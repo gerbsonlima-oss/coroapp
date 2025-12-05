@@ -14,16 +14,281 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      event_song_types: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          order_index: number
+          song_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          order_index?: number
+          song_type_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          order_index?: number
+          song_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_song_types_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_song_types_song_type_id_fkey"
+            columns: ["song_type_id"]
+            isOneToOne: false
+            referencedRelation: "song_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_songs: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          order_index: number
+          song_id: string
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          order_index?: number
+          song_id: string
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          order_index?: number
+          song_id?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_songs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_songs_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string | null
+          date: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          pdf_theme: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          date: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          pdf_theme?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          pdf_theme?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      song_audios: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          naipe: string
+          name: string
+          song_id: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          naipe: string
+          name: string
+          song_id: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          naipe?: string
+          name?: string
+          song_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_audios_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      song_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          order_index: number
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          order_index?: number
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          slug?: string
+        }
+        Relationships: []
+      }
+      songs: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          sheet_music_pdf_url: string | null
+          sheet_music_url: string | null
+          type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          sheet_music_pdf_url?: string | null
+          sheet_music_url?: string | null
+          type: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          sheet_music_pdf_url?: string | null
+          sheet_music_url?: string | null
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +415,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
