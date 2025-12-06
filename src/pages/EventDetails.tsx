@@ -85,6 +85,16 @@ const songSchema = z.object({
   type: z.string().min(1, 'Tipo é obrigatório'),
 });
 
+const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'original'];
+
+const sortByNaipeOrder = <T extends { naipe: string }>(audios: T[]): T[] => {
+  return [...audios].sort((a, b) => {
+    const indexA = NAIPE_ORDER.indexOf(a.naipe.toLowerCase());
+    const indexB = NAIPE_ORDER.indexOf(b.naipe.toLowerCase());
+    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+  });
+};
+
 const getTypeLabel = (type: string | undefined, labels: Record<string, string>) => {
   if (!type) return 'Sem tipo';
   if (labels[type]) return labels[type];
@@ -244,7 +254,7 @@ const EventDetails = () => {
     const allTracks: Track[] = [];
 
     songs.forEach((song) => {
-      song.audios.forEach((audio) => {
+      sortByNaipeOrder(song.audios).forEach((audio) => {
         allTracks.push({
           id: audio.id,
           songId: song.id,
@@ -746,13 +756,15 @@ const EventDetails = () => {
           songs.map((song, index) => {
             const displayIndex = index + 1;
 
-            const songAudios = selectedNaipe === 'all'
-              ? song.audios
-              : song.audios.filter(audio => {
-                  const audioNaipe = String(audio.naipe || '').toLowerCase();
-                  const targetNaipe = String(selectedNaipe).toLowerCase();
-                  return audioNaipe === targetNaipe;
-                });
+            const songAudios = sortByNaipeOrder(
+              selectedNaipe === 'all'
+                ? song.audios
+                : song.audios.filter(audio => {
+                    const audioNaipe = String(audio.naipe || '').toLowerCase();
+                    const targetNaipe = String(selectedNaipe).toLowerCase();
+                    return audioNaipe === targetNaipe;
+                  })
+            );
 
             const hasSongAudios = songAudios.length > 0;
             const hasAnyAudio = (song.audios || []).length > 0;
