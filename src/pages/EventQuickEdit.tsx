@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { uploadFileToBucket } from '@/utils/storageUpload';
@@ -1144,7 +1145,7 @@ const EventQuickEdit = () => {
                   {/* Desktop: tabela completa */}
                   <div className="hidden md:block">
                     <Table>
-                      <TableHeader>
+                      <TableHeader className="sticky top-0 z-10 bg-background">
                         <TableRow className="bg-muted/40">
                           <TableHead className="w-[180px] text-xs uppercase text-muted-foreground">
                             Tipo da música
@@ -1194,54 +1195,68 @@ const EventQuickEdit = () => {
                                     key={`${song.eventSongId}-${key}`}
                                     className="w-[72px] align-middle text-center"
                                   >
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          type="button"
+                                          size="icon"
+                                          variant="outline"
+                                          className={cn(
+                                            'inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 transition-colors hover-scale',
+                                            hasNaipeAudio
+                                              ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                                              : 'bg-muted/40 text-muted-foreground hover:bg-muted/60'
+                                          )}
+                                          onClick={() =>
+                                            setActiveAudio({ eventSongId: song.eventSongId, naipe: key })
+                                          }
+                                          aria-label={
+                                            hasNaipeAudio
+                                              ? `Gerenciar áudio de ${label}`
+                                              : `Adicionar áudio para ${label}`
+                                          }
+                                        >
+                                          {hasNaipeAudio ? (
+                                            <Headphones className="h-4 w-4" />
+                                          ) : (
+                                            <Upload className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>{hasNaipeAudio ? `Gerenciar áudio: ${label}` : `Adicionar áudio: ${label}`}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TableCell>
+                                );
+                              })}
+                              <TableCell className="align-middle text-center">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
                                     <Button
                                       type="button"
                                       size="icon"
                                       variant="outline"
                                       className={cn(
                                         'inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 transition-colors hover-scale',
-                                        hasNaipeAudio
+                                        hasSheet
                                           ? 'bg-primary/10 text-primary hover:bg-primary/20'
                                           : 'bg-muted/40 text-muted-foreground hover:bg-muted/60'
                                       )}
-                                      onClick={() =>
-                                        setActiveAudio({ eventSongId: song.eventSongId, naipe: key })
-                                      }
-                                      aria-label={
-                                        hasNaipeAudio
-                                          ? `Gerenciar áudio de ${label}`
-                                          : `Adicionar áudio para ${label}`
-                                      }
+                                      onClick={() => setActiveSheetSongEventId(song.eventSongId)}
+                                      aria-label={hasSheet ? 'Ver ou trocar partitura' : 'Anexar partitura'}
                                     >
-                                      {hasNaipeAudio ? (
-                                        <Headphones className="h-4 w-4" />
+                                      {hasSheet ? (
+                                        <FileText className="h-4 w-4" />
                                       ) : (
                                         <Upload className="h-4 w-4" />
                                       )}
                                     </Button>
-                                  </TableCell>
-                                );
-                              })}
-                              <TableCell className="align-middle text-center">
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="outline"
-                                  className={cn(
-                                    'inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 transition-colors hover-scale',
-                                    hasSheet
-                                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                                      : 'bg-muted/40 text-muted-foreground hover:bg-muted/60'
-                                  )}
-                                  onClick={() => setActiveSheetSongEventId(song.eventSongId)}
-                                  aria-label={hasSheet ? 'Ver ou trocar partitura' : 'Anexar partitura'}
-                                >
-                                  {hasSheet ? (
-                                    <FileText className="h-4 w-4" />
-                                  ) : (
-                                    <Upload className="h-4 w-4" />
-                                  )}
-                                </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{hasSheet ? 'Ver ou trocar partitura' : 'Anexar partitura'}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </TableCell>
                               <TableCell className="align-middle text-center">
                                 <DropdownMenu>
