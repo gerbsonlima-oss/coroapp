@@ -107,6 +107,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
     textColor: [number, number, number];
     whiteColor: [number, number, number];
     overlayColor: [number, number, number];
+    indexTypeColor: [number, number, number]; // Cor sempre escura para tipos no índice
   }> = {
     deep_blue_gold: {
       primaryColor: [25, 55, 109], // Azul profundo elegante (padrão atual)
@@ -114,6 +115,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
       textColor: [51, 51, 51],
       whiteColor: [255, 255, 255],
       overlayColor: [0, 0, 0],
+      indexTypeColor: [25, 55, 109], // Azul escuro
     },
     emerald_night: {
       primaryColor: [6, 78, 59], // Verde esmeralda escuro
@@ -121,6 +123,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
       textColor: [24, 24, 27],
       whiteColor: [250, 250, 250],
       overlayColor: [15, 23, 42],
+      indexTypeColor: [6, 78, 59], // Verde escuro
     },
     violet_sunset: {
       primaryColor: [88, 28, 135], // Roxo profundo
@@ -128,13 +131,15 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
       textColor: [30, 41, 59],
       whiteColor: [255, 255, 255],
       overlayColor: [15, 23, 42],
+      indexTypeColor: [88, 28, 135], // Roxo escuro
     },
     graphite_copper: {
       primaryColor: [15, 23, 42], // Grafite
       accentColor: [249, 115, 22], // Laranja cobre
-      textColor: [226, 232, 240],
+      textColor: [24, 24, 27], // Corrigido para escuro
       whiteColor: [248, 250, 252],
       overlayColor: [15, 23, 42],
+      indexTypeColor: [180, 83, 9], // Laranja escuro
     },
     crimson_noir: {
       primaryColor: [127, 29, 29], // Vermelho escuro moderno
@@ -142,6 +147,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
       textColor: [24, 24, 27],
       whiteColor: [255, 255, 255],
       overlayColor: [15, 23, 42],
+      indexTypeColor: [127, 29, 29], // Vermelho escuro
     },
     sunrise_coral: {
       primaryColor: [234, 88, 12], // Laranja queimado / coral
@@ -149,6 +155,39 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
       textColor: [17, 24, 39],
       whiteColor: [255, 255, 255],
       overlayColor: [15, 23, 42],
+      indexTypeColor: [180, 83, 9], // Laranja escuro
+    },
+    ocean_teal: {
+      primaryColor: [13, 148, 136], // Teal oceano
+      accentColor: [45, 212, 191], // Turquesa claro
+      textColor: [17, 24, 39],
+      whiteColor: [255, 255, 255],
+      overlayColor: [15, 23, 42],
+      indexTypeColor: [15, 118, 110], // Teal escuro
+    },
+    forest_sage: {
+      primaryColor: [22, 101, 52], // Verde floresta
+      accentColor: [134, 239, 172], // Verde sage claro
+      textColor: [20, 30, 26],
+      whiteColor: [255, 255, 255],
+      overlayColor: [15, 23, 42],
+      indexTypeColor: [22, 101, 52], // Verde floresta
+    },
+    midnight_purple: {
+      primaryColor: [76, 29, 149], // Roxo meia-noite
+      accentColor: [192, 132, 252], // Lavanda
+      textColor: [30, 20, 50],
+      whiteColor: [255, 255, 255],
+      overlayColor: [15, 10, 30],
+      indexTypeColor: [76, 29, 149], // Roxo escuro
+    },
+    wine_burgundy: {
+      primaryColor: [136, 19, 55], // Borgonha vinho
+      accentColor: [251, 207, 232], // Rosa suave
+      textColor: [40, 20, 30],
+      whiteColor: [255, 255, 255],
+      overlayColor: [30, 10, 20],
+      indexTypeColor: [136, 19, 55], // Borgonha
     },
   };
 
@@ -160,6 +199,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
   const textColor = theme.textColor;
   const whiteColor = theme.whiteColor;
   const overlayColor = theme.overlayColor;
+  const indexTypeColor = theme.indexTypeColor;
   
   // ============================================
   // PÁGINA 1: CAPA PROFISSIONAL
@@ -358,8 +398,8 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
     const nameLines = indexPdf.splitTextToSize(song.name, maxNameWidth) as string[];
     indexPdf.text(nameLines, nameX, indexY);
 
-    // Label de tipo alinhada à direita, usando a cor do tema
-    indexPdf.setTextColor(...accentColor);
+    // Label de tipo alinhada à direita, usando cor escura para legibilidade
+    indexPdf.setTextColor(...indexTypeColor);
     const typeWidth = indexPdf.getTextWidth(typeText);
     indexPdf.text(typeText, pageWidth - margin - typeWidth, indexY);
 

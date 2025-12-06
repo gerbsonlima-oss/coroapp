@@ -428,8 +428,8 @@ const EditEvent = () => {
                       : 'border-border bg-card'
                   }`}
                 >
-                  <span className="font-semibold text-foreground">Verde Noturno</span>
-                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-emerald-500 to-slate-900" />
+                  <span className="font-semibold text-foreground">Verde Esmeralda</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-emerald-600 to-emerald-900" />
                 </button>
 
                 <button
@@ -455,7 +455,7 @@ const EditEvent = () => {
                   }`}
                 >
                   <span className="font-semibold text-foreground">Grafite & Cobre</span>
-                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-slate-900 to-orange-500" />
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-slate-800 to-orange-500" />
                 </button>
 
                 <button
@@ -467,8 +467,8 @@ const EditEvent = () => {
                       : 'border-border bg-card'
                   }`}
                 >
-                  <span className="font-semibold text-foreground">Vermelho & Grafite</span>
-                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-red-700 to-slate-900" />
+                  <span className="font-semibold text-foreground">Vermelho Borgonha</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-red-800 to-slate-900" />
                 </button>
 
                 <button
@@ -482,6 +482,58 @@ const EditEvent = () => {
                 >
                   <span className="font-semibold text-foreground">Coral & Dourado</span>
                   <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-orange-500 to-amber-300" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('ocean_teal')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'ocean_teal'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Oceano Turquesa</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-teal-600 to-cyan-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('forest_sage')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'forest_sage'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Verde Floresta</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-green-700 to-green-300" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('midnight_purple')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'midnight_purple'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Roxo Meia-noite</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-purple-800 to-purple-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('wine_burgundy')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'wine_burgundy'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Vinho Borgonha</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-rose-800 to-pink-300" />
                 </button>
               </div>
             </div>
