@@ -195,10 +195,15 @@ const EventQuickEdit = () => {
   const [isReordering, setIsReordering] = useState(false);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [isExportingGrid, setIsExportingGrid] = useState(false);
+  const [songNameFilter, setSongNameFilter] = useState('');
 
 
   const filteredAvailableSongs = availableSongs.filter((song) =>
     song.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredSongs = songs.filter((song) =>
+    song.name.toLowerCase().includes(songNameFilter.toLowerCase())
   );
 
   useEffect(() => {
@@ -1052,10 +1057,22 @@ const EventQuickEdit = () => {
                 )}
 
                 <Card className="mt-4 overflow-x-auto rounded-xl border border-border/60 bg-card/80 shadow-sm sm:shadow-md animate-fade-in">
+                  {/* Filtro de busca por nome */}
+                  <div className="border-b border-border/40 px-3 py-3 sm:px-4">
+                    <div className="relative max-w-xs">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar música pelo nome..."
+                        value={songNameFilter}
+                        onChange={(e) => setSongNameFilter(e.target.value)}
+                        className="h-9 pl-9 text-sm"
+                      />
+                    </div>
+                  </div>
                   <div>
                     {/* Mobile: cards */}
-                    <div className="space-y-3 md:hidden">
-                      {songs.map((song) => {
+                    <div className="space-y-3 p-3 md:hidden">
+                      {filteredSongs.map((song) => {
                       const hasSheet = !!(song.sheet_music_url || song.sheet_music_pdf_url);
                       const selectedSong = availableSongs.find((s) => s.id === song.songId);
 
@@ -1171,7 +1188,7 @@ const EventQuickEdit = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {songs.map((song) => {
+                        {filteredSongs.map((song) => {
                           const hasSheet = !!(song.sheet_music_url || song.sheet_music_pdf_url);
                           const naipesWithAudio = new Set(song.audios.map((a) => a.naipe));
                           const selectedSong = availableSongs.find((s) => s.id === song.songId);
