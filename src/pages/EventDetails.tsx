@@ -907,7 +907,9 @@ const EventDetails = () => {
                                 {song.name}
                               </p>
                               <p className="truncate text-xs text-muted-foreground">
-                                {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                                {audio.naipe.toLowerCase() === 'original' 
+                                  ? 'Todas as Vozes' 
+                                  : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
                               </p>
                             </div>
                           </div>
