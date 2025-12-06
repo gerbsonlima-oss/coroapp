@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { uploadFileToBucket } from '@/utils/storageUpload';
@@ -1144,6 +1144,7 @@ const EventQuickEdit = () => {
 
                   {/* Desktop: tabela completa */}
                   <div className="hidden md:block">
+                    <TooltipProvider delayDuration={200}>
                     <Table>
                       <TableHeader className="sticky top-0 z-10 bg-background">
                         <TableRow className="bg-muted/40">
@@ -1305,6 +1306,7 @@ const EventQuickEdit = () => {
                         })}
                        </TableBody>
                      </Table>
+                    </TooltipProvider>
                      </div>
                    </div>
                  </Card>
