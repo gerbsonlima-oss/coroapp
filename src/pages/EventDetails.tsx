@@ -89,10 +89,10 @@ const typeColors: Record<string, string> = {
   outro: 'bg-transparent text-muted-foreground border-border'
 };
 const naipeColors: Record<string, string> = {
-  soprano: 'bg-pink-500/20 text-pink-600 dark:text-pink-400 border-pink-500/30',
-  contralto: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30',
-  tenor: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30',
-  baixo: 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30'
+  soprano: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30',
+  contralto: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30',
+  tenor: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30',
+  baixo: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30'
 };
 
 // Ordem litúrgica dos tipos de música
@@ -525,7 +525,7 @@ const EventDetails = () => {
         <p>Evento não encontrado</p>
       </div>;
   }
-  return <div className="min-h-screen bg-background pb-40">
+  return <div className="min-h-screen bg-background pb-[144px]">
       {/* Header com gradiente e imagem de capa */}
       <div className="relative">
         <div className="gradient-header relative flex h-64 items-end overflow-hidden">
@@ -730,9 +730,7 @@ const EventDetails = () => {
                                 <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                   {song.name}
                                 </p>
-                                <p className="truncate text-xs text-muted-foreground">
-                                  {getTypeLabel(song.type, typeLabels)}
-                                </p>
+                                
                               </div>
                             </div>
 

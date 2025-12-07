@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -54,6 +55,7 @@ export const PlaylistPlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [audioSrc, setAudioSrc] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isControlsExpanded, setIsControlsExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { isCached, cacheAudio, getCachedUrl } = useAudioCache();
 
@@ -76,7 +78,6 @@ export const PlaylistPlayer = ({
     const playSafely = async () => {
       if (isPlaying && !isLoading) {
         try {
-          // Se o áudio já estiver em cache e ainda não estivermos usando blob, troque para o offline antes de tocar
           if (currentTrack && isCached(currentTrack.url) && !audioSrc.startsWith('blob:')) {
             const cachedUrl = await getCachedUrl(currentTrack.url);
             if (cachedUrl !== audioSrc) {
@@ -86,7 +87,6 @@ export const PlaylistPlayer = ({
           await audio.play();
         } catch (err) {
           console.error('Erro ao reproduzir:', err);
-          // Fallback: se existir no cache, troque para blob e tente novamente
           try {
             if (currentTrack && isCached(currentTrack.url)) {
               const cachedUrl = await getCachedUrl(currentTrack.url);
@@ -128,7 +128,6 @@ export const PlaylistPlayer = ({
       setIsLoading(false);
     };
     const handleEnded = () => {
-      // Se está no modo de repetir música, reinicia a música atual
       if (repeatMode === 'track') {
         audio.currentTime = 0;
         audio.play();
@@ -138,7 +137,6 @@ export const PlaylistPlayer = ({
     };
     const handleCanPlay = () => {
       setIsLoading(false);
-      // Inicia reprodução automática se isPlaying estiver true
       if (isPlaying) {
         audio.play().catch(err => console.error('Erro ao reproduzir:', err));
       }
@@ -158,7 +156,6 @@ export const PlaylistPlayer = ({
     };
   }, [onTrackEnd, isPlaying, repeatMode]);
 
-  // Quando ficar offline, tente trocar a fonte para o blob em cache
   useEffect(() => {
     const handleOffline = () => {
       if (currentTrack) {
@@ -207,7 +204,7 @@ export const PlaylistPlayer = ({
 
   if (!currentTrack) {
     return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground">
+      <div className="fixed bottom-16 left-0 right-0 bg-background border-t border-border flex items-center justify-center h-20 text-muted-foreground">
         Nenhuma música selecionada
       </div>
     );
@@ -217,11 +214,9 @@ export const PlaylistPlayer = ({
   const hasSheetMusic = !!sheetMusicUrl;
   const isPdfSheetMusic = sheetMusicUrl?.toLowerCase().endsWith('.pdf');
 
-  // Renderização em tela cheia com partitura
   if (isExpanded && hasSheetMusic) {
     return (
       <div className="fixed inset-0 z-50 bg-background flex flex-col">
-        {/* Botão de fechar */}
         <div className="absolute top-4 right-4 z-10">
           <Button
             size="icon"
@@ -233,7 +228,6 @@ export const PlaylistPlayer = ({
           </Button>
         </div>
 
-        {/* Partitura */}
         <div className="flex-1 overflow-auto p-4 pb-24">
           <div className="max-w-4xl mx-auto h-full">
             {isPdfSheetMusic ? (
@@ -260,7 +254,6 @@ export const PlaylistPlayer = ({
           </div>
         </div>
 
-        {/* Player minimizado fixo embaixo */}
         <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border p-3">
           <audio 
             ref={audioRef} 
@@ -271,13 +264,11 @@ export const PlaylistPlayer = ({
           
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-3">
-              {/* Info da música - compacta */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{currentTrack.songName}</p>
                 <p className="text-xs text-muted-foreground truncate">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
               </div>
 
-              {/* Controles centrais */}
               <div className="flex items-center gap-2">
                 <Button
                   size="icon"
@@ -314,7 +305,6 @@ export const PlaylistPlayer = ({
                 </Button>
               </div>
 
-              {/* Tempo */}
               <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-[80px] justify-end">
                 <span>{formatTime(currentTime)}</span>
                 <span>/</span>
@@ -322,14 +312,11 @@ export const PlaylistPlayer = ({
               </div>
             </div>
 
-            {/* Barra de progresso compacta */}
             <div className="mt-2">
               <Slider
                 value={[currentTime]}
                 max={duration || 100}
-                step={0.1}
                 onValueChange={handleSeek}
-                className="w-full"
                 disabled={isLoading}
               />
             </div>
@@ -339,128 +326,82 @@ export const PlaylistPlayer = ({
     );
   }
 
-  // Renderização normal do player
   return (
-    <div className="bg-card/50 backdrop-blur-sm">
+    <div className={cn("fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border z-40 flex flex-col justify-end transition-all duration-300", isControlsExpanded ? "h-[112px]" : "h-[64px]")}>
       <audio 
         ref={audioRef} 
         src={audioSrc} 
         preload="metadata" 
         crossOrigin="anonymous"
       />
-
-      {/* Controles compactos em uma linha */}
-      <div className="flex items-center gap-3">
-        {/* Botão Play/Pause */}
-        <Button
-          size="icon"
-          variant="default"
-          onClick={onPlayPause}
-          className="h-10 w-10 rounded-full bg-primary hover:bg-primary-glow shrink-0"
-          disabled={isLoading}
-        >
-          {isPlaying ? (
-            <Pause className="h-4 w-4 fill-current" />
-          ) : (
-            <Play className="h-4 w-4 ml-0.5 fill-current" />
-          )}
-        </Button>
-
-        {/* Info e Progresso */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-xs font-medium truncate">{currentTrack.songName}</p>
-            <span className="text-[10px] text-muted-foreground">•</span>
-            <p className="text-[10px] text-muted-foreground truncate">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
+      <div className="px-4 py-3 flex items-center justify-between h-full">
+        <div className="flex items-center justify-between w-full h-full gap-4">
+          {/* Coluna 1: Informações da Música */}
+          <div className="min-w-0 cursor-pointer" onClick={() => setIsControlsExpanded(prev => !prev)}>
+            <p className="font-medium text-sm truncate">{currentTrack.songName}</p>
+            <p className="text-xs text-muted-foreground truncate">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground shrink-0">{formatTime(currentTime)}</span>
-            <Slider
-              value={[currentTime]}
-              max={duration || 100}
-              step={0.1}
-              onValueChange={handleSeek}
-              className="flex-1"
-              disabled={isLoading}
-            />
-            <span className="text-[10px] text-muted-foreground shrink-0">{formatTime(duration)}</span>
+
+          {/* Coluna 2: Controles Principais */}
+          <div className="flex items-center justify-center gap-2 shrink-0">
+            <Button size="icon" variant="ghost" onClick={onPlayPause} disabled={isLoading} className="h-10 w-10">
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+            </Button>
+            <Button size="icon" variant="ghost" onClick={onNext} disabled={isLoading} className="h-10 w-10">
+              <SkipForward className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Coluna 3: Controles Secundários e Volume */}
+          <div className="flex items-center justify-end gap-3 hidden sm:flex">
+            <Button size="icon" variant="ghost" onClick={onToggleRepeat} disabled={isLoading} className="h-9 w-9">
+              {repeatMode === 'track' ? <Repeat1 className="h-5 w-5 text-primary" /> : <Repeat className="h-5 w-5" />}
+            </Button>
+            {hasSheetMusic && (
+              <Button size="icon" variant="ghost" onClick={() => setIsExpanded(true)} className="h-9 w-9">
+                <Expand className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Controles extras compactos */}
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onPrevious}
-            className="h-8 w-8"
-            disabled={isLoading}
-          >
-            <SkipBack className="h-3.5 w-3.5" />
-          </Button>
-
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onNext}
-            className="h-8 w-8"
-            disabled={isLoading}
-          >
-            <SkipForward className="h-3.5 w-3.5" />
-          </Button>
-
-          <Button
-            size="icon"
-            variant={repeatMode !== 'off' ? 'default' : 'ghost'}
-            onClick={onToggleRepeat}
-            className={cn(
-              "h-8 w-8 relative",
-              repeatMode === 'playlist' && "bg-primary/80 hover:bg-primary",
-              repeatMode === 'track' && "bg-primary hover:bg-primary-glow"
-            )}
-            title={
-              repeatMode === 'off' ? 'Sem repetição' :
-              repeatMode === 'playlist' ? 'Repetir playlist' :
-              'Repetir música'
-            }
-          >
-            {repeatMode === 'track' ? (
-              <Repeat1 className="h-3.5 w-3.5" />
-            ) : (
-              <Repeat className="h-3.5 w-3.5" />
-            )}
-          </Button>
-
-          {hasSheetMusic && (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => isPdfSheetMusic ? window.open(sheetMusicUrl, '_blank') : setIsExpanded(true)}
-              className="h-8 w-8"
-            >
-              {isPdfSheetMusic ? <FileText className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
-            </Button>
-          )}
-
-          {showDownloadButton && !cached && (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleDownload}
-              className="h-8 w-8"
-              disabled={isLoading}
-            >
-              <Download className="h-3.5 w-3.5" />
-            </Button>
-          )}
+        {/* Barra de Progresso e Tempo */}
+        <div className="flex items-center gap-2 absolute top-0 left-0 right-0 h-1">
           
-          {cached && (
-            <span title="Disponível offline" className="h-8 w-8 flex items-center justify-center">
-              <Check className="h-3.5 w-3.5 text-primary" />
-            </span>
-          )}
+          <Slider
+            value={[currentTime]}
+            max={duration || 100}
+            onValueChange={handleSeek}
+            disabled={isLoading}
+            className="flex-1"
+          />
+          
         </div>
       </div>
+      
+      {/* Controles Secundários (Visível apenas quando expandido) */}
+      {isControlsExpanded && (
+        <div className="px-4 py-2 flex items-center justify-between border-t border-border h-12">
+          <div className="flex items-center gap-4">
+            <Button size="icon" variant="ghost" onClick={onPrevious} disabled={isLoading} className="h-9 w-9">
+              <SkipBack className="h-5 w-5" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={onToggleRepeat} disabled={isLoading} className="h-9 w-9">
+              {repeatMode === 'track' ? <Repeat1 className="h-5 w-5 text-primary" /> : <Repeat className="h-5 w-5" />}
+            </Button>
+            {hasSheetMusic && (
+              <Button size="icon" variant="ghost" onClick={() => setIsExpanded(true)} className="h-9 w-9">
+                <Expand className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{formatTime(currentTime)}</span>
+            <span>/</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

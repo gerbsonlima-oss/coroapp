@@ -106,7 +106,7 @@ const Events = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="min-h-screen bg-background pb-[144px]">
       <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-xl shadow-subtle px-4 py-3 md:px-6 md:py-4">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
