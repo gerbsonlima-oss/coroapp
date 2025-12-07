@@ -159,7 +159,8 @@ const EventDetails = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedSong, setSelectedSong] = useState<string | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [selectedNaipe, setSelectedNaipe] = useState<string>('all');
+  const [selectedNaipe, setSelectedNaipe] = useState<string>('todas');
+  const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>('musica');
   const [searchQuery, setSearchQuery] = useState('');
   const [newSongName, setNewSongName] = useState('');
   const [newSongType, setNewSongType] = useState('');
@@ -197,11 +198,18 @@ const EventDetails = () => {
   
   
   // Playlist filtrada baseada no naipe selecionado
-  const filteredPlaylist = selectedNaipe === 'all' 
+  const filteredPlaylist = selectedNaipe === 'todas' 
     ? tracks 
-    : tracks.filter(track => 
-        track.naipe.toLowerCase().includes(selectedNaipe.toLowerCase())
-      );
+    : selectedNaipe === 'nenhum'
+    ? []
+    : tracks.filter(track => {
+        const audioNaipe = track.naipe.toLowerCase();
+        const targetNaipe = selectedNaipe.toLowerCase();
+        if (targetNaipe === 'todas as vozes') {
+          return audioNaipe === 'original';
+        }
+        return audioNaipe === targetNaipe;
+      });
 
   const {
     currentTrack,
@@ -538,7 +546,7 @@ const EventDetails = () => {
     song.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const naipeOptions = ['Soprano', 'Contralto', 'Tenor', 'Baixo'];
+  const filterOptions = ['Soprano', 'Contralto', 'Tenor', 'Baixo', 'Todas as Vozes', 'Nenhum'];
 
   const getFilteredTracks = () => {
     return filteredPlaylist;
@@ -728,17 +736,34 @@ const EventDetails = () => {
           </DropdownMenu>
         </div>
 
+      </div>
+
+      {/* Barra de filtros e agrupamento */}
+      <div className="flex flex-wrap items-center gap-3 px-4 pb-4">
         <div className="flex items-center gap-2">
-          <Music className="h-4 w-4 text-muted-foreground" />
-          <Select value={selectedNaipe} onValueChange={setSelectedNaipe}>
-            <SelectTrigger className="w-[140px] border-muted bg-transparent text-sm">
-              <SelectValue placeholder="Todos" />
+          <span className="text-xs text-muted-foreground">Agrupar:</span>
+          <Select value={groupBy} onValueChange={(v) => setGroupBy(v as 'musica' | 'naipe')}>
+            <SelectTrigger className="h-8 w-[100px] border-muted bg-card text-xs">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {naipeOptions.map((naipe) => (
-                <SelectItem key={naipe} value={naipe}>
-                  {naipe}
+              <SelectItem value="musica">Música</SelectItem>
+              <SelectItem value="naipe">Naipe</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Filtrar:</span>
+          <Select value={selectedNaipe} onValueChange={setSelectedNaipe}>
+            <SelectTrigger className="h-8 w-[140px] border-muted bg-card text-xs">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas</SelectItem>
+              {filterOptions.map((option) => (
+                <SelectItem key={option} value={option.toLowerCase()}>
+                  {option}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -746,22 +771,152 @@ const EventDetails = () => {
         </div>
       </div>
 
-      {/* Lista de músicas - grupos por música na ordem definida na edição rápida */}
+      {/* Lista de músicas */}
       <div className="space-y-2 pb-4 px-3 sm:px-4">
         {songs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Nenhuma música adicionada a este evento ainda.
           </p>
+        ) : groupBy === 'naipe' ? (
+          // Agrupamento por naipe
+          (() => {
+            const naipeGroups: Record<string, { song: EventSong; audio: SongAudio }[]> = {};
+            const naipeOrder = ['soprano', 'contralto', 'tenor', 'baixo', 'original'];
+            
+            songs.forEach(song => {
+              song.audios.forEach(audio => {
+                const naipeKey = audio.naipe.toLowerCase();
+                // Filtrar pelo naipe selecionado
+                if (selectedNaipe !== 'todas' && selectedNaipe !== 'nenhum') {
+                  const targetNaipe = selectedNaipe.toLowerCase();
+                  if (targetNaipe === 'todas as vozes') {
+                    if (naipeKey !== 'original') return;
+                  } else if (naipeKey !== targetNaipe) {
+                    return;
+                  }
+                }
+                if (selectedNaipe === 'nenhum') return;
+                
+                if (!naipeGroups[naipeKey]) {
+                  naipeGroups[naipeKey] = [];
+                }
+                naipeGroups[naipeKey].push({ song, audio });
+              });
+            });
+
+            const sortedNaipes = naipeOrder.filter(n => naipeGroups[n]);
+
+            if (sortedNaipes.length === 0) {
+              return (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum áudio encontrado com o filtro selecionado.
+                </p>
+              );
+            }
+
+            return sortedNaipes.map(naipeKey => {
+              const items = naipeGroups[naipeKey];
+              const naipeLabel = naipeKey === 'original' ? 'Todas as Vozes' : naipeKey.charAt(0).toUpperCase() + naipeKey.slice(1);
+              
+              return (
+                <Card key={naipeKey} className="mb-3 overflow-hidden">
+                  <div className="border-b border-border px-4 py-3 bg-muted/40">
+                    <div className="flex items-center gap-2">
+                      <Badge className={naipeColors[naipeKey] || 'bg-primary/20 text-primary border-primary/30'}>
+                        {naipeLabel}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {items.length} áudio(s)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {items.map(({ song, audio }) => {
+                      const track = filteredPlaylist.find(t => t.id === audio.id);
+                      const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
+
+                      return (
+                        <div
+                          key={audio.id}
+                          ref={(el) => {
+                            if (globalIndex >= 0) {
+                              trackRefs.current[globalIndex] = el;
+                            }
+                          }}
+                          onClick={() => globalIndex >= 0 && playTrack(globalIndex)}
+                          className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${
+                            globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <Music className="h-5 w-5 text-muted-foreground shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`truncate font-medium text-sm ${
+                                  globalIndex >= 0 && currentTrackIndex === globalIndex
+                                    ? 'text-primary'
+                                    : 'text-foreground'
+                                }`}
+                              >
+                                {song.name}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {getTypeLabel(song.type, typeLabels)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const response = await fetch(audio.audio_url);
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                                a.download = fileName;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                                toast.success('Download iniciado!');
+                              } catch (error) {
+                                toast.error('Erro ao baixar áudio');
+                              }
+                            }}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            title="Baixar áudio"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              );
+            });
+          })()
         ) : (
+          // Agrupamento por música (padrão)
           songs.map((song, index) => {
             const displayIndex = index + 1;
 
             const songAudios = sortByNaipeOrder(
-              selectedNaipe === 'all'
+              selectedNaipe === 'todas'
                 ? song.audios
+                : selectedNaipe === 'nenhum'
+                ? []
                 : song.audios.filter(audio => {
                     const audioNaipe = String(audio.naipe || '').toLowerCase();
                     const targetNaipe = String(selectedNaipe).toLowerCase();
+                    if (targetNaipe === 'todas as vozes') {
+                      return audioNaipe === 'original';
+                    }
                     return audioNaipe === targetNaipe;
                   })
             );
