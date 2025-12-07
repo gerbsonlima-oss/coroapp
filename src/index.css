@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -46,7 +47,7 @@ All colors MUST be HSL.
     --popover: 0 0% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 225 73% 50%;
+    --primary: 142 70.5628% 45.2941%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 225 73% 70%;
     --primary-hover: 225 73% 60%;
@@ -77,13 +78,13 @@ All colors MUST be HSL.
     --gradient-header: linear-gradient(180deg, hsl(0 0% 10%) 0%, hsl(0 0% 7%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(0 0% 14%) 0%, hsl(0 0% 10%) 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(0 0% 9%) 0%, hsl(0 0% 7%) 100%);
-    
+
     /* Sombras refinadas com profundidade */
     --shadow-glow: 0 8px 32px hsl(225 73% 50% / 0.25), 0 0 0 1px hsl(225 73% 50% / 0.1);
     --shadow-card: 0 4px 16px hsl(0 0% 0% / 0.5), 0 2px 4px hsl(0 0% 0% / 0.3);
     --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.6), 0 4px 8px hsl(0 0% 0% / 0.4);
     --shadow-subtle: 0 2px 8px hsl(0 0% 0% / 0.3);
-    
+
     /* Bordas com brilho sutil */
     --border-glow: 0 0 0 1px hsl(225 73% 50% / 0.15);
   }
@@ -133,7 +134,7 @@ All colors MUST be HSL.
   .gradient-primary {
     background: var(--gradient-primary);
   }
-  
+
   .gradient-card {
     background: var(--gradient-card);
   }
