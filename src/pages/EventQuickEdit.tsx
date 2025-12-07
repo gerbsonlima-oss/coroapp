@@ -1689,7 +1689,7 @@ const EventQuickEdit = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{song.name}</span>
-                        <Badge className={typeColors[song.type] || typeColors.outro}>
+                        <Badge className="bg-primary/10 text-primary border-primary/30">
                           {typeLabels[song.type] || song.type}
                         </Badge>
                       </div>

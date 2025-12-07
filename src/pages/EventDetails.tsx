@@ -17,7 +17,7 @@ import {
 import { PlaylistPlayer } from '@/components/PlaylistPlayer';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import {
   Accordion,
@@ -161,6 +161,7 @@ const EventDetails = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedNaipe, setSelectedNaipe] = useState<string>('todas');
   const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>('naipe');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [newSongName, setNewSongName] = useState('');
   const [newSongType, setNewSongType] = useState('');
@@ -256,6 +257,10 @@ const EventDetails = () => {
       fetchEventDetails();
     }
   }, [id]);
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   useEffect(() => {
     // Constrói a lista de tracks respeitando a ordem definida em event_songs (order_index)
@@ -711,7 +716,7 @@ const EventDetails = () => {
                     Editar evento
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
-                    <Music className="mr-2 h-4 w-4" />
+                    <Music className="mr-2 h-4 w-4 text-primary" />
                     Editar músicas
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
@@ -725,7 +730,7 @@ const EventDetails = () => {
                 Compartilhar evento
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportPDF}>
-                <FileText className="mr-2 h-4 w-4" />
+                <FileText className="mr-2 h-4 w-4 text-primary" />
                 Exportar Partituras
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportZIP}>
@@ -817,26 +822,35 @@ const EventDetails = () => {
             return sortedNaipes.map((naipeKey, groupIndex) => {
               const items = naipeGroups[naipeKey];
               const naipeLabel = naipeKey === 'original' ? 'Todas as Vozes' : naipeKey.charAt(0).toUpperCase() + naipeKey.slice(1);
+              const groupKey = `naipe:${naipeKey}`;
+              const isCollapsed = Boolean(collapsedGroups[groupKey]);
 
               return (
                 <div key={naipeKey}>
-                  {groupIndex > 0 && (
-                    <div className="mx-3 my-3 h-0.5 rounded bg-primary/80" />
-                  )}
-
                   <Card className="mb-3 overflow-hidden">
                     <div className="border-b border-border px-4 py-3 bg-muted/40">
-                      <div className="flex items-center gap-2">
-                        <Badge className={naipeColors[naipeKey] || 'bg-primary/20 text-primary border-primary/30'}>
-                          {naipeLabel}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {items.length} áudio(s)
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge className={naipeColors[naipeKey] || 'bg-primary/20 text-primary border-primary/30'}>
+                            {naipeLabel}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {items.length} áudio(s)
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleGroup(groupKey); }}
+                          aria-expanded={!isCollapsed}
+                          className="p-1"
+                          title={isCollapsed ? 'Expandir grupo' : 'Colapsar grupo'}
+                        >
+                          <ChevronDown className={`h-4 w-4 transform transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
+                        </button>
                       </div>
                     </div>
-                    <div className="divide-y divide-border">
-                      {items.map(({ song, audio }, idx) => {
+                    {!isCollapsed && (
+                      <div className="divide-y divide-border">
+                        {items.map(({ song, audio }, idx) => {
                         const track = filteredPlaylist.find(t => t.id === audio.id);
                         const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
                         const orderNumber = idx + 1;
@@ -855,10 +869,7 @@ const EventDetails = () => {
                             }`}
                           >
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                {orderNumber}
-                              </div>
-                              <Music className="h-5 w-5 text-muted-foreground shrink-0" />
+                              <Music className="h-5 w-5 text-primary shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p
                                   className={`truncate font-medium text-sm ${
@@ -904,8 +915,9 @@ const EventDetails = () => {
                             </Button>
                           </div>
                         );
-                      })}
-                    </div>
+                        })}
+                      </div>
+                    )}
                   </Card>
                 </div>
               );
@@ -915,6 +927,8 @@ const EventDetails = () => {
           // Agrupamento por música (padrão)
           songs.map((song, index) => {
             const displayIndex = index + 1;
+            const groupKey = `song:${song.event_song_id}`;
+            const isCollapsed = Boolean(collapsedGroups[groupKey]);
 
             const songAudios = sortByNaipeOrder(
               selectedNaipe === 'todas'
@@ -945,19 +959,28 @@ const EventDetails = () => {
                         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                           {displayIndex}
                         </div>
-                        <Badge className={typeColors[song.type]}>
+                        <Badge className="bg-primary/10 text-primary border-primary/30">
                           {getTypeLabel(song.type, typeLabels)}
                         </Badge>
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleGroup(groupKey); }}
+                          aria-expanded={!isCollapsed}
+                          className="p-1 mr-1"
+                          title={isCollapsed ? 'Expandir' : 'Colapsar'}
+                        >
+                          <ChevronDown className={`h-4 w-4 transform transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
+                        </button>
+
                         <div
                           className="flex items-center justify-center"
-                          title={hasAnyAudio ? 'Possui áudios cadastrados' : 'Sem áudios cadastrados'}
+                          title={hasSheetMusic ? 'Possui partitura cadastrada' : 'Sem partitura cadastrada'}
                         >
-                          <Music
+                          <FileText
                             className={
-                              hasAnyAudio
+                              hasSheetMusic
                                 ? 'h-4 w-4 text-primary'
                                 : 'h-4 w-4 text-muted-foreground/60'
                             }
@@ -1007,7 +1030,7 @@ const EventDetails = () => {
                                 await handleDownloadSongPdf(song);
                               }}
                             >
-                              <FileText className="mr-2 h-4 w-4" />
+                              <FileText className="mr-2 h-4 w-4 text-primary" />
                               Baixar partitura (PDF)
                             </DropdownMenuItem>
                             {user && (
@@ -1052,9 +1075,10 @@ const EventDetails = () => {
                   </div>
                 </div>
 
-                <div className="divide-y divide-border">
-                  {hasSongAudios ? (
-                    songAudios.map((audio) => {
+                {!isCollapsed && (
+                  <div className="divide-y divide-border">
+                    {hasSongAudios ? (
+                      songAudios.map((audio) => {
                       const track = filteredPlaylist.find(t => t.id === audio.id);
                       const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
 
@@ -1072,7 +1096,7 @@ const EventDetails = () => {
                           }`}
                         >
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Music className="h-5 w-5 text-muted-foreground shrink-0" />
+                            <Music className="h-5 w-5 text-primary shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p
                                 className={`truncate font-medium text-sm ${
@@ -1121,12 +1145,13 @@ const EventDetails = () => {
                         </div>
                       );
                     })
-                  ) : (
-                    <div className="px-4 py-3 text-xs text-muted-foreground">
-                      Esta música ainda não possui áudios cadastrados.
-                    </div>
-                  )}
-                </div>
+                      ) : (
+                        <div className="px-4 py-3 text-xs text-muted-foreground">
+                          Esta música ainda não possui áudios cadastrados.
+                        </div>
+                      )}
+                  </div>
+                )}
               </Card>
             );
           })

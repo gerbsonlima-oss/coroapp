@@ -147,8 +147,7 @@ const SongDetails = () => {
             </Button>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{song.name}</h1>
-              <Badge className={`${typeColors[song.type]} mt-1 text-xs font-medium`}
-              >
+              <Badge className={`bg-primary/10 text-primary border-primary/30 mt-1 text-xs font-medium`}>
                 {typeLabels[song.type]}
               </Badge>
             </div>
