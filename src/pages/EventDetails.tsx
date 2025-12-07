@@ -169,6 +169,7 @@ const EventDetails = () => {
   const [duration, setDuration] = useState(0);
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
   const [eventTypes, setEventTypes] = useState<{ id: string; slug: string; name: string; order_index: number }[]>([]);
+  const [groupBy, setGroupBy] = useState<'song' | 'naipe'>('song');
   const navigate = useNavigate();
   const { cacheMultipleAudios, isLoading: isCaching } = useAudioCache();
   const trackRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -728,10 +729,18 @@ const EventDetails = () => {
           </DropdownMenu>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Music className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-3">
+          <Select value={groupBy} onValueChange={(v: 'song' | 'naipe') => setGroupBy(v)}>
+            <SelectTrigger className="w-[100px] h-8 border-muted bg-transparent text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="song">Música</SelectItem>
+              <SelectItem value="naipe">Naipe</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={selectedNaipe} onValueChange={setSelectedNaipe}>
-            <SelectTrigger className="w-[140px] border-muted bg-transparent text-sm">
+            <SelectTrigger className="w-[120px] h-8 border-muted bg-transparent text-xs">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -746,16 +755,16 @@ const EventDetails = () => {
         </div>
       </div>
 
-      {/* Lista de músicas - grupos por música na ordem definida na edição rápida */}
-      <div className="space-y-2 pb-4 px-3 sm:px-4">
+      {/* Lista de músicas */}
+      <div className="pb-4 px-3 sm:px-4">
         {songs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Nenhuma música adicionada a este evento ainda.
           </p>
-        ) : (
+        ) : groupBy === 'song' ? (
+          /* Agrupado por música */
           songs.map((song, index) => {
             const displayIndex = index + 1;
-
             const songAudios = sortByNaipeOrder(
               selectedNaipe === 'all'
                 ? song.audios
@@ -765,316 +774,248 @@ const EventDetails = () => {
                     return audioNaipe === targetNaipe;
                   })
             );
-
             const hasSongAudios = songAudios.length > 0;
             const hasAnyAudio = (song.audios || []).length > 0;
             const hasSheetMusic = Boolean(song.sheet_music_url || song.sheet_music_pdf_url);
 
             return (
-              <Card key={song.event_song_id} className="mb-3 overflow-hidden">
-                <div className="border-b border-border px-4 py-3 bg-muted/40">
-                  <div className="flex flex-col gap-2">
-                    {/* Linha 1: numeração + tipo da música à esquerda, ícones e menu à direita */}
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                          {displayIndex}
-                        </div>
-                        <Badge className={typeColors[song.type]}>
-                          {getTypeLabel(song.type, typeLabels)}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="flex items-center justify-center"
-                          title={hasAnyAudio ? 'Possui áudios cadastrados' : 'Sem áudios cadastrados'}
-                        >
-                          <Music
-                            className={
-                              hasAnyAudio
-                                ? 'h-4 w-4 text-primary'
-                                : 'h-4 w-4 text-muted-foreground/60'
-                            }
-                          />
-                        </div>
-
-                        <div
-                          className="flex items-center justify-center"
-                          title={hasSheetMusic ? 'Possui partitura cadastrada' : 'Sem partitura cadastrada'}
-                        >
-                          <FileText
-                            className={
-                              hasSheetMusic
-                                ? 'h-4 w-4 text-primary'
-                                : 'h-4 w-4 text-muted-foreground/60'
-                            }
-                          />
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            >
-                              <svg
-                                className="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="12" cy="5" r="1"></circle>
-                                <circle cx="12" cy="19" r="1"></circle>
-                              </svg>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="z-50">
-                            <DropdownMenuItem
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                await handleDownloadSongPdf(song);
-                              }}
-                            >
-                              <FileText className="mr-2 h-4 w-4" />
-                              Baixar partitura (PDF)
+              <div key={song.event_song_id} className="border-b border-border last:border-b-0">
+                {/* Header da música - compacto */}
+                <div className="flex items-center gap-2 px-2 py-1.5 bg-muted/30">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary shrink-0">
+                    {displayIndex}
+                  </span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                    {getTypeLabel(song.type, typeLabels)}
+                  </Badge>
+                  <span className="text-xs font-medium text-foreground truncate flex-1">
+                    {song.name}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Music className={`h-3 w-3 ${hasAnyAudio ? 'text-primary' : 'text-muted-foreground/40'}`} />
+                    <FileText className={`h-3 w-3 ${hasSheetMusic ? 'text-primary' : 'text-muted-foreground/40'}`} />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="z-50">
+                        <DropdownMenuItem onClick={() => handleDownloadSongPdf(song)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Baixar partitura
+                        </DropdownMenuItem>
+                        {user && (
+                          <>
+                            <DropdownMenuItem onClick={() => navigate(`/songs/${song.id}/edit?eventId=${id}`)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar música
                             </DropdownMenuItem>
-                            {user && (
-                              <>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/songs/${song.id}/edit?eventId=${id}`);
-                                  }}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Editar música
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeSongFromEvent(song.event_song_id);
-                                  }}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Remover do evento
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-
-                    {/* Linha 2: nome da música ocupando toda a largura */}
-                    <div className="min-w-0">
-                      <p className="font-semibold text-foreground text-base md:text-lg leading-snug">
-                        {song.name}
-                      </p>
-                      {songAudios.length > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          {songAudios.length} áudio(s) disponível(is)
-                        </p>
-                      )}
-                    </div>
+                            <DropdownMenuItem onClick={() => removeSongFromEvent(song.event_song_id)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Remover
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
+                {/* Áudios da música */}
+                {hasSongAudios ? (
+                  songAudios.map((audio) => {
+                    const track = filteredPlaylist.find(t => t.id === audio.id);
+                    const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
+                    const isActive = globalIndex >= 0 && currentTrackIndex === globalIndex;
 
-                <div className="divide-y divide-border">
-                  {hasSongAudios ? (
-                    songAudios.map((audio) => {
-                      const track = filteredPlaylist.find(t => t.id === audio.id);
-                      const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
-
-                      return (
-                        <div
-                          key={audio.id}
-                          ref={(el) => {
-                            if (globalIndex >= 0) {
-                              trackRefs.current[globalIndex] = el;
-                            }
-                          }}
-                          onClick={() => globalIndex >= 0 && playTrack(globalIndex)}
-                          className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${
-                            globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Music className="h-5 w-5 text-muted-foreground shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className={`truncate font-medium text-sm ${
-                                  globalIndex >= 0 && currentTrackIndex === globalIndex
-                                    ? 'text-primary'
-                                    : 'text-foreground'
-                                }`}
-                              >
-                                {song.name}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {audio.naipe.toLowerCase() === 'original' 
-                                  ? 'Todas as Vozes' 
-                                  : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
-                              </p>
-                            </div>
-                          </div>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const response = await fetch(audio.audio_url);
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
-                                a.download = fileName;
-                                document.body.appendChild(a);
-                                a.click();
-                                window.URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
-                                toast.success('Download iniciado!');
-                              } catch (error) {
-                                toast.error('Erro ao baixar áudio');
-                              }
-                            }}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            title="Baixar áudio"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
+                    return (
+                      <div
+                        key={audio.id}
+                        ref={(el) => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }}
+                        onClick={() => globalIndex >= 0 && playTrack(globalIndex)}
+                        className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-muted/50 ${isActive ? 'bg-primary/5' : ''}`}
+                      >
+                        <div className={`h-6 w-6 rounded flex items-center justify-center shrink-0 ${isActive ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                          {isActive && isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                         </div>
-                      );
-                    })
-                  ) : (
-                    <div className="px-4 py-3 text-xs text-muted-foreground">
-                      Esta música ainda não possui áudios cadastrados.
-                    </div>
-                  )}
-                </div>
-              </Card>
+                        <span className={`text-xs truncate flex-1 ${isActive ? 'text-primary font-medium' : 'text-foreground'}`}>
+                          {audio.naipe.toLowerCase() === 'original' ? 'Todas as Vozes' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 shrink-0"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const response = await fetch(audio.audio_url);
+                              const blob = await response.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                              document.body.appendChild(a);
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                              document.body.removeChild(a);
+                              toast.success('Download iniciado!');
+                            } catch { toast.error('Erro ao baixar'); }
+                          }}
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="px-3 py-1.5 text-[10px] text-muted-foreground">Sem áudios</div>
+                )}
+              </div>
             );
           })
+        ) : (
+          /* Agrupado por naipe */
+          (() => {
+            const naipeGroups: Record<string, { song: EventSong; audio: SongAudio; globalIndex: number }[]> = {};
+            songs.forEach((song) => {
+              const songAudios = sortByNaipeOrder(
+                selectedNaipe === 'all'
+                  ? song.audios
+                  : song.audios.filter(audio => audio.naipe.toLowerCase() === selectedNaipe.toLowerCase())
+              );
+              songAudios.forEach((audio) => {
+                const naipeKey = audio.naipe.toLowerCase() === 'original' ? 'Todas as Vozes' : audio.naipe;
+                if (!naipeGroups[naipeKey]) naipeGroups[naipeKey] = [];
+                const globalIndex = filteredPlaylist.findIndex(t => t.id === audio.id);
+                naipeGroups[naipeKey].push({ song, audio, globalIndex });
+              });
+            });
+
+            const naipeOrder = ['Soprano', 'Contralto', 'Tenor', 'Baixo', 'Todas as Vozes'];
+            const sortedNaipes = Object.keys(naipeGroups).sort((a, b) => {
+              const aIdx = naipeOrder.findIndex(n => n.toLowerCase() === a.toLowerCase());
+              const bIdx = naipeOrder.findIndex(n => n.toLowerCase() === b.toLowerCase());
+              return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+            });
+
+            return sortedNaipes.map((naipe) => (
+              <div key={naipe} className="border-b border-border last:border-b-0">
+                <div className="px-2 py-1.5 bg-muted/30">
+                  <span className="text-xs font-semibold text-foreground">{naipe.charAt(0).toUpperCase() + naipe.slice(1)}</span>
+                  <span className="text-[10px] text-muted-foreground ml-2">({naipeGroups[naipe].length})</span>
+                </div>
+                {naipeGroups[naipe].map(({ song, audio, globalIndex }) => {
+                  const isActive = globalIndex >= 0 && currentTrackIndex === globalIndex;
+                  return (
+                    <div
+                      key={audio.id}
+                      ref={(el) => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }}
+                      onClick={() => globalIndex >= 0 && playTrack(globalIndex)}
+                      className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-muted/50 ${isActive ? 'bg-primary/5' : ''}`}
+                    >
+                      <div className={`h-6 w-6 rounded flex items-center justify-center shrink-0 ${isActive ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        {isActive && isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-xs truncate block ${isActive ? 'text-primary font-medium' : 'text-foreground'}`}>{song.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{getTypeLabel(song.type, typeLabels)}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const response = await fetch(audio.audio_url);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            toast.success('Download iniciado!');
+                          } catch { toast.error('Erro ao baixar'); }
+                        }}
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            ));
+          })()
         )}
       </div>
 
-      {/* Mini Player Fixo - acima da navegação */}
+      {/* Mini Player Fixo - estilo Spotify compacto */}
       {currentTrack && (
-        <div className="fixed bottom-16 left-0 right-0 z-30 px-4">
-          <div className="rounded-lg border border-border bg-card/95 shadow-elevated backdrop-blur-md px-3 py-2 space-y-2">
-            {/* Cabeçalho: capa/partitura + info da faixa + tempo */}
-            <div className="flex items-center gap-3">
+        <div className="fixed bottom-16 left-0 right-0 z-30 px-2">
+          <div className="rounded-lg border border-border bg-card/95 shadow-elevated backdrop-blur-md overflow-hidden">
+            {/* Progress bar no topo */}
+            <div className="px-2 pt-1">
+              <Slider
+                value={[duration ? Math.min(currentTime, duration) : 0]}
+                max={duration || 0}
+                step={0.1}
+                onValueChange={handleSeek}
+                className="w-full cursor-pointer touch-action-pan-y h-1"
+              />
+            </div>
+            {/* Linha única: thumb + info + controles */}
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              {/* Thumbnail */}
               <div 
-                className="gradient-card flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded relative"
+                className="gradient-card flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded relative"
                 onClick={() => {
                   const song = songs.find(s => s.id === currentTrack.songId);
                   if (song?.sheet_music_url || song?.sheet_music_pdf_url) {
                     setShowSheetViewer(true);
                   } else {
-                    toast.info('Nenhuma partitura disponível para esta música');
+                    toast.info('Nenhuma partitura disponível');
                   }
                 }}
               >
-                <span className="text-sm text-white">♫</span>
+                <span className="text-xs text-white">♫</span>
                 {(() => {
                   const song = songs.find(s => s.id === currentTrack.songId);
-                  const hasSheet = Boolean(song?.sheet_music_url || song?.sheet_music_pdf_url);
-                  return hasSheet ? (
-                    <div
-                      className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-background"
-                      title="Partitura disponível"
-                    />
-                  ) : (
-                    <div
-                      className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-muted-foreground/40 border-2 border-background"
-                      title="Sem partitura"
-                    />
+                  return Boolean(song?.sheet_music_url || song?.sheet_music_pdf_url) && (
+                    <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 border border-background" />
                   );
                 })()}
               </div>
-
-              <div className="min-w-0 flex-1 cursor-pointer" onClick={() => {
-                const song = songs.find(s => s.id === currentTrack.songId);
-                if (song?.sheet_music_url || song?.sheet_music_pdf_url) {
-                  setShowSheetViewer(true);
-                }
-              }}>
-                <p className="truncate text-sm font-semibold text-foreground">
-                  {currentTrack.songName}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}
+              {/* Info */}
+              <div 
+                className="min-w-0 flex-1 cursor-pointer"
+                onClick={() => {
+                  const song = songs.find(s => s.id === currentTrack.songId);
+                  if (song?.sheet_music_url || song?.sheet_music_pdf_url) setShowSheetViewer(true);
+                }}
+              >
+                <p className="truncate text-xs font-semibold text-foreground leading-tight">{currentTrack.songName}</p>
+                <p className="truncate text-[10px] text-muted-foreground leading-tight">
+                  {currentTrack.naipe.toLowerCase() === 'original' ? 'Todas as Vozes' : currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()} • {formatTime(currentTime)}
                 </p>
               </div>
-
-              <span className="ml-2 text-xs text-muted-foreground shrink-0">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
-            </div>
-
-            {/* Barra de progresso inspirada no player de naipe */}
-            <Slider
-              value={[duration ? Math.min(currentTime, duration) : 0]}
-              max={duration || 0}
-              step={0.1}
-              onValueChange={handleSeek}
-              className="w-full cursor-pointer touch-action-pan-y"
-            />
-
-            {/* Controles principais */}
-            <div className="flex items-center justify-center gap-1.5">
-              <button
-                onClick={playPrevious}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 transition"
-              >
-                <SkipBack className="h-4 w-4" />
-              </button>
-
-              <button
-                onClick={togglePlay}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-primary text-primary-foreground shadow-subtle active:scale-95 transition"
-              >
-                {isPlaying ? (
-                  <Pause className="h-5 w-5" />
-                ) : (
-                  <Play className="h-5 w-5" />
-                )}
-              </button>
-
-              <button
-                onClick={playNext}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 transition"
-              >
-                <SkipForward className="h-4 w-4" />
-              </button>
-
-              <button 
-                onClick={toggleRepeat}
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 transition ${
-                  repeatMode !== 'off' ? 'text-primary' : ''
-                }`}
-                title={
-                  repeatMode === 'off' ? 'Sem repetição' :
-                  repeatMode === 'playlist' ? 'Repetir playlist' :
-                  'Repetir música'
-                }
-              >
-                {repeatMode === 'track' ? (
-                  <Repeat1 className="h-4 w-4" />
-                ) : (
-                  <Repeat className="h-4 w-4" />
-                )}
-              </button>
+              {/* Controles compactos */}
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button onClick={playPrevious} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-accent active:scale-95">
+                  <SkipBack className="h-4 w-4" />
+                </button>
+                <button onClick={togglePlay} className="h-9 w-9 flex items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-95">
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </button>
+                <button onClick={playNext} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-accent active:scale-95">
+                  <SkipForward className="h-4 w-4" />
+                </button>
+                <button onClick={toggleRepeat} className={`h-8 w-8 flex items-center justify-center rounded-full hover:bg-accent active:scale-95 ${repeatMode !== 'off' ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {repeatMode === 'track' ? <Repeat1 className="h-3.5 w-3.5" /> : <Repeat className="h-3.5 w-3.5" />}
+                </button>
+              </div>
             </div>
           </div>
 
