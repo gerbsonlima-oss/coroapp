@@ -14,7 +14,7 @@ import { SheetViewer } from '@/components/SheetViewer';
 import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -131,7 +131,11 @@ const EventDetails = () => {
   const [selectedNaipe, setSelectedNaipe] = useState<string>('todas');
   const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>('naipe');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredSongs = songs.filter(song => 
+    song.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const [newSongName, setNewSongName] = useState('');
   const [newSongType, setNewSongType] = useState('');
   const [isCreatingSong, setIsCreatingSong] = useState(false);
@@ -229,7 +233,7 @@ const EventDetails = () => {
   useEffect(() => {
     // Constrói a lista de tracks respeitando a ordem definida em event_songs (order_index)
     const allTracks: Track[] = [];
-    songs.forEach(song => {
+    filteredSongs.forEach(song => {
       sortByNaipeOrder(song.audios).forEach(audio => {
         allTracks.push({
           id: audio.id,
@@ -617,6 +621,15 @@ const EventDetails = () => {
 
       {/* Barra de filtros e agrupamento */}
       <div className="flex flex-wrap items-center gap-3 px-4 pb-4">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input 
+            placeholder="Buscar música..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 w-full bg-muted/40 border-border" 
+          />
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Agrupar:</span>
           <Select value={groupBy} onValueChange={v => setGroupBy(v as 'musica' | 'naipe')}>
@@ -648,7 +661,7 @@ const EventDetails = () => {
 
       {/* Lista de músicas */}
       <div className="space-y-2 pb-4 px-3 sm:px-4">
-        {songs.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
+        {filteredSongs.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
             Nenhuma música adicionada a este evento ainda.
           </p> : groupBy === 'naipe' ?
       // Agrupamento por naipe
@@ -658,7 +671,7 @@ const EventDetails = () => {
           audio: SongAudio;
         }[]> = {};
         const naipeOrder = ['soprano', 'contralto', 'tenor', 'baixo', 'original'];
-        songs.forEach(song => {
+        filteredSongs.forEach(song => {
           song.audios.forEach(audio => {
             const naipeKey = audio.naipe.toLowerCase();
             // Filtrar pelo naipe selecionado
@@ -734,27 +747,47 @@ const EventDetails = () => {
                               </div>
                             </div>
 
-                            <Button variant="ghost" size="icon" onClick={async e => {
-                      e.stopPropagation();
-                      try {
-                        const response = await fetch(audio.audio_url);
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                        toast.success('Download iniciado!');
-                      } catch (error) {
-                        toast.error('Erro ao baixar áudio');
-                      }
-                    }} className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Baixar áudio">
-                              <Download className="h-4 w-4" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Mais opções">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={async e => {
+                                  e.stopPropagation();
+                                  try {
+                                    const response = await fetch(audio.audio_url);
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                                    a.download = fileName;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                    toast.success('Download do áudio iniciado!');
+                                  } catch (error) {
+                                    toast.error('Erro ao baixar áudio');
+                                  }
+                                }}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Baixar Áudio
+                                </DropdownMenuItem>
+                                {song.sheet_music_url && (
+                                  <DropdownMenuItem onClick={e => {
+                                    e.stopPropagation();
+                                    window.open(song.sheet_music_url, '_blank');
+                                  }}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Ver Partitura
+                                  </DropdownMenuItem>
+                                )}
+                                
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>;
                 })}
                       </div>}
@@ -763,7 +796,7 @@ const EventDetails = () => {
         });
       })() :
       // Agrupamento por música (padrão)
-      songs.map((song, index) => {
+      filteredSongs.map((song, index) => {
         const displayIndex = index + 1;
         const groupKey = `song:${song.event_song_id}`;
         const isCollapsed = Boolean(collapsedGroups[groupKey]);
