@@ -814,90 +814,100 @@ const EventDetails = () => {
               );
             }
 
-            return sortedNaipes.map(naipeKey => {
+            return sortedNaipes.map((naipeKey, groupIndex) => {
               const items = naipeGroups[naipeKey];
               const naipeLabel = naipeKey === 'original' ? 'Todas as Vozes' : naipeKey.charAt(0).toUpperCase() + naipeKey.slice(1);
-              
+
               return (
-                <Card key={naipeKey} className="mb-3 overflow-hidden">
-                  <div className="border-b border-border px-4 py-3 bg-muted/40">
-                    <div className="flex items-center gap-2">
-                      <Badge className={naipeColors[naipeKey] || 'bg-primary/20 text-primary border-primary/30'}>
-                        {naipeLabel}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {items.length} áudio(s)
-                      </span>
+                <div key={naipeKey}>
+                  {groupIndex > 0 && (
+                    <div className="mx-3 my-3 h-0.5 rounded bg-primary/80" />
+                  )}
+
+                  <Card className="mb-3 overflow-hidden">
+                    <div className="border-b border-border px-4 py-3 bg-muted/40">
+                      <div className="flex items-center gap-2">
+                        <Badge className={naipeColors[naipeKey] || 'bg-primary/20 text-primary border-primary/30'}>
+                          {naipeLabel}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {items.length} áudio(s)
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {items.map(({ song, audio }) => {
-                      const track = filteredPlaylist.find(t => t.id === audio.id);
-                      const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
+                    <div className="divide-y divide-border">
+                      {items.map(({ song, audio }, idx) => {
+                        const track = filteredPlaylist.find(t => t.id === audio.id);
+                        const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
+                        const orderNumber = idx + 1;
 
-                      return (
-                        <div
-                          key={audio.id}
-                          ref={(el) => {
-                            if (globalIndex >= 0) {
-                              trackRefs.current[globalIndex] = el;
-                            }
-                          }}
-                          onClick={() => globalIndex >= 0 && playTrack(globalIndex)}
-                          className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${
-                            globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Music className="h-5 w-5 text-muted-foreground shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className={`truncate font-medium text-sm ${
-                                  globalIndex >= 0 && currentTrackIndex === globalIndex
-                                    ? 'text-primary'
-                                    : 'text-foreground'
-                                }`}
-                              >
-                                {song.name}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {getTypeLabel(song.type, typeLabels)}
-                              </p>
-                            </div>
-                          </div>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const response = await fetch(audio.audio_url);
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
-                                a.download = fileName;
-                                document.body.appendChild(a);
-                                a.click();
-                                window.URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
-                                toast.success('Download iniciado!');
-                              } catch (error) {
-                                toast.error('Erro ao baixar áudio');
+                        return (
+                          <div
+                            key={audio.id}
+                            ref={(el) => {
+                              if (globalIndex >= 0) {
+                                trackRefs.current[globalIndex] = el;
                               }
                             }}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            title="Baixar áudio"
+                            onClick={() => globalIndex >= 0 && playTrack(globalIndex)}
+                            className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${
+                              globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'
+                            }`}
                           >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                {orderNumber}
+                              </div>
+                              <Music className="h-5 w-5 text-muted-foreground shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className={`truncate font-medium text-sm ${
+                                    globalIndex >= 0 && currentTrackIndex === globalIndex
+                                      ? 'text-primary'
+                                      : 'text-foreground'
+                                  }`}
+                                >
+                                  {song.name}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {getTypeLabel(song.type, typeLabels)}
+                                </p>
+                              </div>
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const response = await fetch(audio.audio_url);
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                                  a.download = fileName;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  window.URL.revokeObjectURL(url);
+                                  document.body.removeChild(a);
+                                  toast.success('Download iniciado!');
+                                } catch (error) {
+                                  toast.error('Erro ao baixar áudio');
+                                }
+                              }}
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              title="Baixar áudio"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </div>
               );
             });
           })()
