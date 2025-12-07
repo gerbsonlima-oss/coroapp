@@ -160,7 +160,7 @@ const EventDetails = () => {
   const [selectedSong, setSelectedSong] = useState<string | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedNaipe, setSelectedNaipe] = useState<string>('todas');
-  const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>('musica');
+  const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>('naipe');
   const [searchQuery, setSearchQuery] = useState('');
   const [newSongName, setNewSongName] = useState('');
   const [newSongType, setNewSongType] = useState('');
