@@ -18,10 +18,7 @@ export function BottomNavigation() {
           <span className="text-xs font-semibold">Biblioteca</span>
         </button>
 
-        <button onClick={() => navigate('/audio-to-sheet')} className={`flex flex-col items-center gap-1.5 min-w-[80px] py-2.5 px-4 rounded-xl transition-all duration-200 ${isAudioToSheetActive ? 'text-primary bg-primary/15 shadow-subtle border border-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-accent/80 active:scale-95'}`}>
-          <Mic2 className="h-6 w-6" />
-          <span className="text-xs font-semibold">Gravar</span>
-        </button>
+        
       </div>
     </div>;
 }
