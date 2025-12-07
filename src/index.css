@@ -71,7 +71,7 @@ All colors MUST be HSL.
     --input: 0 0% 15%;
     --ring: 225 73% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0rem;
 
     /* Gradientes refinados */
     --gradient-primary: linear-gradient(135deg, hsl(225 73% 50%), hsl(225 73% 40%));
@@ -92,6 +92,7 @@ All colors MUST be HSL.
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
+    --radius: 0rem;
   }
 }
 
