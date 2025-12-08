@@ -183,27 +183,32 @@ const Events = () => {
                 <div
                   key={event.id}
                   onClick={() => navigate(`/events/${event.id}`)}
-                  className="group cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+                  className="group cursor-pointer transition-all duration-300 hover:scale-[1.05] active:scale-[0.95]"
                 >
-                  <div className="gradient-card shadow-card hover:shadow-elevated relative mb-3 flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-border/50 transition-all">
+                  <div className="relative aspect-square overflow-hidden rounded-lg shadow-card hover:shadow-elevated transition-all border border-border/50">
                     {event.cover_image_url ? (
-                      <img 
-                        src={event.cover_image_url} 
-                        alt={event.name}
-                        className="h-full w-full object-cover"
-                      />
+                      <>
+                        <img 
+                          src={event.cover_image_url} 
+                          alt={event.name}
+                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60" />
+                      </>
                     ) : (
-                      <Music className="h-12 w-12 md:h-16 md:w-16 text-primary/70" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center">
+                        <Music className="h-12 w-12 md:h-16 md:w-16 text-white/60" />
+                      </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                  </div>
-                  <div className="space-y-1 px-1">
-                    <h3 className="line-clamp-2 truncate font-medium text-sm text-primary">
-                      {event.name}
-                    </h3>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {format(new Date(event.date), "dd 'de' MMMM", { locale: ptBR })}
-                    </p>
+                    
+                    <div className="absolute inset-0 flex flex-col justify-end p-3 md:p-4">
+                      <h3 className="text-white font-semibold text-sm md:text-base leading-tight break-words">
+                        {event.name}
+                      </h3>
+                      <p className="text-white/70 text-xs md:text-sm mt-2">
+                        {format(new Date(event.date), "dd 'de' MMMM", { locale: ptBR })}
+                      </p>
+                    </div>
                   </div>
                  </div>
                ))}
