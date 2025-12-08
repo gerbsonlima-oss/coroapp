@@ -907,10 +907,10 @@ const EventDetails = () => {
                                 if (globalIndex >= 0) {
                                   playTrack(globalIndex);
                                 }
-                                if (song.sheet_music_pdf_url || song.sheet_music_url) {
+                                if (song.sheet_music_pdf_url) {
                                   setShowSheetViewer(true);
                                 } else {
-                                  toast.info('Nenhuma partitura disponível para esta música');
+                                  toast.info('Nenhum PDF de partitura disponível para esta música');
                                 }
                               }}
                               className="shrink-0 p-1 -m-1 rounded hover:bg-primary/10 transition-colors"
@@ -1062,8 +1062,13 @@ const EventDetails = () => {
       {showSheetViewer && currentTrack && (() => {
       const currentSong = songs.find(s => s.id === currentTrack.songId);
       if (!currentSong) return null;
-      const sheetUrl = currentSong.sheet_music_pdf_url || currentSong.sheet_music_url;
-      if (!sheetUrl) return null;
+      // Sempre usar PDF para visualização
+      const sheetUrl = currentSong.sheet_music_pdf_url;
+      if (!sheetUrl) {
+        toast.info('Nenhum PDF de partitura disponível para esta música');
+        setShowSheetViewer(false);
+        return null;
+      }
       return <SheetViewer currentTrack={currentTrack} isPlaying={isPlaying} onPlayPause={togglePlay} onNext={playNext} onPrevious={playPrevious} onClose={() => setShowSheetViewer(false)} onTrackEnd={() => {
         if (repeatMode === 'track') {
           if (audioRef.current) {
