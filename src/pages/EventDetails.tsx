@@ -901,23 +901,7 @@ const EventDetails = () => {
                 }
               }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'}`}>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (globalIndex >= 0) {
-                                  playTrack(globalIndex);
-                                }
-                                if (song.sheet_music_pdf_url) {
-                                  setShowSheetViewer(true);
-                                } else {
-                                  toast.info('Nenhum PDF de partitura disponível para esta música');
-                                }
-                              }}
-                              className="shrink-0 p-1 -m-1 rounded hover:bg-primary/10 transition-colors"
-                              title="Ver partitura"
-                            >
-                              <Music className="h-5 w-5 text-primary" />
-                            </button>
+                            <Music className="h-5 w-5 text-primary shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                 {song.name}
@@ -1062,13 +1046,8 @@ const EventDetails = () => {
       {showSheetViewer && currentTrack && (() => {
       const currentSong = songs.find(s => s.id === currentTrack.songId);
       if (!currentSong) return null;
-      // Sempre usar PDF para visualização
-      const sheetUrl = currentSong.sheet_music_pdf_url;
-      if (!sheetUrl) {
-        toast.info('Nenhum PDF de partitura disponível para esta música');
-        setShowSheetViewer(false);
-        return null;
-      }
+      const sheetUrl = currentSong.sheet_music_pdf_url || currentSong.sheet_music_url;
+      if (!sheetUrl) return null;
       return <SheetViewer currentTrack={currentTrack} isPlaying={isPlaying} onPlayPause={togglePlay} onNext={playNext} onPrevious={playPrevious} onClose={() => setShowSheetViewer(false)} onTrackEnd={() => {
         if (repeatMode === 'track') {
           if (audioRef.current) {
