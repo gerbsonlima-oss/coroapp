@@ -2,7 +2,6 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Register service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
@@ -18,36 +17,33 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById("root")!).render(<App />);
 
 const setupBadgeCloser = () => {
-  const badge = document.getElementById('lovable-badge');
   const closeBtn = document.getElementById('lovable-badge-close');
+  if (!closeBtn) return;
+  
+  const handleClose = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const badge = document.getElementById('lovable-badge');
+    if (badge) badge.remove();
+  };
 
-  if (badge && closeBtn) {
-    closeBtn.onclick = (e: any) => {
-      e.preventDefault();
-      e.stopPropagation();
-      badge.remove();
-    };
-
-    document.addEventListener('keydown', (e) => {
-      const badgeElement = document.getElementById('lovable-badge');
-      if (e.key === 'Escape' && badgeElement) {
-        badgeElement.remove();
-      }
-    });
-  }
+  closeBtn.addEventListener('click', handleClose, true);
+  closeBtn.addEventListener('touchend', handleClose, true);
 };
 
-const observer = new MutationObserver(() => {
-  const badge = document.getElementById('lovable-badge');
-  if (badge) {
-    setupBadgeCloser();
-  }
-});
+const waitForBadge = () => {
+  const checkBadge = () => {
+    if (document.getElementById('lovable-badge-close')) {
+      setupBadgeCloser();
+    } else {
+      requestAnimationFrame(checkBadge);
+    }
+  };
+  checkBadge();
+};
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupBadgeCloser);
+  document.addEventListener('DOMContentLoaded', waitForBadge);
 } else {
-  setupBadgeCloser();
+  waitForBadge();
 }
-
-observer.observe(document.documentElement, { childList: true, subtree: true });
