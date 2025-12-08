@@ -54,10 +54,10 @@ export const SplashScreen = () => {
             box-shadow: 0 0 0 0 rgba(120, 119, 198, 0.7);
           }
           50% {
-            box-shadow: 0 0 0 30px rgba(120, 119, 198, 0);
+            box-shadow: 0 0 0 40px rgba(120, 119, 198, 0);
           }
           100% {
-            box-shadow: 0 0 0 60px rgba(120, 119, 198, 0);
+            box-shadow: 0 0 0 80px rgba(120, 119, 198, 0);
           }
         }
         
@@ -86,7 +86,7 @@ export const SplashScreen = () => {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_85%_60%_at_50%_50%,black,transparent)]" />
 
       {/* Logo + Title */}
-      <div className="relative flex flex-col items-center gap-8 z-10">
+      <div className="relative flex flex-col items-center gap-10 md:gap-12 z-10">
         {/* Logo Circle Container */}
         <div
           className="relative flex items-center justify-center"
@@ -96,20 +96,20 @@ export const SplashScreen = () => {
         >
           {/* Animated Ring */}
           <div
-            className="absolute w-48 h-48 md:w-56 md:h-56 rounded-full border-2 border-primary/30"
+            className="absolute w-64 h-64 md:w-80 md:h-80 rounded-full border-3 border-primary/40"
             style={{
               animation: 'pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
             }}
           />
 
           {/* Circle Background */}
-          <div className="absolute w-48 h-48 md:w-56 md:h-56 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm border border-primary/20" />
+          <div className="absolute w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 backdrop-blur-sm border-2 border-primary/30" />
 
           {/* Logo Image */}
           <img
             src={logoImage}
             alt="Coro Diocesano de Quixadá"
-            className="relative w-40 h-40 md:w-48 md:h-48 object-contain drop-shadow-[0_10px_30px_rgba(120,119,198,0.3)]"
+            className="relative w-56 h-56 md:w-72 md:h-72 object-contain drop-shadow-[0_15px_50px_rgba(120,119,198,0.5)]"
           />
         </div>
 
@@ -121,7 +121,7 @@ export const SplashScreen = () => {
           }}
         >
           <h1
-            className="text-2xl md:text-3xl font-light tracking-wider text-foreground"
+            className="text-3xl md:text-4xl lg:text-5xl font-light tracking-wider text-foreground"
             style={{
               fontFamily: "'DM Sans', sans-serif",
               letterSpacing: '0.15em',
@@ -131,7 +131,7 @@ export const SplashScreen = () => {
             Coro Diocesano
           </h1>
           <p
-            className="text-xl md:text-2xl font-light text-primary/90"
+            className="text-2xl md:text-3xl lg:text-4xl font-light text-primary/90"
             style={{
               fontFamily: "'DM Sans', sans-serif",
               letterSpacing: '0.12em',
