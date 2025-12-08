@@ -712,7 +712,21 @@ const EventDetails = () => {
                     }
                   }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <Music className="h-5 w-5 text-primary shrink-0" />
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  if (song.sheet_music_url || song.sheet_music_pdf_url) {
+                                    if (globalIndex >= 0) {
+                                      playTrack(globalIndex);
+                                    }
+                                    setShowSheetViewer(true);
+                                  }
+                                }}
+                                className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${song.sheet_music_url || song.sheet_music_pdf_url ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}
+                                title={song.sheet_music_url || song.sheet_music_pdf_url ? 'Abrir partitura' : 'Sem partitura disponível'}
+                              >
+                                <Music className="h-5 w-5 shrink-0" />
+                              </button>
                               <div className="flex-1 min-w-0">
                                 <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                   {song.name}
@@ -863,7 +877,21 @@ const EventDetails = () => {
                 }
               }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Music className="h-5 w-5 text-primary shrink-0" />
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (hasSheetMusic) {
+                                  if (globalIndex >= 0) {
+                                    playTrack(globalIndex);
+                                  }
+                                  setShowSheetViewer(true);
+                                }
+                              }}
+                              className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}
+                              title={hasSheetMusic ? 'Abrir partitura' : 'Sem partitura disponível'}
+                            >
+                              <Music className="h-5 w-5 shrink-0" />
+                            </button>
                             <div className="flex-1 min-w-0">
                               <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                 {song.name}
