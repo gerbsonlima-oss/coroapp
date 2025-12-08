@@ -16,3 +16,28 @@ if ('serviceWorker' in navigator) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+const setupBadgeCloser = () => {
+  const badge = document.getElementById('lovable-badge');
+  const closeBtn = document.getElementById('lovable-badge-close');
+
+  if (badge && closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      badge.style.display = 'none';
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && badge.style.display !== 'none') {
+        badge.style.display = 'none';
+      }
+    });
+  }
+};
+
+document.addEventListener('DOMContentLoaded', setupBadgeCloser);
+const observer = new MutationObserver(() => {
+  if (!document.getElementById('lovable-badge-close')) {
+    setupBadgeCloser();
+  }
+});
+observer.observe(document.body, { childList: true, subtree: true });
