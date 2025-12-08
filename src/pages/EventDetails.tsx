@@ -901,7 +901,23 @@ const EventDetails = () => {
                 }
               }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'}`}>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <Music className="h-5 w-5 text-primary shrink-0" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (globalIndex >= 0) {
+                                  playTrack(globalIndex);
+                                }
+                                if (song.sheet_music_pdf_url || song.sheet_music_url) {
+                                  setShowSheetViewer(true);
+                                } else {
+                                  toast.info('Nenhuma partitura disponível para esta música');
+                                }
+                              }}
+                              className="shrink-0 p-1 -m-1 rounded hover:bg-primary/10 transition-colors"
+                              title="Ver partitura"
+                            >
+                              <Music className="h-5 w-5 text-primary" />
+                            </button>
                             <div className="flex-1 min-w-0">
                               <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                 {song.name}
