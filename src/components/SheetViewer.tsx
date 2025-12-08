@@ -67,9 +67,11 @@ export const SheetViewer = ({
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sheetAreaRef = useRef<HTMLDivElement>(null);
 
   const isPdf = sheetMusicUrl?.toLowerCase().endsWith('.pdf');
 
@@ -213,6 +215,30 @@ export const SheetViewer = ({
     setCurrentPage(prev => Math.max(prev - 1, 0));
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        if (currentPage < pdfPages.length - 1) {
+          handleNextPage();
+        }
+      } else {
+        if (currentPage > 0) {
+          handlePreviousPage();
+        }
+      }
+    }
+    setTouchStart(null);
+  };
+
   const currentSheet = isPdf && pdfPages.length > 0 ? pdfPages[currentPage] : sheetMusicUrl;
   const canGoToPrevTrack = currentTrackIndex > 0;
   const canGoToNextTrack = currentTrackIndex < allTracks.length - 1;
@@ -297,7 +323,12 @@ export const SheetViewer = ({
       </div>
 
       {/* Área da partitura */}
-      <div className="relative flex-1 overflow-auto bg-gradient-to-b from-black/90 to-black">
+      <div 
+        ref={sheetAreaRef}
+        className="relative flex-1 overflow-auto bg-gradient-to-b from-black/90 to-black"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="flex min-h-full items-center justify-center p-4">
           {loadingPdf ? (
             <div className="text-white">Carregando partitura...</div>
@@ -326,29 +357,27 @@ export const SheetViewer = ({
                 }}
               />
               
-              {/* Navegação de páginas do PDF */}
+              {/* Navegação de páginas do PDF - Minimalista */}
               {isPdf && pdfPages.length > 1 && (
                 <>
                   {currentPage > 0 && (
-                    <Button
-                      size="icon"
-                      variant="default"
+                    <button
                       onClick={handlePreviousPage}
-                      className="absolute left-4 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
+                      className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center text-white/40 hover:text-white/60 transition-colors"
+                      title="Página anterior"
                     >
                       <ChevronLeft className="h-6 w-6" />
-                    </Button>
+                    </button>
                   )}
                   
                   {currentPage < pdfPages.length - 1 && (
-                    <Button
-                      size="icon"
-                      variant="default"
+                    <button
                       onClick={handleNextPage}
-                      className="absolute right-4 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
+                      className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center text-white/40 hover:text-white/60 transition-colors"
+                      title="Próxima página"
                     >
                       <ChevronRight className="h-6 w-6" />
-                    </Button>
+                    </button>
                   )}
 
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur">
@@ -362,10 +391,10 @@ export const SheetViewer = ({
       </div>
 
       {/* Player fixo na parte inferior */}
-      <div className="border-t border-border/20 bg-muted p-4">
+      <div className="bg-muted p-4">
         <div className="mx-auto max-w-4xl">
           {/* Barra de progresso */}
-          <div className="mb-3 flex items-center gap-3">
+          <div className="mb-4 flex items-center gap-3">
             <span className="text-xs text-muted-foreground">{formatTime(currentTime)}</span>
             <Slider
               value={[currentTime]}
