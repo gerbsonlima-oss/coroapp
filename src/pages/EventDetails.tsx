@@ -776,16 +776,13 @@ const EventDetails = () => {
                                   <Download className="mr-2 h-4 w-4" />
                                   Baixar Áudio
                                 </DropdownMenuItem>
-                                {song.sheet_music_url && (
-                                  <DropdownMenuItem onClick={e => {
-                                    e.stopPropagation();
-                                    window.open(song.sheet_music_url, '_blank');
-                                  }}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Ver Partitura
-                                  </DropdownMenuItem>
-                                )}
-                                
+                                <DropdownMenuItem onClick={async e => {
+                                  e.stopPropagation();
+                                  await handleDownloadSongPdf(song);
+                                }}>
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Baixar Partitura
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>;
@@ -915,27 +912,44 @@ const EventDetails = () => {
                             </div>
                           </div>
 
-                          <Button variant="ghost" size="icon" onClick={async e => {
-                  e.stopPropagation();
-                  try {
-                    const response = await fetch(audio.audio_url);
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                    toast.success('Download iniciado!');
-                  } catch (error) {
-                    toast.error('Erro ao baixar áudio');
-                  }
-                }} className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Baixar áudio">
-                            <Download className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Mais opções">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={async e => {
+                                e.stopPropagation();
+                                try {
+                                  const response = await fetch(audio.audio_url);
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  const fileName = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                                  a.download = fileName;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  window.URL.revokeObjectURL(url);
+                                  document.body.removeChild(a);
+                                  toast.success('Download do áudio iniciado!');
+                                } catch (error) {
+                                  toast.error('Erro ao baixar áudio');
+                                }
+                              }}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Baixar Áudio
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={async e => {
+                                e.stopPropagation();
+                                await handleDownloadSongPdf(song);
+                              }}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                Baixar Partitura
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>;
             }) : <div className="px-4 py-3 text-xs text-muted-foreground">
                           Esta música ainda não possui áudios cadastrados.
