@@ -6,15 +6,7 @@ import {
   Pause, 
   SkipBack, 
   SkipForward, 
-  X,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  Maximize,
-  Minimize
+  X
 } from 'lucide-react';
 import type { Track } from '@/hooks/usePlaylistPlayer';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -59,13 +51,9 @@ export const SheetViewer = ({
   currentTime: externalCurrentTime,
   duration: externalDuration,
 }: SheetViewerProps) => {
-  const [zoom, setZoom] = useState(100);
-  const [rotation, setRotation] = useState(0);
   const [currentTime, setCurrentTime] = useState(externalCurrentTime || 0);
   const [duration, setDuration] = useState(externalDuration || 0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [pdfPages, setPdfPages] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
   const [loadingPdf, setLoadingPdf] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -130,7 +118,7 @@ export const SheetViewer = ({
 
   // Configurar áudio - só se não houver elemento externo
   useEffect(() => {
-    if (audioElement) return; // Usa o elemento externo, não configura listeners
+    if (audioElement) return;
     
     const audio = audioRef.current;
     if (!audio) return;
@@ -152,7 +140,7 @@ export const SheetViewer = ({
 
   // Play/Pause - não controla o áudio se houver elemento externo
   useEffect(() => {
-    if (audioElement) return; // O controle é feito pelo player externo
+    if (audioElement) return;
     
     const audio = audioRef.current;
     if (!audio) return;
@@ -178,42 +166,6 @@ export const SheetViewer = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 25, 200));
-  };
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 25, 50));
-  };
-
-  const handleResetZoom = () => {
-    setZoom(100);
-    setRotation(0);
-  };
-
-  const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(prev + 1, pdfPages.length - 1));
-  };
-
-  const handlePreviousPage = () => {
-    setCurrentPage(prev => Math.max(prev - 1, 0));
-  };
-
-  const currentSheet = isPdf && pdfPages.length > 0 ? pdfPages[currentPage] : sheetMusicUrl;
   const canGoToPrevTrack = currentTrackIndex > 0;
   const canGoToNextTrack = currentTrackIndex < allTracks.length - 1;
 
@@ -229,144 +181,89 @@ export const SheetViewer = ({
         />
       )}
 
-      {/* Header com controles */}
-      <div className="relative z-10 border-b border-border/20 bg-black/80 px-4 py-3 backdrop-blur-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={onClose}
-              className="h-8 w-8 text-white hover:bg-white/10"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            
-            <div className="ml-2">
-              <p className="text-sm font-semibold text-white">{currentTrack.songName}</p>
-              <p className="text-xs text-white/60">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Controles de zoom */}
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleZoomOut}
-              className="h-8 w-8 text-white hover:bg-white/10"
-              disabled={zoom <= 50}
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            
-            <span className="min-w-[60px] text-center text-xs text-white/80">
-              {zoom}%
-            </span>
-            
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleZoomIn}
-              className="h-8 w-8 text-white hover:bg-white/10"
-              disabled={zoom >= 200}
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleResetZoom}
-              className="h-8 w-8 text-white hover:bg-white/10"
-              title="Resetar zoom e rotação"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={toggleFullscreen}
-              className="h-8 w-8 text-white hover:bg-white/10"
-            >
-              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-            </Button>
-          </div>
+      {/* Header minimalista */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onClose}
+          className="h-10 w-10 text-white hover:bg-white/20 rounded-full"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+        
+        <div className="text-center flex-1 mx-4">
+          <p className="text-sm font-semibold text-white truncate">{currentTrack.songName}</p>
+          <p className="text-xs text-white/60">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
         </div>
+
+        <div className="w-10" /> {/* Spacer para centralizar o título */}
       </div>
 
-      {/* Área da partitura */}
-      <div className="relative flex-1 overflow-auto bg-gradient-to-b from-black/90 to-black">
-        <div className="flex min-h-full items-center justify-center p-4">
-          {loadingPdf ? (
-            <div className="text-white">Carregando partitura...</div>
-          ) : isPdf && pdfPages.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 text-white">
-              <FileText className="h-16 w-16 text-white/40" />
-              <p className="text-white/60">Erro ao carregar PDF</p>
-              <Button
-                onClick={() => window.open(sheetMusicUrl, '_blank')}
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                Abrir em nova aba
-              </Button>
-            </div>
-          ) : (
-            <div className="relative">
+      {/* Área da partitura com scroll e pinch-to-zoom */}
+      <div 
+        className="flex-1 overflow-auto overscroll-contain"
+        style={{ 
+          touchAction: 'pan-x pan-y pinch-zoom',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
+        {loadingPdf ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-white text-sm">Carregando partitura...</div>
+          </div>
+        ) : isPdf && pdfPages.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-4 text-white p-4">
+            <p className="text-white/60 text-sm">Erro ao carregar PDF</p>
+            <Button
+              onClick={() => window.open(sheetMusicUrl, '_blank')}
+              variant="outline"
+              size="sm"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Abrir em nova aba
+            </Button>
+          </div>
+        ) : (
+          <div className="min-w-max pb-32">
+            {isPdf && pdfPages.length > 0 ? (
+              // Renderiza todas as páginas do PDF em sequência vertical
+              pdfPages.map((page, index) => (
+                <img 
+                  key={index}
+                  src={page} 
+                  alt={`Página ${index + 1}`} 
+                  className="w-auto max-w-none block mx-auto"
+                  style={{ 
+                    minWidth: '100vw',
+                    height: 'auto'
+                  }}
+                  draggable={false}
+                />
+              ))
+            ) : (
+              // Imagem única
               <img 
-                src={currentSheet} 
+                src={sheetMusicUrl} 
                 alt="Partitura" 
-                className="max-w-full shadow-2xl"
+                className="w-auto max-w-none block mx-auto"
                 style={{ 
-                  transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-                  transformOrigin: 'center',
-                  transition: 'transform 0.2s ease'
+                  minWidth: '100vw',
+                  height: 'auto'
                 }}
+                draggable={false}
               />
-              
-              {/* Navegação de páginas do PDF */}
-              {isPdf && pdfPages.length > 1 && (
-                <>
-                  {currentPage > 0 && (
-                    <Button
-                      size="icon"
-                      variant="default"
-                      onClick={handlePreviousPage}
-                      className="absolute left-4 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
-                    >
-                      <ChevronLeft className="h-6 w-6" />
-                    </Button>
-                  )}
-                  
-                  {currentPage < pdfPages.length - 1 && (
-                    <Button
-                      size="icon"
-                      variant="default"
-                      onClick={handleNextPage}
-                      className="absolute right-4 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full bg-white/90 text-black shadow-lg hover:bg-white"
-                    >
-                      <ChevronRight className="h-6 w-6" />
-                    </Button>
-                  )}
-
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur">
-                    Página {currentPage + 1} de {pdfPages.length}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Player fixo na parte inferior */}
-      <div className="border-t border-border/20 bg-muted p-4">
-        <div className="mx-auto max-w-4xl">
+      {/* Player fixo na parte inferior - minimalista */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black via-black/95 to-transparent pt-8 pb-4 px-4">
+        <div className="max-w-md mx-auto space-y-3">
           {/* Barra de progresso */}
-          <div className="mb-3 flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">{formatTime(currentTime)}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-white/60 min-w-[32px] text-right">{formatTime(currentTime)}</span>
             <Slider
               value={[currentTime]}
               max={duration || 100}
@@ -374,11 +271,11 @@ export const SheetViewer = ({
               onValueChange={handleSeek}
               className="flex-1"
             />
-            <span className="text-xs text-muted-foreground">{formatTime(duration)}</span>
+            <span className="text-[10px] text-white/60 min-w-[32px]">{formatTime(duration)}</span>
           </div>
 
           {/* Controles de reprodução */}
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-6">
             <Button
               size="icon"
               variant="ghost"
@@ -388,7 +285,7 @@ export const SheetViewer = ({
                 }
               }}
               disabled={!canGoToPrevTrack}
-              className="h-10 w-10"
+              className="h-10 w-10 text-white hover:bg-white/20 disabled:opacity-30"
             >
               <SkipBack className="h-5 w-5" />
             </Button>
@@ -397,7 +294,7 @@ export const SheetViewer = ({
               size="icon"
               variant="default"
               onClick={onPlayPause}
-              className="h-14 w-14 rounded-full bg-primary hover:scale-105 hover:bg-primary-hover"
+              className="h-14 w-14 rounded-full bg-white text-black hover:bg-white/90"
             >
               {isPlaying ? (
                 <Pause className="h-6 w-6" />
@@ -415,7 +312,7 @@ export const SheetViewer = ({
                 }
               }}
               disabled={!canGoToNextTrack}
-              className="h-10 w-10"
+              className="h-10 w-10 text-white hover:bg-white/20 disabled:opacity-30"
             >
               <SkipForward className="h-5 w-5" />
             </Button>
