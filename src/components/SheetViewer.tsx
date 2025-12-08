@@ -225,7 +225,7 @@ export const SheetViewer = ({
             </Button>
           </div>
         ) : (
-          <div className="min-w-max pb-32">
+          <div className="pb-32 px-2">
             {isPdf && pdfPages.length > 0 ? (
               // Renderiza todas as páginas do PDF em sequência vertical
               pdfPages.map((page, index) => (
@@ -233,11 +233,7 @@ export const SheetViewer = ({
                   key={index}
                   src={page} 
                   alt={`Página ${index + 1}`} 
-                  className="w-auto max-w-none block mx-auto"
-                  style={{ 
-                    minWidth: '100vw',
-                    height: 'auto'
-                  }}
+                  className="w-full h-auto block"
                   draggable={false}
                 />
               ))
@@ -246,11 +242,7 @@ export const SheetViewer = ({
               <img 
                 src={sheetMusicUrl} 
                 alt="Partitura" 
-                className="w-auto max-w-none block mx-auto"
-                style={{ 
-                  minWidth: '100vw',
-                  height: 'auto'
-                }}
+                className="w-full h-auto block"
                 draggable={false}
               />
             )}
