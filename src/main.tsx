@@ -22,22 +22,32 @@ const setupBadgeCloser = () => {
   const closeBtn = document.getElementById('lovable-badge-close');
 
   if (badge && closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      badge.style.display = 'none';
-    });
+    closeBtn.onclick = (e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
+      badge.remove();
+    };
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && badge.style.display !== 'none') {
-        badge.style.display = 'none';
+      const badgeElement = document.getElementById('lovable-badge');
+      if (e.key === 'Escape' && badgeElement) {
+        badgeElement.remove();
       }
     });
   }
 };
 
-document.addEventListener('DOMContentLoaded', setupBadgeCloser);
 const observer = new MutationObserver(() => {
-  if (!document.getElementById('lovable-badge-close')) {
+  const badge = document.getElementById('lovable-badge');
+  if (badge) {
     setupBadgeCloser();
   }
 });
-observer.observe(document.body, { childList: true, subtree: true });
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupBadgeCloser);
+} else {
+  setupBadgeCloser();
+}
+
+observer.observe(document.documentElement, { childList: true, subtree: true });
