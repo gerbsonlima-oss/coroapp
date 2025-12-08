@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlaylistPlayer } from '@/components/PlaylistPlayer';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -132,6 +133,8 @@ const EventDetails = () => {
   const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>('naipe');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
 
   const filteredSongs = songs.filter(song => 
     song.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -529,138 +532,113 @@ const EventDetails = () => {
         <p>Evento não encontrado</p>
       </div>;
   }
-  return <div className="min-h-screen bg-background pb-[144px]">
-      {/* Header com gradiente e imagem de capa */}
-      <div className="relative">
-        <div className="gradient-header relative flex h-64 items-end overflow-hidden">
-          {event.cover_image_url && <div className="absolute inset-0 bg-cover bg-center" style={{
-          backgroundImage: `url(${event.cover_image_url})`
-        }}>
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-background" />
-            </div>}
-          
-          <div className="relative z-10 w-full px-4 pb-6">
-            <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="absolute left-4 top-4 h-8 w-8 rounded-full bg-black/40 text-white hover:bg-black/60">
-              <ArrowLeft className="h-4 w-4" />
+  return <div className="min-h-screen bg-background pb-28">
+      {/* Sticky Header com botões */}
+      <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-background/95 backdrop-blur-md">
+        <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-8 w-8 shrink-0 text-foreground">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground">
+              <MoreVertical className="h-4 w-4" />
             </Button>
-            
-            <h1 className="mb-2 text-2xl font-bold">{event.name}</h1>
-            <div className="flex items-center gap-2 text-sm text-white/80">
-              <span>{format(new Date(event.date), "dd 'de' MMMM, yyyy", {
-                locale: ptBR
-              })}</span>
-              <span>•</span>
-              <span>{tracks.length} músicas</span>
-            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleDownloadAll} disabled={isCaching || tracks.length === 0}>
+              <Download className="mr-2 h-4 w-4" />
+              Baixar Tudo
+            </DropdownMenuItem>
+            {user && <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar evento
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
+                  <Music className="mr-2 h-4 w-4 text-primary" />
+                  Editar músicas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar música
+                </DropdownMenuItem>
+              </>}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleShare}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Compartilhar evento
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportPDF}>
+              <FileText className="mr-2 h-4 w-4 text-primary" />
+              Exportar Partituras
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportZIP}>
+              <FileArchive className="mr-2 h-4 w-4" />
+              Exportar Áudios
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Album Card - Sticky Minimal Header */}
+      <div className="sticky top-12 z-10 bg-background/95 backdrop-blur-md border-b border-primary/20 shadow-subtle px-4 py-3 animate-slide-up">
+        <div className="flex items-start gap-4">
+          {/* Imagem do evento */}
+          <div className="h-20 w-20 shrink-0 rounded-lg shadow-card overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center flex-shrink-0">
+            {event.cover_image_url ? (
+              <img src={event.cover_image_url} alt={event.name} className="h-full w-full object-cover" />
+            ) : (
+              <Music className="h-7 w-7 text-primary/70 animate-float" />
+            )}
+          </div>
+
+          {/* Nome do evento */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <h2 className="line-clamp-2 font-bold text-base text-foreground leading-tight mb-1.5">{event.name}</h2>
+            <p className="text-xs text-muted-foreground font-medium">
+              {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Barra de ações - agora rola com a página */}
-      <div className="flex items-center justify-between px-4 py-4">
-        <div className="flex items-center gap-4">
-          <Button onClick={() => {
-          if (filteredPlaylist.length > 0) {
-            if (currentTrackIndex === null) {
-              playTrack(0);
-            } else {
-              togglePlay();
-            }
-          }
-        }} disabled={filteredPlaylist.length === 0} className="h-14 w-14 rounded-full bg-primary p-0 hover:scale-105 hover:bg-primary-hover">
-            {isPlaying ? <svg width="28" height="28" viewBox="0 0 24 24" fill="black">
-                <rect x="6" y="4" width="4" height="16"></rect>
-                <rect x="14" y="4" width="4" height="16"></rect>
-              </svg> : <svg width="28" height="28" viewBox="0 0 24 24" fill="black">
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>}
-          </Button>
-
-          <Button variant="ghost" size="icon" onClick={handleDownloadAll} disabled={isCaching || tracks.length === 0} className="text-muted-foreground hover:text-foreground">
-            <Download className="h-6 w-6" />
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                <MoreVertical className="h-6 w-6" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {user && <>
-                  <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar evento
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
-                    <Music className="mr-2 h-4 w-4 text-primary" />
-                    Editar músicas
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar música
-                  </DropdownMenuItem>
-                </>}
-              <DropdownMenuItem onClick={handleShare}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Compartilhar evento
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportPDF}>
-                <FileText className="mr-2 h-4 w-4 text-primary" />
-                Exportar Partituras
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportZIP}>
-                <FileArchive className="mr-2 h-4 w-4" />
-                Exportar Áudios
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-      </div>
-
-      {/* Barra de filtros e agrupamento */}
-      <div className="flex flex-wrap items-center gap-3 px-4 pb-4">
+      {/* Search e Filtros */}
+      <div className="px-3 py-3 space-y-2 border-b border-primary/15 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Buscar música..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 w-full bg-muted/40 border-border" 
+            className="pl-9 w-full h-11 bg-secondary/50 border-primary/30 text-sm rounded-md shadow-subtle focus:shadow-glow focus:border-primary/60 transition-all" 
           />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Agrupar:</span>
-          <Select value={groupBy} onValueChange={v => setGroupBy(v as 'musica' | 'naipe')}>
-            <SelectTrigger className="h-8 w-[100px] border-muted bg-card text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="musica">Música</SelectItem>
-              <SelectItem value="naipe">Naipe</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Filtrar:</span>
-          <Select value={selectedNaipe} onValueChange={setSelectedNaipe}>
-            <SelectTrigger className="h-8 w-[140px] border-muted bg-card text-xs">
-              <SelectValue placeholder="Todas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas</SelectItem>
-              {filterOptions.map(option => <SelectItem key={option} value={option.toLowerCase()}>
-                  {option}
-                </SelectItem>)}
-            </SelectContent>
-          </Select>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowGroupModal(true)}
+            className="flex-1 h-10 text-sm px-3 gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+          >
+            <Sliders className="h-4 w-4" />
+            <span>Agrupar</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowFilterModal(true)}
+            className="flex-1 h-10 text-sm px-3 gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+          >
+            <Filter className="h-4 w-4" />
+            <span>Filtrar</span>
+          </Button>
         </div>
       </div>
 
       {/* Lista de músicas */}
-      <div className="space-y-2 pb-4 px-3 sm:px-4">
+      <div className="px-3 py-3 space-y-2.5">
         {filteredSongs.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
             Nenhuma música adicionada a este evento ainda.
           </p> : groupBy === 'naipe' ?
@@ -705,26 +683,22 @@ const EventDetails = () => {
           const groupKey = `naipe:${naipeKey}`;
           const isCollapsed = Boolean(collapsedGroups[groupKey]);
           return <div key={naipeKey}>
-                  <Card className="mb-3 overflow-hidden">
-                    <div className="border-b border-border px-4 py-3 bg-muted/40">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge className={naipeColors[naipeKey] || 'bg-primary/20 text-primary border-primary/30'}>
-                            {naipeLabel}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {items.length} áudio(s)
-                          </span>
-                        </div>
-                        <button onClick={e => {
-                    e.stopPropagation();
-                    toggleGroup(groupKey);
-                  }} aria-expanded={!isCollapsed} className="p-1" title={isCollapsed ? 'Expandir grupo' : 'Colapsar grupo'}>
-                          <ChevronDown className={`h-4 w-4 transform transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
-                        </button>
+                  <div className="rounded-md bg-card border border-primary/20 overflow-hidden shadow-card hover:shadow-elevated transition-all">
+                    <div className="px-3 py-3.5 bg-gradient-to-r from-primary/8 to-transparent flex items-center justify-between cursor-pointer hover:from-primary/12 transition-all" onClick={e => {
+                      e.stopPropagation();
+                      toggleGroup(groupKey);
+                    }}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Badge className={naipeColors[naipeKey] || 'bg-primary/25 text-primary border-primary/40'}>
+                          {naipeLabel}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                          {items.length} {items.length === 1 ? 'áudio' : 'áudios'}
+                        </span>
                       </div>
+                      <ChevronDown className={`h-5 w-5 text-primary/70 transform transition-transform shrink-0 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
                     </div>
-                    {!isCollapsed && <div className="divide-y divide-border">
+                    {!isCollapsed && <div className="divide-y divide-primary/10">
                         {items.map(({
                   song,
                   audio
@@ -736,20 +710,22 @@ const EventDetails = () => {
                     if (globalIndex >= 0) {
                       trackRefs.current[globalIndex] = el;
                     }
-                  }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'}`}>
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                  }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
                               <Music className="h-5 w-5 text-primary shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                   {song.name}
                                 </p>
-                                
+                                <p className="text-xs text-muted-foreground">
+                                  {audio.naipe === 'original' ? 'Todas as Vozes' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                                </p>
                               </div>
                             </div>
 
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Mais opções">
+                                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0">
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -788,7 +764,7 @@ const EventDetails = () => {
                           </div>;
                 })}
                       </div>}
-                  </Card>
+                  </div>
                 </div>;
         });
       })() :
@@ -808,90 +784,76 @@ const EventDetails = () => {
         const hasSongAudios = songAudios.length > 0;
         const hasAnyAudio = (song.audios || []).length > 0;
         const hasSheetMusic = Boolean(song.sheet_music_url || song.sheet_music_pdf_url);
-        return <Card key={song.event_song_id} className="mb-3 overflow-hidden">
-                <div className="border-b border-border px-4 py-3 bg-muted/40">
+        return <div key={song.event_song_id} className="rounded-md bg-card border border-primary/20 overflow-hidden shadow-card hover:shadow-elevated transition-all animate-slide-up">
+                <div className="px-3 py-3.5 bg-gradient-to-r from-primary/8 to-transparent border-b border-primary/15">
                   <div className="flex flex-col gap-2">
-                    {/* Linha 1: numeração + tipo da música à esquerda, ícones e menu à direita */}
-                    <div className="flex items-center justify-between gap-3">
+                    {/* Cabeçalho */}
+                    <div className="flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary shrink-0">
                           {displayIndex}
                         </div>
-                        <Badge className="bg-primary/10 text-primary border-primary/30">
+                        <Badge className="bg-primary/10 text-primary border-primary/30 text-xs">
                           {getTypeLabel(song.type, typeLabels)}
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <button onClick={e => {
-                    e.stopPropagation();
-                    toggleGroup(groupKey);
-                  }} aria-expanded={!isCollapsed} className="p-1 mr-1" title={isCollapsed ? 'Expandir' : 'Colapsar'}>
-                          <ChevronDown className={`h-4 w-4 transform transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
-                        </button>
-
-                        <div className="flex items-center justify-center" title={hasSheetMusic ? 'Possui partitura cadastrada' : 'Sem partitura cadastrada'}>
-                          
-                        </div>
-
-                        <div className="flex items-center justify-center" title={hasSheetMusic ? 'Possui partitura cadastrada' : 'Sem partitura cadastrada'}>
-                          
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={e => {
+                      <button onClick={e => {
                         e.stopPropagation();
-                      }} className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="1"></circle>
-                                <circle cx="12" cy="5" r="1"></circle>
-                                <circle cx="12" cy="19" r="1"></circle>
-                              </svg>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="z-50">
-                            <DropdownMenuItem onClick={async e => {
-                        e.stopPropagation();
-                        await handleDownloadSongPdf(song);
-                      }}>
-                              <FileText className="mr-2 h-4 w-4 text-primary" />
-                              Baixar partitura (PDF)
+                        toggleGroup(groupKey);
+                      }} className="p-1 hover:bg-primary/20 rounded transition-colors shrink-0">
+                        <ChevronDown className={`h-5 w-5 text-primary/70 transform transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
+                      </button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={e => {
+                            e.stopPropagation();
+                          }} className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors">
+                            <MoreVertical className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="z-50">
+                          <DropdownMenuItem onClick={async e => {
+                            e.stopPropagation();
+                            await handleDownloadSongPdf(song);
+                          }}>
+                            <FileText className="mr-2 h-4 w-4 text-primary" />
+                            Baixar partitura (PDF)
+                          </DropdownMenuItem>
+                          {user && <>
+                            <DropdownMenuItem onClick={e => {
+                              e.stopPropagation();
+                              navigate(`/songs/${song.id}/edit?eventId=${id}`);
+                            }}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar música
                             </DropdownMenuItem>
-                            {user && <>
-                                <DropdownMenuItem onClick={e => {
-                          e.stopPropagation();
-                          navigate(`/songs/${song.id}/edit?eventId=${id}`);
-                        }}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Editar música
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={e => {
-                          e.stopPropagation();
-                          removeSongFromEvent(song.event_song_id);
-                        }} className="text-destructive focus:text-destructive">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Remover do evento
-                                </DropdownMenuItem>
-                              </>}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                            <DropdownMenuItem onClick={e => {
+                              e.stopPropagation();
+                              removeSongFromEvent(song.event_song_id);
+                            }} className="text-destructive focus:text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Remover do evento
+                            </DropdownMenuItem>
+                          </>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
-                    {/* Linha 2: nome da música ocupando toda a largura */}
+                    {/* Nome da música */}
                     <div className="min-w-0">
-                      <p className="font-semibold text-foreground text-base md:text-lg leading-snug">
+                      <p className="truncate font-medium text-sm text-primary">
                         {song.name}
                       </p>
-                      {songAudios.length > 0 && <p className="text-xs text-muted-foreground">
-                          {songAudios.length} áudio(s) disponível(is)
+                      {hasSongAudios && <p className="text-xs text-muted-foreground mt-1">
+                          {songAudios.length} {songAudios.length === 1 ? 'áudio' : 'áudios'} disponível
                         </p>}
                     </div>
                   </div>
                 </div>
 
-                {!isCollapsed && <div className="divide-y divide-border">
+                {!isCollapsed && <div className="divide-y divide-primary/10">
                     {hasSongAudios ? songAudios.map(audio => {
               const track = filteredPlaylist.find(t => t.id === audio.id);
               const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
@@ -899,7 +861,7 @@ const EventDetails = () => {
                 if (globalIndex >= 0) {
                   trackRefs.current[globalIndex] = el;
                 }
-              }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center gap-3 px-4 py-3 active:bg-muted ${globalIndex >= 0 && currentTrackIndex === globalIndex ? '' : 'cursor-pointer'}`}>
+              }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <Music className="h-5 w-5 text-primary shrink-0" />
                             <div className="flex-1 min-w-0">
@@ -914,7 +876,7 @@ const EventDetails = () => {
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" title="Mais opções">
+                              <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors" title="Mais opções">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -951,94 +913,114 @@ const EventDetails = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>;
-            }) : <div className="px-4 py-3 text-xs text-muted-foreground">
-                          Esta música ainda não possui áudios cadastrados.
+            }) : <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+                          Nenhum áudio cadastrado
                         </div>}
                   </div>}
-              </Card>;
-      })}
+              </div>;
+        })}
       </div>
 
-      {/* Mini Player Fixo - acima da navegação */}
-      {currentTrack && <div className="fixed bottom-16 left-0 right-0 z-30 px-4">
-          <div className="rounded-lg border border-border bg-card/95 shadow-elevated backdrop-blur-md px-3 py-2 space-y-2">
-            {/* Cabeçalho: capa/partitura + info da faixa + tempo */}
-            <div className="flex items-center gap-3">
-              <div className="gradient-card flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded relative" onClick={() => {
-            const song = songs.find(s => s.id === currentTrack.songId);
-            if (song?.sheet_music_url || song?.sheet_music_pdf_url) {
-              setShowSheetViewer(true);
-            } else {
-              toast.info('Nenhuma partitura disponível para esta música');
-            }
-          }}>
-                <span className="text-sm text-white">♫</span>
-                {(() => {
-              const song = songs.find(s => s.id === currentTrack.songId);
-              const hasSheet = Boolean(song?.sheet_music_url || song?.sheet_music_pdf_url);
-              return hasSheet ? <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-background" title="Partitura disponível" /> : <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-muted-foreground/40 border-2 border-background" title="Sem partitura" />;
-            })()}
-              </div>
+      {/* Ultra Minimal Player */}
+      {currentTrack && <div className="fixed bottom-16 left-0 right-0 z-40 bg-card border-t border-primary/20 shadow-elevated">
+          {/* Barra de progresso fina - única linha decorativa */}
+          <Slider 
+            value={[duration ? Math.min(currentTime, duration) : 0]} 
+            max={duration || 0} 
+            step={0.1} 
+            onValueChange={handleSeek} 
+            className="w-full cursor-pointer touch-action-pan-y px-0 py-0 h-1 [&>span]:h-0.5 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+          />
 
-              <div className="min-w-0 flex-1 cursor-pointer" onClick={() => {
-            const song = songs.find(s => s.id === currentTrack.songId);
-            if (song?.sheet_music_url || song?.sheet_music_pdf_url) {
-              setShowSheetViewer(true);
-            }
-          }}>
-                <p className="truncate text-sm font-semibold text-foreground">
+          {/* Tudo em uma linha */}
+          <div className="flex items-center justify-between px-3 py-2.5 gap-2">
+            {/* Ícone + Info */}
+            <div 
+              className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" 
+              onClick={() => {
+                const song = songs.find(s => s.id === currentTrack.songId);
+                if (song?.sheet_music_url || song?.sheet_music_pdf_url) {
+                  setShowSheetViewer(true);
+                }
+              }}
+            >
+              <div className="gradient-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sm text-white relative shadow-glow animate-float">
+                ♫
+                {(() => {
+                  const song = songs.find(s => s.id === currentTrack.songId);
+                  const hasSheet = Boolean(song?.sheet_music_url || song?.sheet_music_pdf_url);
+                  return hasSheet ? <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-success animate-glow-pulse" /> : null;
+                })()}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate font-medium text-sm text-primary">
                   {currentTrack.songName}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}
                 </p>
               </div>
-
-              <span className="ml-2 text-xs text-muted-foreground shrink-0">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
             </div>
 
-            {/* Barra de progresso inspirada no player de naipe */}
-            <Slider value={[duration ? Math.min(currentTime, duration) : 0]} max={duration || 0} step={0.1} onValueChange={handleSeek} className="w-full cursor-pointer touch-action-pan-y" />
-
-            {/* Controles principais */}
-            <div className="flex items-center justify-center gap-1.5">
-              <button onClick={playPrevious} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 transition">
+            {/* Controles compactos */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button 
+                onClick={playPrevious}
+                className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md"
+              >
                 <SkipBack className="h-4 w-4" />
               </button>
 
-              <button onClick={togglePlay} className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-primary text-primary-foreground shadow-subtle active:scale-95 transition">
-                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              <button 
+                onClick={togglePlay}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-90 transition shadow-glow hover:shadow-elevated"
+              >
+                {isPlaying ? <Pause className="h-5 w-5 ml-0.5" /> : <Play className="h-5 w-5 ml-0.5" />}
               </button>
 
-              <button onClick={playNext} className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 transition">
+              <button 
+                onClick={playNext}
+                className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md"
+              >
                 <SkipForward className="h-4 w-4" />
               </button>
 
-              <button onClick={toggleRepeat} className={`flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95 transition ${repeatMode !== 'off' ? 'text-primary' : ''}`} title={repeatMode === 'off' ? 'Sem repetição' : repeatMode === 'playlist' ? 'Repetir playlist' : 'Repetir música'}>
+              <button 
+                onClick={toggleRepeat}
+                className={`flex h-9 w-9 items-center justify-center active:scale-90 transition-all rounded-md ${repeatMode !== 'off' ? 'text-primary bg-primary/15' : 'text-muted-foreground hover:text-primary hover:bg-primary/15'}`}
+                title={repeatMode === 'off' ? 'Sem repetição' : repeatMode === 'playlist' ? 'Repetir' : 'Repetir música'}
+              >
                 {repeatMode === 'track' ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
-          {/* Audio player oculto - controla o áudio */}
-          <div style={{
-        display: 'none'
-      }}>
-            <PlaylistPlayer currentTrack={currentTrack} isPlaying={isPlaying} repeatMode={repeatMode} onPlayPause={togglePlay} onNext={playNext} onPrevious={playPrevious} onToggleRepeat={toggleRepeat} onTrackEnd={() => {
-          if (repeatMode === 'track') {
-            if (audioRef.current) {
-              audioRef.current.currentTime = 0;
-              audioRef.current.play();
-            }
-          } else {
-            playNext();
-          }
-        }} onSetAudioElement={audio => {
-          audioRef.current = audio;
-          setAudioElement(audio);
-        }} showDownloadButton={false} />
+          {/* Audio player oculto */}
+          <div style={{ display: 'none' }}>
+            <PlaylistPlayer 
+              currentTrack={currentTrack} 
+              isPlaying={isPlaying} 
+              repeatMode={repeatMode} 
+              onPlayPause={togglePlay} 
+              onNext={playNext} 
+              onPrevious={playPrevious} 
+              onToggleRepeat={toggleRepeat} 
+              onTrackEnd={() => {
+                if (repeatMode === 'track') {
+                  if (audioRef.current) {
+                    audioRef.current.currentTime = 0;
+                    audioRef.current.play();
+                  }
+                } else {
+                  playNext();
+                }
+              }} 
+              onSetAudioElement={audio => {
+                audioRef.current = audio;
+                setAudioElement(audio);
+              }} 
+              showDownloadButton={false} 
+            />
           </div>
         </div>}
 
@@ -1060,6 +1042,72 @@ const EventDetails = () => {
       }} sheetMusicUrl={sheetUrl} allTracks={filteredPlaylist} currentTrackIndex={currentTrackIndex ?? 0} onTrackSelect={index => playTrack(index)} audioElement={audioRef.current} currentTime={currentTime} duration={duration} />;
     })()}
 
+      {/* Modal de Agrupamento */}
+      <Dialog open={showGroupModal} onOpenChange={setShowGroupModal}>
+        <DialogContent className="w-[90vw] max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Agrupar por</DialogTitle>
+            <DialogDescription>Escolha como deseja agrupar as músicas</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Button 
+              variant={groupBy === 'musica' ? 'default' : 'outline'}
+              className="w-full justify-start"
+              onClick={() => {
+                setGroupBy('musica');
+                setShowGroupModal(false);
+              }}
+            >
+              Música
+            </Button>
+            <Button 
+              variant={groupBy === 'naipe' ? 'default' : 'outline'}
+              className="w-full justify-start"
+              onClick={() => {
+                setGroupBy('naipe');
+                setShowGroupModal(false);
+              }}
+            >
+              Naipe
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Filtro */}
+      <Dialog open={showFilterModal} onOpenChange={setShowFilterModal}>
+        <DialogContent className="w-[90vw] max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Filtrar por</DialogTitle>
+            <DialogDescription>Escolha qual naipe deseja visualizar</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+            <Button 
+              variant={selectedNaipe === 'todas' ? 'default' : 'outline'}
+              className="w-full justify-start"
+              onClick={() => {
+                setSelectedNaipe('todas');
+                setShowFilterModal(false);
+              }}
+            >
+              Todas
+            </Button>
+            {filterOptions.map(option => (
+              <Button 
+                key={option}
+                variant={selectedNaipe === option.toLowerCase() ? 'default' : 'outline'}
+                className="w-full justify-start"
+                onClick={() => {
+                  setSelectedNaipe(option.toLowerCase());
+                  setShowFilterModal(false);
+                }}
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNavigation />
     </div>;

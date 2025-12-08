@@ -6,19 +6,31 @@ export function BottomNavigation() {
   const isEventsActive = location.pathname.startsWith('/events');
   const isSongsActive = location.pathname.startsWith('/songs');
   const isAudioToSheetActive = location.pathname.startsWith('/audio-to-sheet');
-  return <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl shadow-elevated">
-      <div className="flex items-center justify-around safe-area-inset-bottom py-px px-[3px]">
-        <button onClick={() => navigate('/events')} className={`flex flex-col items-center gap-1.5 min-w-[80px] py-2.5 px-4 rounded-xl transition-all duration-200 ${isEventsActive ? 'text-primary bg-primary/15 shadow-subtle border border-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-accent/80 active:scale-95'}`}>
+  return <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm safe-area-inset-bottom">
+      <div className="flex items-center justify-around px-0">
+        <button 
+          onClick={() => navigate('/events')} 
+          className={`flex flex-col items-center gap-1 flex-1 py-3 px-2 transition-all duration-200 active:scale-95 ${
+            isEventsActive 
+              ? 'text-primary' 
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
           <Home className="h-6 w-6" />
-          <span className="text-xs font-semibold">Eventos</span>
+          <span className="text-xs font-medium">Eventos</span>
         </button>
 
-        <button onClick={() => navigate('/songs')} className={`flex flex-col items-center gap-1.5 min-w-[80px] py-2.5 px-4 rounded-xl transition-all duration-200 ${isSongsActive ? 'text-primary bg-primary/15 shadow-subtle border border-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-accent/80 active:scale-95'}`}>
+        <button 
+          onClick={() => navigate('/songs')} 
+          className={`flex flex-col items-center gap-1 flex-1 py-3 px-2 transition-all duration-200 active:scale-95 ${
+            isSongsActive 
+              ? 'text-primary' 
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
           <Library className="h-6 w-6" />
-          <span className="text-xs font-semibold">Biblioteca</span>
+          <span className="text-xs font-medium">Biblioteca</span>
         </button>
-
-        
       </div>
     </div>;
 }

@@ -227,7 +227,7 @@ const Songs = () => {
                 return (
                   <section key={album.type} className="space-y-2">
                     <div className="flex items-center justify-between px-0.5">
-                      <h2 className="text-sm md:text-base font-semibold">
+                      <h2 className="truncate font-medium text-sm text-primary">
                         {album.name}
                       </h2>
                       <Button
@@ -247,7 +247,7 @@ const Songs = () => {
                           className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-3 py-2.5 text-left shadow-sm transition-all active:scale-[0.98]"
                         >
                           <div className="flex min-w-0 flex-col">
-                            <span className="text-base font-medium line-clamp-1">
+                            <span className="truncate font-medium text-sm text-primary">
                               {song.name}
                             </span>
                             <span className="text-[11px] uppercase tracking-wide text-muted-foreground">

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -15,7 +16,7 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
-  				'DM Sans',
+  				'Inter',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
@@ -25,12 +26,14 @@ export default {
   				'Noto Color Emoji'
   			],
   			serif: [
-  				'ui-serif',
-  				'Georgia',
-  				'Cambria',
-  				'Times New Roman',
-  				'Times',
-  				'serif'
+  				'Inter',
+  				'ui-sans-serif',
+  				'system-ui',
+  				'sans-serif'
+  			],
+  			display: [
+  				'Inter',
+  				'sans-serif'
   			],
   			mono: [
   				'ui-monospace',
@@ -47,13 +50,13 @@ export default {
   			xs: [
   				'0.75rem',
   				{
-  					lineHeight: '1.1rem'
+  					lineHeight: '1rem'
   				}
   			],
   			sm: [
   				'0.875rem',
   				{
-  					lineHeight: '1.3rem'
+  					lineHeight: '1.25rem'
   				}
   			],
   			base: [
@@ -65,13 +68,13 @@ export default {
   			lg: [
   				'1.125rem',
   				{
-  					lineHeight: '1.75rem'
+  					lineHeight: '1.625rem'
   				}
   			],
   			xl: [
   				'1.25rem',
   				{
-  					lineHeight: '1.8rem'
+  					lineHeight: '1.75rem'
   				}
   			],
   			'2xl': [
@@ -84,6 +87,18 @@ export default {
   				'1.875rem',
   				{
   					lineHeight: '2.25rem'
+  				}
+  			],
+  			'4xl': [
+  				'2.25rem',
+  				{
+  					lineHeight: '2.5rem'
+  				}
+  			],
+  			'5xl': [
+  				'3rem',
+  				{
+  					lineHeight: '3.5rem'
   				}
   			]
   		},
@@ -139,9 +154,16 @@ export default {
   			}
   		},
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			lg: '0.5rem',
+  			md: '0.5rem',
+  			sm: '0.25rem'
+  		},
+  		boxShadow: {
+  			'glow': 'var(--shadow-glow)',
+  			'card': 'var(--shadow-card)',
+  			'elevated': 'var(--shadow-elevated)',
+  			'subtle': 'var(--shadow-subtle)',
+  			'border': 'var(--shadow-border)'
   		},
   		keyframes: {
   			'accordion-down': {
@@ -159,13 +181,51 @@ export default {
   				to: {
   					height: '0'
   				}
+  			},
+  			'slide-up': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translateY(8px)'
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translateY(0)'
+  				}
+  			},
+  			'pulse-subtle': {
+  				'0%, 100%': {
+  					opacity: '1'
+  				},
+  				'50%': {
+  					opacity: '0.8'
+  				}
+  			},
+  			'glow-pulse': {
+  				'0%, 100%': {
+  					boxShadow: '0 0 0 0 hsl(120 40% 40% / 0.4)'
+  				},
+  				'70%': {
+  					boxShadow: '0 0 0 8px hsl(120 40% 40% / 0)'
+  				}
+  			},
+  			'float': {
+  				'0%, 100%': {
+  					transform: 'translateY(0px)'
+  				},
+  				'50%': {
+  					transform: 'translateY(-2px)'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'slide-up': 'slide-up 0.4s ease-out',
+  			'pulse-subtle': 'pulse-subtle 2.5s ease-in-out infinite',
+  			'glow-pulse': 'glow-pulse 2s infinite',
+  			'float': 'float 3s ease-in-out infinite'
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

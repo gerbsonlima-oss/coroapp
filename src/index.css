@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,12 +24,66 @@
   }
 }
 
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(120 40% 40% / 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px hsl(120 40% 40% / 0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 .animate-fade-out {
   animation: fade-out 0.5s ease-in-out 1.5s forwards;
 }
 
 .animate-scale-in {
   animation: scale-in 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2.5s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
@@ -39,60 +93,61 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 7%;
-    --foreground: 0 0% 98%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 142 70.5628% 45.2941%;
+    --primary: 135 61% 41%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 225 73% 70%;
-    --primary-hover: 225 73% 60%;
+    --primary-glow: 135 65% 48%;
+    --primary-hover: 135 61% 38%;
 
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 0 0% 30%;
+    --muted-foreground: 0 0% 70%;
 
-    --accent: 0 0% 20%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 135 61% 41%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 55%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 45%;
+    --success: 135 61% 41%;
     --success-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 15%;
-    --ring: 225 73% 50%;
+    --border: 0 0% 15%;
+    --input: 0 0% 12%;
+    --ring: 135 61% 41%;
 
-    --radius: 0rem;
+    --radius: 0.25rem;
 
-    /* Gradientes refinados */
-    --gradient-primary: linear-gradient(135deg, hsl(225 73% 50%), hsl(225 73% 40%));
+    /* Gradientes estilo Spotify */
+    --gradient-primary: linear-gradient(135deg, hsl(135 61% 41%) 0%, hsl(135 61% 35%) 100%);
     --gradient-header: linear-gradient(180deg, hsl(0 0% 10%) 0%, hsl(0 0% 7%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 14%) 0%, hsl(0 0% 10%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 9%) 0%, hsl(0 0% 7%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 12%) 0%, hsl(0 0% 9%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 10%) 0%, hsl(0 0% 7%) 100%);
 
-    /* Sombras refinadas com profundidade */
-    --shadow-glow: 0 8px 32px hsl(225 73% 50% / 0.25), 0 0 0 1px hsl(225 73% 50% / 0.1);
-    --shadow-card: 0 4px 16px hsl(0 0% 0% / 0.5), 0 2px 4px hsl(0 0% 0% / 0.3);
-    --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.6), 0 4px 8px hsl(0 0% 0% / 0.4);
+    /* Sombras minimalistas Spotify */
+    --shadow-glow: 0 8px 32px hsl(135 61% 41% / 0.25), 0 0 0 1px hsl(135 61% 41% / 0.1);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.5);
     --shadow-subtle: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-border: inset 0 1px 0 hsl(135 61% 41% / 0.1);
 
-    /* Bordas com brilho sutil */
-    --border-glow: 0 0 0 1px hsl(225 73% 50% / 0.15);
+    /* Bordas com verde Spotify */
+    --border-glow: 0 0 0 1px hsl(135 61% 41% / 0.2);
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --radius: 0rem;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 100%;
+    --radius: 0.25rem;
   }
 }
 
@@ -104,9 +159,10 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    font-size: 15px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
     line-height: 1.5;
+    letter-spacing: 0px;
   }
 
   html {
@@ -114,20 +170,53 @@ All colors MUST be HSL.
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold;
+    font-family: 'Inter', sans-serif;
     line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
   h1 {
-    @apply text-2xl md:text-3xl;
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    font-weight: 800;
+    margin-bottom: 0.5em;
   }
 
   h2 {
-    @apply text-xl md:text-2xl;
+    @apply text-2xl md:text-3xl lg:text-4xl;
+    font-weight: 700;
+    margin-bottom: 0.4em;
   }
 
   h3 {
+    @apply text-xl md:text-2xl;
+    font-weight: 700;
+    margin-bottom: 0.35em;
+  }
+
+  h4 {
     @apply text-lg md:text-xl;
+    font-weight: 600;
+    margin-bottom: 0.3em;
+  }
+
+  h5 {
+    @apply text-base md:text-lg;
+    font-weight: 600;
+    margin-bottom: 0.25em;
+  }
+
+  h6 {
+    @apply text-sm md:text-base;
+    font-weight: 600;
+    margin-bottom: 0.2em;
+  }
+
+  p {
+    @apply text-foreground;
+  }
+
+  strong, b {
+    @apply font-semibold;
   }
 }
 
@@ -170,5 +259,66 @@ All colors MUST be HSL.
 
   .touch-action-pan-y {
     touch-action: pan-y;
+  }
+
+  .text-display {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .text-headline {
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .text-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .text-body-lg {
+    font-size: 1.125rem;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  .text-body {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-body-sm {
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .text-caption {
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  @media (max-width: 768px) {
+    .text-display {
+      font-size: 1.875rem;
+    }
+
+    .text-headline {
+      font-size: 1.5rem;
+    }
+
+    .text-title {
+      font-size: 1.125rem;
+    }
   }
 }

@@ -198,7 +198,7 @@ const Events = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                   </div>
                   <div className="space-y-1 px-1">
-                    <h3 className="line-clamp-2 text-base md:text-lg font-semibold">
+                    <h3 className="line-clamp-2 truncate font-medium text-sm text-primary">
                       {event.name}
                     </h3>
                     <p className="truncate text-xs text-muted-foreground">
