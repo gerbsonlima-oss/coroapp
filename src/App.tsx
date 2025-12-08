@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
+import { SplashScreen } from "@/components/SplashScreen";
 import { lazy, Suspense } from "react";
 
 const Auth = lazy(() => import("./pages/Auth"));
@@ -27,7 +28,9 @@ const LoadingFallback = () => (
 
 function App() {
   return (
-    <BrowserRouter>
+    <>
+      <SplashScreen />
+      <BrowserRouter>
       <AuthProvider>
         <RouteTracker />
         <Toaster />
@@ -101,7 +104,8 @@ function App() {
           </Routes>
         </Suspense>
       </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </>
   );
 }
 
