@@ -18,6 +18,7 @@ const SongDetails = lazy(() => import("./pages/SongDetails"));
 const SongTypeDetails = lazy(() => import("./pages/SongTypeDetails"));
 const AdminSongTypes = lazy(() => import("./pages/AdminSongTypes"));
 const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
+const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const LoadingFallback = () => (
@@ -100,6 +101,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/rehearsals" element={<Rehearsals />} />
+            <Route path="/events/:eventId/rehearsals" element={<Rehearsals />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

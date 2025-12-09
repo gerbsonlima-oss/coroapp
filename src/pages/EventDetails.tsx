@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlaylistPlayer } from '@/components/PlaylistPlayer';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -579,6 +579,10 @@ const EventDetails = () => {
                 <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar música
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/events/${id}/rehearsals`)}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Ensaios
                 </DropdownMenuItem>
               </>}
             <DropdownMenuSeparator />
