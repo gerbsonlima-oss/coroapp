@@ -10,6 +10,7 @@ interface SignUpData {
   naipe?: string;
   birthDate?: string;
   parish?: string;
+  phone?: string;
 }
 
 interface AuthContextType {
@@ -70,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             naipe: data.naipe || null,
             birth_date: data.birthDate || null,
             parish: data.parish || null,
+            phone: data.phone || null,
           })
           .eq('id', authData.user.id);
         
@@ -146,6 +148,7 @@ export const useAuth = () => {
               naipe: data.naipe || null,
               birth_date: data.birthDate || null,
               parish: data.parish || null,
+              phone: data.phone || null,
             })
             .eq('id', authData.user.id);
         }

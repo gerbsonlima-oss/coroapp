@@ -19,6 +19,7 @@ const authSchema = z.object({
   naipe: z.string().optional(),
   birthDate: z.string().optional(),
   parish: z.string().max(100, 'Paróquia muito longa').optional(),
+  phone: z.string().max(20, 'Telefone muito longo').optional(),
 });
 
 const Auth = () => {
@@ -29,6 +30,7 @@ const Auth = () => {
   const [naipe, setNaipe] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [parish, setParish] = useState('');
+  const [phone, setPhone] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
@@ -48,12 +50,12 @@ const Auth = () => {
 
     try {
       const data = isSignUp 
-        ? { email, password, fullName, naipe, birthDate, parish } 
+        ? { email, password, fullName, naipe, birthDate, parish, phone } 
         : { email, password };
       authSchema.parse(data);
 
       if (isSignUp) {
-        await signUp({ email, password, fullName, naipe, birthDate, parish });
+        await signUp({ email, password, fullName, naipe, birthDate, parish, phone });
       } else {
         await signIn(email, password);
       }
@@ -182,6 +184,29 @@ const Auth = () => {
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
                     {errors.parish}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm">Telefone (WhatsApp)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="(88) 99999-9999"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={loading}
+                className={`h-12 text-sm ${errors.phone ? 'border-destructive' : ''}`}
+              />
+              {errors.phone && (
+                <Alert variant="destructive" className="py-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    {errors.phone}
                   </AlertDescription>
                 </Alert>
               )}
