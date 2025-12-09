@@ -1,0 +1,618 @@
+[
+  {
+    "text": "O que é a Missa Crismonal?",
+    "options": {
+      "A": "Uma missa comum",
+      "B": "A missa presidida pelo bispo no Jueves Santo onde se abençoam os óleos sagrados",
+      "C": "Uma missa privada",
+      "D": "Uma missa de defuntos"
+    },
+    "correct": "B",
+    "explanation": "A Missa Crismonal é celebrada pelo bispo na quinta-feira de Semana Santa (Quinta-feira Santa) para benção solene dos óleos sagrados (óleo do catecúmeno, óleo dos enfermos e crisma)."
+  },
+  {
+    "text": "O que são os óleos sagrados?",
+    "options": {
+      "A": "Óleos ordinários",
+      "B": "Óleos bênção pela Igreja usados nos sacramentos: óleo do catecúmeno, óleo dos enfermos e crisma",
+      "C": "Perfumes",
+      "D": "Óleos de cozinha"
+    },
+    "correct": "B",
+    "explanation": "Os óleos sagrados são três: óleo do catecúmeno (para batismo), óleo dos enfermos (para unção dos enfermos) e crisma (para confirmação), todos bênção solentemente pelo bispo."
+  },
+  {
+    "text": "O que é a Missa da Ceia do Senhor?",
+    "options": {
+      "A": "Uma missa comum",
+      "B": "A missa celebrada na quinta-feira santa commemorando a última ceia e instituição da Eucaristia",
+      "C": "Uma missa de defuntos",
+      "D": "Uma missa privada"
+    },
+    "correct": "B",
+    "explanation": "A Missa da Ceia do Senhor é celebrada na quinta-feira santa (Quinta-feira da Semana Santa) commemorando a última ceia de Jesus e instituição da Eucaristia."
+  },
+  {
+    "text": "O que é o Sábado Santo ou Sábado de Aleluia?",
+    "options": {
+      "A": "Um dia festivo",
+      "B": "O dia entre a crucificação e a ressurreição de Cristo, período de silêncio litúrgico",
+      "C": "Uma festa de Maria",
+      "D": "Um dia de trabalho ordinário"
+    },
+    "correct": "B",
+    "explanation": "O Sábado Santo é o dia entre a crucificação de Jesus (Sexta-feira Santa) e sua ressurreição (Domingo de Páscoa), um período de silêncio e expectativa litúrgica."
+  },
+  {
+    "text": "O que é a Paixão de Cristo?",
+    "options": {
+      "A": "Uma festa de Maria",
+      "B": "Os sofrimentos e morte de Cristo relatados nos evangelos, commemorados durante a Semana Santa",
+      "C": "Uma celebração de santos",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Paixão de Cristo refere-se aos sofrimentos, morte e ressurreição de Jesus, especialmente commemorados durante a Semana Santa e lidos durante as Missas."
+  },
+  {
+    "text": "O que é o Evangelho da Paixão?",
+    "options": {
+      "A": "Uma parábola",
+      "B": "O relato do sofrimento e morte de Cristo lido durante o Domingo de Ramos e nas missas da Semana Santa",
+      "C": "Uma leitura ordinária",
+      "D": "Uma história de santos"
+    },
+    "correct": "B",
+    "explanation": "O Evangelho da Paixão é o relato detalhado do sofrimento e morte de Cristo, proclamado durante o Domingo de Ramos (resumido) e nas missas da Semana Santa (completo)."
+  },
+  {
+    "text": "O que é a Via Crucis ou Via Crúcis?",
+    "options": {
+      "A": "Uma procissão festiva",
+      "B": "Uma devoção que commemora os 14 passos da paixão de Cristo do julgamento até sua morte",
+      "C": "Um hino",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Via Crucis é uma devoção que contempla os 14 estações (ou passos) da paixão de Cristo desde seu julgamento até sua morte no Calvário."
+  },
+  {
+    "text": "O que significa 'Hosana'?",
+    "options": {
+      "A": "Adeus",
+      "B": "'Salva-nos' em hebraico, aclamação de louvor usada no Domingo de Ramos",
+      "C": "Bênção",
+      "D": "Glória"
+    },
+    "correct": "B",
+    "explanation": "'Hosana' é uma palavra hebraica que significa 'salva-nos', uma aclamação de louvor e supplicação feita pela multidão no Domingo de Ramos."
+  },
+  {
+    "text": "O que é a Procissão de Ramos?",
+    "options": {
+      "A": "Uma procissão de festa",
+      "B": "A procissão no Domingo de Ramos onde os fiéis carregam ramos benção e aclamam Jesus",
+      "C": "Uma marcha ordinária",
+      "D": "Uma dança"
+    },
+    "correct": "B",
+    "explanation": "A Procissão de Ramos é a procissão solene no Domingo de Ramos onde os fiéis carregam ramos de palmeiras ou outros ramos bênção e aclamam a entrada triunfal de Jesus."
+  },
+  {
+    "text": "O que é a Sexta-feira Santa?",
+    "options": {
+      "A": "Um dia festivo",
+      "B": "O dia da crucificação e morte de Cristo, commemorado com solenidade e penitência",
+      "C": "Um dia de trabalho ordinário",
+      "D": "Uma festa de Maria"
+    },
+    "correct": "B",
+    "explanation": "A Sexta-feira Santa é o dia da crucificação e morte de Cristo, commemorado com grande solenidade, jejum e devoção, sem celebração da Missa com consagração."
+  },
+  {
+    "text": "O que é a Liturgia da Paixão?",
+    "options": {
+      "A": "Uma Missa comum",
+      "B": "A célula específica da Sexta-feira Santa que não inclui consagração, mas adoração da cruz",
+      "C": "Uma bênção",
+      "D": "Uma procissão"
+    },
+    "correct": "B",
+    "explanation": "A Liturgia da Paixão é a celebração litúrgica da Sexta-feira Santa que consiste em leitura de orações, procissão de veneração da cruz e comunhão de hóstias consagradas no dia anterior."
+  },
+  {
+    "text": "O que é a veneração da cruz?",
+    "options": {
+      "A": "Uma adoração idólatra",
+      "B": "Um ato de reverência e bênção diante da cruz na Sexta-feira Santa como símbolo de salvação",
+      "C": "Uma obrigação legal",
+      "D": "Uma dança ritual"
+    },
+    "correct": "B",
+    "explanation": "A veneração da cruz é um ato solene de reverência na Sexta-feira Santa onde os fiéis beijam ou tocam a cruz como símbolo do sacrifício redentor de Cristo."
+  },
+  {
+    "text": "O que é a Comunhão na Sexta-feira Santa?",
+    "options": {
+      "A": "Uma Eucaristia consagrada naquele dia",
+      "B": "A distribuição de Comunhão usando hóstias consagradas no Jueves Santo",
+      "C": "Nenhuma Comunhão é dada",
+      "D": "Uma bênção apenas"
+    },
+    "correct": "B",
+    "explanation": "Na Sexta-feira Santa, os fiéis recebem Comunhão usando hóstias que foram consagradas na Quinta-feira Santa, pois não há consagração durante a Liturgia da Paixão."
+  },
+  {
+    "text": "O que é a Vigília Pascal ou Vigília de Páscoa?",
+    "options": {
+      "A": "Uma missa no domingo de Páscoa",
+      "B": "A celebração litúrgica mais importante celebrada na noite de Sábado Santo esperando a ressurreição",
+      "C": "Uma missa ordinária",
+      "D": "Uma procissão"
+    },
+    "correct": "B",
+    "explanation": "A Vigília Pascal é a celebração litúrgica mais importante do ano, celebrada na noite entre Sábado Santo e Domingo de Páscoa, incluindo ritos de preparação e celebração da ressurreição."
+  },
+  {
+    "text": "O que é o Acendimento do Círio Pascal?",
+    "options": {
+      "A": "Uma vela ordinária",
+      "B": "O acendimento de uma grande vela branca durante a Vigília Pascal simbolizando Cristo ressuscitado",
+      "C": "Uma decoração",
+      "D": "Um ritual de morte"
+    },
+    "correct": "B",
+    "explanation": "O Círio Pascal é uma grande vela branca acesa durante a Vigília Pascal que simboliza Cristo ressuscitado, a Luz que vence as trevas e a morte."
+  },
+  {
+    "text": "O que é o Exsultet?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "Um hino solene cantado no início da Vigília Pascal exaltando a vitória de Cristo",
+      "C": "Uma leitura bíblica",
+      "D": "Uma oração penitencial"
+    },
+    "correct": "B",
+    "explanation": "O Exsultet é um hino solene e triumfante cantado no início da Vigília Pascal, exaltando a vitória de Cristo sobre o pecado e a morte."
+  },
+  {
+    "text": "O que é o Aleluia Pascal?",
+    "options": {
+      "A": "Um hino ordinário",
+      "B": "A aclamação 'Aleluia' que marca o regresso da alegria após o silêncio litúrgico da Quaresma",
+      "C": "Uma bênção",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "O Aleluia Pascal é a aclamação 'Aleluia' (Louvai a Deus) que volta a ser usada durante a Vigília e após a Páscoa, marcando o retorno à alegria após o silêncio da Quaresma."
+  },
+  {
+    "text": "O que é a Festa da Ascensão?",
+    "options": {
+      "A": "Uma festa de Maria",
+      "B": "A solenidade 40 dias após a Páscoa commemorando a ascensão de Cristo ao Céu",
+      "C": "Uma festa de santos",
+      "D": "Uma celebração do Natal"
+    },
+    "correct": "B",
+    "explanation": "A Festa da Ascensão é uma solenidade celebrada 40 dias após a Páscoa, commemorando a ascensão de Cristo ao Céu após sua ressurreição."
+  },
+  {
+    "text": "O que é o Dom do Espírito Santo?",
+    "options": {
+      "A": "Uma festa ordinária",
+      "B": "O Espírito Santo vindo aos apóstolos e à Igreja no Pentecostes como força e santificação",
+      "C": "Uma bênção",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "O Dom do Espírito Santo refere-se ao Espírito Santo enviado por Cristo no Pentecostes, vindo sobre os apóstolos e a Igreja como força transformadora e santificadora."
+  },
+  {
+    "text": "O que é a Festa de Todos os Santos?",
+    "options": {
+      "A": "Uma festa de Maria",
+      "B": "A solenidade em 1º de novembro commemorando todos os santos que vivem em glória no Céu",
+      "C": "Uma festa do Natal",
+      "D": "Uma celebração local"
+    },
+    "correct": "B",
+    "explanation": "A Festa de Todos os Santos é uma solenidade em 1º de novembro que celebra e honra todos os santos canonizados e não canonizados que vivem em glória no Céu."
+  },
+  {
+    "text": "O que é a Festa de Finados ou Dia de Mortos?",
+    "options": {
+      "A": "Uma festa alegre",
+      "B": "O 2º de novembro quando a Igreja reza pelos falecidos em sufrágio de suas almas",
+      "C": "Uma celebração de santos",
+      "D": "Uma festa do Natal"
+    },
+    "correct": "B",
+    "explanation": "A Festa de Finados (2 de novembro) é quando a Igreja reza especialmente pelos defuntos, pedindo em sufrágio que suas almas recebam repouso e paz em Deus."
+  },
+  {
+    "text": "O que é a Imolação Cósmica?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "A oferenda de todo o universo a Deus através do sacrifício da Missa",
+      "C": "Uma procissão",
+      "D": "Uma oração ordinária"
+    },
+    "correct": "B",
+    "explanation": "A Imolação Cósmica refere-se à oferenda de todo o universo e de toda a criação a Deus através do sacrifício sacramental da Missa."
+  },
+  {
+    "text": "O que é a Doxologia Final?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "'Glória ao Pai, ao Filho e ao Espírito Santo...', aclamação de louvor ao final de salmos e orações",
+      "C": "Uma leitura bíblica",
+      "D": "Uma oração penitencial"
+    },
+    "correct": "B",
+    "explanation": "A Doxologia Final é a aclamação solene 'Glória ao Pai, ao Filho e ao Espírito Santo, como era no princípio, agora e sempre...', louvando a Santíssima Trindade."
+  },
+  {
+    "text": "O que é a Concelebração?",
+    "options": {
+      "A": "Uma missa privada",
+      "B": "A celebração de um sacramento (geralmente Missa) por vários sacerdotes sob a presidência de um",
+      "C": "Uma missa ordinária",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Concelebração é quando vários sacerdotes celebram uma Missa juntos sob a presidência de um, pronunciando simultaneamente as palavras da consagração e realizando os mesmos gestos."
+  },
+  {
+    "text": "O que é o cálice de espinhos?",
+    "options": {
+      "A": "Um cálice ordinário",
+      "B": "Referência ao cálice da paixão que Jesus ofereceu beber durante a última ceia",
+      "C": "Um ornamento litúrgico",
+      "D": "Uma decoração"
+    },
+    "correct": "B",
+    "explanation": "'O cálice de espinhos' refere-se ao cálice da paixão, à agonia da morte que Jesus ofereceu durante a última ceia e aceitou completamente no Getsêmani."
+  },
+  {
+    "text": "O que é a Oração Sacerdotal?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "A oração de Jesus no Evangelho de João (cap. 17) na noite da última ceia",
+      "C": "Uma bênção",
+      "D": "Uma invocação"
+    },
+    "correct": "B",
+    "explanation": "A Oração Sacerdotal (ou Oração de Jesus) é a oração que Jesus faz no Evangelho de João cap. 17, na noite da última ceia, pedindo pela unidade de seus discípulos."
+  },
+  {
+    "text": "O que é a Teologia Sacramental?",
+    "options": {
+      "A": "O estudo de vidas de santos",
+      "B": "O estudo teológico dos sacramentos como sinais eficazes da graça instituídos por Cristo",
+      "C": "Um livro de orações",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Teologia Sacramental estuda os sacramentos como sinais eficazes da graça de Deus instituídos por Cristo, explicando sua significação e efeitos espirituais."
+  },
+  {
+    "text": "Quantos são os sacramentos da Igreja Católica?",
+    "options": {
+      "A": "Quatro",
+      "B": "Cinco",
+      "C": "Sete",
+      "D": "Dez"
+    },
+    "correct": "C",
+    "explanation": "A Igreja Católica reconhece sete sacramentos: Batismo, Confirmação, Eucaristia, Penitência, Unção dos Enfermos, Ordem Sagrada e Matrimônio."
+  },
+  {
+    "text": "O que é o Batismo?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "O sacramento que lava o pecado original e faz alguém membro da Igreja",
+      "C": "Uma cerimônia ordinária",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "O Batismo é o primeiro dos sacramentos que lava o pecado original, perdoa pecados e faz alguém membro vivo da Igreja, abrindo a porta aos outros sacramentos."
+  },
+  {
+    "text": "O que é a Confirmação?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "O sacramento que confirma a graça batismal e concede os dons do Espírito Santo",
+      "C": "Uma cerimônia ordinária",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "A Confirmação é o sacramento que completa o Batismo, confirmando a graça batismal e concedendo os dons do Espírito Santo para uma vida cristã mais plena."
+  },
+  {
+    "text": "O que é o Sacramento da Penitência ou Confissão?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "O sacramento pelo qual os pecados cometidos após o Batismo são perdoados",
+      "C": "Uma cerimônia ordinária",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "O Sacramento da Penitência (ou Confissão) é aquele pelo qual os pecados cometidos após o Batismo são perdoados através da absolvição do sacerdote."
+  },
+  {
+    "text": "O que é a Unção dos Enfermos?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "O sacramento que confere a graça de Deus aos enfermos e idosos para força espiritual",
+      "C": "Uma cerimônia ordinária",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "A Unção dos Enfermos é o sacramento que confere força espiritual, consolação e perdão aos enfermos graves e idosos, aproximando-os de Cristo em seu sofrimento."
+  },
+  {
+    "text": "O que é a Ordem Sagrada?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "O sacramento pelo qual homens são ordenados diáconos, sacerdotes ou bispos para o ministério da Igreja",
+      "C": "Uma cerimônia ordinária",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "A Ordem Sagrada é o sacramento pelo qual homens são ordenados para ministérios na Igreja: como diáconos, sacerdotes ou bispos, para servir o povo de Deus."
+  },
+  {
+    "text": "O que é o Matrimônio?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "O sacramento pelo qual um homem e uma mulher se unem em aliança para a vida",
+      "C": "Uma cerimônia ordinária",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "O Matrimônio é o sacramento pelo qual um homem e uma mulher se unem em aliança perante Deus e a Igreja para uma vida de amor, fidelidade e abertura à vida."
+  },
+  {
+    "text": "O que é a Graça Sacramental?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A força e bênção divina comunicada através dos sacramentos para ajudar na vida espiritual",
+      "C": "Uma oração",
+      "D": "Uma bênção geral"
+    },
+    "correct": "B",
+    "explanation": "A Graça Sacramental é a força e bênção divina comunicada através dos sacramentos para fortalecer e santificar os fiéis em sua jornada espiritual."
+  },
+  {
+    "text": "O que é a Intenção do Sacramento?",
+    "options": {
+      "A": "O propósito ordinário",
+      "B": "A propósito ou vontade do ministro de fazer aquilo que faz a Igreja ao administrar um sacramento",
+      "C": "Uma oração",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Intenção do Sacramento refere-se à propósito ou vontade do ministro de fazer o que a Igreja faz ao administrar o sacramento, necessária para a validade."
+  },
+  {
+    "text": "O que é o Sinal Sensível?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "A matéria visível e os gestos do sacramento que significam externamente a graça interna",
+      "C": "Uma oração",
+      "D": "Uma bênção ordinária"
+    },
+    "correct": "B",
+    "explanation": "O Sinal Sensível de um sacramento é a matéria (como água, óleo, palavras) e os gestos visíveis que significam externamente a graça invisível que é conferida."
+  },
+  {
+    "text": "O que é a Forma do Sacramento?",
+    "options": {
+      "A": "A estrutura da Igreja",
+      "B": "As palavras pronunciadas pelo ministro que determinam a significação do sinal sensível",
+      "C": "A roupa do sacerdote",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Forma do Sacramento refere-se às palavras precisas (por exemplo, 'Eu te batizo...') pronunciadas pelo ministro que definem a significação do sinal sensível."
+  },
+  {
+    "text": "O que é a Matéria do Sacramento?",
+    "options": {
+      "A": "A importância",
+      "B": "A substância física usada no sacramento (como água, óleo, pão, vinho)",
+      "C": "A roupa",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Matéria do Sacramento é a substância física necessária para o sacramento (água no Batismo, óleo na Confirmação, pão e vinho na Eucaristia, etc.)."
+  },
+  {
+    "text": "O que é o Ministro do Sacramento?",
+    "options": {
+      "A": "Um assistente ordinário",
+      "B": "A pessoa autorizada pela Igreja a administrar validamente um sacramento (geralmente um sacerdote ou bispo)",
+      "C": "Um membro do povo",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "O Ministro do Sacramento é a pessoa autorizada pela Igreja (geralmente um sacerdote ou bispo, em alguns casos diáconos) a administrar validamente um sacramento."
+  },
+  {
+    "text": "O que é o Sujeito do Sacramento?",
+    "options": {
+      "A": "O tema do sacramento",
+      "B": "A pessoa que recebe o sacramento (o batizando, o confirmando, etc.)",
+      "C": "A Igreja",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "O Sujeito do Sacramento é a pessoa que recebe o sacramento, aquela a quem são conferidas a matéria, a forma e a intenção (o batizando, o confirmando, etc.)."
+  },
+  {
+    "text": "O que é a Missa Pontifícia?",
+    "options": {
+      "A": "Uma missa ordinária",
+      "B": "A Missa presidida pelo bispo com maior solenidade e cerimonial",
+      "C": "Uma missa privada",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Missa Pontifícia é a Missa celebrada pelo bispo (Pontifícia significa 'do bispo'), geralmente com maior solenidade, cerimonial e número de ministros."
+  },
+  {
+    "text": "O que é a Missa Solene?",
+    "options": {
+      "A": "Uma missa ordinária",
+      "B": "A Missa celebrada com todo o cerimonial, incluindo diáconos e subdiáconos, com toda a liturgia cantada",
+      "C": "Uma missa privada",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Missa Solene é celebrada com todo o cerimonial litúrgico completo, incluindo diáconos e outros ministros, com toda a liturgia sendo cantada e realizada solemnemente."
+  },
+  {
+    "text": "O que é a Missa Rezada?",
+    "options": {
+      "A": "Uma Missa rápida",
+      "B": "A Missa na qual as partes variáveis e constantes são apenas recitadas, não cantadas",
+      "C": "Uma missa privada",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "A Missa Rezada é a Missa na qual as partes variáveis e do Ordinário são apenas recitadas ou faladas pelo celebrante e povo, não cantadas."
+  },
+  {
+    "text": "O que é o Gloria em excelsix Deo?",
+    "options": {
+      "A": "Uma oração de penitência",
+      "B": "'Glória a Deus nas alturas', o hino de louvor cantado ou recitado após o Kyrie",
+      "C": "Uma aclamação de paz",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "'Gloria in excelsis Deo' significa 'Glória a Deus nas alturas', é o hino de louvor cantado ou recitado no início da Missa, exceto na Quaresma e Advento."
+  },
+  {
+    "text": "O que é o Credo?",
+    "options": {
+      "A": "Uma oração de louvor",
+      "B": "A profissão de fé cristã recitada na Missa após a homilia",
+      "C": "Uma aclamação de paz",
+      "D": "Uma bênção"
+    },
+    "correct": "B",
+    "explanation": "O Credo é a profissão de fé cristã recitada na Missa após a homilia nos domingos e festas, afirmando as crenças fundamentais da Igreja."
+  },
+  {
+    "text": "O que significa 'Et incarnatus est'?",
+    "options": {
+      "A": "Ressuscitou",
+      "B": "'E se fez carne', parte do Credo recordando a encarnação do Verbo",
+      "C": "Foi crucificado",
+      "D": "Ascendeu ao Céu"
+    },
+    "correct": "B",
+    "explanation": "'Et incarnatus est' significa 'E se fez carne' (Verbo), referindo-se à encarnação quando Deus se tornou homem em Jesus Cristo."
+  },
+  {
+    "text": "O que é o Kyrie Eleison na Missa?",
+    "options": {
+      "A": "Uma aclamação de louvor",
+      "B": "A invocação de misericórdia 'Senhor, tende piedade' recitada três vezes no Ato Penitencial",
+      "C": "Uma bênção",
+      "D": "Uma oração eucarística"
+    },
+    "correct": "B",
+    "explanation": "Kyrie Eleison significa 'Senhor, tende piedade' em grego e é uma invocação de misericórdia recitada ou cantada durante o Ato Penitencial da Missa."
+  },
+  {
+    "text": "O que é o Christe Eleison?",
+    "options": {
+      "A": "Uma aclamação de louvor",
+      "B": "'Cristo, tende piedade', invocação de misericórdia dirigida a Cristo",
+      "C": "Uma bênção",
+      "D": "Uma oração eucarística"
+    },
+    "correct": "B",
+    "explanation": "Christe Eleison significa 'Cristo, tende piedade' em grego e é a segunda invocação de misericórdia no Ato Penitencial, dirigida especificamente a Cristo."
+  },
+  {
+    "text": "O que é Alleluia ou Aleluia?",
+    "options": {
+      "A": "Uma invocação de penitência",
+      "B": "'Louvai a Deus', aclamação de louvor usada antes do evangelho e após a ressurreição",
+      "C": "Uma bênção",
+      "D": "Uma oração"
+    },
+    "correct": "B",
+    "explanation": "Alleluia (ou Aleluia) significa 'Louvai a Deus' em hebraico e é uma aclamação de louvor usada antes do evangelho e especialmente após a Páscoa."
+  },
+  {
+    "text": "O que é a Aclamação Memorial?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "A aclamação do povo após a narrativa da instituição durante a Oração Eucarística",
+      "C": "Uma oração",
+      "D": "Uma saudação"
+    },
+    "correct": "B",
+    "explanation": "A Aclamação Memorial é a resposta do povo após a consagração durante a Oração Eucarística, proclamando o mistério pascal ('Anunciamos, Senhor, vossa morte...')."
+  },
+  {
+    "text": "O que é o Sinal da Paz?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Um gesto ou saudação de paz entre o celebrante, ministros e povo antes da Comunhão",
+      "C": "Uma oração",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Sinal da Paz é um gesto ou saudação de paz realizado antes da Comunhão, onde os presentes trocam sinais de paz (aperto de mão, abraço), simbolizando reconciliação."
+  },
+  {
+    "text": "O que é 'Domine, non sum dignus'?",
+    "options": {
+      "A": "Uma oração de louvor",
+      "B": "'Senhor, não sou digno', oração de humildade antes de receber a Comunhão",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "'Domine, non sum dignus' significa 'Senhor, não sou digno', uma oração de humildade e disposição espiritual que precede a recepção da Comunhão."
+  },
+  {
+    "text": "O que é a Comunhão Sacramental?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "A recepção real e sensível do corpo e sangue de Cristo sob as espécies de pão e vinho",
+      "C": "Uma oração",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Comunhão Sacramental é a recepção real e sensível do corpo e sangue de Cristo sob as aparências (acidentes) de pão e vinho na Eucaristia."
+  },
+  {
+    "text": "O que é a Comunhão Espiritual?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "A união desejada com Cristo através de um ato de fé e amor quando se não pode receber sacramentalmente",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Comunhão Espiritual é uma união desejada com Cristo através de um ato de fé e caridade quando alguém não pode receber fisicamente a Comunhão sacramental."
+  },
+  {
+    "text": "O que é a Eucaristia?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "O Sacramento mais Sagrado onde Cristo está realmente presente sob as espécies de pão e vinho",
+      "C": "Uma oração",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Eucaristia é o Sacramento mais Sagrado da Igreja onde Cristo está realmente presente (em corpo, sangue, alma e divindade) sob as aparências de pão e vinho."
+  }
+]

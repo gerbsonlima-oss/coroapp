@@ -1,0 +1,607 @@
+[
+  {
+    "text": "O que é o Ofício dos Mortos?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Conjunto de orações e salmos rezados pelos falecidos, pedindo descanso eterno",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Ofício dos Mortos é um conjunto de orações, salmos e leituras rezadas pelos falecidos, pedindo a Deus por seu repouso e libertação das penas do purgatório."
+  },
+  {
+    "text": "O que é a Antífona?",
+    "options": {
+      "A": "Uma oração",
+      "B": "Uma resposta ou aclamação breve cantada antes e depois de um salmo ou cântico",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Uma Antífona é uma resposta ou aclamação breve cantada pelo povo ou coro antes e depois de um salmo ou cântico, estruturando a participação litúrgica."
+  },
+  {
+    "text": "O que é o Responsório?",
+    "options": {
+      "A": "Uma oração",
+      "B": "Uma aclamação mais longa entre leitor e povo ou coro, alternada durante o Ofício",
+      "C": "Uma bênção",
+      "D": "Uma aclamação breve"
+    },
+    "correct": "B",
+    "explanation": "Um Responsório é uma aclamação mais extensa cantada alternadamente entre o leitor (ou cantor) e o povo ou coro durante o Ofício Divino ou partes litúrgicas."
+  },
+  {
+    "text": "O que é o Gloria Patri?",
+    "options": {
+      "A": "Uma oração de louvor",
+      "B": "'Glória ao Pai', doxologia breve recitada ao final de salmos e cânticos",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "'Gloria Patri, et Filio, et Spiritui Sancto...' ('Glória ao Pai, ao Filho e ao Espírito Santo...') é a doxologia breve recitada ao final de cada salmo."
+  },
+  {
+    "text": "O que é o Salmo Responsorial?",
+    "options": {
+      "A": "Uma oração",
+      "B": "Um salmo cantado entre a primeira e segunda leitura com responsório do povo",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Salmo Responsorial é um salmo bíblico cantado entre a primeira e segunda leitura, com o povo respondendo com um refrão apropriado ao texto."
+  },
+  {
+    "text": "O que é um Cântico?",
+    "options": {
+      "A": "Uma oração",
+      "B": "Uma composição poética para ser cantada em louvor, oração ou ação de graças",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Um Cântico é uma composição poética intencional para ser cantada como expressão de louvor, ação de graças ou intercessão a Deus."
+  },
+  {
+    "text": "O que é o Benedictus?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Um cântico do Evangelho de Lucas 1:68-79 cantado nas Laudes do Ofício Divino",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Benedictus é um cântico do Evangelho de Lucas (canção de Zacarias) que começa com 'Bendito seja o Deus de Israel', cantado nos Laudes do Ofício Divino."
+  },
+  {
+    "text": "O que é o Magnificat?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Um cântico do Evangelho de Lucas 1:46-55, oração de Maria, cantado nas Vésperas",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Magnificat é o cântico de Maria (Lucas 1:46-55) que começa com 'Minha alma glorifica o Senhor', cantado nas Vésperas do Ofício Divino."
+  },
+  {
+    "text": "O que é o Nunc Dimittis?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Um cântico do Evangelho de Lucas 2:29-32, oração de Simeão, cantado nas Completas",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Nunc Dimittis é o cântico de Simeão (Lucas 2:29-32) que começa com 'Agora deixas partir teu servo', cantado nas Completas do Ofício Divino."
+  },
+  {
+    "text": "O que são os Laudes?",
+    "options": {
+      "A": "Uma bênção",
+      "B": "A segunda parte principal do Ofício Divino rezada ao amanhecer",
+      "C": "Uma oração",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Os Laudes (ou Horas Laudes) são a segunda parte principal do Ofício Divino, rezada ao amanhecer, consistindo em salmos, um cântico e oração."
+  },
+  {
+    "text": "O que são as Vésperas?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A maior parte principal do Ofício Divino rezada ao entardecer",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "As Vésperas são a maior parte principal do Ofício Divino, rezada ao entardecer, consistindo em salmos, um cântico (Magnificat) e oração."
+  },
+  {
+    "text": "O que é a Hora Nona?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma das Horas Menores do Ofício Divino rezada por volta das 3 da tarde",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Hora Nona é uma das Horas Menores do Ofício Divino rezada tradicionalmente por volta das 3 da tarde, consistindo em salmos e orações breves."
+  },
+  {
+    "text": "O que é o Ofício Divino ou Liturgia das Horas?",
+    "options": {
+      "A": "Uma missa",
+      "B": "Conjunto de orações, salmos e cânticos distribuídos ao longo do dia e noite",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Ofício Divino (ou Liturgia das Horas) é o conjunto de orações, salmos, cânticos e leituras distribuídos ao longo do dia e noite, rezado pela Igreja."
+  },
+  {
+    "text": "O que são as Matinas?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A parte inicial do Ofício rezada durante a noite ou primeira coisa pela manhã",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "As Matinas são a primeira parte principal do Ofício Divino, tradicionamente rezada durante a noite ou muito cedo pela manhã, contendo longos salmos e leituras."
+  },
+  {
+    "text": "O que é a Hora Prima?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma das Horas Menores rezada pela manhã, por volta da 6 horas",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Hora Prima é uma das Horas Menores do Ofício Divino rezada pela manhã, tradicionalmente por volta das 6 horas, começando o dia com oração."
+  },
+  {
+    "text": "O que é a Hora Terça?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma das Horas Menores rezada por volta das 9 da manhã",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Hora Terça é uma das Horas Menores do Ofício Divino rezada pela manhã, tradicionamente por volta das 9 horas da manhã."
+  },
+  {
+    "text": "O que é a Hora Sexta?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma das Horas Menores rezada ao meio-dia",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Hora Sexta é uma das Horas Menores do Ofício Divino rezada ao meio-dia, lembrando a Paixão de Cristo que começou ao meio-dia."
+  },
+  {
+    "text": "O que são as Completas?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A última parte do Ofício Divino rezada antes de dormir",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "As Completas são a última parte principal do Ofício Divino rezada ao final do dia antes de dormir, pedindo proteção durante a noite."
+  },
+  {
+    "text": "O que é a Lição ou Lectio?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma passagem bíblica ou patrística lida durante o Ofício Divino",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Uma Lição (ou Lectio) é uma passagem bíblica ou texto dos Padres da Igreja lido durante o Ofício Divino como ensinamento e meditação espiritual."
+  },
+  {
+    "text": "O que é o Responsório Breve?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma breve aclamação respondida pelo povo após uma lição no Ofício",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação longa"
+    },
+    "correct": "B",
+    "explanation": "Um Responsório Breve é uma breve aclamação ou verso respondido pelo povo após uma lição no Ofício Divino, resumindo o tema da leitura."
+  },
+  {
+    "text": "O que é a Oração Final do Ofício?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma oração breve rezada ao final de cada Hora, pedindo a bênção de Deus",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Oração Final do Ofício é uma oração breve rezada ao término de cada Hora do Ofício Divino, pedindo a bênção e proteção de Deus."
+  },
+  {
+    "text": "O que é a Bênção 'Benedicamus Domino'?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "'Bendigamos ao Senhor', aclamação final do Ofício pedindo bênção",
+      "C": "Uma oração de louvor",
+      "D": "Uma aclamação de despedida"
+    },
+    "correct": "B",
+    "explanation": "'Benedicamus Domino' significa 'Bendigamos ao Senhor', uma aclamação final do Ofício Divino através da qual se termina pedindo a bênção de Deus."
+  },
+  {
+    "text": "O que é um Confráde ou Membro de Confraria?",
+    "options": {
+      "A": "Um sacerdote",
+      "B": "Um leigo membro de uma associação de fiéis dedicada a práticas devocional ou caritativas",
+      "C": "Um monge",
+      "D": "Um diácono"
+    },
+    "correct": "B",
+    "explanation": "Um Confráde é um membro leigo de uma confraria ou irmandade, associação de fiéis dedicada a práticas devocional, caritativas ou apostólicas sob orientação da Igreja."
+  },
+  {
+    "text": "O que é a Via Crucis em grupo?",
+    "options": {
+      "A": "Uma procissão ordinária",
+      "B": "Uma prática devocional em grupo onde se contempla os 14 passos da Paixão",
+      "C": "Uma marcha",
+      "D": "Uma dança"
+    },
+    "correct": "B",
+    "explanation": "A Via Crucis em grupo é uma prática devocional realizada coletivamente onde os participantes caminham contemplando cada uma das 14 estações da Paixão de Cristo."
+  },
+  {
+    "text": "O que é a Hora Santa?",
+    "options": {
+      "A": "Uma hora ordinária do dia",
+      "B": "Uma hora de adoração silenciosa e oração diante do Santíssimo Sacramento",
+      "C": "Uma hora de trabalho",
+      "D": "Uma hora de descanso"
+    },
+    "correct": "B",
+    "explanation": "Uma Hora Santa é uma hora dedicada à adoração silenciosa e profunda oração diante do Santíssimo Sacramento, meditando sobre a Paixão de Cristo."
+  },
+  {
+    "text": "O que é o Rosário?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Uma devoção mariana consistindo em repetição de Ave Marias agrupadas em décadas de meditação",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Rosário é uma devoção mariana consagrada na qual se reza Ave Marias agrupadas em décadas, mediando sobre os mistérios da vida de Jesus e Maria."
+  },
+  {
+    "text": "O que são os Mistérios Gozosos?",
+    "options": {
+      "A": "Eventos tristes",
+      "B": "Cinco eventos alegres da vida de Jesus e Maria meditados no Rosário",
+      "C": "Eventos da Paixão",
+      "D": "Eventos da Ressurreição"
+    },
+    "correct": "B",
+    "explanation": "Os Mistérios Gozosos são cinco eventos alegres (Anunciação, Visitação, Nascimento, Apresentação, Encontro no Templo) meditados no Rosário de segundas e sábados."
+  },
+  {
+    "text": "O que são os Mistérios da Ascensão?",
+    "options": {
+      "A": "Eventos da Paixão",
+      "B": "Cinco eventos da ascensão e glorificação de Cristo meditados no Rosário",
+      "C": "Eventos da Ressurreição",
+      "D": "Eventos do Natal"
+    },
+    "correct": "B",
+    "explanation": "Os Mistérios da Ascensão (ou Gloriosos) são cinco eventos da glorificação de Cristo (Ressurreição, Ascensão, Pentecostes, Assunção, Coroação de Maria) meditados no Rosário."
+  },
+  {
+    "text": "O que é a Ave Maria?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma oração mariana à Virgem Maria pedindo sua intercesso",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Ave Maria é uma oração mariana que saudação e invoca Maria pedindo sua intercesso junto a Jesus, frequentemente rezada no Rosário em décadas de 10."
+  },
+  {
+    "text": "O que é o Pai Nosso?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A oração ensinada por Jesus Cristo, rezada em cada década do Rosário",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Pai Nosso é a oração fundamental do cristianismo ensinada por Jesus, rezada em cada década do Rosário como base da estrutura meditativa."
+  },
+  {
+    "text": "O que é o Gloria seja ao Pai?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma doxologia rezada ao final de cada década do Rosário",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "'Gloria Patri, et Filio, et Spiritui Sancto, sicut erat in principio...' é rezada ao final de cada década do Rosário como louvor à Trindade."
+  },
+  {
+    "text": "O que é uma Ladainha?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Uma série de invocações breves a Deus ou santos, com resposta repetida do povo",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Uma Ladainha é uma série de invocações breves a Deus, Maria ou santos, cada uma seguida de uma resposta fixa do povo, como 'rogai por nós'."
+  },
+  {
+    "text": "O que é a Ladainha de Santos?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Uma série de invocações a santos pedindo sua intercesso",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Ladainha de Santos é uma série de invocações breves a diversos santos, cada uma seguida da resposta 'Rogai por nós', procurando sua intercesso."
+  },
+  {
+    "text": "O que é a Ladainha de Nossa Senhora?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Uma série de invocações a atributos de Maria, pedindo sua intercesso",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Ladainha de Nossa Senhora (Lauretana) é uma série de invocações aos atributos, privilégios e título de Maria, cada seguida de 'Rogai por nós'."
+  },
+  {
+    "text": "O que é o Magnificat Antiphon?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma antífona breve cantada antes e depois do cântico Magnificat",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Magnificat Antiphon é uma antífona breve (um ou dois versos) cantada antes e depois do Magnificat nas Vésperas, introduzindo o tema do dia."
+  },
+  {
+    "text": "O que é o Gloria Patri após um Salmo?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A doxologia breve cantada ao final de cada salmo no Ofício",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Gloria Patri após um Salmo é a doxologia breve 'Glória ao Pai, ao Filho e ao Espírito Santo...' cantada ao término cada salmo no Ofício Divino."
+  },
+  {
+    "text": "O que é um Hino Litúrgico?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "Uma composição poética para ser cantada em louvor durante o Ofício ou Missa",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Um Hino Litúrgico é uma composição poética cantada durante o Ofício Divino ou Missa como louvor a Deus, Cristo, Maria ou santos específicos."
+  },
+  {
+    "text": "O que é a Sequência?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Um poema ou cântico cantado após o Aleluia em dias especiais da Missa",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Uma Sequência é um poema ou cântico cantado após o Aleluia em certas Missas de festa (como Páscoa, Pentecostes, Corpus Christi) em louvor ao mistério celebrado."
+  },
+  {
+    "text": "O que é a Sequência Paschal?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "A sequência 'Victimae Paschali laudes' cantada na Missa de Páscoa",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Sequência Paschal é o cântico 'Victimae Paschali laudes' cantado durante a Missa de Páscoa, exaltando Cristo ressuscitado e a vitória sobre a morte."
+  },
+  {
+    "text": "O que é a Sequência de Pentecostes?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "A sequência 'Veni Sancte Spiritus' cantada na Missa de Pentecostes",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Sequência de Pentecostes é o cântico 'Veni Sancte Spiritus' cantado na Missa de Pentecostes, invocando os dons do Espírito Santo."
+  },
+  {
+    "text": "O que é a Sequência de Corpus Christi?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "A sequência 'Lauda Sion Salvatorem' cantada na Missa de Corpus Christi",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Sequência de Corpus Christi é o cântico 'Lauda Sion Salvatorem' cantado na Missa de Corpus Christi, celebrando a Eucaristia e a presença real de Cristo."
+  },
+  {
+    "text": "O que é o Kyrie Eleison Simples?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "O Kyrie reduzido apenas a 'Kyrie Eleison' recitado três vezes",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "O Kyrie Eleison Simples é uma forma abreviada do Kyrie onde se recita apenas 'Kyrie Eleison' (Senhor, tende piedade) três vezes sem variação."
+  },
+  {
+    "text": "O que é o Gloria Triplado?",
+    "options": {
+      "A": "Uma oração ordinária",
+      "B": "O Glória repetido três vezes de forma condensada",
+      "C": "Uma bênção",
+      "D": "Uma aclamação"
+    },
+    "correct": "A",
+    "explanation": "Tecnicamente, não existe um 'Gloria Triplado' padrão; o Gloria é cantado ou recitado uma vez como hino de louvor na Missa, exceto em Advento e Quaresma."
+  },
+  {
+    "text": "O que é uma Festa de Preceito?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma solenidade em que os fiéis são obrigados a ouvir Missa",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Uma Festa de Preceito (ou Festa Obrigatória) é uma solenidade em que os fiéis são obrigados por lei da Igreja a ouvir Missa, como Natal, Páscoa, Assunção."
+  },
+  {
+    "text": "O que é um Dia de Abstinência?",
+    "options": {
+      "A": "Um dia ordinário",
+      "B": "Um dia em que a Igreja recomenda abster-se de carne em penitência",
+      "C": "Um dia de festejo",
+      "D": "Um dia de trabalho"
+    },
+    "correct": "B",
+    "explanation": "Um Dia de Abstinência é um dia em que a Igreja recomenda aos fiéis absterem-se de carne (especialmente sextas-feiras) como prática de penitência e mortificação."
+  },
+  {
+    "text": "O que é um Dia de Jejum?",
+    "options": {
+      "A": "Um dia ordinário",
+      "B": "Um dia em que a Igreja recomenda reduzir quantidade de comida",
+      "C": "Um dia de festejo",
+      "D": "Um dia de trabalho"
+    },
+    "correct": "B",
+    "explanation": "Um Dia de Jejum é um dia em que a Igreja recomenda aos fiéis jejuar (fazer apenas uma refeição substancial), especialmente na Quaresma."
+  },
+  {
+    "text": "O que é a Penitência Eclesial?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Práticas comunitárias de conversão como jejum, esmola e oração",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Penitência Eclesial é o conjunto de práticas comunitárias de conversão (jejum, esmola, oração) realizadas pela comunidade cristã, especialmente durante a Quaresma."
+  },
+  {
+    "text": "O que é a Esmola?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma dádiva generosa aos pobres e necessitados como forma de caridade",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Esmola é uma dádiva generosa aos pobres, doentes e necessitados como manifestação de caridade cristiana, particularmente recomendada durante a Quaresma."
+  },
+  {
+    "text": "O que é a Mortificação?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A privação voluntária de prazeres para dominar a carne e crescer espiritualmente",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Mortificação é a privação voluntária e moderada de prazeres (alimento, conforto) para dominar a carne, crescer em virtuude e participar nos sofrimentos de Cristo."
+  },
+  {
+    "text": "O que é o Escândalo na Teologia Moral?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "Uma ação ou omissão que leva outros ao pecado contra fé ou moral",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "Escândalo na teologia moral é uma ação ou omissão que funciona como estímulo para levar outro ao pecado contra a fé cristã ou moralidade."
+  },
+  {
+    "text": "O que é a Justiça na Virtude?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A virtude moral que dispõe a dar a cada um o que lhe é devido",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Justiça é uma das virtudes cardeais que dispõe a vontade a dar a cada um aquilo que lhe é justamente devido, em igualdade e proporção."
+  },
+  {
+    "text": "O que é a Caridade?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A virtude teologal que ama a Deus acima de tudo e ao próximo como a si mesmo",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Caridade é a virtude teologal (infundida por Deus) que ama a Deus acima de todas as coisas e ao próximo como a si mesmo, pelo amor de Deus."
+  },
+  {
+    "text": "O que é a Fé?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A virtude teologal que crê em Deus e tudo que Ele revelou",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Fé é a virtude teologal que crê em Deus e tudo que Ele revelou e que a Igreja nos ensina, aceitando com confiança total."
+  },
+  {
+    "text": "O que é a Esperança?",
+    "options": {
+      "A": "Uma bênção ordinária",
+      "B": "A virtude teologal que espera em Deus para a salvação e suas promessas",
+      "C": "Uma oração ordinária",
+      "D": "Uma aclamação"
+    },
+    "correct": "B",
+    "explanation": "A Esperança é a virtude teologal que espera em Deus para a salvação eterna e para o cumprimento de suas promessas, confiando em Sua misericórdia."
+  },
+  {
+    "text": "O que é a Instrução Geral do Missal em essência?",
+    "options": {
+      "A": "Um livro de leis",
+      "B": "Um guia pastoral que explica a estrutura, significado e forma apropriada de celebrar a Missa",
+      "C": "Uma coleção de orações",
+      "D": "Uma história da Igreja"
+    },
+    "correct": "B",
+    "explanation": "A Instrução Geral do Missal Romano é essencialmente um guia pastoral que explica a natureza da Missa, sua importância, estrutura e forma apropriada de celebração."
+  }
+]

@@ -1,0 +1,772 @@
+[
+  {
+    "text": "Qual é o nome oficial do livro que contém as orações e ritos da Missa?",
+    "options": {
+      "A": "Breviário",
+      "B": "Missal Romano",
+      "C": "Sacramentário",
+      "D": "Pontifical"
+    },
+    "correct": "B",
+    "explanation": "O Missal Romano é o livro litúrgico que contém as orações, leituras e ritos necessários para a celebração da Missa."
+  },
+  {
+    "text": "Quantas são as partes principais da Missa?",
+    "options": {
+      "A": "Duas: Liturgia da Palavra e Liturgia Eucarística",
+      "B": "Três: Ritos Iniciais, Liturgia da Palavra e Liturgia Eucarística",
+      "C": "Quatro: Ritos Iniciais, Liturgia da Palavra, Liturgia Eucarística e Rito de Conclusão",
+      "D": "Cinco, incluindo o Ato Penitencial como parte separada"
+    },
+    "correct": "C",
+    "explanation": "A Missa é dividida em quatro partes principais: Ritos Iniciais, Liturgia da Palavra, Liturgia Eucarística e Rito de Conclusão."
+  },
+  {
+    "text": "O que é o Ordinário da Missa?",
+    "options": {
+      "A": "As leituras que variam conforme o dia litúrgico",
+      "B": "As partes que se repetem em todas as Missas",
+      "C": "Os hinos cantados durante a celebração",
+      "D": "As bênçãos dadas pelo celebrante"
+    },
+    "correct": "B",
+    "explanation": "O Ordinário são as partes que se repetem em todas as Missas, como o Kyrie, Gloria, Credo, Sanctus e Agnus Dei."
+  },
+  {
+    "text": "O que é o Próprio da Missa?",
+    "options": {
+      "A": "As partes fixas e imutáveis da celebração",
+      "B": "As partes que variam conforme o dia litúrgico ou a festa",
+      "C": "Os gestos realizados pelo celebrante",
+      "D": "As vestimentas usadas pelo clero"
+    },
+    "correct": "B",
+    "explanation": "O Próprio da Missa contém partes que variam conforme o dia litúrgico, a festa ou a ocasião especial."
+  },
+  {
+    "text": "Qual é a cor litúrgica usada no período do Advento?",
+    "options": {
+      "A": "Branco",
+      "B": "Vermelho",
+      "C": "Roxo",
+      "D": "Verde"
+    },
+    "correct": "C",
+    "explanation": "O roxo (ou violeta) é a cor litúrgica usada no Advento, representando penitência e preparação espiritual."
+  },
+  {
+    "text": "Qual é a cor litúrgica utilizada no Natal e na Páscoa?",
+    "options": {
+      "A": "Roxo",
+      "B": "Verde",
+      "C": "Branco",
+      "D": "Vermelho"
+    },
+    "correct": "C",
+    "explanation": "O branco é a cor litúrgica usada nas festas do Natal e da Páscoa, representando alegria, pureza e luz."
+  },
+  {
+    "text": "Em qual momento da Missa ocorre o Ato Penitencial?",
+    "options": {
+      "A": "No início dos Ritos Iniciais",
+      "B": "Antes da Liturgia Eucarística",
+      "C": "Depois da Comunhão",
+      "D": "No Rito de Conclusão"
+    },
+    "correct": "A",
+    "explanation": "O Ato Penitencial ocorre no início da Missa, após a Saudação inicial e antes da Glória, permitindo que os fiéis reconheçam seus pecados."
+  },
+  {
+    "text": "Qual é o significado do Kyrie Eleison?",
+    "options": {
+      "A": "Glória a Deus nas alturas",
+      "B": "Senhor, tende piedade de nós",
+      "C": "Santíssimo é o Cordeiro de Deus",
+      "D": "Vinde adorar ao Senhor"
+    },
+    "correct": "B",
+    "explanation": "Kyrie Eleison significa 'Senhor, tende piedade' em grego. É uma invocação de misericórdia durante o Ato Penitencial."
+  },
+  {
+    "text": "O que é cantado ou recitado logo após o Kyrie?",
+    "options": {
+      "A": "O Credo",
+      "B": "O Gloria",
+      "C": "O Sanctus",
+      "D": "O Agnus Dei"
+    },
+    "correct": "B",
+    "explanation": "O Glória (ou Hino de Louvor) é cantado ou recitado após o Kyrie, exceto nos períodos de Advento e Quaresma."
+  },
+  {
+    "text": "Qual é a função principal da Liturgia da Palavra?",
+    "options": {
+      "A": "Consagrar o pão e o vinho",
+      "B": "Proclamar a Palavra de Deus e instruir os fiéis",
+      "C": "Preparar os fiéis para a Comunhão",
+      "D": "Pedir a bênção final de Deus"
+    },
+    "correct": "B",
+    "explanation": "A Liturgia da Palavra tem como função principal proclamar as leituras bíblicas e instruir os fiéis na fé, culminando com o evangelho e a homilia."
+  },
+  {
+    "text": "Quantas leituras bíblicas normalmente precedem o evangelho em uma Missa dominical?",
+    "options": {
+      "A": "Uma",
+      "B": "Duas",
+      "C": "Três",
+      "D": "Nenhuma"
+    },
+    "correct": "B",
+    "explanation": "Normalmente, duas leituras precedem o evangelho: uma do Antigo Testamento (ou Atos dos Apóstolos) e outra de uma epístola do Novo Testamento."
+  },
+  {
+    "text": "Qual é a primeira leitura da Liturgia da Palavra?",
+    "options": {
+      "A": "Uma epístola",
+      "B": "O evangelho",
+      "C": "Uma leitura do Antigo Testamento ou dos Atos",
+      "D": "Um salmo"
+    },
+    "correct": "C",
+    "explanation": "A primeira leitura é geralmente do Antigo Testamento ou do livro dos Atos dos Apóstolos, seguida do Salmo Responsorial."
+  },
+  {
+    "text": "O que é o Salmo Responsorial?",
+    "options": {
+      "A": "Uma leitura do Novo Testamento",
+      "B": "Um salmo cantado entre as leituras",
+      "C": "Uma oração de louvor",
+      "D": "Uma intervenção do povo durante a liturgia"
+    },
+    "correct": "B",
+    "explanation": "O Salmo Responsorial é um salmo bíblico cantado ou recitado entre a primeira leitura e a segunda, permitindo a resposta do povo."
+  },
+  {
+    "text": "Qual é o livro do Novo Testamento frequentemente lido como segunda leitura?",
+    "options": {
+      "A": "Os Evangelho",
+      "B": "As Epístolas",
+      "C": "O Apocalipse",
+      "D": "Os Atos dos Apóstolos"
+    },
+    "correct": "B",
+    "explanation": "As Epístolas (cartas apostólicas como as de São Paulo) são frequentemente lidas como segunda leitura nas Missas dominicais."
+  },
+  {
+    "text": "Qual é a importância especial do evangelho na Missa?",
+    "options": {
+      "A": "É a primeira leitura da Missa",
+      "B": "É o auge da Liturgia da Palavra e contém as palavras de Jesus",
+      "C": "É uma oração dirigida a Deus",
+      "D": "Encerra o Rito de Conclusão"
+    },
+    "correct": "B",
+    "explanation": "O evangelho é o auge da Liturgia da Palavra, contendo o ensinamento direto de Cristo, e é por isso que o povo se levanta ao ouvi-lo."
+  },
+  {
+    "text": "Qual é a função da Homilia?",
+    "options": {
+      "A": "Explicar o significado das leituras para a vida dos fiéis",
+      "B": "Contar histórias de santos",
+      "C": "Corrigir os comportamentos dos fiéis",
+      "D": "Iniciar a Liturgia Eucarística"
+    },
+    "correct": "A",
+    "explanation": "A Homilia é uma explicação das leituras bíblicas, conectando-as com a vida dos fiéis e aprofundando sua compreensão da fé."
+  },
+  {
+    "text": "O Credo é recitado em qual momento da Missa?",
+    "options": {
+      "A": "Após o Glória",
+      "B": "Após a Homilia",
+      "C": "Após a Comunhão",
+      "D": "Durante o Rito de Conclusão"
+    },
+    "correct": "B",
+    "explanation": "O Credo é recitado após a Homilia, permitindo que os fiéis renovem sua profissão de fé antes de passar para a Liturgia Eucarística."
+  },
+  {
+    "text": "O que significa a Oração dos Fiéis?",
+    "options": {
+      "A": "Uma oração silenciosa de cada fiel",
+      "B": "Intercessões do povo em favor de diversos intenções",
+      "C": "A oração eucarística",
+      "D": "A bênção final da Missa"
+    },
+    "correct": "B",
+    "explanation": "A Oração dos Fiéis (ou Oração Universal) é quando o povo apresenta intercessões e petições em favor de vários intenções."
+  },
+  {
+    "text": "Qual é o momento em que se ofertam o pão e o vinho?",
+    "options": {
+      "A": "Durante os Ritos Iniciais",
+      "B": "Durante a Liturgia da Palavra",
+      "C": "No início da Liturgia Eucarística",
+      "D": "Após a Comunhão"
+    },
+    "correct": "C",
+    "explanation": "O pão e o vinho são ofertados no início da Liturgia Eucarística, na preparação dos dons, antes da consagração."
+  },
+  {
+    "text": "O que significa a palavra Eucaristia?",
+    "options": {
+      "A": "Comunhão dos santos",
+      "B": "Ação de graças",
+      "C": "Celebração festiva",
+      "D": "Perdão dos pecados"
+    },
+    "correct": "B",
+    "explanation": "Eucaristia vem do grego e significa 'ação de graças', referindo-se ao sacrifício de louvor e gratidão oferecido a Deus."
+  },
+  {
+    "text": "Qual é o objetivo principal da Oração Eucarística?",
+    "options": {
+      "A": "Pedir perdão pelos pecados",
+      "B": "Transformar o pão e o vinho no corpo e sangue de Cristo",
+      "C": "Louvar e agradecer a Deus e consagrar os dons",
+      "D": "Preparar os fiéis para a Comunhão"
+    },
+    "correct": "C",
+    "explanation": "A Oração Eucarística é a parte central da Missa onde se oferece sacrifício a Deus e se pede a consagração do pão e vinho."
+  },
+  {
+    "text": "Quantas são as Orações Eucarísticas principais no Missal Romano?",
+    "options": {
+      "A": "Uma",
+      "B": "Duas",
+      "C": "Três",
+      "D": "Quatro"
+    },
+    "correct": "D",
+    "explanation": "O Missal Romano contém quatro Orações Eucarísticas principais (Canon I, II, III e IV), além de outras para circunstâncias especiais."
+  },
+  {
+    "text": "O que é a Consagração?",
+    "options": {
+      "A": "A elevação das hóstias",
+      "B": "O momento em que o pão e o vinho se transformam no corpo e sangue de Cristo",
+      "C": "A bênção final da Missa",
+      "D": "A preparação dos dons antes da Missa"
+    },
+    "correct": "B",
+    "explanation": "A Consagração é o momento da Missa em que, por meio das palavras do sacerdote e ação do Espírito Santo, o pão e o vinho são transformados no corpo e sangue de Cristo."
+  },
+  {
+    "text": "O que é o Sanctus?",
+    "options": {
+      "A": "Uma bênção ao final da Missa",
+      "B": "Um hino de louvor: 'Santo, Santo, Santo é o Senhor'",
+      "C": "Uma oração pelo perdão dos pecados",
+      "D": "Uma invocação ao Espírito Santo"
+    },
+    "correct": "B",
+    "explanation": "O Sanctus é um hino de louvor que se canta durante a Oração Eucarística, aclamando a santidade de Deus: 'Santo, Santo, Santo é o Senhor'."
+  },
+  {
+    "text": "Qual é o significado do Agnus Dei?",
+    "options": {
+      "A": "Glória a Deus",
+      "B": "Cordeiro de Deus, que tira o pecado do mundo",
+      "C": "Bendito seja o Senhor",
+      "D": "Senhor, tende piedade"
+    },
+    "correct": "B",
+    "explanation": "Agnus Dei significa 'Cordeiro de Deus' e é uma aclamação que se canta antes da Comunhão, reconhecendo Cristo como sacrifício pelos nossos pecados."
+  },
+  {
+    "text": "O que é a Fração do Pão?",
+    "options": {
+      "A": "A distribuição da Comunhão",
+      "B": "A oferta do pão antes da consagração",
+      "C": "A partição do pão consagrado",
+      "D": "A preparação do altar"
+    },
+    "correct": "C",
+    "explanation": "A Fração do Pão é o ato de partir o pão consagrado antes da Comunhão, significando a unidade de todos os fiéis no corpo de Cristo."
+  },
+  {
+    "text": "Qual é o sinal de paz durante a Missa?",
+    "options": {
+      "A": "Uma genuflexão",
+      "B": "Uma troca de cumprimento de paz entre os fiéis",
+      "C": "Uma bênção do sacerdote",
+      "D": "Uma elevação das mãos"
+    },
+    "correct": "B",
+    "explanation": "O Sinal da Paz é o momento em que os fiéis se cumprimentam mutuamente, oferecendo-se paz uns aos outros antes da Comunhão."
+  },
+  {
+    "text": "O que significa 'Dominus Vobiscum'?",
+    "options": {
+      "A": "Aqui está o Cordeiro de Deus",
+      "B": "O Senhor esteja convosco",
+      "C": "Graça e paz a vós",
+      "D": "Bendita seja a Santíssima Trindade"
+    },
+    "correct": "B",
+    "explanation": "'Dominus Vobiscum' é uma saudação latina que significa 'O Senhor esteja convosco', usada pelo celebrante durante a Missa."
+  },
+  {
+    "text": "Qual é a resposta dos fiéis a 'Dominus Vobiscum'?",
+    "options": {
+      "A": "Amém",
+      "B": "E também convosco",
+      "C": "Glória a Deus",
+      "D": "Senhor, tende piedade"
+    },
+    "correct": "B",
+    "explanation": "Os fiéis respondem com 'E também convosco' (ou em latim 'Et cum spiritu tuo'), retribuindo a saudação de paz do celebrante."
+  },
+  {
+    "text": "Em que consiste o Rito de Conclusão?",
+    "options": {
+      "A": "Apenas na bênção final",
+      "B": "Na bênção e no envio dos fiéis",
+      "C": "Apenas no envio dos fiéis",
+      "D": "Na distribuição da comunhão"
+    },
+    "correct": "B",
+    "explanation": "O Rito de Conclusão compreende a bênção do celebrante e o envio dos fiéis (Ite missa est), encerrando a celebração."
+  },
+  {
+    "text": "O que significa 'Ite missa est'?",
+    "options": {
+      "A": "A Missa terminou",
+      "B": "Ide em paz",
+      "C": "O Senhor esteja convosco",
+      "D": "Abençoados sejam todos"
+    },
+    "correct": "B",
+    "explanation": "'Ite missa est' significa 'Ide em paz' e é a fórmula tradicional que encerra a Missa, enviando os fiéis ao mundo."
+  },
+  {
+    "text": "Qual é o papel do diácono na Missa?",
+    "options": {
+      "A": "Acompanhar silenciosamente a celebração",
+      "B": "Cantar as leituras, assistir o celebrante e servir o povo",
+      "C": "Apenas distribuir a Comunhão",
+      "D": "Dirigir os cânticos do povo"
+    },
+    "correct": "B",
+    "explanation": "O diácono auxilia o celebrante, proclaima o evangelho, faz a Oração dos Fiéis, auxilia na Comunhão e despede os fiéis."
+  },
+  {
+    "text": "Qual é a função do ministro acolitor?",
+    "options": {
+      "A": "Receber os fiéis na entrada da igreja",
+      "B": "Auxiliar o celebrante e o diácono no altar",
+      "C": "Cantar os salmos",
+      "D": "Dar a bênção final"
+    },
+    "correct": "B",
+    "explanation": "O ministro acólito auxilia o sacerdote e o diácono, trazendo as oferendas, incensando o altar e auxiliando em outras funções litúrgicas."
+  },
+  {
+    "text": "Qual é a função do leitor ou ministro da Palavra?",
+    "options": {
+      "A": "Proclamar as duas primeiras leituras",
+      "B": "Cantar o evangelho",
+      "C": "Fazer a Oração dos Fiéis",
+      "D": "Distribuir a Comunhão"
+    },
+    "correct": "A",
+    "explanation": "O leitor é responsável por proclamar as duas primeiras leituras durante a Liturgia da Palavra (não o evangelho, que é proclamado pelo diácono ou sacerdote)."
+  },
+  {
+    "text": "Qual é a função do salmista ou cantor do salmo responsorial?",
+    "options": {
+      "A": "Cantar os hinos da Missa",
+      "B": "Cantar o Salmo Responsorial entre as leituras",
+      "C": "Proclamar a primeira leitura",
+      "D": "Distribuir palmas no Domingo de Ramos"
+    },
+    "correct": "B",
+    "explanation": "O salmista ou cantor responsorial é responsável por cantar o Salmo Responsorial entre a primeira e segunda leitura."
+  },
+  {
+    "text": "Como deve ser a atitude do povo durante a proclamação do evangelho?",
+    "options": {
+      "A": "Sentado e atento",
+      "B": "De pé e com honra",
+      "C": "Ajoelhado em silêncio",
+      "D": "Cantando louvores"
+    },
+    "correct": "B",
+    "explanation": "O povo deve estar de pé durante o evangelho, como sinal de honra e respeito às palavras de Jesus Cristo."
+  },
+  {
+    "text": "Qual é a vestimenta principal do sacerdote durante a Missa?",
+    "options": {
+      "A": "O roquete",
+      "B": "A alva e a casula",
+      "C": "O alba e a estola",
+      "D": "Apenas a sotana"
+    },
+    "correct": "B",
+    "explanation": "A alva é uma túnica branca de linho que todos usam, e a casula é a vestimenta exterior do sacerdote, cobrindo os ombros e braços."
+  },
+  {
+    "text": "O que é a estola litúrgica?",
+    "options": {
+      "A": "Uma faixa de pano que cobre os ombros do diácono",
+      "B": "Uma vestimenta que o sacerdote leva nos ombros, cruzada no peito",
+      "C": "Um ornamento no altar",
+      "D": "Uma veste usada apenas no Advento"
+    },
+    "correct": "B",
+    "explanation": "A estola é uma fita de tecido que o sacerdote veste no pescoço, deixando cair sobre o peito e o dorso, como sinal de seu ministério."
+  },
+  {
+    "text": "Qual é a cor da alva litúrgica?",
+    "options": {
+      "A": "Branca",
+      "B": "Vermelha",
+      "C": "Roxa",
+      "D": "Verde"
+    },
+    "correct": "A",
+    "explanation": "A alva é uma vestimenta branca de linho, que simboliza a pureza e é usada por todos os ministros litúrgicos na Missa."
+  },
+  {
+    "text": "O que é o cálice na Missa?",
+    "options": {
+      "A": "Um ornamento do altar",
+      "B": "O vaso sagrado em que o vinho é consagrado",
+      "C": "Uma veste litúrgica",
+      "D": "Um livro de orações"
+    },
+    "correct": "B",
+    "explanation": "O cálice é o vaso sagrado em que o vinho é colocado antes e depois da consagração, simbolizando o sangue de Cristo."
+  },
+  {
+    "text": "O que é a patena ou pátena?",
+    "options": {
+      "A": "Um cálice pequeno",
+      "B": "Um prato pequeno que segura a hóstia a ser consagrada",
+      "C": "Uma veste do sacerdote",
+      "D": "Um livro litúrgico"
+    },
+    "correct": "B",
+    "explanation": "A patena é um prato pequeno, geralmente de ouro ou prata, que segura a hóstia antes e depois da consagração."
+  },
+  {
+    "text": "O que é o cibório?",
+    "options": {
+      "A": "Um vaso para água benta",
+      "B": "Um vaso sagrado que guarda as hóstias consagradas",
+      "C": "Uma vestimenta litúrgica",
+      "D": "Um candelabro"
+    },
+    "correct": "B",
+    "explanation": "O cibório é um vaso com tampa usado para guardar e distribuir a Comunhão aos fiéis durante a Missa."
+  },
+  {
+    "text": "Qual é a função da âmbula ou corporal?",
+    "options": {
+      "A": "Cobrir o cálice",
+      "B": "Um pano que se estende no altar para repousar o cálice e a patena",
+      "C": "Uma veste do diácono",
+      "D": "Um incensório"
+    },
+    "correct": "B",
+    "explanation": "O corporal é um pano de linho que se coloca sobre o altar para repousar o cálice e a patena durante a Missa."
+  },
+  {
+    "text": "O que é um incensório?",
+    "options": {
+      "A": "Uma veste litúrgica",
+      "B": "Um vaso contendo brasa e incenso",
+      "C": "Um livro de orações",
+      "D": "Um ornamento do altar"
+    },
+    "correct": "B",
+    "explanation": "O incensório (ou turíbulo) é um recipiente suspenso por correntes que contém brasa e incenso, usado para honrar partes da Missa."
+  },
+  {
+    "text": "Qual é a função do turíbulo ou incensório na Missa?",
+    "options": {
+      "A": "Purificar o ar da igreja",
+      "B": "Perfumar os fiéis",
+      "C": "Honrar a Deus e significar a oração elevando-se ao céu",
+      "D": "Apenas decorar o altar"
+    },
+    "correct": "C",
+    "explanation": "O incenso na Missa simboliza as orações dos fiéis elevando-se a Deus, e honra os momentos mais solenes como a consagração."
+  },
+  {
+    "text": "Qual é o significado da genuflexão durante a Missa?",
+    "options": {
+      "A": "Um gesto de cansaço",
+      "B": "Um sinal de reverência e adoração diante da Santíssima Eucaristia",
+      "C": "Uma pose para comodidade",
+      "D": "Um gesto sem significado religioso"
+    },
+    "correct": "B",
+    "explanation": "A genuflexão é um gesto de reverência e adoração, particularmente quando se aproxima do tabernáculo ou durante momentos solenes da Eucaristia."
+  },
+  {
+    "text": "Quando o povo deve ajoelhar-se durante a Missa?",
+    "options": {
+      "A": "Apenas no início",
+      "B": "Durante toda a Missa",
+      "C": "Durante o Ato Penitencial e a Oração Eucarística",
+      "D": "Apenas durante a Comunhão"
+    },
+    "correct": "C",
+    "explanation": "O povo normalmente ajoelha-se durante o Ato Penitencial e durante a Oração Eucarística, particularmente na consagração."
+  },
+  {
+    "text": "O que significa fazer o sinal da cruz no início da Missa?",
+    "options": {
+      "A": "Uma bênção do celebrante",
+      "B": "Uma invocação da Santíssima Trindade e um compromisso com Cristo",
+      "C": "Uma preparação física para orar",
+      "D": "Um costume sem significado litúrgico"
+    },
+    "correct": "B",
+    "explanation": "O sinal da cruz invoca a Santíssima Trindade (Pai, Filho e Espírito Santo) e renueva nosso compromisso com Cristo."
+  },
+  {
+    "text": "Qual é o significado da elevação da hóstia e do cálice durante a consagração?",
+    "options": {
+      "A": "Um gesto de limpeza",
+      "B": "Mostrar ao povo o corpo e sangue consagrados de Cristo para adoração",
+      "C": "Um gesto apenas de tradição",
+      "D": "Uma preparação para a distribuição da Comunhão"
+    },
+    "correct": "B",
+    "explanation": "A elevação do pão e do vinho consagrados permite que os fiéis adorem o corpo e sangue de Cristo, renovando sua fé."
+  },
+  {
+    "text": "O que é a Comunhão sob ambas as espécies?",
+    "options": {
+      "A": "Receber apenas o pão",
+      "B": "Receber apenas o vinho",
+      "C": "Receber tanto o pão consagrado quanto o vinho consagrado",
+      "D": "Uma prática proibida pela Igreja"
+    },
+    "correct": "C",
+    "explanation": "A Comunhão sob ambas as espécies significa receber tanto o corpo (pão) quanto o sangue (vinho) de Cristo na mesma celebração."
+  },
+  {
+    "text": "Como os fiéis devem se preparar para receber a Comunhão?",
+    "options": {
+      "A": "Apenas rezando",
+      "B": "Em estado de graça, sinceros de coração e respeitosos",
+      "C": "Sem nenhuma preparação especial",
+      "D": "Apenas assistindo a Missa"
+    },
+    "correct": "B",
+    "explanation": "Os fiéis devem estar em estado de graça (sem pecado mortal), sinceros de coração e demonstrar respeito para receber dignamente a Comunhão."
+  },
+  {
+    "text": "Qual é a postura recomendada ao receber a Comunhão?",
+    "options": {
+      "A": "Em pé ou ajoelhado",
+      "B": "Apenas em pé",
+      "C": "Apenas ajoelhado",
+      "D": "Qualquer postura é aceitável"
+    },
+    "correct": "A",
+    "explanation": "A Igreja permite que os fiéis recebam a Comunhão tanto em pé quanto ajoelhados, respeitando as tradições locais e a devoção pessoal."
+  },
+  {
+    "text": "O que significa a transubstanciação?",
+    "options": {
+      "A": "A bênção do pão",
+      "B": "A transformação completa da substância do pão no corpo de Cristo",
+      "C": "Um sinal de presença de Cristo",
+      "D": "Uma simbolização do corpo de Cristo"
+    },
+    "correct": "B",
+    "explanation": "Transubstanciação é a transformação completa da substância do pão e do vinho no corpo e sangue de Cristo, enquanto os acidentes (aparência) permanecem."
+  },
+  {
+    "text": "Qual é a diferença entre a Missa solene e a Missa cantada?",
+    "options": {
+      "A": "Não há diferença",
+      "B": "A Missa solene tem mais celebrantes e toda ela é cantada",
+      "C": "A Missa cantada tem apenas alguns partes cantadas",
+      "D": "A Missa solene é apenas com velas"
+    },
+    "correct": "B",
+    "explanation": "Na Missa solene participam vários celebrantes e toda a celebração é feita com cânticos, enquanto na Missa cantada nem todas as partes são cantadas."
+  },
+  {
+    "text": "O que é uma Missa de defuntos ou Réquiem?",
+    "options": {
+      "A": "Uma Missa comum",
+      "B": "Uma Missa especial celebrada em favor dos defuntos",
+      "C": "Uma Missa apenas de oração",
+      "D": "Uma Missa sem Comunhão"
+    },
+    "correct": "B",
+    "explanation": "A Missa de Réquiem é uma Missa especial celebrada em favor dos defuntos, pedindo o descanso eterno e a misericórdia divina."
+  },
+  {
+    "text": "Qual é o significado da cor vermelha nas vestes litúrgicas?",
+    "options": {
+      "A": "Alegria e festa",
+      "B": "Penitência e sacrifício",
+      "C": "Martírio e sangue dos santos",
+      "D": "Esperança e glória"
+    },
+    "correct": "C",
+    "explanation": "O vermelho representa o martírio e o sangue derramado pelos santos e mártires, usado em suas festas e na festa de Pentecostes."
+  },
+  {
+    "text": "Qual é o significado da cor verde nas vestes litúrgicas?",
+    "options": {
+      "A": "Penitência",
+      "B": "Esperança e renovação espiritual",
+      "C": "Martírio",
+      "D": "Morte"
+    },
+    "correct": "B",
+    "explanation": "O verde representa a esperança e a renovação espiritual, usado durante o Tempo Comum que segue os períodos de festas maiores."
+  },
+  {
+    "text": "Qual é o papel do tabernáculo na igreja?",
+    "options": {
+      "A": "Um local para guardar velas",
+      "B": "Um recipiente sagrado que guarda o Santíssimo Sacramento",
+      "C": "Um assento para o sacerdote",
+      "D": "Um local para livros litúrgicos"
+    },
+    "correct": "B",
+    "explanation": "O tabernáculo é um recipiente sagrado onde o Santíssimo Sacramento é guardado após a Missa, permitindo adoração e comunhão dos enfermos."
+  },
+  {
+    "text": "O que é a lâmpada do tabernáculo?",
+    "options": {
+      "A": "Uma decoração do altar",
+      "B": "Uma luz que indica a presença do Santíssimo Sacramento no tabernáculo",
+      "C": "Uma vela para iluminar a leitura",
+      "D": "Um símbolo da presença de anjos"
+    },
+    "correct": "B",
+    "explanation": "A lâmpada vermelha que arde perto do tabernáculo indica que o Santíssimo Sacramento está presente, convite à adoração e respeito."
+  },
+  {
+    "text": "Qual é a função da Missa matinal?",
+    "options": {
+      "A": "Apenas para monges",
+      "B": "Uma Missa celebrada nas primeiras horas do dia, acessível aos fiéis que trabalham cedo",
+      "C": "Uma Missa com regras diferentes",
+      "D": "Uma Missa sem o evangelho"
+    },
+    "correct": "B",
+    "explanation": "A Missa matinal é celebrada nas primeiras horas do dia para acomodar os fiéis que trabalham ou têm compromissos posteriores."
+  },
+  {
+    "text": "O que é a Vigília Pascoa?",
+    "options": {
+      "A": "Uma Missa no domingo de Páscoa",
+      "B": "A cerimônia mais solene do ano litúrgico, celebrada na noite de Sábado Santo",
+      "C": "Uma preparação para a Quaresma",
+      "D": "Uma Missa apenas para clérigos"
+    },
+    "correct": "B",
+    "explanation": "A Vigília Pascal é a cerimônia mais solene do ano litúrgico, celebrada na noite entre Sábado Santo e Domingo de Páscoa, celebrando a ressurreição de Cristo."
+  },
+  {
+    "text": "O que é a Missa do Galo?",
+    "options": {
+      "A": "Uma Missa celebrada apenas no Natal",
+      "B": "A primeira Missa do Natal celebrada à meia-noite",
+      "C": "Uma Missa com hinos especiais",
+      "D": "Uma Missa antiga sem uso hoje"
+    },
+    "correct": "B",
+    "explanation": "A Missa do Galo é a Missa do Natal celebrada à meia-noite, iniciando a celebração do nascimento de Jesus Cristo."
+  },
+  {
+    "text": "Qual é a importância da Bênção Final na Missa?",
+    "options": {
+      "A": "Apenas um costume",
+      "B": "Uma transmissão da bênção de Deus aos fiéis antes de deixarem a Igreja",
+      "C": "Uma despedida ordinária",
+      "D": "Uma bênção apenas para membros do clero"
+    },
+    "correct": "B",
+    "explanation": "A Bênção Final é uma transmissão solene da bênção de Deus aos fiéis, preparando-os para levar a graça recebida em suas vidas."
+  },
+  {
+    "text": "O que significa 'Pax Vobis' ou 'A paz esteja convosco'?",
+    "options": {
+      "A": "Adeus",
+      "B": "Uma transmissão da paz de Cristo aos presentes",
+      "C": "Uma cumprimento ordinário",
+      "D": "Uma ordem para sair da Igreja"
+    },
+    "correct": "B",
+    "explanation": "'Pax Vobis' significa 'A paz esteja convosco' e é uma transmissão da paz de Cristo aos fiéis durante a Missa."
+  },
+  {
+    "text": "Qual é a postura do sacerdote durante a Oração Eucarística?",
+    "options": {
+      "A": "De pé com os braços baixos",
+      "B": "De pé com os braços estendidos em forma de cruz",
+      "C": "Ajoelhado",
+      "D": "Sentado"
+    },
+    "correct": "B",
+    "explanation": "Durante a Oração Eucarística, o sacerdote frequentemente estende os braços em forma de cruz, significando oferecimento e sacrifício a Deus."
+  },
+  {
+    "text": "O que significa a aclamação 'Amém'?",
+    "options": {
+      "A": "Adeus",
+      "B": "Assim seja' ou 'Eu concorr'",
+      "C": "Uma pergunta",
+      "D": "Uma ordem"
+    },
+    "correct": "B",
+    "explanation": "'Amém' significa 'Assim seja' ou 'Eu concorro', expressa a adesão e concordância do povo com as orações e ações realizadas na Missa."
+  },
+  {
+    "text": "Qual é a função das velas no altar?",
+    "options": {
+      "A": "Apenas iluminação",
+      "B": "Iluminar e significar a presença de Cristo, luz do mundo",
+      "C": "Apenas decoração",
+      "D": "Manutenção da temperatura"
+    },
+    "correct": "B",
+    "explanation": "As velas acesas no altar iluminam o espaço sagrado e simbolizam Cristo como 'Luz do Mundo' e a presença do Espírito Santo."
+  },
+  {
+    "text": "Quantas velas devem estar acesas no altar durante a Missa?",
+    "options": {
+      "A": "Uma",
+      "B": "Duas",
+      "C": "Pelo menos duas, preferencialmente mais",
+      "D": "Dez"
+    },
+    "correct": "C",
+    "explanation": "O Missal recomenda que haja pelo menos duas velas acesas no altar durante toda a Missa, podendo haver mais em celebrações mais solenes."
+  },
+  {
+    "text": "O que é o Santíssimo Sacramento?",
+    "options": {
+      "A": "Um sacramental",
+      "B": "O corpo e sangue de Cristo sob as espécies de pão e vinho",
+      "C": "Uma oração especial",
+      "D": "Uma veste litúrgica"
+    },
+    "correct": "B",
+    "explanation": "O Santíssimo Sacramento é o corpo e sangue de Cristo sob as espécies de pão e vinho, o maior e mais sagrado dos sacramentos."
+  },
+  {
+    "text": "Qual é o significado litúrgico da genuflexão diante do tabernáculo?",
+    "options": {
+      "A": "Um exercício físico",
+      "B": "Uma demonstração de reverência e adoração diante da presença real de Cristo",
+      "C": "Um gesto apenas de cortesia",
+      "D": "Uma pose para descanso"
+    },
+    "correct": "B",
+    "explanation": "A genuflexão diante do tabernáculo é um gesto de profunda reverência e adoração diante da presença real e sacramentada de Cristo."
+  }
+]
