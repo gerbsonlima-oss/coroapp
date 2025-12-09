@@ -22,12 +22,12 @@ const FEEDBACK_MESSAGES = [
   { correct: false, messages: ['😢 Errou dessa vez!', '🤔 Quase lá!', '📚 Vamos estudar mais!', '💭 Tente novamente!', '🎯 Próxima vez acerta!', '📖 Boa tentativa!'] }
 ];
 
-const QUESTIONS_PER_PAGE = 10;
+const QUESTIONS_PER_SESSION = 10;
 
 const Quiz = () => {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+  const [sessionQuestions, setSessionQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
@@ -50,8 +50,7 @@ const Quiz = () => {
           explanation: item.explanation
         }));
         
-        const shuffled = parsed.sort(() => Math.random() - 0.5);
-        setQuestions(shuffled);
+        setAllQuestions(parsed);
         setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar quiz:', error);
@@ -62,15 +61,8 @@ const Quiz = () => {
     loadQuestions();
   }, []);
 
-  const questionsInPage = questions.slice(
-    currentPage * QUESTIONS_PER_PAGE,
-    (currentPage + 1) * QUESTIONS_PER_PAGE
-  );
-  
-  const indexInPage = currentIndex % QUESTIONS_PER_PAGE;
-  const currentQuestion = questionsInPage[indexInPage];
+  const currentQuestion = sessionQuestions[currentIndex];
   const isCorrect = selectedAnswer === currentQuestion?.correct;
-  const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
 
   const handleAnswerClick = (answer: 'A' | 'B' | 'C' | 'D') => {
     if (showResult) return;
@@ -97,41 +89,40 @@ const Quiz = () => {
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      const nextIndex = currentIndex + 1;
-      const nextPage = Math.floor(nextIndex / QUESTIONS_PER_PAGE);
-      
-      setCurrentIndex(nextIndex);
-      setCurrentPage(nextPage);
+    if (currentIndex < sessionQuestions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setFeedback(null);
     }
   };
 
+  const selectRandomQuestions = () => {
+    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, QUESTIONS_PER_SESSION);
+  };
+
   const startQuiz = () => {
+    const selected = selectRandomQuestions();
+    setSessionQuestions(selected);
     setCurrentIndex(0);
-    setCurrentPage(0);
     setSelectedAnswer(null);
     setShowResult(false);
     setScore(0);
     setTotalAnswered(0);
     setFeedback(null);
-    const shuffled = [...questions].sort(() => Math.random() - 0.5);
-    setQuestions(shuffled);
     setQuizStarted(true);
   };
 
   const handleRestart = () => {
+    const selected = selectRandomQuestions();
+    setSessionQuestions(selected);
     setCurrentIndex(0);
-    setCurrentPage(0);
     setSelectedAnswer(null);
     setShowResult(false);
     setScore(0);
     setTotalAnswered(0);
     setFeedback(null);
-    const shuffled = [...questions].sort(() => Math.random() - 0.5);
-    setQuestions(shuffled);
     setQuizStarted(true);
   };
 
@@ -176,7 +167,7 @@ const Quiz = () => {
           </div>
 
           <div className="bg-primary/10 rounded-lg p-4 space-y-2">
-            <p className="text-sm font-semibold text-primary">📚 {questions.length} perguntas disponíveis</p>
+            <p className="text-sm font-semibold text-primary">📚 {QUESTIONS_PER_SESSION} perguntas por sessão</p>
             <p className="text-sm text-muted-foreground">Desafie-se a responder corretamente e aprenda mais sobre nossa fé!</p>
           </div>
 
@@ -205,11 +196,11 @@ const Quiz = () => {
 
           <div className="bg-primary/10 rounded-lg p-6 space-y-3">
             <div>
-              <p className="text-5xl font-bold text-primary">{Math.round((score / totalAnswered) * 100)}%</p>
+              <p className="text-5xl font-bold text-primary">{Math.round((score / QUESTIONS_PER_SESSION) * 100)}%</p>
               <p className="text-sm text-muted-foreground">Taxa de acertos</p>
             </div>
             <div className="border-t pt-3">
-              <p className="text-lg font-semibold">{score} de {totalAnswered}</p>
+              <p className="text-lg font-semibold">{score} de {QUESTIONS_PER_SESSION}</p>
               <p className="text-sm text-muted-foreground">Respostas corretas</p>
             </div>
           </div>
@@ -228,7 +219,7 @@ const Quiz = () => {
     );
   }
 
-  const progress = ((currentIndex + 1) / questions.length) * 100;
+  const progress = ((currentIndex + 1) / QUESTIONS_PER_SESSION) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-32">
@@ -239,7 +230,7 @@ const Quiz = () => {
               <Sparkles className="h-5 w-5" />
               <span className="font-semibold">{score} acertos</span>
             </div>
-            <span className="text-sm font-medium">Página {currentPage + 1} de {totalPages} • Pergunta {indexInPage + 1} de 10</span>
+            <span className="text-sm font-medium">{currentIndex + 1} de {QUESTIONS_PER_SESSION}</span>
           </div>
           <div className="w-full bg-white/30 rounded-full h-2 overflow-hidden">
             <div 
@@ -307,10 +298,10 @@ const Quiz = () => {
               <Button 
                 onClick={handleNext}
                 className="w-full h-11 text-base font-semibold"
-                disabled={currentIndex >= questions.length - 1}
+                disabled={currentIndex >= QUESTIONS_PER_SESSION - 1}
               >
-                {currentIndex >= questions.length - 1 ? 'Finalizar Página' : 'Próxima'}
-                {currentIndex < questions.length - 1 && <ChevronRight className="ml-2 h-5 w-5" />}
+                {currentIndex >= QUESTIONS_PER_SESSION - 1 ? 'Finalizar Quiz' : 'Próxima'}
+                {currentIndex < QUESTIONS_PER_SESSION - 1 && <ChevronRight className="ml-2 h-5 w-5" />}
               </Button>
             )}
           </div>
