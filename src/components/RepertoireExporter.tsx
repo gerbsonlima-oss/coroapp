@@ -45,6 +45,8 @@ const typeIcons: Record<string, string> = {
   outro: '🎵'
 };
 
+const defaultTypeColor = { bg: '#F3F4F6', text: '#374151', border: '#9CA3AF' };
+
 const typeColors: Record<string, { bg: string; text: string; border: string }> = {
   canto_entrada: { bg: '#EFF6FF', text: '#0369A1', border: '#0EA5E9' },
   ato_penitencial: { bg: '#FEF2F2', text: '#991B1B', border: '#EF4444' },
@@ -57,6 +59,9 @@ const typeColors: Record<string, { bg: string; text: string; border: string }> =
   comunhao: { bg: '#F0FDF4', text: '#065F46', border: '#10B981' },
   acao_gracas: { bg: '#E0E7FF', text: '#3730A3', border: '#6366F1' },
   final: { bg: '#FFF7ED', text: '#92400E', border: '#FB923C' },
+  adoracao: { bg: '#FDF4FF', text: '#7E22CE', border: '#A855F7' },
+  concerto_natalino: { bg: '#FEF2F2', text: '#B91C1C', border: '#DC2626' },
+  outro: { bg: '#F3F4F6', text: '#374151', border: '#9CA3AF' },
 };
 
 export const RepertoireExporter = ({
@@ -70,7 +75,7 @@ export const RepertoireExporter = ({
   const [isExporting, setIsExporting] = useState(false);
 
   const getTypeColor = (type: string) => {
-    return typeColors[type] || typeColors.outro;
+    return typeColors[type] || defaultTypeColor;
   };
 
   const groupedSongs = songs.reduce((acc, song) => {
