@@ -265,7 +265,9 @@ export const PlaylistPlayer = ({
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{currentTrack.songName}</p>
+                <div className="marquee-container">
+                  <p className="text-sm font-medium animate-marquee pr-5">{currentTrack.songName}</p>
+                </div>
                 <p className="text-xs text-muted-foreground truncate">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
               </div>
 
@@ -337,8 +339,10 @@ export const PlaylistPlayer = ({
       <div className="px-4 py-3 flex items-center justify-between h-full">
         <div className="flex items-center justify-between w-full h-full gap-4">
           {/* Coluna 1: Informações da Música */}
-          <div className="min-w-0 cursor-pointer" onClick={() => setIsControlsExpanded(prev => !prev)}>
-            <p className="font-medium text-sm truncate">{currentTrack.songName}</p>
+          <div className="min-w-0 cursor-pointer flex-1" onClick={() => setIsControlsExpanded(prev => !prev)}>
+            <div className="marquee-container">
+              <p className="font-medium text-sm animate-marquee pr-5">{currentTrack.songName}</p>
+            </div>
             <p className="text-xs text-muted-foreground truncate">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
           </div>
 

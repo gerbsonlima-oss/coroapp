@@ -1,0 +1,169 @@
+export interface ShareOptions {
+  title: string;
+  audioUrl?: string;
+  sheetUrl?: string;
+  message?: string;
+  phone?: string;
+}
+
+export function shareToWhatsApp(options: ShareOptions): void {
+  const {
+    title,
+    audioUrl,
+    sheetUrl,
+    message = '',
+    phone = '',
+  } = options;
+
+  let text = `🎵 ${title}`;
+
+  if (message) {
+    text += `\n\n${message}`;
+  }
+
+  if (audioUrl) {
+    text += `\n\n🔊 Áudio: ${audioUrl}`;
+  }
+
+  if (sheetUrl) {
+    text += `\n\n📄 Partitura: ${sheetUrl}`;
+  }
+
+  const encodedText = encodeURIComponent(text);
+  const phoneParam = phone ? `phone=${phone}&` : '';
+  
+  const whatsappUrl = `https://wa.me/?${phoneParam}text=${encodedText}`;
+  window.open(whatsappUrl, '_blank');
+}
+
+export async function sendAudioToWhatsApp(
+  audioUrl: string,
+  songName: string,
+  naipe?: string,
+  sheetUrl?: string
+): Promise<void> {
+  let message = `🎵 ${songName}`;
+  if (naipe) {
+    message += ` (${naipe})`;
+  }
+
+  const files: File[] = [];
+  let canShareWithFiles = false;
+
+  try {
+    const audioBlob = await fetchWithTimeout(audioUrl, 10000);
+    if (audioBlob) {
+      const audioFile = new File(
+        [audioBlob],
+        `${songName} - ${naipe || 'original'}.mp3`,
+        { type: 'audio/mp3' }
+      );
+      files.push(audioFile);
+      canShareWithFiles = true;
+    }
+  } catch (error) {
+    console.warn('Erro ao carregar áudio:', error);
+  }
+
+  if (sheetUrl && canShareWithFiles) {
+    try {
+      const sheetBlob = await fetchWithTimeout(sheetUrl, 10000);
+      if (sheetBlob) {
+        const mimeType = sheetUrl.includes('.pdf') ? 'application/pdf' : 'image/jpeg';
+        const extension = sheetUrl.includes('.pdf') ? 'pdf' : 'jpg';
+        const sheetFile = new File(
+          [sheetBlob],
+          `${songName} - Partitura.${extension}`,
+          { type: mimeType }
+        );
+        files.push(sheetFile);
+      }
+    } catch (error) {
+      console.warn('Erro ao carregar partitura:', error);
+    }
+  }
+
+  if (canShareWithFiles && navigator.share && navigator.canShare?.({ files })) {
+    try {
+      await navigator.share({
+        title: songName,
+        text: message,
+        files: files
+      });
+      return;
+    } catch (error) {
+      console.warn('Compartilhamento com arquivo falhou:', error);
+    }
+  }
+
+  let fallbackMessage = message;
+  if (audioUrl) {
+    fallbackMessage += `\n\n🔊 Áudio: ${audioUrl}`;
+  }
+  if (sheetUrl) {
+    fallbackMessage += `\n\n📄 Partitura: ${sheetUrl}`;
+  }
+
+  const encodedText = encodeURIComponent(fallbackMessage);
+  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+  window.open(whatsappUrl, '_blank');
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Blob | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit',
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return await response.blob();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+export function shareSheetToWhatsApp(
+  sheetUrl: string,
+  songName: string
+): void {
+  const message = `🎵 ${songName}\n\n📄 Partitura: ${sheetUrl}`;
+  const encodedText = encodeURIComponent(message);
+  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+  window.open(whatsappUrl, '_blank');
+}
+
+export function shareCompleteToWhatsApp(
+  songName: string,
+  audioUrl?: string,
+  sheetUrl?: string,
+  naipe?: string
+): void {
+  let message = `🎵 ${songName}`;
+  
+  if (naipe) {
+    message += ` (${naipe})`;
+  }
+
+  if (audioUrl) {
+    message += `\n\n🔊 Áudio: ${audioUrl}`;
+  }
+
+  if (sheetUrl) {
+    message += `\n\n📄 Partitura: ${sheetUrl}`;
+  }
+
+  const encodedText = encodeURIComponent(message);
+  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+  window.open(whatsappUrl, '_blank');
+}

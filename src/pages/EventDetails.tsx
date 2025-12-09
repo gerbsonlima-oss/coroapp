@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlaylistPlayer } from '@/components/PlaylistPlayer';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -562,36 +562,41 @@ const EventDetails = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleDownloadAll} disabled={isCaching || tracks.length === 0}>
-              <Download className="mr-2 h-4 w-4" />
-              Baixar Tudo
-            </DropdownMenuItem>
             {user && <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar evento
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
-                  <Music className="mr-2 h-4 w-4 text-primary" />
-                  Editar músicas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar música
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate(`/events/${id}/rehearsals`)}>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Ensaios
-                </DropdownMenuItem>
-              </>}
-            <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar evento
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
+                <Music className="mr-2 h-4 w-4" />
+                Editar músicas
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar música
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate(`/events/${id}/rehearsals`)}>
+                <Calendar className="mr-2 h-4 w-4" />
+                Ensaios
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/events/${id}/registrations`)}>
+                <Users className="mr-2 h-4 w-4" />
+                Gerenciar Inscrições
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>}
             <DropdownMenuItem onClick={handleShare}>
               <Share2 className="mr-2 h-4 w-4" />
               Compartilhar evento
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleDownloadAll} disabled={isCaching || tracks.length === 0}>
+              <Download className="mr-2 h-4 w-4" />
+              Baixar Tudo
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportPDF}>
-              <FileText className="mr-2 h-4 w-4 text-primary" />
+              <FileText className="mr-2 h-4 w-4" />
               Exportar Partituras
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportZIP}>
@@ -600,7 +605,7 @@ const EventDetails = () => {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowRepertoireExporter(true)}>
               <Download className="mr-2 h-4 w-4" />
-              Exportar Repertório (Imagem)
+              Exportar Repertório
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

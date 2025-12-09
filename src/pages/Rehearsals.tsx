@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Calendar, MapPin, Users, Trash2, Edit2, Phone, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, MapPin, Users, Trash2, Edit2, Phone, MessageCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -258,11 +258,52 @@ const Rehearsals = () => {
       return;
     }
 
-    // Open WhatsApp with the first number and copy message
     const message = encodeURIComponent(`Olá! Mensagem do Coro da Diocese de Quixadá.`);
     window.open(`https://wa.me/55${phonesWithAttendance[0]}?text=${message}`, '_blank');
     
     toast.info(`${phonesWithAttendance.length} números disponíveis. Aberto o primeiro.`);
+  };
+
+  const handleDownloadAttendance = (rehearsalId: string) => {
+    if (!selectedRehearsal) return;
+
+    const rehearsalAttendance = attendance[rehearsalId] || [];
+    const attendedProfiles = profiles.filter(p => isUserAttended(rehearsalId, p.id));
+    const absentProfiles = profiles.filter(p => !isUserAttended(rehearsalId, p.id));
+
+    const csv = [
+      `LISTA DE PRESENÇA - ${format(new Date(selectedRehearsal.date), 'dd/MM/yyyy')}`,
+      `Local: ${selectedRehearsal.location || 'Não especificado'}`,
+      `Total de Presentes: ${attendedProfiles.length}`,
+      `Total de Ausentes: ${absentProfiles.length}`,
+      '',
+      'PRESENTES',
+      ['Nome', 'Email', 'Naipe'].join(','),
+      ...attendedProfiles.map(p => [
+        p.full_name || 'N/A',
+        p.email,
+        p.naipe || 'N/A'
+      ].join(',')),
+      '',
+      'AUSENTES',
+      ['Nome', 'Email', 'Naipe'].join(','),
+      ...absentProfiles.map(p => [
+        p.full_name || 'N/A',
+        p.email,
+        p.naipe || 'N/A'
+      ].join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `presenca-${format(selectedRehearsal.date, 'dd-MM-yyyy')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    toast.success('Lista exportada!');
   };
 
   const isUserAttended = (rehearsalId: string, userId: string) => {
@@ -409,21 +450,48 @@ const Rehearsals = () => {
                   </span>
                 )}
               </div>
-              {isAdmin && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                  onClick={handleSendWhatsAppToAll}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {isAdmin && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() => handleDownloadAttendance(selectedRehearsal!.id)}
+                    >
+                      <Download className="h-4 w-4" />
+                      Baixar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                      onClick={handleSendWhatsAppToAll}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      WhatsApp
+                    </Button>
+                  </>
+                )}
+              </div>
             </DialogTitle>
           </DialogHeader>
           {selectedRehearsal && (
             <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-3 gap-2 p-2 bg-muted/50 rounded-lg">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="text-lg font-bold">{profiles.length}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Presentes</p>
+                  <p className="text-lg font-bold text-green-600">{getAttendanceCount(selectedRehearsal.id)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Ausentes</p>
+                  <p className="text-lg font-bold text-red-600">{profiles.length - getAttendanceCount(selectedRehearsal.id)}</p>
+                </div>
+              </div>
               {Object.entries(groupedProfiles).map(([naipe, naipeProfiles]) => (
                 <div key={naipe}>
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">

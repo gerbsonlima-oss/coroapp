@@ -142,7 +142,9 @@ export function MiniPlayer() {
                 <Music2 className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{currentTrack.songName}</p>
+                <div className="marquee-container">
+                  <p className="text-sm font-semibold animate-marquee pr-5">{currentTrack.songName}</p>
+                </div>
                 <p className="text-xs text-muted-foreground truncate">
                   {currentTrack.naipe} • {formatTime(currentTime)} / {formatTime(duration)}
                 </p>
