@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +16,9 @@ const authSchema = z.object({
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
   password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').max(100, 'Senha muito longa'),
   fullName: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100, 'Nome muito longo').optional(),
+  naipe: z.string().optional(),
+  birthDate: z.string().optional(),
+  parish: z.string().max(100, 'Paróquia muito longa').optional(),
 });
 
 const Auth = () => {
@@ -22,6 +26,9 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [naipe, setNaipe] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [parish, setParish] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
@@ -40,14 +47,15 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const data = isSignUp ? { email, password, fullName } : { email, password };
+      const data = isSignUp 
+        ? { email, password, fullName, naipe, birthDate, parish } 
+        : { email, password };
       authSchema.parse(data);
 
       if (isSignUp) {
-        await signUp(email, password, fullName);
+        await signUp({ email, password, fullName, naipe, birthDate, parish });
       } else {
         await signIn(email, password);
-        // Navegação será feita automaticamente pelo useEffect quando user mudar
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -59,7 +67,6 @@ const Auth = () => {
         });
         setErrors(fieldErrors);
       } else {
-        // Mostra erros de autenticação que não são de validação
         setErrors({ general: error.message || 'Erro ao fazer login' });
       }
     } finally {
@@ -121,6 +128,60 @@ const Auth = () => {
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
                     {errors.fullName}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="naipe" className="text-sm">Naipe</Label>
+              <Select value={naipe} onValueChange={setNaipe} disabled={loading}>
+                <SelectTrigger className={`h-12 text-sm ${errors.naipe ? 'border-destructive' : ''}`}>
+                  <SelectValue placeholder="Selecione seu naipe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="soprano">Soprano</SelectItem>
+                  <SelectItem value="contralto">Contralto</SelectItem>
+                  <SelectItem value="tenor">Tenor</SelectItem>
+                  <SelectItem value="baixo">Baixo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="birthDate" className="text-sm">Data de Nascimento</Label>
+              <Input
+                id="birthDate"
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                disabled={loading}
+                className={`h-12 text-sm ${errors.birthDate ? 'border-destructive' : ''}`}
+              />
+            </div>
+          )}
+
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="parish" className="text-sm">Paróquia</Label>
+              <Input
+                id="parish"
+                type="text"
+                placeholder="Nome da sua paróquia"
+                value={parish}
+                onChange={(e) => setParish(e.target.value)}
+                disabled={loading}
+                className={`h-12 text-sm ${errors.parish ? 'border-destructive' : ''}`}
+              />
+              {errors.parish && (
+                <Alert variant="destructive" className="py-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    {errors.parish}
                   </AlertDescription>
                 </Alert>
               )}

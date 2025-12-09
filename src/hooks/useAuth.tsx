@@ -3,11 +3,20 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 
+interface SignUpData {
+  email: string;
+  password: string;
+  fullName: string;
+  naipe?: string;
+  birthDate?: string;
+  parish?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -37,21 +46,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (data: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
+      const { error, data: authData } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: fullName,
+            full_name: data.fullName,
           },
         },
       });
 
       if (error) throw error;
+      
+      // Update profile with additional fields
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            naipe: data.naipe || null,
+            birth_date: data.birthDate || null,
+            parish: data.parish || null,
+          })
+          .eq('id', authData.user.id);
+        
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+        }
+      }
+      
       toast.success('Conta criada com sucesso!');
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
@@ -101,17 +127,29 @@ export const useAuth = () => {
       user: null,
       session: null,
       loading: false,
-      signUp: async (email: string, password: string, fullName: string) => {
+      signUp: async (data: SignUpData) => {
         const redirectUrl = `${window.location.origin}/`;
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
+        const { error, data: authData } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
           options: {
             emailRedirectTo: redirectUrl,
-            data: { full_name: fullName },
+            data: { full_name: data.fullName },
           },
         });
         if (error) throw error;
+        
+        if (authData.user) {
+          await supabase
+            .from('profiles')
+            .update({
+              naipe: data.naipe || null,
+              birth_date: data.birthDate || null,
+              parish: data.parish || null,
+            })
+            .eq('id', authData.user.id);
+        }
+        
         toast.success('Conta criada com sucesso!');
       },
       signIn: async (email: string, password: string) => {

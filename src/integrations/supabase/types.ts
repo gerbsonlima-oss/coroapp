@@ -136,24 +136,110 @@ export type Database = {
       }
       profiles: {
         Row: {
+          birth_date: string | null
           created_at: string | null
           email: string
           full_name: string | null
           id: string
+          naipe: string | null
+          parish: string | null
         }
         Insert: {
+          birth_date?: string | null
           created_at?: string | null
           email: string
           full_name?: string | null
           id: string
+          naipe?: string | null
+          parish?: string | null
         }
         Update: {
+          birth_date?: string | null
           created_at?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          naipe?: string | null
+          parish?: string | null
         }
         Relationships: []
+      }
+      rehearsal_attendance: {
+        Row: {
+          attended: boolean
+          created_at: string
+          id: string
+          rehearsal_id: string
+          user_id: string
+        }
+        Insert: {
+          attended?: boolean
+          created_at?: string
+          id?: string
+          rehearsal_id: string
+          user_id: string
+        }
+        Update: {
+          attended?: boolean
+          created_at?: string
+          id?: string
+          rehearsal_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rehearsal_attendance_rehearsal_id_fkey"
+            columns: ["rehearsal_id"]
+            isOneToOne: false
+            referencedRelation: "rehearsals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rehearsal_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rehearsals: {
+        Row: {
+          created_at: string
+          date: string
+          event_id: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          event_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          event_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rehearsals_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       song_audios: {
         Row: {
