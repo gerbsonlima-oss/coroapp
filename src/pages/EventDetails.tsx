@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlaylistPlayer } from '@/components/PlaylistPlayer';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
+import { MusicRain } from '@/components/MusicRain';
 import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -151,6 +152,19 @@ const EventDetails = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [showRepertoireExporter, setShowRepertoireExporter] = useState(false);
+  const [imageClickCount, setImageClickCount] = useState(0);
+  const [showMusicRain, setShowMusicRain] = useState(false);
+
+  const handleImageClick = () => {
+    setImageClickCount(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 5) {
+        setShowMusicRain(true);
+        return 0;
+      }
+      return newCount;
+    });
+  };
 
   const filteredSongs = songs.filter(song => 
     song.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -549,6 +563,7 @@ const EventDetails = () => {
       </div>;
   }
   return <div className="min-h-screen bg-background pb-28">
+      {showMusicRain && <MusicRain onComplete={() => setShowMusicRain(false)} />}
       {/* Sticky Header com botões */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-background/95 backdrop-blur-md">
         <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-8 w-8 shrink-0 text-foreground">
@@ -615,7 +630,10 @@ const EventDetails = () => {
       <div className="sticky top-12 z-10 bg-background/95 backdrop-blur-md border-b border-primary/20 shadow-subtle px-4 py-3 animate-slide-up">
         <div className="flex items-start gap-4">
           {/* Imagem do evento */}
-          <div className="h-20 w-20 shrink-0 rounded-lg shadow-card overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center flex-shrink-0">
+          <div 
+            className="h-20 w-20 shrink-0 rounded-lg shadow-card overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-75 transition-opacity"
+            onClick={handleImageClick}
+          >
             {event.cover_image_url ? (
               <img src={event.cover_image_url} alt={event.name} className="h-full w-full object-cover" />
             ) : (
