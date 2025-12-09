@@ -22,9 +22,12 @@ const FEEDBACK_MESSAGES = [
   { correct: false, messages: ['😢 Errou dessa vez!', '🤔 Quase lá!', '📚 Vamos estudar mais!', '💭 Tente novamente!', '🎯 Próxima vez acerta!', '📖 Boa tentativa!'] }
 ];
 
+const QUESTIONS_PER_PAGE = 10;
+
 const Quiz = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
@@ -59,8 +62,15 @@ const Quiz = () => {
     loadQuestions();
   }, []);
 
-  const currentQuestion = questions[currentIndex];
+  const questionsInPage = questions.slice(
+    currentPage * QUESTIONS_PER_PAGE,
+    (currentPage + 1) * QUESTIONS_PER_PAGE
+  );
+  
+  const indexInPage = currentIndex % QUESTIONS_PER_PAGE;
+  const currentQuestion = questionsInPage[indexInPage];
   const isCorrect = selectedAnswer === currentQuestion?.correct;
+  const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
 
   const handleAnswerClick = (answer: 'A' | 'B' | 'C' | 'D') => {
     if (showResult) return;
@@ -88,7 +98,11 @@ const Quiz = () => {
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      const nextIndex = currentIndex + 1;
+      const nextPage = Math.floor(nextIndex / QUESTIONS_PER_PAGE);
+      
+      setCurrentIndex(nextIndex);
+      setCurrentPage(nextPage);
       setSelectedAnswer(null);
       setShowResult(false);
       setFeedback(null);
@@ -97,6 +111,7 @@ const Quiz = () => {
 
   const startQuiz = () => {
     setCurrentIndex(0);
+    setCurrentPage(0);
     setSelectedAnswer(null);
     setShowResult(false);
     setScore(0);
@@ -109,6 +124,7 @@ const Quiz = () => {
 
   const handleRestart = () => {
     setCurrentIndex(0);
+    setCurrentPage(0);
     setSelectedAnswer(null);
     setShowResult(false);
     setScore(0);
@@ -217,13 +233,13 @@ const Quiz = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-32">
       <div className="sticky top-0 bg-gradient-to-r from-primary to-primary/80 text-white p-4 shadow-lg z-20">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
               <span className="font-semibold">{score} acertos</span>
             </div>
-            <span className="text-sm font-medium">{currentIndex + 1} de {questions.length}</span>
+            <span className="text-sm font-medium">Página {currentPage + 1} de {totalPages} • Pergunta {indexInPage + 1} de 10</span>
           </div>
           <div className="w-full bg-white/30 rounded-full h-2 overflow-hidden">
             <div 
@@ -234,65 +250,71 @@ const Quiz = () => {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        <Card className="p-6 border-0 shadow-lg">
-          <h2 className="text-xl font-bold mb-6 leading-relaxed text-foreground">
-            {currentQuestion.text}
-          </h2>
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Pergunta e Opções */}
+          <Card className="p-6 border-0 shadow-lg h-fit">
+            <h2 className="text-lg font-bold mb-6 leading-relaxed text-foreground">
+              {currentQuestion.text}
+            </h2>
 
-          <div className="space-y-3">
-            {(['A', 'B', 'C', 'D'] as const).map((option) => (
-              <button
-                key={option}
-                onClick={() => handleAnswerClick(option)}
-                disabled={showResult}
-                className={`w-full text-left p-4 rounded-lg font-semibold transition-all border-2 border-transparent hover:border-primary/50 disabled:cursor-default ${getAnswerButtonColor(option)}`}
-              >
-                <span className="inline-block w-8 h-8 rounded-full bg-white/20 text-center leading-8 mr-3">
-                  {option}
-                </span>
-                {currentQuestion.options[option]}
-              </button>
-            ))}
-          </div>
-        </Card>
-
-        {showResult && feedback && (
-          <div className={`animate-in fade-in zoom-in-95 duration-300 p-6 rounded-lg border-2 ${
-            feedback.isCorrect 
-              ? 'bg-green-500/10 border-green-500/30' 
-              : 'bg-red-500/10 border-red-500/30'
-          }`}>
             <div className="space-y-3">
-              <p className="text-2xl font-bold text-center">
-                {feedback.text}
-              </p>
-              <div className="bg-white/50 rounded p-3">
-                <p className="text-sm font-semibold mb-1">Resposta correta:</p>
-                <p className="text-foreground font-medium">
-                  {currentQuestion.options[currentQuestion.correct]}
-                </p>
-              </div>
-              <div className="bg-primary/5 rounded p-3 border border-primary/20">
-                <p className="text-sm font-semibold mb-1">📚 Explicação:</p>
-                <p className="text-foreground text-sm leading-relaxed">
-                  {currentQuestion.explanation}
-                </p>
-              </div>
+              {(['A', 'B', 'C', 'D'] as const).map((option) => (
+                <button
+                  key={option}
+                  onClick={() => handleAnswerClick(option)}
+                  disabled={showResult}
+                  className={`w-full text-left p-3 rounded-lg font-semibold transition-all border-2 border-transparent hover:border-primary/50 disabled:cursor-default text-sm ${getAnswerButtonColor(option)}`}
+                >
+                  <span className="inline-block w-7 h-7 rounded-full bg-white/20 text-center leading-7 mr-2 text-xs">
+                    {option}
+                  </span>
+                  {currentQuestion.options[option]}
+                </button>
+              ))}
             </div>
-          </div>
-        )}
+          </Card>
 
-        {showResult && (
-          <Button 
-            onClick={handleNext}
-            className="w-full h-12 text-lg font-semibold"
-            disabled={currentIndex >= questions.length - 1}
-          >
-            {currentIndex >= questions.length - 1 ? 'Quiz Finalizado' : 'Próxima Pergunta'}
-            {currentIndex < questions.length - 1 && <ChevronRight className="ml-2 h-5 w-5" />}
-          </Button>
-        )}
+          {/* Resultado e Explicação */}
+          <div className="space-y-6">
+            {showResult && feedback && (
+              <div className={`animate-in fade-in zoom-in-95 duration-300 p-6 rounded-lg border-2 shadow-lg ${
+                feedback.isCorrect 
+                  ? 'bg-green-500/10 border-green-500/30' 
+                  : 'bg-red-500/10 border-red-500/30'
+              }`}>
+                <div className="space-y-4">
+                  <p className="text-2xl font-bold text-center">
+                    {feedback.text}
+                  </p>
+                  <div className="bg-white/50 rounded p-4">
+                    <p className="text-sm font-semibold mb-2">Resposta correta:</p>
+                    <p className="text-foreground font-medium text-base">
+                      {currentQuestion.options[currentQuestion.correct]}
+                    </p>
+                  </div>
+                  <div className="bg-primary/5 rounded p-4 border border-primary/20 max-h-32 overflow-y-auto">
+                    <p className="text-sm font-semibold mb-2">📚 Explicação:</p>
+                    <p className="text-foreground text-sm leading-relaxed">
+                      {currentQuestion.explanation}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showResult && (
+              <Button 
+                onClick={handleNext}
+                className="w-full h-11 text-base font-semibold"
+                disabled={currentIndex >= questions.length - 1}
+              >
+                {currentIndex >= questions.length - 1 ? 'Finalizar Página' : 'Próxima'}
+                {currentIndex < questions.length - 1 && <ChevronRight className="ml-2 h-5 w-5" />}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       <BottomNavigation />

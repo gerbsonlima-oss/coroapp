@@ -2,54 +2,54 @@
   {
     "text": "Qual é o ano de publicação da Instrução Geral do Missal Romano apresentada neste documento?",
     "options": {
-      "A": "2002",
-      "B": "1570",
-      "C": "2000",
-      "D": "1974"
+      "A": "2000",
+      "B": "2002",
+      "C": "1974",
+      "D": "1570"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A Instrução Geral do Missal Romano foi traduzida e publicada em 2002, conforme consta na página de rosto do documento."
   },
   {
     "text": "Qual Concílio promulgou as normas que presidem à revisão do Ordo Missae?",
     "options": {
-      "A": "II Concílio do Vaticano",
+      "A": "Concílio de Niceia",
       "B": "Concílio de Trento",
-      "C": "Concílio de Niceia",
+      "C": "II Concílio do Vaticano",
       "D": "Sínodo de Aachen"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O II Concílio do Vaticano promulgou as normas que deveriam presidir à revisão do Ordo Missae, com expressa menção de restaurar certos ritos em conformidade com a antiga norma dos Santos Padres."
   },
   {
     "text": "Segundo o documento, qual era a preocupação principal de São Pio V ao promulgar o Missal Tridentino?",
     "options": {
-      "A": "Salvaguardar uma tradição injustamente atacada",
-      "B": "Introduzir inovações litúrgicas",
-      "C": "Modernizar todos os ritos",
-      "D": "Aumentar o uso da língua vernácula"
+      "A": "Aumentar o uso da língua vernácula",
+      "B": "Modernizar todos os ritos",
+      "C": "Introduzir inovações litúrgicas",
+      "D": "Salvaguardar uma tradição injustamente atacada"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "São Pio V estava particularmente preocupado em salvaguardar uma tradição, recente mas injustamente atacada, quanto ao carácter sacrificial da Missa e ao sacerdócio ministerial."
   },
   {
     "text": "Qual é a relação entre o Missal de 1570 e o de 1474?",
     "options": {
-      "A": "O de 1570 pouco difere do de 1474",
-      "B": "O de 1570 foi completamente diferente",
-      "C": "Não há relação entre eles",
-      "D": "O de 1474 foi baseado no de 1570"
+      "A": "O de 1570 foi completamente diferente",
+      "B": "Não há relação entre eles",
+      "C": "O de 1474 foi baseado no de 1570",
+      "D": "O de 1570 pouco difere do de 1474"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "Conforme o documento, o Missal de 1570 pouco difere do primeiro impresso em 1474, que reproduz fielmente o Missal do tempo de Inocêncio III."
   },
   {
     "text": "Qual Concílio reafirmou a natureza sacrificial da Missa?",
     "options": {
       "A": "II Concílio do Vaticano",
-      "B": "Concílio de Trento",
+      "B": "Nenhum dos anteriores",
       "C": "Ambos A e B",
-      "D": "Nenhum dos anteriores"
+      "D": "Concílio de Trento"
     },
     "correct": "C",
     "explanation": "Tanto o Concílio de Trento quanto o II Concílio do Vaticano reafirmaram a natureza sacrificial da Missa, cada um em seu tempo e contexto."
@@ -57,54 +57,54 @@
   {
     "text": "Qual é a definição de anamnese na Missa?",
     "options": {
-      "A": "Memorial do sacrifício de Cristo",
+      "A": "Invocação do Espírito Santo",
       "B": "Elevação do pão e vinho",
-      "C": "Invocação do Espírito Santo",
-      "D": "Recitação do Credo"
+      "C": "Recitação do Credo",
+      "D": "Memorial do sacrifício de Cristo"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A anamnese é o memorial do sacrifício de Cristo. No momento da anamnese, o sacerdote dirige-se a Deus, em nome de todo o povo, dá-Lhe graças e oferece-Lhe o sacrifício."
   },
   {
     "text": "O II Concílio do Vaticano permitiu qual inovação importante na celebração?",
     "options": {
-      "A": "O uso da língua vernácula na Liturgia",
+      "A": "A eliminação do Evangelho",
       "B": "A abolição da Eucaristia",
-      "C": "A eliminação do Evangelho",
+      "C": "O uso da língua vernácula na Liturgia",
       "D": "A comunhão em pé apenas"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O II Concílio do Vaticano autorizou o uso da língua vernácula na Liturgia, reconhecendo sua grande utilidade para que o povo compreendesse melhor o mistério celebrado."
   },
   {
     "text": "Qual é o mistério central reafirmado pelo II Concílio do Vaticano?",
     "options": {
-      "A": "A presença real do Senhor sob as espécies eucarísticas",
-      "B": "A reencarnação de Cristo",
-      "C": "A ascensão de Maria",
-      "D": "A volta de Cristo ao fim dos tempos"
+      "A": "A volta de Cristo ao fim dos tempos",
+      "B": "A ascensão de Maria",
+      "C": "A presença real do Senhor sob as espécies eucarísticas",
+      "D": "A reencarnação de Cristo"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O II Concílio do Vaticano reafirmou o mistério admirável da presença real do Senhor sob as espécies eucarísticas, conforme havia proposto o Concílio de Trento."
   },
   {
     "text": "Qual processo ocorre nas palavras da consagração?",
     "options": {
-      "A": "Transubstanciação",
-      "B": "Transignificação",
-      "C": "Transformação simbólica",
-      "D": "Ascensão do pão"
+      "A": "Ascensão do pão",
+      "B": "Transubstanciação",
+      "C": "Transignificação",
+      "D": "Transformação simbólica"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "Nas palavras da consagração, Cristo se torna presente por transubstanciação, ou seja, a substância do pão e do vinho são transformadas no Corpo e Sangue de Cristo."
   },
   {
     "text": "Qual é a natureza do sacerdócio ministerial segundo o documento?",
     "options": {
       "A": "Continuação do poder do próprio Cristo",
-      "B": "Uma função meramente administrativa",
-      "C": "Um cargo decorativo",
-      "D": "Uma profissão como outra qualquer"
+      "B": "Uma profissão como outra qualquer",
+      "C": "Uma função meramente administrativa",
+      "D": "Um cargo decorativo"
     },
     "correct": "A",
     "explanation": "O sacerdócio ministerial é descrito como continuação do poder do próprio Cristo, Sumo Pontífice da Nova Aliança, através da imposição das mãos."
@@ -112,43 +112,43 @@
   {
     "text": "O que é o sacerdócio real dos fiéis?",
     "options": {
-      "A": "O sacrifício espiritual dos fiéis consumado pelo ministério dos sacerdotes",
-      "B": "Um sacerdócio paralelo ao ministerial",
-      "C": "Uma função exclusiva dos bispos",
-      "D": "O direito de consagrar a Eucaristia"
+      "A": "O direito de consagrar a Eucaristia",
+      "B": "O sacrifício espiritual dos fiéis consumado pelo ministério dos sacerdotes",
+      "C": "Um sacerdócio paralelo ao ministerial",
+      "D": "Uma função exclusiva dos bispos"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O sacerdócio real dos fiéis é seu sacrifício espiritual, que é consumado pelo ministério dos sacerdotes em união com o sacrifício de Cristo, único Mediador."
   },
   {
     "text": "Qual é o objetivo principal da participação dos fiéis na Eucaristia?",
     "options": {
-      "A": "Participação consciente, ativa e frutuosa no mistério eucarístico",
-      "B": "Apenas cumprir uma obrigação moral",
-      "C": "Assistir passivamente ao rito",
-      "D": "Render homenagem ao sacerdote"
+      "A": "Render homenagem ao sacerdote",
+      "B": "Participação consciente, ativa e frutuosa no mistério eucarístico",
+      "C": "Apenas cumprir uma obrigação moral",
+      "D": "Assistir passivamente ao rito"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O documento enfatiza que os fiéis devem participar de forma consciente, ativa e frutuosa no mistério eucarístico, crescendo continuamente em santidade."
   },
   {
     "text": "Quantas partes principais tem a Missa?",
     "options": {
-      "A": "Quatro: Ritos iniciais, Liturgia da Palavra, Liturgia Eucarística e Rito de conclusão",
+      "A": "Três: Palavra, Oferenda e Comunhão",
       "B": "Duas: Entrada e Saída",
-      "C": "Três: Palavra, Oferenda e Comunhão",
-      "D": "Cinco: Incluindo a homilia como parte independente"
+      "C": "Cinco: Incluindo a homilia como parte independente",
+      "D": "Quatro: Ritos iniciais, Liturgia da Palavra, Liturgia Eucarística e Rito de conclusão"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A Missa divide-se em quatro partes principais: Ritos iniciais, Liturgia da Palavra, Liturgia Eucarística e Rito de conclusão."
   },
   {
     "text": "Qual é a importância do canto na celebração eucarística?",
     "options": {
       "A": "Significativa importância para expressar e alimentar a fé",
-      "B": "Nenhuma importância",
+      "B": "Apenas para entretimento da assembleia",
       "C": "Uma função meramente estética",
-      "D": "Apenas para entretimento da assembleia"
+      "D": "Nenhuma importância"
     },
     "correct": "A",
     "explanation": "O documento atribui importância significativa ao canto como meio de alimentar, fortalecer e expressar a fé durante a celebração litúrgica."
@@ -158,8 +158,8 @@
     "options": {
       "A": "Favorecer a reflexão interior e interiorizar a Palavra de Deus",
       "B": "Nenhuma importância",
-      "C": "Apenas para descanso do sacerdote",
-      "D": "Um tempo para distrações pessoais"
+      "C": "Um tempo para distrações pessoais",
+      "D": "Apenas para descanso do sacerdote"
     },
     "correct": "A",
     "explanation": "O silêncio sagrado na Missa é fundamental para permitir que os fiéis interiorizem a Palavra de Deus e participem mais plenamente do mistério celebrado."
@@ -167,34 +167,34 @@
   {
     "text": "Qual é a função do ambão?",
     "options": {
-      "A": "Lugar da proclamação da Palavra de Deus",
-      "B": "Mesa do altar",
-      "C": "Assento do sacerdote",
-      "D": "Local para distribuição de esmolas"
+      "A": "Assento do sacerdote",
+      "B": "Lugar da proclamação da Palavra de Deus",
+      "C": "Local para distribuição de esmolas",
+      "D": "Mesa do altar"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O ambão é o espaço reservado especificamente para a proclamação da Palavra de Deus durante a Liturgia da Palavra."
   },
   {
     "text": "O que é a Oração Coleta?",
     "options": {
-      "A": "A oração que encerra os Ritos iniciais",
-      "B": "A oração eucarística",
-      "C": "Uma prece para recolher dinheiro",
-      "D": "A benção final da Missa"
+      "A": "Uma prece para recolher dinheiro",
+      "B": "A benção final da Missa",
+      "C": "A oração eucarística",
+      "D": "A oração que encerra os Ritos iniciais"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A Oração Coleta é a oração que encerra os Ritos iniciais e introduz a Liturgia da Palavra."
   },
   {
     "text": "Qual é o propósito do Salmo responsorial?",
     "options": {
-      "A": "Resposta meditada à primeira leitura",
+      "A": "Apenas um entretenimento musical",
       "B": "Substituir a leitura das Escrituras",
-      "C": "Apenas um entretenimento musical",
+      "C": "Resposta meditada à primeira leitura",
       "D": "Uma tradição sem significado litúrgico"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O Salmo responsorial é um momento de meditação que responde à primeira leitura, permitindo que a Palavra de Deus seja interiorizada pelos fiéis."
   },
   {
@@ -202,8 +202,8 @@
     "options": {
       "A": "Expressar a fé da Igreja no mistério celebrado",
       "B": "Apenas uma formalidade antiga",
-      "C": "Um teste de conhecimento teológico",
-      "D": "Uma concessão à modernidade"
+      "C": "Uma concessão à modernidade",
+      "D": "Um teste de conhecimento teológico"
     },
     "correct": "A",
     "explanation": "A Profissão de Fé exprime a adesão dos fiéis ao mistério de Cristo celebrado na Eucaristia e à doutrina fundamental da Igreja."
@@ -234,8 +234,8 @@
     "text": "Qual é a função da Oração sobre as Oblatas?",
     "options": {
       "A": "Abençoar os dons preparados antes da Eucaristia",
-      "B": "Convalidar a consagração",
-      "C": "Permitir a comunhão dos fiéis",
+      "B": "Permitir a comunhão dos fiéis",
+      "C": "Convalidar a consagração",
       "D": "Encerrar a Liturgia da Palavra"
     },
     "correct": "A",
@@ -244,54 +244,54 @@
   {
     "text": "O que é a Oração Eucarística?",
     "options": {
-      "A": "A oração central da Missa que realiza a consagração",
-      "B": "Uma oração opcional da celebração",
-      "C": "A bênção final sobre a assembleia",
-      "D": "Uma leitura do Evangelho cantada"
+      "A": "Uma oração opcional da celebração",
+      "B": "A oração central da Missa que realiza a consagração",
+      "C": "Uma leitura do Evangelho cantada",
+      "D": "A bênção final sobre a assembleia"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A Oração Eucarística é a oração central e mais importante da Missa, na qual ocorre a consagração do pão e do vinho."
   },
   {
     "text": "Qual é a significância do Rito da Paz?",
     "options": {
-      "A": "Expressar e promover a paz e a caridade entre os fiéis",
-      "B": "Apenas uma saudação social",
-      "C": "Um intervalo para descanso",
-      "D": "Uma tradição sem sentido litúrgico"
+      "A": "Uma tradição sem sentido litúrgico",
+      "B": "Expressar e promover a paz e a caridade entre os fiéis",
+      "C": "Apenas uma saudação social",
+      "D": "Um intervalo para descanso"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O Rito da Paz é um momento importante em que os fiéis expressam e reforçam a paz e a comunhão antes de receber a Eucaristia."
   },
   {
     "text": "O que significa a Fração do Pão?",
     "options": {
-      "A": "A divisão do pão consagrado em partes para distribuição",
+      "A": "Uma ação sem importância litúrgica",
       "B": "O partir do pão como símbolo de rejeição",
-      "C": "Uma ação sem importância litúrgica",
+      "C": "A divisão do pão consagrado em partes para distribuição",
       "D": "O aumento do pão para todos os presentes"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "A Fração do Pão é a divisão do pão consagrado em partes que serão distribuídas aos fiéis durante a comunhão, simbolizando a unidade na diversidade."
   },
   {
     "text": "Qual é o propósito da Comunhão?",
     "options": {
-      "A": "Receber o Corpo e Sangue de Cristo para crescimento espiritual",
-      "B": "Apenas cumprir uma obrigação",
+      "A": "Demonstrar lealdade à Igreja",
+      "B": "Receber o Corpo e Sangue de Cristo para crescimento espiritual",
       "C": "Um gesto meramente social",
-      "D": "Demonstrar lealdade à Igreja"
+      "D": "Apenas cumprir uma obrigação"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A Comunhão é o momento em que os fiéis recebem o Corpo e Sangue de Cristo, participando plenamente do sacrifício eucarístico e fortalecendo-se espiritualmente."
   },
   {
     "text": "Qual é a Oração Dominical?",
     "options": {
       "A": "O Pai Nosso, recitado antes da comunhão",
-      "B": "A oração ao amanhecer",
-      "C": "Uma prece exclusiva dos domingos",
-      "D": "A benção sobre o alimento"
+      "B": "A benção sobre o alimento",
+      "C": "A oração ao amanhecer",
+      "D": "Uma prece exclusiva dos domingos"
     },
     "correct": "A",
     "explanation": "A Oração Dominical (Pai Nosso) é recitada durante o Rito da Comunhão, unindo toda a assembleia numa prece comum instituída por Cristo."
@@ -299,45 +299,45 @@
   {
     "text": "Qual é o propósito do Rito de conclusão?",
     "options": {
-      "A": "Encerrar a celebração com bênção e envio dos fiéis",
-      "B": "Apenas agradecer a presença de todos",
-      "C": "Um intervalo antes da próxima Missa",
-      "D": "Uma oração individual do sacerdote"
+      "A": "Um intervalo antes da próxima Missa",
+      "B": "Uma oração individual do sacerdote",
+      "C": "Apenas agradecer a presença de todos",
+      "D": "Encerrar a celebração com bênção e envio dos fiéis"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O Rito de conclusão encerra a celebração eucarística com uma bênção e o envio dos fiéis, despedindo-os para levar para o mundo a missão de Cristo."
   },
   {
     "text": "Qual é a função principal do bispo diocesano quanto à Liturgia?",
     "options": {
-      "A": "Ser o moderador, promotor e guardião de toda a vida litúrgica",
-      "B": "Apenas administrador financeiro",
-      "C": "Um observador das celebrações",
-      "D": "Um simples participante da Missa"
+      "A": "Um observador das celebrações",
+      "B": "Um simples participante da Missa",
+      "C": "Apenas administrador financeiro",
+      "D": "Ser o moderador, promotor e guardião de toda a vida litúrgica"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O bispo diocesano é o primeiro dispensador dos mistérios de Deus e é responsável por moderar, promover e guardar toda a vida litúrgica da diocese."
   },
   {
     "text": "O que representa a celebração da Eucaristia com a participação do presbitério?",
     "options": {
-      "A": "O mistério da Igreja reunida em comunidade",
-      "B": "Uma celebração exclusiva do bispo",
+      "A": "Uma celebração exclusiva do bispo",
+      "B": "O mistério da Igreja reunida em comunidade",
       "C": "Uma prática opcional",
       "D": "Uma celebração de menor importância"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A celebração eucarística presidida pelo bispo com a participação do presbitério, diáconos e povo manifesta claramente o mistério da Igreja e sua estrutura."
   },
   {
     "text": "Qual é a responsabilidade do sacerdote quanto às adaptações da Missa?",
     "options": {
-      "A": "Escolher ritos e textos apropriados, mas não acrescentar, suprimir ou mudar arbitrariamente",
-      "B": "Ter liberdade total para modificar a celebração",
+      "A": "Ter liberdade total para modificar a celebração",
+      "B": "Escolher ritos e textos apropriados, mas não acrescentar, suprimir ou mudar arbitrariamente",
       "C": "Apenas seguir instruções do bispo sem discernimento",
       "D": "Ignorar as normas litúrgicas estabelecidas"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O sacerdote é servidor da sagrada Liturgia e pode fazer escolhas apropriadas, mas não lhe é permitido, por sua livre iniciativa, acrescentar, suprimir ou mudar coisa alguma na Missa."
   },
   {
@@ -354,12 +354,12 @@
   {
     "text": "Quantas Orações Eucarísticas são reconhecidas como principais?",
     "options": {
-      "A": "Múltiplas (pelo menos quatro)",
-      "B": "Apenas uma",
+      "A": "Apenas uma",
+      "B": "Múltiplas (pelo menos quatro)",
       "C": "Nenhuma",
       "D": "Uma para cada dia da semana"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O documento refere a existência de múltiplas Orações Eucarísticas, com diferentes características, como a Oração Eucarística IV que tem prefácio invariável."
   },
   {
@@ -367,8 +367,8 @@
     "options": {
       "A": "Possui um prefácio invariável",
       "B": "Pode ser omitida em certos dias",
-      "C": "Não contém a consagração",
-      "D": "É a mais curta de todas"
+      "C": "É a mais curta de todas",
+      "D": "Não contém a consagração"
     },
     "correct": "A",
     "explanation": "A Oração Eucarística IV é caracterizada por possuir um prefácio fixo que não varia conforme os diferentes dias e celebrações."
@@ -377,9 +377,9 @@
     "text": "Qual é a forma de celebração mais comum com o povo?",
     "options": {
       "A": "Missa com o povo, com ou sem diácono",
-      "B": "Missa concelebrada apenas",
-      "C": "Missa com assistência de um só ministro",
-      "D": "Missa privada do sacerdote"
+      "B": "Missa privada do sacerdote",
+      "C": "Missa concelebrada apenas",
+      "D": "Missa com assistência de um só ministro"
     },
     "correct": "A",
     "explanation": "A Missa com o povo é a forma mais ordinária de celebração, podendo ser realizada com a presença de diácono ou apenas com acólito e leitor."
@@ -387,67 +387,67 @@
   {
     "text": "O que caracteriza a Missa concelebrada?",
     "options": {
-      "A": "Múltiplos sacerdotes celebrando juntos uma mesma Eucaristia",
-      "B": "Apenas um sacerdote em celebração",
-      "C": "Uma celebração sem povo",
-      "D": "Uma forma menor de celebração eucarística"
+      "A": "Apenas um sacerdote em celebração",
+      "B": "Uma celebração sem povo",
+      "C": "Uma forma menor de celebração eucarística",
+      "D": "Múltiplos sacerdotes celebrando juntos uma mesma Eucaristia"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A Missa concelebrada é aquela em que vários sacerdotes celebram juntos a mesma Eucaristia, mantendo a unidade do sacrifício e da consagração."
   },
   {
     "text": "Qual é a característica da 'Missa com assistência de um só ministro'?",
     "options": {
-      "A": "Celebração com a mínima estrutura de ministério ordenado",
-      "B": "Uma celebração sem importância",
-      "C": "Uma prática proibida",
-      "D": "Válida apenas em casos de emergência"
+      "A": "Uma prática proibida",
+      "B": "Celebração com a mínima estrutura de ministério ordenado",
+      "C": "Válida apenas em casos de emergência",
+      "D": "Uma celebração sem importância"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A Missa com assistência de um só ministro é uma forma válida de celebração em que há apenas um ministro além do sacerdote, geralmente um acólito ou leitor."
   },
   {
     "text": "O que é veneração do altar?",
     "options": {
-      "A": "Atos de reverência realizados pelo sacerdote em relação ao altar",
-      "B": "Uma adoração exclusiva ao altar",
-      "C": "Um gesto opcional",
-      "D": "Uma prática medieval obsoleta"
+      "A": "Uma prática medieval obsoleta",
+      "B": "Um gesto opcional",
+      "C": "Uma adoração exclusiva ao altar",
+      "D": "Atos de reverência realizados pelo sacerdote em relação ao altar"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A veneração do altar consiste em atos de reverência apropriados, como genuflexão ou inclinação, que expressam o respeito pelo altar como mesa do sacrifício."
   },
   {
     "text": "Qual é a significância da genuflexão na Missa?",
     "options": {
-      "A": "Expressar adoração e reverência a Cristo presente",
-      "B": "Um exercício físico dos fiéis",
-      "C": "Uma prática opcional",
-      "D": "Uma tradição sem sentido atual"
+      "A": "Um exercício físico dos fiéis",
+      "B": "Expressar adoração e reverência a Cristo presente",
+      "C": "Uma tradição sem sentido atual",
+      "D": "Uma prática opcional"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A genuflexão é um gesto corporal que expressa a adoração e reverência dos fiéis diante da presença de Cristo, especialmente durante a consagração."
   },
   {
     "text": "Qual é a função da incensação na celebração?",
     "options": {
-      "A": "Expressar a oração que sobe a Deus e honrar pessoas/objetos",
-      "B": "Apenas perfumar o ambiente",
-      "C": "Uma prática decorativa",
-      "D": "Um costume folclórico"
+      "A": "Um costume folclórico",
+      "B": "Uma prática decorativa",
+      "C": "Expressar a oração que sobe a Deus e honrar pessoas/objetos",
+      "D": "Apenas perfumar o ambiente"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "A incensação expressa simbolicamente a oração que sobe a Deus e serve para honrar o altar, o Evangelho, a assembleia e os defuntos segundo sua importância."
   },
   {
     "text": "O que são as purificações na Eucaristia?",
     "options": {
-      "A": "Limpeza dos vasos sagrados após a consagração com água ou vinho",
+      "A": "Uma ação sem significado litúrgico",
       "B": "Um ritual de limpeza espiritual",
-      "C": "Uma ação sem significado litúrgico",
-      "D": "Uma preparação pessoal do sacerdote"
+      "C": "Uma preparação pessoal do sacerdote",
+      "D": "Limpeza dos vasos sagrados após a consagração com água ou vinho"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "As purificações são ações práticas e simbólicas de limpeza dos vasos sagrados (cálice e patena) após a consagração, realizadas com reverência pelos resíduos sacramentais."
   },
   {
@@ -465,8 +465,8 @@
     "text": "Qual é a importância de colocar em prática a homilia frequentemente?",
     "options": {
       "A": "Permitir a catequese contínua dos fiéis sobre os mistérios da fé",
-      "B": "Apenas preencher tempo na Missa",
-      "C": "Uma prática opcional",
+      "B": "Uma prática opcional",
+      "C": "Apenas preencher tempo na Missa",
       "D": "Uma exigência apenas do Concílio de Trento"
     },
     "correct": "A",
@@ -475,64 +475,64 @@
   {
     "text": "O que significa 'lex orandi' (norma da oração)?",
     "options": {
-      "A": "O que a Igreja reza expressa aquilo em que crê",
-      "B": "Uma simples tradição antiga",
-      "C": "Um costume opcional",
-      "D": "Uma prática apenas de sacerdotes eruditos"
+      "A": "Um costume opcional",
+      "B": "O que a Igreja reza expressa aquilo em que crê",
+      "C": "Uma prática apenas de sacerdotes eruditos",
+      "D": "Uma simples tradição antiga"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "'Lex orandi' significa que a norma da oração da Igreja está em consonância com a norma de fé 'lex credendi', ou seja, o que rezamos expressa o que acreditamos."
   },
   {
     "text": "Qual é a relação entre 'lex credendi' e 'lex orandi'?",
     "options": {
-      "A": "Estão em perfeita consonância; a oração expressa a fé",
-      "B": "Não têm relação",
-      "C": "A fé contradiz a oração",
+      "A": "Não têm relação",
+      "B": "A fé contradiz a oração",
+      "C": "Estão em perfeita consonância; a oração expressa a fé",
       "D": "São conceitos rivais na teologia"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "Conforme o documento, existe perfeita identidade entre a 'lex credendi' (norma da fé) e a 'lex orandi' (norma da oração), mostrando que o que cremos é expresso no que rezamos."
   },
   {
     "text": "Qual Sacramentário foi publicado primeiro em edição crítica moderna?",
     "options": {
-      "A": "O Sacramentário Gregoriano (1571)",
-      "B": "O Leoniano",
-      "C": "O Gelasiano",
-      "D": "O Gregoriano Medieval"
+      "A": "O Leoniano",
+      "B": "O Sacramentário Gregoriano (1571)",
+      "C": "O Gregoriano Medieval",
+      "D": "O Gelasiano"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "Após a primeira edição do Sacramentário Gregoriano publicada em 1571, vários antigos Sacramentários Romanos e Ambrosianos foram publicados em edições críticas."
   },
   {
     "text": "Qual é a contribuição dos Padres da antiguidade para a teologia eucarística?",
     "options": {
-      "A": "Iluminar a compreensão do mistério eucarístico através de seus escritos",
-      "B": "Nenhuma, pois eram primitivos",
-      "C": "Apenas preservar tradições",
-      "D": "Contradizer a fé atual"
+      "A": "Nenhuma, pois eram primitivos",
+      "B": "Iluminar a compreensão do mistério eucarístico através de seus escritos",
+      "C": "Contradizer a fé atual",
+      "D": "Apenas preservar tradições"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O documento refere que através dos estudos patrísticos, a teologia do mistério eucarístico é iluminada pela doutrina de eminentes Padres como Ireneu, Ambrósio, Cirilo e Crisóstomo."
   },
   {
     "text": "Qual é o alcance da 'norma dos Santos Padres' conforme o documento?",
     "options": {
-      "A": "Abraça toda a tradição eclesiástica através dos séculos e culturas",
-      "B": "Apenas tradições recentes",
-      "C": "Somente as práticas latinas",
-      "D": "Apenas os primeiros séculos"
+      "A": "Apenas os primeiros séculos",
+      "B": "Somente as práticas latinas",
+      "C": "Apenas tradições recentes",
+      "D": "Abraça toda a tradição eclesiástica através dos séculos e culturas"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A 'norma dos Santos Padres' não se limita apenas ao passado imediato, mas abrange toda a tradição da Igreja em suas diversas manifestações culturais: semitas, gregas e latinas."
   },
   {
     "text": "Qual foi a decisão do Concílio de Trento quanto ao uso da língua vernácula?",
     "options": {
       "A": "Proibiu e condenou o uso de língua vulgar na Missa",
-      "B": "Permitiu o uso de língua vernácula",
-      "C": "Deixou a cargo de cada bispo",
+      "B": "Deixou a cargo de cada bispo",
+      "C": "Permitiu o uso de língua vernácula",
       "D": "Tornou o uso de vernáculo obrigatório"
     },
     "correct": "A",
@@ -542,9 +542,9 @@
     "text": "Qual era a justificativa de Trento para sua decisão sobre a língua na Missa?",
     "options": {
       "A": "Defender a doutrina que o sacrifício eucarístico é ação de Cristo, cuja eficácia não depende da compreensão dos fiéis",
-      "B": "Falta de tradições em vernáculo",
-      "C": "Desejo de manter o latim como língua de prestígio",
-      "D": "Impossibilidade técnica de traduzir a Missa"
+      "B": "Impossibilidade técnica de traduzir a Missa",
+      "C": "Falta de tradições em vernáculo",
+      "D": "Desejo de manter o latim como língua de prestígio"
     },
     "correct": "A",
     "explanation": "Trento justificou sua posição argumentando que a eficácia do sacrifício eucarístico não pode ser afetada pelo modo como nele participam os fiéis, e que o próprio sacrifício é ação de Cristo."
@@ -553,9 +553,9 @@
     "text": "Qual foi a resposta de Trento à preocupação de que os fiéis não compreendiam o latim?",
     "options": {
       "A": "Ordenou que pastores explicassem os textos e mistérios através de catequese",
-      "B": "Simplesmente ignorou a questão",
+      "B": "Recomendou que fiéis aprendessem latim",
       "C": "Autorizou a tradução da Missa",
-      "D": "Recomendou que fiéis aprendessem latim"
+      "D": "Simplesmente ignorou a questão"
     },
     "correct": "A",
     "explanation": "O Concílio de Trento, reconhecendo que os fiéis não compreendiam o latim, ordenou aos pastores a obrigação de fazer catequese frequente explicando os textos da Missa."
@@ -563,32 +563,32 @@
   {
     "text": "Qual foi a decisão do II Concílio do Vaticano quanto ao uso da língua vernácula?",
     "options": {
-      "A": "Autorizou o uso da língua vernácula na Liturgia",
-      "B": "Manteve a proibição de Trento",
+      "A": "Exigiu exclusivamente o vernáculo",
+      "B": "Autorizou o uso da língua vernácula na Liturgia",
       "C": "Deixou opcional o uso de latim ou vernáculo",
-      "D": "Exigiu exclusivamente o vernáculo"
+      "D": "Manteve a proibição de Trento"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O II Concílio do Vaticano, reconhecendo a mudança nas circunstâncias pastorais, autorizou o uso da língua vernácula na Liturgia para facilitar a compreensão dos fiéis."
   },
   {
     "text": "Qual é a importância da participação ativa dos fiéis segundo o documento?",
     "options": {
-      "A": "Os fiéis devem participar conscientemente, não apenas passivamente",
-      "B": "A participação dos fiéis é irrelevante",
-      "C": "Apenas a presença física importa",
-      "D": "A participação deve ser apenas mental"
+      "A": "Apenas a presença física importa",
+      "B": "A participação deve ser apenas mental",
+      "C": "Os fiéis devem participar conscientemente, não apenas passivamente",
+      "D": "A participação dos fiéis é irrelevante"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O documento enfatiza que é direito e dever do povo cristão participar de forma consciente, ativa e plena, com corpo e espírito, fé, esperança e caridade."
   },
   {
     "text": "Qual é a consequência da participação ativa dos fiéis na Eucaristia?",
     "options": {
       "A": "Contínuo crescimento em santidade do povo cristão",
-      "B": "Simples cumprimento de uma obrigação legal",
-      "C": "Um passatempo espiritual",
-      "D": "Uma prática tradicional sem efeito prático"
+      "B": "Uma prática tradicional sem efeito prático",
+      "C": "Simples cumprimento de uma obrigação legal",
+      "D": "Um passatempo espiritual"
     },
     "correct": "A",
     "explanation": "A participação consciente, ativa e frutuosa no mistério eucarístico leva ao contínuo crescimento em santidade do povo cristão, conforme promessas de Cristo."
@@ -596,12 +596,12 @@
   {
     "text": "Qual é a posição do documento quanto à eficácia da Eucaristia?",
     "options": {
-      "A": "A Eucaristia tem sempre eficácia assegurada, independente da participação dos fiéis",
-      "B": "A eficácia depende da devoção individual",
-      "C": "A eficácia é meramente psicológica",
-      "D": "Não há eficácia real na Eucaristia"
+      "A": "A eficácia é meramente psicológica",
+      "B": "A Eucaristia tem sempre eficácia assegurada, independente da participação dos fiéis",
+      "C": "Não há eficácia real na Eucaristia",
+      "D": "A eficácia depende da devoção individual"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O documento afirma que embora nem sempre haja presença e participação ativa visível, a celebração eucarística tem sempre assegurada sua eficácia e dignidade, pois é ação de Cristo."
   },
   {
@@ -618,21 +618,21 @@
   {
     "text": "Como se realiza a celebração eucarística segundo o documento?",
     "options": {
-      "A": "Por meio de sinais sensíveis que alimentam, fortalecem e exprimem a fé",
-      "B": "Apenas através de palavras sem gestos",
-      "C": "Exclusivamente através de conceitos intelectuais",
+      "A": "Exclusivamente através de conceitos intelectuais",
+      "B": "Por meio de sinais sensíveis que alimentam, fortalecem e exprimem a fé",
+      "C": "Apenas através de palavras sem gestos",
       "D": "Sem necessidade de sinais ou símbolos"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A celebração eucarística realiza-se por meio de sinais sensíveis (palavras, gestos, objetos) pelos quais se alimenta, fortalece e exprime a fé dos fiéis."
   },
   {
     "text": "Qual é a prerrogativa do bispo diocesano em relação à Liturgia?",
     "options": {
       "A": "Fazer adaptações segundo necessidades pastorais de sua diocese",
-      "B": "Seguir instruções roma sem possibilidade de adaptação",
-      "C": "Abolir ritos conforme seu julgamento",
-      "D": "Impedir qualquer mudança na celebração"
+      "B": "Impedir qualquer mudança na celebração",
+      "C": "Seguir instruções roma sem possibilidade de adaptação",
+      "D": "Abolir ritos conforme seu julgamento"
     },
     "correct": "A",
     "explanation": "O documento reconhece que o bispo diocesano e a Conferência Episcopal podem fazer certas adaptações e variações mais profundas conforme as tradições e índole dos povos."
@@ -640,43 +640,43 @@
   {
     "text": "Qual é a importância da preparação do sacerdote antes de celebrar?",
     "options": {
-      "A": "Disposição de alma adequada conforme normas da Igreja",
-      "B": "Nenhuma importância especial",
-      "C": "Apenas uma formalidade",
-      "D": "Responsabilidade apenas do leigo"
+      "A": "Nenhuma importância especial",
+      "B": "Responsabilidade apenas do leigo",
+      "C": "Disposição de alma adequada conforme normas da Igreja",
+      "D": "Apenas uma formalidade"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O documento enfatiza que antes de tudo, há que haver disposição adequada de alma do sacerdote, relacionada às prescrições da Igreja para uma celebração digna."
   },
   {
     "text": "Como deve ser a escolha da Missa segundo o documento?",
     "options": {
-      "A": "Conforme o calendário litúrgico e as circunstâncias",
-      "B": "Conforme preferência pessoal do sacerdote",
-      "C": "Sem nenhuma norma específica",
-      "D": "Sempre a mesma, independente do dia"
+      "A": "Sempre a mesma, independente do dia",
+      "B": "Conforme o calendário litúrgico e as circunstâncias",
+      "C": "Conforme preferência pessoal do sacerdote",
+      "D": "Sem nenhuma norma específica"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O documento estabelece que deve haver critérios para a escolha da Missa, conforme o calendário litúrgico, as circunstâncias do dia e as necessidades pastorais."
   },
   {
     "text": "Qual é a importância das leituras bíblicas na Missa?",
     "options": {
-      "A": "Transmitir a Palavra de Deus e conectá-la com o mistério eucarístico",
+      "A": "Algo que pode ser substituído por outras leituras",
       "B": "Apenas tradição costumeira",
       "C": "Uma prática opcional",
-      "D": "Algo que pode ser substituído por outras leituras"
+      "D": "Transmitir a Palavra de Deus e conectá-la com o mistério eucarístico"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "As leituras bíblicas são essenciais na Liturgia da Palavra, permitindo que a Palavra de Deus seja proclamada e compreendida pelos fiéis, fundamentando a Eucaristia."
   },
   {
     "text": "Qual é a função das admonições na Missa?",
     "options": {
       "A": "Esclarecer e orientar os fiéis sobre o significado dos ritos",
-      "B": "Apenas sermões moralizantes",
-      "C": "Críticas aos fiéis",
-      "D": "Instruções administrativas paroquiais"
+      "B": "Críticas aos fiéis",
+      "C": "Instruções administrativas paroquiais",
+      "D": "Apenas sermões moralizantes"
     },
     "correct": "A",
     "explanation": "As admonições, inseridas dentro dos próprios ritos sagrados, servem para esclarecer o significado e importância das várias partes da celebração eucarística."
@@ -684,109 +684,109 @@
   {
     "text": "Como se caracteriza a Missa crismal?",
     "options": {
-      "A": "Celebração na Quinta-Feira da Semana Santa onde se comemora o sacerdócio",
+      "A": "Uma celebração particular do bispo",
       "B": "Uma Missa para crianças batizadas",
-      "C": "Uma celebração particular do bispo",
-      "D": "Uma Missa menor da Igreja"
+      "C": "Uma Missa menor da Igreja",
+      "D": "Celebração na Quinta-Feira da Semana Santa onde se comemora o sacerdócio"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A Missa Crismal, celebrada na Quinta-Feira da Semana Santa, é uma celebração especial em que se comemora a instituição do sacerdócio através da renovação das promessas sacerdotais."
   },
   {
     "text": "Qual é o significado de 'transubstanciação' conforme o documento?",
     "options": {
-      "A": "A transformação da substância do pão e vinho no Corpo e Sangue de Cristo",
-      "B": "Uma mudança apenas simbólica ou mental",
-      "C": "Um conceito protestante rejeitado",
-      "D": "Uma prática medieval superada"
+      "A": "Um conceito protestante rejeitado",
+      "B": "Uma prática medieval superada",
+      "C": "Uma mudança apenas simbólica ou mental",
+      "D": "A transformação da substância do pão e vinho no Corpo e Sangue de Cristo"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "Transubstanciação é o termo teológico que descreve como, nas palavras da consagração, a substância do pão e do vinho se transforma no Corpo e Sangue de Cristo."
   },
   {
     "text": "Qual é a mensagem central do documento sobre a Eucaristia?",
     "options": {
-      "A": "A Eucaristia é o centro da vida cristã e requer participação consciente e ativa",
+      "A": "A Eucaristia é opcional para os cristãos",
       "B": "A Eucaristia é uma tradição obsoleta",
       "C": "A Eucaristia é apenas um simbolismo",
-      "D": "A Eucaristia é opcional para os cristãos"
+      "D": "A Eucaristia é o centro da vida cristã e requer participação consciente e ativa"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O documento proclama que a celebração da Eucaristia é o centro de toda a vida cristã e requer participação consciente, ativa e frutuosa dos fiéis para colher seus abundantes frutos."
   },
   {
     "text": "Qual é a importância da beleza e da arte nas igrejas?",
     "options": {
-      "A": "Contribuem para a dignidade e beleza das celebrações litúrgicas",
+      "A": "Apenas adornam sem importância espiritual",
       "B": "São supérfluas na religião",
-      "C": "Apenas adornam sem importância espiritual",
+      "C": "Contribuem para a dignidade e beleza das celebrações litúrgicas",
       "D": "Desviam a atenção da Eucaristia"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O documento enfatiza que a beleza dos lugares sagrados, da música e da arte contribuem significativamente para a promoção da dignidade das celebrações eucarísticas."
   },
   {
     "text": "Qual é o papel da música no culto eucarístico?",
     "options": {
-      "A": "Expressar a fé e participação ativa dos fiéis",
-      "B": "Apenas preencher silêncios",
-      "C": "Uma tradição sem importância",
-      "D": "Um entretenimento opcional"
+      "A": "Apenas preencher silêncios",
+      "B": "Expressar a fé e participação ativa dos fiéis",
+      "C": "Um entretenimento opcional",
+      "D": "Uma tradição sem importância"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A música, especialmente o canto, tem importância significativa na celebração eucarística para alimentar, fortalecer e expressar a fé dos participantes."
   },
   {
     "text": "Qual era a preocupação fundamental do Concílio de Trento?",
     "options": {
-      "A": "Defender a doutrina católica contra ataques à fé eucarística",
-      "B": "Modernizar todos os ritos",
-      "C": "Permitir inovações litúrgicas",
-      "D": "Abolir tradições antigas"
+      "A": "Modernizar todos os ritos",
+      "B": "Defender a doutrina católica contra ataques à fé eucarística",
+      "C": "Abolir tradições antigas",
+      "D": "Permitir inovações litúrgicas"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O Concílio de Trento tinha como preocupação fundamental salvaguardar a fé contra ataques quanto ao carácter sacrificial da Missa, ao sacerdócio ministerial e à presença real de Cristo."
   },
   {
     "text": "Qual é a composição do povo de Deus segundo o documento?",
     "options": {
-      "A": "Povo adquirido pelo Sangue de Cristo, congregado pelo Senhor e alimentado por sua Palavra",
-      "B": "Apenas clérigos e religiosos",
-      "C": "Apenas os que recebem comunhão",
-      "D": "Somente aqueles que fazem voto de pobreza"
+      "A": "Apenas clérigos e religiosos",
+      "B": "Apenas os que recebem comunhão",
+      "C": "Somente aqueles que fazem voto de pobreza",
+      "D": "Povo adquirido pelo Sangue de Cristo, congregado pelo Senhor e alimentado por sua Palavra"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O povo de Deus é descrito como aquele adquirido pelo Sangue de Cristo, congregado pelo Senhor e alimentado com sua Palavra, chamado a participar plenamente na Eucaristia."
   },
   {
     "text": "Qual é a função principal do Evangeliário na Missa?",
     "options": {
-      "A": "Livro contendo os Evangelhos que é venerado e proclamado",
-      "B": "Um ornamento do altar",
-      "C": "Apenas um símbolo histórico",
-      "D": "Um objeto sem importância litúrgica"
+      "A": "Um objeto sem importância litúrgica",
+      "B": "Apenas um símbolo histórico",
+      "C": "Um ornamento do altar",
+      "D": "Livro contendo os Evangelhos que é venerado e proclamado"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O Evangeliário é o livro solene contendo os Evangelhos, que é venerado e proclamado solenemente durante a Missa como Palavra viva de Cristo."
   },
   {
     "text": "Qual é a posição do sacerdote durante a Oração Eucarística?",
     "options": {
-      "A": "De pé e com os braços estendidos em atitude de oferenda",
-      "B": "Sentado no assento presidencial",
+      "A": "Sentado no assento presidencial",
+      "B": "De pé e com os braços estendidos em atitude de oferenda",
       "C": "Ajoelhado durante toda a Oração",
       "D": "Caminhando ao redor do altar"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "Durante a Oração Eucarística, o sacerdote permanece de pé diante do altar, com os braços estendidos em atitude de oferta, representando a atitude de Cristo no Calvário."
   },
   {
     "text": "Qual é a razão teológica para a veneração dos vasos sagrados?",
     "options": {
       "A": "Conter o Corpo e Sangue de Cristo merece reverência máxima",
-      "B": "São feitos de materiais preciosos",
-      "C": "Tradição sem fundamento dogmático",
-      "D": "Apenas prática de superstição"
+      "B": "Apenas prática de superstição",
+      "C": "São feitos de materiais preciosos",
+      "D": "Tradição sem fundamento dogmático"
     },
     "correct": "A",
     "explanation": "Os vasos sagrados merecem máxima reverência porque contêm o Corpo e Sangue de Cristo após a consagração, devendo ser tratados com sumo cuidado e respeito."
@@ -794,21 +794,21 @@
   {
     "text": "Qual é a importância do Ato Penitencial no início da Missa?",
     "options": {
-      "A": "Preparar os fiéis espiritualmente e promover a reconciliação com Deus",
-      "B": "Apenas cumprir uma formalidade",
-      "C": "Condenar os pecadores presentes",
-      "D": "Uma prática meramente psicológica"
+      "A": "Condenar os pecadores presentes",
+      "B": "Uma prática meramente psicológica",
+      "C": "Preparar os fiéis espiritualmente e promover a reconciliação com Deus",
+      "D": "Apenas cumprir uma formalidade"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O Ato Penitencial no início da Missa permite que os fiéis se preparem espiritualmente, reconheçam seus pecados e se reconciliem com Deus antes de celebrar a Eucaristia."
   },
   {
     "text": "O que significa 'Kýrie eleison'?",
     "options": {
       "A": "Senhor, tende piedade (Senhor, tende misericórdia)",
-      "B": "Glória a Deus nas alturas",
-      "C": "Paz seja convosco",
-      "D": "Amém, amém vos digo"
+      "B": "Paz seja convosco",
+      "C": "Amém, amém vos digo",
+      "D": "Glória a Deus nas alturas"
     },
     "correct": "A",
     "explanation": "'Kýrie eleison' é uma exclamação grega que significa 'Senhor, tende piedade' ou 'Senhor, tende misericórdia', expressa durante o Ato Penitencial."
@@ -816,12 +816,12 @@
   {
     "text": "Qual é o significado do 'Glória in excelsis Deo'?",
     "options": {
-      "A": "Hino de louvor e ação de graças a Deus pelo mistério da Encarnação",
-      "B": "Uma prece pelos mortos",
+      "A": "Uma prece pelos mortos",
+      "B": "Uma invocação ao Espírito Santo",
       "C": "Um cântico de penitência",
-      "D": "Uma invocação ao Espírito Santo"
+      "D": "Hino de louvor e ação de graças a Deus pelo mistério da Encarnação"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "'Glória in excelsis Deo' (Glória a Deus nas alturas) é um antigo hino de louvor e ação de graças que celebra a Encarnação e a Redenção."
   },
   {
@@ -829,8 +829,8 @@
     "options": {
       "A": "Proclamar as leituras bíblicas (Primeira Leitura e Aleluia) com clareza e reverência",
       "B": "Apenas auxiliar o sacerdote",
-      "C": "Cantar toda a Missa",
-      "D": "Distribuir a comunhão"
+      "C": "Distribuir a comunhão",
+      "D": "Cantar toda a Missa"
     },
     "correct": "A",
     "explanation": "O leitor institucionalizado tem a função específica de proclamar a Primeira Leitura e o Salmo responsorial, bem como anunciar o Evangelho e a Aclamação."
@@ -838,43 +838,43 @@
   {
     "text": "Qual é a função do acólito institucionalizado?",
     "options": {
-      "A": "Preparar o altar, velas e vasos sagrados; auxiliar o sacerdote durante a Eucaristia",
+      "A": "Consagrar a Eucaristia",
       "B": "Apenas ler as intenções",
       "C": "Fazer a homilia",
-      "D": "Consagrar a Eucaristia"
+      "D": "Preparar o altar, velas e vasos sagrados; auxiliar o sacerdote durante a Eucaristia"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O acólito institucionalizado auxilia o sacerdote durante a celebração, preparando o altar e os vasos sagrados, acendendo velas e auxiliando especialmente na Eucaristia."
   },
   {
     "text": "Qual é a importância da inclinação (flexão) na Missa?",
     "options": {
-      "A": "Expressar reverência quando passado diante do altar ou em momentos solenes",
+      "A": "Apenas durante a consagração",
       "B": "Um exercício físico",
       "C": "Uma prática opcional",
-      "D": "Apenas durante a consagração"
+      "D": "Expressar reverência quando passado diante do altar ou em momentos solenes"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A inclinação (flexão) é um gesto de reverência apropriado, realizado quando se passa diante do altar e em certos momentos solenes da celebração."
   },
   {
     "text": "O que são as 'partes variáveis' da Missa?",
     "options": {
-      "A": "Partes que mudam conforme a celebração (leituras, orações do dia)",
-      "B": "Partes que permanecem sempre iguais",
-      "C": "Partes opcionais da celebração",
-      "D": "Partes que podem ser omitidas"
+      "A": "Partes que podem ser omitidas",
+      "B": "Partes que mudam conforme a celebração (leituras, orações do dia)",
+      "C": "Partes que permanecem sempre iguais",
+      "D": "Partes opcionais da celebração"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "As partes variáveis da Missa são aquelas que mudam conforme o dia celebrado, incluindo as leituras, as orações do dia, a Oração Eucarística escolhida e os cânticos."
   },
   {
     "text": "O que são as 'partes ordinárias' da Missa?",
     "options": {
       "A": "Partes que permanecem sempre iguais em toda Missa (Kyrie, Glória, Credo, etc.)",
-      "B": "Partes que mudam diariamente",
-      "C": "Partes exclusivas do domingo",
-      "D": "Partes que podem ser substituídas"
+      "B": "Partes que podem ser substituídas",
+      "C": "Partes que mudam diariamente",
+      "D": "Partes exclusivas do domingo"
     },
     "correct": "A",
     "explanation": "As partes ordinárias são aquelas que permanecem iguais em toda Missa, como Kyrie eleison, Glória, Profissão de Fé, Sanctus e Agnus Dei, formando a estrutura fixa da celebração."
@@ -882,86 +882,86 @@
   {
     "text": "Qual é a importância dos 'Ritos Iniciais' na Missa?",
     "options": {
-      "A": "Preparar espiritual e comunitariamente os fiéis para a celebração",
+      "A": "Cumprimento de uma tradição obsoleta",
       "B": "Apenas uma formalidade administrativa",
-      "C": "Cumprimento de uma tradição obsoleta",
+      "C": "Preparar espiritual e comunitariamente os fiéis para a celebração",
       "D": "Um tempo de espera antes da Missa real"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "Os Ritos Iniciais (Entrada, Saudação, Ato Penitencial, Kyrie, Glória e Oração Coleta) preparam os fiéis espiritualmente e os unem como assembleia para celebrar a Eucaristia."
   },
   {
     "text": "Qual é a sequência correta da Liturgia da Palavra?",
     "options": {
-      "A": "1ª Leitura, Salmo, 2ª Leitura, Aclamação, Evangelho, Homilia, Credo, Oração Universal",
-      "B": "Evangelho, 1ª Leitura, Homilia, Credo, Oração Universal",
-      "C": "Salmo, Evangelho, 1ª Leitura, Homilia",
-      "D": "Oração Universal, Evangelho, Credo, Homilia"
+      "A": "Salmo, Evangelho, 1ª Leitura, Homilia",
+      "B": "Oração Universal, Evangelho, Credo, Homilia",
+      "C": "Evangelho, 1ª Leitura, Homilia, Credo, Oração Universal",
+      "D": "1ª Leitura, Salmo, 2ª Leitura, Aclamação, Evangelho, Homilia, Credo, Oração Universal"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A sequência correta da Liturgia da Palavra é: 1ª Leitura, Salmo responsorial, 2ª Leitura (aos domingos), Aclamação do Evangelho, Evangelho, Homilia, Profissão de Fé e Oração Universal."
   },
   {
     "text": "O que marca o início da Liturgia Eucarística?",
     "options": {
-      "A": "A Preparação dos Dons e a Oração sobre as Oblatas",
-      "B": "A consagração",
-      "C": "O Evangelho",
+      "A": "A consagração",
+      "B": "O Evangelho",
+      "C": "A Preparação dos Dons e a Oração sobre as Oblatas",
       "D": "A homilia"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "A Liturgia Eucarística tem início com a Preparação dos Dons, quando o pão e o vinho são trazidos ao altar, seguidos pela Oração sobre as Oblatas."
   },
   {
     "text": "Qual é o significado do 'Sanctus' (Santo, Santo, Santo)?",
     "options": {
-      "A": "Aclamação dos anjos no céu, em que os fiéis se unem à liturgia celeste",
+      "A": "Uma prece pelos mortos",
       "B": "Uma simples repetição de palavras",
       "C": "Uma condenação dos pecadores",
-      "D": "Uma prece pelos mortos"
+      "D": "Aclamação dos anjos no céu, em que os fiéis se unem à liturgia celeste"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "'Sanctus' (Santo, Santo, Santo) é uma aclamação baseada nas visões de Isaías e do Apocalipse, em que os fiéis se unem à liturgia celeste dos anjos e santos que louvam a Deus."
   },
   {
     "text": "O que é o 'Agnus Dei' (Cordeiro de Deus)?",
     "options": {
-      "A": "Invocação a Cristo como Cordeiro que tira os pecados do mundo",
-      "B": "Uma música festiva",
-      "C": "Uma prece de ação de graças",
-      "D": "Uma condecoração episcopal"
+      "A": "Uma condecoração episcopal",
+      "B": "Invocação a Cristo como Cordeiro que tira os pecados do mundo",
+      "C": "Uma música festiva",
+      "D": "Uma prece de ação de graças"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "'Agnus Dei' (Cordeiro de Deus) é uma invocação cristológica que proclama Jesus Cristo como o Cordeiro de Deus que tira o pecado do mundo, baseada no testemunho de João Batista."
   },
   {
     "text": "Qual é o propósito da 'Consagração'?",
     "options": {
-      "A": "Transformar pão e vinho no Corpo e Sangue de Cristo através das palavras do sacerdote",
-      "B": "Apenas uma bênção do pão e vinho",
+      "A": "Uma prática que qualquer fiel pode realizar",
+      "B": "Transformar pão e vinho no Corpo e Sangue de Cristo através das palavras do sacerdote",
       "C": "Um rito simbólico sem efeito real",
-      "D": "Uma prática que qualquer fiel pode realizar"
+      "D": "Apenas uma bênção do pão e vinho"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "A Consagração é o momento solene em que, através das palavras do sacerdote instituídas por Cristo, o pão e o vinho se transformam no Corpo e Sangue de Cristo."
   },
   {
     "text": "Qual é o significado da 'Epiclese' na Oração Eucarística?",
     "options": {
-      "A": "Invocação do Espírito Santo sobre os dons para que se tornem Corpo e Sangue de Cristo",
-      "B": "Uma bênção dos fiéis",
-      "C": "Uma prece pelos mortos",
+      "A": "Uma bênção dos fiéis",
+      "B": "Uma prece pelos mortos",
+      "C": "Invocação do Espírito Santo sobre os dons para que se tornem Corpo e Sangue de Cristo",
       "D": "Uma invocação dos santos"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "A Epiclese é a invocação do Espírito Santo na Oração Eucarística, pedindo que o Espírito Santo venha e transforme os dons em Corpo e Sangue de Cristo."
   },
   {
     "text": "Qual é a posição correta dos fiéis durante a Consagração?",
     "options": {
       "A": "Ajoelhados em reverência a Cristo que se torna presente",
-      "B": "De pé cantando",
-      "C": "Sentados em meditação",
+      "B": "Sentados em meditação",
+      "C": "De pé cantando",
       "D": "Livre escolha de cada fiel"
     },
     "correct": "A",
@@ -970,20 +970,20 @@
   {
     "text": "O que significa a instrução de 'comungar em cada Missa'?",
     "options": {
-      "A": "Que os fiéis devem receber a Eucaristia em cada Missa a que assistem, quando possível",
-      "B": "Que apenas o sacerdote pode comungar",
+      "A": "Que apenas o sacerdote pode comungar",
+      "B": "Que os fiéis devem receber a Eucaristia em cada Missa a que assistem, quando possível",
       "C": "Que a comunhão é opcional",
       "D": "Que cada fiel deve celebrar sua própria Missa"
     },
-    "correct": "A",
+    "correct": "B",
     "explanation": "O documento recomenda que os fiéis participem mais plenamente da sagrada Eucaristia, recebendo do mesmo sacrifício o Corpo do Senhor em cada Missa, além da comunhão espiritual."
   },
   {
     "text": "Qual é a importância de observar com atenção os ritos e gestos?",
     "options": {
       "A": "Favorecem a compreensão e participação consciente no mistério celebrado",
-      "B": "São apenas tradições sem importância",
-      "C": "Podem ser ignorados sem problema",
+      "B": "Podem ser ignorados sem problema",
+      "C": "São apenas tradições sem importância",
       "D": "Apenas o sacerdote precisa conhecê-los"
     },
     "correct": "A",
@@ -993,8 +993,8 @@
     "text": "Qual é a relação entre o sacrifício da Cruz e a Eucaristia?",
     "options": {
       "A": "A Eucaristia é a renovação sacramental do sacrifício da Cruz, perpetuando seu efeito",
-      "B": "São eventos completamente separados",
-      "C": "A Eucaristia é apenas simbólica",
+      "B": "A Eucaristia é apenas simbólica",
+      "C": "São eventos completamente separados",
       "D": "A Eucaristia substitui a Cruz"
     },
     "correct": "A",
@@ -1003,100 +1003,100 @@
   {
     "text": "Qual é o significado de 'memorial' na teologia eucarística?",
     "options": {
-      "A": "Tornar presente de modo sacramental o evento pascual de Cristo",
-      "B": "Apenas relembrar historicamente a morte de Cristo",
-      "C": "Uma recordação psicológica",
+      "A": "Apenas relembrar historicamente a morte de Cristo",
+      "B": "Uma recordação psicológica",
+      "C": "Tornar presente de modo sacramental o evento pascual de Cristo",
       "D": "Um gesto meramente simbólico"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "O 'memorial' (anamnese) na Eucaristia significa tornar presente de modo sacramental o sacrifício de Cristo, não apenas lembrá-lo historicamente, mas atualizá-lo."
   },
   {
     "text": "Qual é a importância do 'sacrifício de louvor' na Missa?",
     "options": {
-      "A": "Expressar a gratidão e adoração do povo a Deus pelo mistério da salvação",
+      "A": "Um gesto sem sentido religioso",
       "B": "Apenas cumprir uma obrigação legal",
-      "C": "Um gesto sem sentido religioso",
-      "D": "Uma prática exclusiva de clérigos"
+      "C": "Uma prática exclusiva de clérigos",
+      "D": "Expressar a gratidão e adoração do povo a Deus pelo mistério da salvação"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A Missa, como sacrifício de louvor, permite que toda a Igreja e povo de Deus expressem sua gratidão e adoração a Deus pelo mistério sublime da redenção em Cristo."
   },
   {
     "text": "Qual é o benefício espiritual da 'comunhão sob as duas espécies'?",
     "options": {
-      "A": "Oferece apresentação mais clara do sinal sacramental para compreensão do mistério",
+      "A": "Oferece maior eficácia que uma espécie",
       "B": "É necessário receber as duas espécies para ser válida",
-      "C": "Oferece maior eficácia que uma espécie",
+      "C": "Oferece apresentação mais clara do sinal sacramental para compreensão do mistério",
       "D": "É uma concessão para fiéis menos dedicados"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "A comunhão sob as duas espécies, quando autorizada, apresenta mais claramente o sinal sacramental do Cristo total (Corpo e Sangue), facilitando a compreensão do mistério."
   },
   {
     "text": "Qual é o papel da 'Profissão de Fé' (Credo) na Missa?",
     "options": {
-      "A": "Expressar a adesão dos fiéis à fé da Igreja no mistério celebrado",
-      "B": "Apenas um exercício de memória",
-      "C": "Uma tradição sem significado",
-      "D": "Uma prova de conhecimento teológico"
+      "A": "Uma tradição sem significado",
+      "B": "Uma prova de conhecimento teológico",
+      "C": "Apenas um exercício de memória",
+      "D": "Expressar a adesão dos fiéis à fé da Igreja no mistério celebrado"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "A Profissão de Fé (Credo) permite que os fiéis, em comunidade, reafirmem sua adesão aos mistérios fundamentais da fé cristã, conectando-se com a tradição apostólica."
   },
   {
     "text": "Qual é a significância de Cristo estar 'presente' de múltiplas formas na Missa?",
     "options": {
-      "A": "Cristo está presente na Palavra, no sacerdote, na assembleia e principalmente nas espécies eucarísticas",
-      "B": "Cristo está apenas no tabernáculo",
-      "C": "Cristo está apenas na comunhão",
-      "D": "A presença de Cristo é apenas simbólica"
+      "A": "A presença de Cristo é apenas simbólica",
+      "B": "Cristo está apenas na comunhão",
+      "C": "Cristo está apenas no tabernáculo",
+      "D": "Cristo está presente na Palavra, no sacerdote, na assembleia e principalmente nas espécies eucarísticas"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O documento ensina que Cristo está presente de múltiplas formas durante a Missa: na Palavra proclamada, no sacerdote que age em sua pessoa, na comunidade reunida e, principalmente, nas espécies consagradas."
   },
   {
     "text": "Qual é a importância do 'Rito da Paz' antes da comunhão?",
     "options": {
-      "A": "Promover a paz e caridade entre os fiéis antes de receber o Corpo de Cristo",
+      "A": "Uma prática meramente folclórica",
       "B": "Apenas uma saudação social",
       "C": "Um intervalo opcional",
-      "D": "Uma prática meramente folclórica"
+      "D": "Promover a paz e caridade entre os fiéis antes de receber o Corpo de Cristo"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O Rito da Paz é um momento significativo onde os fiéis expressam e fortalecem a paz e comunhão fraterna, preparando-se para receber Cristo na Eucaristia em unidade de espírito."
   },
   {
     "text": "Qual é o critério para a escolha das Orações Eucarísticas?",
     "options": {
-      "A": "Sua oportunidade conforme o dia, celebração e necessidades pastorais",
-      "B": "Sempre a mesma Oração Eucarística I",
+      "A": "Sempre a mesma Oração Eucarística I",
+      "B": "Apenas as Orações Eucarísticas I e II são válidas",
       "C": "Escolha pessoal e arbitrária do sacerdote",
-      "D": "Apenas as Orações Eucarísticas I e II são válidas"
+      "D": "Sua oportunidade conforme o dia, celebração e necessidades pastorais"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O documento estabelece que a escolha da Oração Eucarística deve ser feita conforme a oportunidade de cada dia, tipo de celebração e necessidades pastorais da comunidade."
   },
   {
     "text": "Qual é a responsabilidade do fiel quanto à sua participação litúrgica?",
     "options": {
-      "A": "Participar conscientemente com corpo e espírito, em fé, esperança e caridade",
-      "B": "Apenas estar presente fisicamente",
-      "C": "Participar apenas mentalmente",
-      "D": "Nenhuma responsabilidade especial"
+      "A": "Participar apenas mentalmente",
+      "B": "Nenhuma responsabilidade especial",
+      "C": "Participar conscientemente com corpo e espírito, em fé, esperança e caridade",
+      "D": "Apenas estar presente fisicamente"
     },
-    "correct": "A",
+    "correct": "C",
     "explanation": "Conforme o documento, é direito e dever do povo cristão participar na Missa de forma consciente, ativa e plena, com corpo e espírito, em fé, esperança e caridade ardente."
   },
   {
     "text": "Qual é o ensinamento do documento sobre a 'comunhão espiritual'?",
     "options": {
-      "A": "É válida para aqueles que desejam comungar mas não podem receber sacramentalmente",
-      "B": "É superior à comunhão sacramental",
-      "C": "Substitui completamente a comunhão sacramental",
-      "D": "Não tem nenhum valor espiritual"
+      "A": "É superior à comunhão sacramental",
+      "B": "Substitui completamente a comunhão sacramental",
+      "C": "Não tem nenhum valor espiritual",
+      "D": "É válida para aqueles que desejam comungar mas não podem receber sacramentalmente"
     },
-    "correct": "A",
+    "correct": "D",
     "explanation": "O documento reconhece a comunhão espiritual como válida para os fiéis que desejam participar plenamente do sacrifício eucarístico mas não podem receber fisicamente a Eucaristia sacramental."
   }
 ]
