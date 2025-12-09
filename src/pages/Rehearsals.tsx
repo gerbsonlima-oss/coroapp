@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Calendar, MapPin, Users, Trash2, Edit2 } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, MapPin, Users, Trash2, Edit2, Phone, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -27,6 +27,7 @@ interface Profile {
   full_name: string | null;
   email: string;
   naipe: string | null;
+  phone: string | null;
 }
 
 interface Attendance {
@@ -109,7 +110,7 @@ const Rehearsals = () => {
       // Fetch all profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, naipe')
+        .select('id, full_name, email, naipe, phone')
         .order('full_name');
       if (profilesError) throw profilesError;
       setProfiles(profilesData || []);
@@ -241,6 +242,27 @@ const Rehearsals = () => {
   const getAttendanceCount = (rehearsalId: string) => {
     const rehearsalAttendance = attendance[rehearsalId] || [];
     return rehearsalAttendance.filter(a => a.attended).length;
+  };
+
+  const formatPhoneForWhatsApp = (phone: string) => {
+    return phone.replace(/\D/g, '');
+  };
+
+  const handleSendWhatsAppToAll = () => {
+    const phonesWithAttendance = profiles
+      .filter(p => p.phone)
+      .map(p => formatPhoneForWhatsApp(p.phone!));
+    
+    if (phonesWithAttendance.length === 0) {
+      toast.error('Nenhum participante com telefone cadastrado');
+      return;
+    }
+
+    // Open WhatsApp with the first number and copy message
+    const message = encodeURIComponent(`Olá! Mensagem do Coro da Diocese de Quixadá.`);
+    window.open(`https://wa.me/55${phonesWithAttendance[0]}?text=${message}`, '_blank');
+    
+    toast.info(`${phonesWithAttendance.length} números disponíveis. Aberto o primeiro.`);
   };
 
   const isUserAttended = (rehearsalId: string, userId: string) => {
@@ -378,12 +400,25 @@ const Rehearsals = () => {
       <Dialog open={isAttendanceDialogOpen} onOpenChange={setIsAttendanceDialogOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Lista de Presença
-              {selectedRehearsal && (
-                <span className="block text-sm font-normal text-muted-foreground mt-1">
-                  {format(new Date(selectedRehearsal.date), "dd/MM/yyyy")}
-                </span>
+            <DialogTitle className="flex items-center justify-between">
+              <div>
+                Lista de Presença
+                {selectedRehearsal && (
+                  <span className="block text-sm font-normal text-muted-foreground mt-1">
+                    {format(new Date(selectedRehearsal.date), "dd/MM/yyyy")}
+                  </span>
+                )}
+              </div>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleSendWhatsAppToAll}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </Button>
               )}
             </DialogTitle>
           </DialogHeader>
@@ -414,6 +449,20 @@ const Rehearsals = () => {
                           )}
                           <div className="flex-1">
                             <p className="text-sm font-medium">{profile.full_name || profile.email}</p>
+                            {profile.phone && (
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <Phone className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">{profile.phone}</span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-5 w-5"
+                                  onClick={() => window.open(`https://wa.me/55${formatPhoneForWhatsApp(profile.phone!)}`, '_blank')}
+                                >
+                                  <MessageCircle className="h-3 w-3 text-green-600" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
