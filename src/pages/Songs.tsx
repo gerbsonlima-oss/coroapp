@@ -164,7 +164,7 @@ const Songs = () => {
             <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
               <Music className="h-6 w-6 md:h-7 md:w-7 text-primary" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold">Biblioteca</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Repertório</h1>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
             <InstallPWAButton size="icon" showText={false} />

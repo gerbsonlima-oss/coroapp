@@ -4,8 +4,10 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
 import { SplashScreen } from "@/components/SplashScreen";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+const Home = lazy(() => import("./pages/Home"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Events = lazy(() => import("./pages/Events"));
 const NewEvent = lazy(() => import("./pages/NewEvent"));
@@ -20,6 +22,8 @@ const AdminSongTypes = lazy(() => import("./pages/AdminSongTypes"));
 const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
 const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const EventRegistrations = lazy(() => import("./pages/EventRegistrations"));
+const Liturgy = lazy(() => import("./pages/Liturgy"));
+const Quiz = lazy(() => import("./pages/Quiz"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const LoadingFallback = () => (
@@ -29,16 +33,19 @@ const LoadingFallback = () => (
 );
 
 function App() {
+  const queryClient = useMemo(() => new QueryClient(), []);
+
   return (
     <>
       <SplashScreen />
       <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RouteTracker />
         <Toaster />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
-            <Route path="/" element={<Navigate to="/events" replace />} />
+            <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/public/events/:id" element={<EventDetails />} />
             <Route path="/events" element={<Events />} />
@@ -105,10 +112,13 @@ function App() {
             <Route path="/rehearsals" element={<Rehearsals />} />
             <Route path="/events/:eventId/rehearsals" element={<Rehearsals />} />
             <Route path="/events/:eventId/registrations" element={<EventRegistrations />} />
+            <Route path="/liturgy" element={<Liturgy />} />
+            <Route path="/quiz" element={<Quiz />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </AuthProvider>
+      </QueryClientProvider>
       </BrowserRouter>
     </>
   );

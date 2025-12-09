@@ -1,0 +1,110 @@
+
+> vite_react_shadcn_ts@0.0.0 build
+> vite build
+
+[36mvite v5.4.19 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 3447 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mregisterSW.js                          [39m[1m[2m    0.13 kB[22m[1m[22m
+[2mdist/[22m[32mmanifest.webmanifest                   [39m[1m[2m    0.37 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                             [39m[1m[2m    2.05 kB[22m[1m[22m[2m │ gzip:   0.82 kB[22m
+[2mdist/[22m[32massets/coro-logo-DCd8OseH.png          [39m[1m[2m  653.66 kB[22m[1m[22m
+[2mdist/[22m[32massets/pdf.worker.min-GEee69Xl.js      [39m[1m[2m1,001.93 kB[22m[1m[22m
+[2mdist/[22m[32massets/diocese-brasao-BTDA8Yw4.png     [39m[1m[2m1,258.40 kB[22m[1m[22m
+[2mdist/[22m[35massets/index-D5Y5mB-I.css              [39m[1m[2m  105.90 kB[22m[1m[22m[2m │ gzip:  17.13 kB[22m
+[2mdist/[22m[36massets/check-ELpaH2Oo.js               [39m[1m[2m    0.29 kB[22m[1m[22m[2m │ gzip:   0.24 kB[22m
+[2mdist/[22m[36massets/chevron-left-BIPjmhDO.js        [39m[1m[2m    0.30 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/chevron-right-Dvu43EcD.js       [39m[1m[2m    0.30 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/plus-CND1kaO4.js                [39m[1m[2m    0.32 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/x-D7jokUNE.js                   [39m[1m[2m    0.32 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/music-2-QvRrr9h1.js             [39m[1m[2m    0.33 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/arrow-left-B9LLhceI.js          [39m[1m[2m    0.33 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/rotate-ccw-CmTKdRRj.js          [39m[1m[2m    0.37 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/music-Dete-gKJ.js               [39m[1m[2m    0.38 kB[22m[1m[22m[2m │ gzip:   0.28 kB[22m
+[2mdist/[22m[36massets/pen-BfUoFRQY.js                 [39m[1m[2m    0.41 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/circle-alert-o3h8MtL4.js        [39m[1m[2m    0.42 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/upload-yJ4q-0yn.js              [39m[1m[2m    0.43 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/calendar-DJfyQrL7.js            [39m[1m[2m    0.43 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/log-out-Dhstf05f.js             [39m[1m[2m    0.43 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/download-B05GlDjL.js            [39m[1m[2m    0.43 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/image-B95TQsrI.js               [39m[1m[2m    0.44 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/users-B4EA1G2Q.js               [39m[1m[2m    0.47 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/file-text-nfedyhVi.js           [39m[1m[2m    0.50 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/trash-2-CtPkJuFT.js             [39m[1m[2m    0.53 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
+[2mdist/[22m[36massets/index-BXEv_2Yu.js               [39m[1m[2m    0.53 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+[2mdist/[22m[36massets/grip-vertical-BK7pZ_Rd.js       [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/textarea-DCqJaGo6.js            [39m[1m[2m    0.60 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+[2mdist/[22m[36massets/label-CUyGU4PV.js               [39m[1m[2m    0.62 kB[22m[1m[22m[2m │ gzip:   0.40 kB[22m
+[2mdist/[22m[36massets/NotFound-DKH0f1Sr.js            [39m[1m[2m    0.62 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+[2mdist/[22m[36massets/play-C4LBUrW6.js                [39m[1m[2m    0.63 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/sparkles-StoJyxOD.js            [39m[1m[2m    0.68 kB[22m[1m[22m[2m │ gzip:   0.40 kB[22m
+[2mdist/[22m[36massets/input-r0rQ5zdO.js               [39m[1m[2m    0.70 kB[22m[1m[22m[2m │ gzip:   0.41 kB[22m
+[2mdist/[22m[36massets/index-BTKi2-cb.js               [39m[1m[2m    0.73 kB[22m[1m[22m[2m │ gzip:   0.42 kB[22m
+[2mdist/[22m[36massets/badge-R3WqqEeM.js               [39m[1m[2m    0.74 kB[22m[1m[22m[2m │ gzip:   0.40 kB[22m
+[2mdist/[22m[36massets/zoom-out-DgaDIKCv.js            [39m[1m[2m    0.84 kB[22m[1m[22m[2m │ gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/card-xDrQc-1g.js                [39m[1m[2m    1.09 kB[22m[1m[22m[2m │ gzip:   0.43 kB[22m
+[2mdist/[22m[36massets/InstallPWAButton-r-Y-7TZh.js    [39m[1m[2m    1.28 kB[22m[1m[22m[2m │ gzip:   0.68 kB[22m
+[2mdist/[22m[36massets/index-DjqKB7Uo.js               [39m[1m[2m    1.40 kB[22m[1m[22m[2m │ gzip:   0.70 kB[22m
+[2mdist/[22m[36massets/midiExport-CHFouLR_.js          [39m[1m[2m    1.89 kB[22m[1m[22m[2m │ gzip:   1.04 kB[22m
+[2mdist/[22m[36massets/dialog-Bik0_aB0.js              [39m[1m[2m    2.06 kB[22m[1m[22m[2m │ gzip:   0.82 kB[22m
+[2mdist/[22m[36massets/index-CefM8ynE.js               [39m[1m[2m    2.16 kB[22m[1m[22m[2m │ gzip:   0.95 kB[22m
+[2mdist/[22m[36massets/useAudioCache-DnbnHPoN.js       [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:   1.06 kB[22m
+[2mdist/[22m[36massets/index-DzNhuneZ.js               [39m[1m[2m    2.62 kB[22m[1m[22m[2m │ gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/BottomNavigation-BhjNOE9I.js    [39m[1m[2m    2.86 kB[22m[1m[22m[2m │ gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/Liturgy-CXwE7VFz.js             [39m[1m[2m    3.16 kB[22m[1m[22m[2m │ gzip:   1.47 kB[22m
+[2mdist/[22m[36massets/checkbox-DstwTXjZ.js            [39m[1m[2m    4.02 kB[22m[1m[22m[2m │ gzip:   1.76 kB[22m
+[2mdist/[22m[36massets/alert-dialog-tqvrJt8m.js        [39m[1m[2m    4.83 kB[22m[1m[22m[2m │ gzip:   1.77 kB[22m
+[2mdist/[22m[36massets/AudioPlayer-B0d4iGFB.js         [39m[1m[2m    5.07 kB[22m[1m[22m[2m │ gzip:   1.92 kB[22m
+[2mdist/[22m[36massets/index-0xnSPPcm.js               [39m[1m[2m    5.38 kB[22m[1m[22m[2m │ gzip:   2.05 kB[22m
+[2mdist/[22m[36massets/SongDetails-Dbl8rJxT.js         [39m[1m[2m    5.55 kB[22m[1m[22m[2m │ gzip:   2.29 kB[22m
+[2mdist/[22m[36massets/Quiz--uhsbG7r.js                [39m[1m[2m    6.54 kB[22m[1m[22m[2m │ gzip:   2.23 kB[22m
+[2mdist/[22m[36massets/EventRegistrations-Q-PuHZQw.js  [39m[1m[2m    6.88 kB[22m[1m[22m[2m │ gzip:   2.60 kB[22m
+[2mdist/[22m[36massets/Events-Ch9lC3k4.js              [39m[1m[2m    7.21 kB[22m[1m[22m[2m │ gzip:   2.68 kB[22m
+[2mdist/[22m[36massets/Auth-miW3o3fa.js                [39m[1m[2m    7.35 kB[22m[1m[22m[2m │ gzip:   2.37 kB[22m
+[2mdist/[22m[36massets/NewEvent-DesN-7LA.js            [39m[1m[2m    7.81 kB[22m[1m[22m[2m │ gzip:   2.94 kB[22m
+[2mdist/[22m[36massets/AdminSongTypes-DTpofYpp.js      [39m[1m[2m    8.41 kB[22m[1m[22m[2m │ gzip:   2.89 kB[22m
+[2mdist/[22m[36massets/slider-YR1djKE8.js              [39m[1m[2m    8.57 kB[22m[1m[22m[2m │ gzip:   3.47 kB[22m
+[2mdist/[22m[36massets/Songs-B50b1Wa5.js               [39m[1m[2m    9.30 kB[22m[1m[22m[2m │ gzip:   3.51 kB[22m
+[2mdist/[22m[36massets/pdfToImage-BeX-UkE4.js          [39m[1m[2m    9.80 kB[22m[1m[22m[2m │ gzip:   4.00 kB[22m
+[2mdist/[22m[36massets/usePlaylistPlayer-DlWzrXol.js   [39m[1m[2m   10.34 kB[22m[1m[22m[2m │ gzip:   3.08 kB[22m
+[2mdist/[22m[36massets/Rehearsals-D6xzVclR.js          [39m[1m[2m   11.33 kB[22m[1m[22m[2m │ gzip:   4.03 kB[22m
+[2mdist/[22m[36massets/AudioToSheet-C9UxjrxG.js        [39m[1m[2m   12.22 kB[22m[1m[22m[2m │ gzip:   4.83 kB[22m
+[2mdist/[22m[36massets/SongForm-DD29jXUL.js            [39m[1m[2m   13.78 kB[22m[1m[22m[2m │ gzip:   4.94 kB[22m
+[2mdist/[22m[36massets/EditEvent-D1vkurax.js           [39m[1m[2m   14.63 kB[22m[1m[22m[2m │ gzip:   4.15 kB[22m
+[2mdist/[22m[36massets/SongTypeDetails-BHGqMBUC.js     [39m[1m[2m   15.65 kB[22m[1m[22m[2m │ gzip:   5.48 kB[22m
+[2mdist/[22m[36massets/Combination-C2Z1dHeY.js         [39m[1m[2m   20.21 kB[22m[1m[22m[2m │ gzip:   7.26 kB[22m
+[2mdist/[22m[36massets/select-q5zudG1w.js              [39m[1m[2m   21.79 kB[22m[1m[22m[2m │ gzip:   7.66 kB[22m
+[2mdist/[22m[36massets/purify.es-B6FQ9oRL.js           [39m[1m[2m   22.57 kB[22m[1m[22m[2m │ gzip:   8.74 kB[22m
+[2mdist/[22m[36massets/dropdown-menu-CGNvaodQ.js       [39m[1m[2m   24.92 kB[22m[1m[22m[2m │ gzip:   7.41 kB[22m
+[2mdist/[22m[36massets/button-C8fgnnkg.js              [39m[1m[2m   26.01 kB[22m[1m[22m[2m │ gzip:   8.98 kB[22m
+[2mdist/[22m[36massets/pt-BR-zDp5R3A4.js               [39m[1m[2m   26.44 kB[22m[1m[22m[2m │ gzip:   7.22 kB[22m
+[2mdist/[22m[36massets/index-ii_y-q6F.js               [39m[1m[2m   27.20 kB[22m[1m[22m[2m │ gzip:  10.58 kB[22m
+[2mdist/[22m[36massets/Home-l1-AIymi.js                [39m[1m[2m   49.64 kB[22m[1m[22m[2m │ gzip:  10.62 kB[22m
+[2mdist/[22m[36massets/types-B9wejLtr.js               [39m[1m[2m   53.35 kB[22m[1m[22m[2m │ gzip:  12.16 kB[22m
+[2mdist/[22m[36massets/EventQuickEdit-DnlLrWPL.js      [39m[1m[2m   87.77 kB[22m[1m[22m[2m │ gzip:  27.25 kB[22m
+[2mdist/[22m[36massets/index.es-C2SdunCH.js            [39m[1m[2m  150.52 kB[22m[1m[22m[2m │ gzip:  51.45 kB[22m
+[2mdist/[22m[36massets/html2canvas.esm-CBrSDip1.js     [39m[1m[2m  201.42 kB[22m[1m[22m[2m │ gzip:  48.03 kB[22m
+[2mdist/[22m[36massets/jspdf.es.min-lWIQJkil.js        [39m[1m[2m  387.85 kB[22m[1m[22m[2m │ gzip: 127.32 kB[22m
+[2mdist/[22m[36massets/index-CWexKj-K.js               [39m[1m[2m  430.28 kB[22m[1m[22m[2m │ gzip: 125.44 kB[22m
+[2mdist/[22m[36massets/pdf-CNdbj11k.js                 [39m[1m[2m  444.93 kB[22m[1m[22m[2m │ gzip: 130.34 kB[22m
+[2mdist/[22m[36massets/EventDetails-mfyU5NKq.js        [39m[1m[33m  693.63 kB[39m[22m[2m │ gzip: 262.72 kB[22m
+[32m✓ built in 28.81s[39m
+
+PWA v1.1.0
+Building public/sw.js service worker ("es" format)...
+[36mvite v5.4.19 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 82 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[36msw.mjs  [39m[1m[2m25.86 kB[22m[1m[22m[2m │ gzip: 8.28 kB[22m
+[32m✓ built in 27.81s[39m
+
+PWA v1.1.0
+mode      injectManifest
+format:   es
+precache  90 entries (6122.94 KiB)
+files generated
+  dist/sw.js
