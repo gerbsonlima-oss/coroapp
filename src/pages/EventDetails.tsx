@@ -130,8 +130,22 @@ const EventDetails = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedSong, setSelectedSong] = useState<string | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [selectedNaipe, setSelectedNaipe] = useState<string>('todas');
-  const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>('naipe');
+  const [selectedNaipe, setSelectedNaipe] = useState<string>(() => {
+    return localStorage.getItem('eventDetails_selectedNaipe') || 'todas';
+  });
+  const [groupBy, setGroupBy] = useState<'musica' | 'naipe'>(() => {
+    const saved = localStorage.getItem('eventDetails_groupBy');
+    return (saved === 'musica' || saved === 'naipe') ? saved : 'naipe';
+  });
+
+  // Persistir preferências no localStorage
+  useEffect(() => {
+    localStorage.setItem('eventDetails_selectedNaipe', selectedNaipe);
+  }, [selectedNaipe]);
+
+  useEffect(() => {
+    localStorage.setItem('eventDetails_groupBy', groupBy);
+  }, [groupBy]);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterModal, setShowFilterModal] = useState(false);
