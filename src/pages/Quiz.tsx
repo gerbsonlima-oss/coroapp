@@ -89,12 +89,10 @@ const Quiz = () => {
   };
 
   const handleNext = () => {
-    if (currentIndex < sessionQuestions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-      setFeedback(null);
-    }
+    setCurrentIndex(currentIndex + 1);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setFeedback(null);
   };
 
   const selectRandomQuestions = () => {
@@ -298,7 +296,6 @@ const Quiz = () => {
               <Button 
                 onClick={handleNext}
                 className="w-full h-11 text-base font-semibold"
-                disabled={currentIndex >= QUESTIONS_PER_SESSION - 1}
               >
                 {currentIndex >= QUESTIONS_PER_SESSION - 1 ? 'Finalizar Quiz' : 'Próxima'}
                 {currentIndex < QUESTIONS_PER_SESSION - 1 && <ChevronRight className="ml-2 h-5 w-5" />}
