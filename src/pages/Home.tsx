@@ -214,9 +214,9 @@ const Home = () => {
                       <img
                         src={event.cover_image_url}
                         alt={event.name}
-                        loading={index < 2 ? "eager" : "lazy"}
-                        decoding={index < 2 ? "sync" : "async"}
-                        fetchPriority={index === 0 ? "high" : undefined}
+                        loading={index < 3 ? "eager" : "lazy"}
+                        decoding={index < 3 ? "sync" : "async"}
+                        fetchPriority={index < 2 ? "high" : undefined}
                         className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
