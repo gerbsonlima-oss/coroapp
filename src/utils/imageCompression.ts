@@ -2,10 +2,11 @@ interface ImageCompressionOptions {
   maxWidth?: number;
   maxHeight?: number;
   quality?: number;
+  format?: 'webp' | 'jpeg' | 'png';
 }
 
-const DEFAULT_MAX_WIDTH = 1920;
-const DEFAULT_MAX_HEIGHT = 1080;
+const DEFAULT_MAX_WIDTH = 800;
+const DEFAULT_MAX_HEIGHT = 800;
 const DEFAULT_QUALITY = 0.8;
 
 export async function compressImage(
@@ -15,6 +16,7 @@ export async function compressImage(
   const maxWidth = options.maxWidth || DEFAULT_MAX_WIDTH;
   const maxHeight = options.maxHeight || DEFAULT_MAX_HEIGHT;
   const quality = options.quality || DEFAULT_QUALITY;
+  const format = options.format || 'webp';
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -27,10 +29,11 @@ export async function compressImage(
           const canvas = document.createElement('canvas');
           let { width, height } = img;
 
+          // Calculate new dimensions maintaining aspect ratio
           if (width > maxWidth || height > maxHeight) {
             const ratio = Math.min(maxWidth / width, maxHeight / height);
-            width *= ratio;
-            height *= ratio;
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
           }
 
           canvas.width = width;
@@ -42,8 +45,13 @@ export async function compressImage(
             return;
           }
 
+          // Use better image smoothing for resizing
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
 
+          const mimeType = getMimeType(format);
+          
           canvas.toBlob(
             (blob) => {
               if (!blob) {
@@ -59,16 +67,18 @@ export async function compressImage(
                 `Image compressed: ${(originalSize / 1024).toFixed(2)}KB → ${(compressedSize / 1024).toFixed(2)}KB (${compressionRatio}% reduction)`
               );
 
-              const extension = file.name.split('.').pop() || 'jpg';
+              const extension = format === 'webp' ? 'webp' : format === 'png' ? 'png' : 'jpg';
+              const newFileName = file.name.replace(/\.[^.]+$/, `.${extension}`);
+              
               const compressedFile = new File(
                 [blob],
-                file.name.replace(/\.[^.]+$/, `.${extension}`),
-                { type: blob.type }
+                newFileName,
+                { type: mimeType }
               );
 
               resolve(compressedFile);
             },
-            getMimeType(file.type),
+            mimeType,
             quality
           );
         } catch (error) {
@@ -91,11 +101,23 @@ export async function compressImage(
   });
 }
 
-function getMimeType(originalType: string): string {
-  if (originalType.includes('webp')) return 'image/webp';
-  if (originalType.includes('png')) return 'image/png';
-  if (originalType.includes('gif')) return 'image/gif';
+function getMimeType(format: string): string {
+  if (format === 'webp') return 'image/webp';
+  if (format === 'png') return 'image/png';
   return 'image/jpeg';
+}
+
+/**
+ * Compresses an image specifically for event covers
+ * Uses WebP format and smaller dimensions for optimal performance
+ */
+export async function compressEventCoverImage(file: File): Promise<File> {
+  return compressImage(file, {
+    maxWidth: 400,
+    maxHeight: 400,
+    quality: 0.75,
+    format: 'webp',
+  });
 }
 
 export function getImageCompressionInfo(

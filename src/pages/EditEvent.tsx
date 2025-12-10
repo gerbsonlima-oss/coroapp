@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Calendar, Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { compressEventCoverImage } from '@/utils/imageCompression';
 import { z } from 'zod';
 import {
   AlertDialog,
@@ -181,13 +182,14 @@ const EditEvent = () => {
 
     setUploadingImage(true);
     try {
-      const fileExt = coverImageFile.name.split('.').pop();
-      const fileName = `${userId}/${id}-${Date.now()}.${fileExt}`;
+      // Compress image to WebP format for better performance
+      const compressedFile = await compressEventCoverImage(coverImageFile);
+      const fileName = `${userId}/${id}-${Date.now()}.webp`;
 
       const { error: uploadError, data } = await supabase.storage
         .from('event-covers')
-        .upload(fileName, coverImageFile, {
-          cacheControl: '3600',
+        .upload(fileName, compressedFile, {
+          cacheControl: '31536000', // 1 year cache
           upsert: true
         });
 
