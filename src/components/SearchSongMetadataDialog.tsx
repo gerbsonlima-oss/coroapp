@@ -206,7 +206,21 @@ export function SearchSongMetadataDialog({
                     placeholder="Digite um nome alternativo para a música"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && alternativeSearchName.trim()) {
-                        handleSearch();
+                        setLoading(true);
+                        searchSongMetadata(alternativeSearchName)
+                          .then(result => {
+                            if (result && Object.keys(result).length > 1) {
+                              setMetadata(result);
+                              setEditedComposer(result.composer || '');
+                              setEditedAlbum(result.album || '');
+                              setEditedLyrics(result.lyrics || '');
+                              setEditedYear(result.year?.toString() || '');
+                            } else {
+                              toast.error('Nenhum dado encontrado');
+                            }
+                          })
+                          .catch(() => toast.error('Erro ao buscar'))
+                          .finally(() => setLoading(false));
                       }
                     }}
                   />
