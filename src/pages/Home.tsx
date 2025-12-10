@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Music, Sparkles, MapPin, Clock } from 'lucide-react';
+import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
+import { useAuth } from '@/hooks/useAuth';
+import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { format, addMonths, addDays, getDaysInMonth, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
@@ -42,6 +44,7 @@ const getLiturgicalColor = (season: string): string => {
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
@@ -148,6 +151,22 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-28">
+      {/* Header with Auth and Install buttons */}
+      <div className="flex items-center justify-end gap-2 px-4 py-3">
+        {!user && (
+          <Button
+            onClick={() => navigate('/auth')}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <LogIn className="h-4 w-4" />
+            Entrar
+          </Button>
+        )}
+        <InstallPWAButton />
+      </div>
+
       {/* Hero Section */}
       <div className={`bg-gradient-to-br ${liturgicalColor} text-white pt-6 pb-8 px-4 rounded-b-2xl shadow-lg`}>
         <div className="text-center space-y-1">

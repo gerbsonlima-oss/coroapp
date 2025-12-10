@@ -316,21 +316,23 @@ const EditEvent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-lg">
-        <div className="container mx-auto flex items-center gap-4 p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/events/${id}`)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Editar Evento</h1>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5 pb-20">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
+        <div className="flex items-center gap-4 px-4 py-3">
+          <button 
+            onClick={() => navigate(`/events/${id}`)}
+            className="p-2 rounded-full hover:bg-secondary transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-xl font-bold">Editar Evento</h1>
         </div>
       </header>
 
-      <main className="container mx-auto p-4">
-        <Card className="gradient-card border-border/50 p-6 shadow-card">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm">Nome do Evento *</Label>
+      <main className="px-3 py-3 max-w-2xl mx-auto h-[calc(100vh-80px)] flex flex-col">
+        <form onSubmit={handleSubmit} className="space-y-3 flex-1 overflow-y-auto">
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="name" className="text-xs font-semibold">Nome do Evento *</Label>
               <Input
                 id="name"
                 type="text"
@@ -338,15 +340,13 @@ const EditEvent = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={loading}
-                className={errors.name ? 'border-destructive' : ''}
+                className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.name ? 'border-red-500' : ''}`}
               />
-              {errors.name && (
-                <p className="text-xs text-destructive">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="cover">Imagem de Capa</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="cover" className="text-xs font-semibold">Imagem de Capa</Label>
               <div className="space-y-4">
                 {coverImageUrl ? (
                   <div className="relative aspect-video overflow-hidden rounded-lg border border-border">
@@ -400,8 +400,8 @@ const EditEvent = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Tema do PDF de Partituras</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label className="text-xs font-semibold">Tema do PDF de Partituras</Label>
               <p className="text-xs text-muted-foreground">
                 Escolha a paleta de cores usada na capa, no índice e nos cabeçalhos das partituras exportadas.
               </p>
@@ -535,11 +535,76 @@ const EditEvent = () => {
                   <span className="font-semibold text-foreground">Vinho Borgonha</span>
                   <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-rose-800 to-pink-300" />
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('indigo_silver')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'indigo_silver'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Índigo & Prata</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-indigo-700 to-slate-300" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('navy_gold')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'navy_gold'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Azul Marinho & Ouro</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-blue-900 to-yellow-500" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('terracotta_cream')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'terracotta_cream'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Terracota & Creme</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-orange-700 to-amber-100" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('jade_bronze')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'jade_bronze'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Jade & Bronze</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-green-600 to-amber-700" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPdfTheme('charcoal_rose')}
+                  className={`flex flex-col items-start rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                    pdfTheme === 'charcoal_rose'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <span className="font-semibold text-foreground">Carvão & Rosa</span>
+                  <span className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gradient-to-r from-gray-800 to-rose-300" />
+                </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-sm">Data *</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="date" className="text-xs font-semibold">Data *</Label>
               <div className="relative">
                 <Input
                   id="date"
@@ -547,17 +612,15 @@ const EditEvent = () => {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   disabled={loading}
-                  className={errors.date ? 'border-destructive' : ''}
+                  className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.date ? 'border-red-500' : ''}`}
                 />
-                <Calendar className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               </div>
-              {errors.date && (
-                <p className="text-xs text-destructive">{errors.date}</p>
-              )}
+              {errors.date && <p className="text-xs text-red-500">{errors.date}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm">Local</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="location" className="text-xs font-semibold">Local</Label>
               <Input
                 id="location"
                 type="text"
@@ -565,15 +628,13 @@ const EditEvent = () => {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 disabled={loading}
-                className={errors.location ? 'border-destructive' : ''}
+                className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.location ? 'border-red-500' : ''}`}
               />
-              {errors.location && (
-                <p className="text-xs text-destructive">{errors.location}</p>
-              )}
+              {errors.location && <p className="text-xs text-red-500">{errors.location}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-sm">Observações</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="notes" className="text-xs font-semibold">Observações</Label>
               <Textarea
                 id="notes"
                 placeholder="Notas sobre o evento..."
@@ -581,15 +642,13 @@ const EditEvent = () => {
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={loading}
                 rows={4}
-                className={errors.notes ? 'border-destructive' : ''}
+                className={`rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.notes ? 'border-red-500' : ''}`}
               />
-              {errors.notes && (
-                <p className="text-xs text-destructive">{errors.notes}</p>
-              )}
+              {errors.notes && <p className="text-xs text-red-500">{errors.notes}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Tipos de música deste evento</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label className="text-xs font-semibold">Tipos de música deste evento</Label>
               <p className="text-xs text-muted-foreground">
                 Selecione quais tipos litúrgicos serão utilizados neste evento. Todos vêm
                 selecionados por padrão.
@@ -620,7 +679,7 @@ const EditEvent = () => {
 
             <Button
               type="submit"
-              className="w-full gradient-primary shadow-glow"
+              className="w-full gradient-primary shadow-glow mt-2"
               disabled={loading || uploadingImage}
             >
               {loading || uploadingImage ? (
@@ -645,7 +704,6 @@ const EditEvent = () => {
               </Button>
             )}
           </form>
-        </Card>
       </main>
 
       {/* Delete Confirmation Dialog */}

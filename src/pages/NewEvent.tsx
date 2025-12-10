@@ -271,21 +271,23 @@ const toggleTypeSelection = (typeId: string) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-lg">
-        <div className="container mx-auto flex items-center gap-4 p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/events')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Novo Evento</h1>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5 pb-20">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
+        <div className="flex items-center gap-4 px-4 py-3">
+          <button 
+            onClick={() => navigate('/events')}
+            className="p-2 rounded-full hover:bg-secondary transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-xl font-bold">Novo Evento</h1>
         </div>
       </header>
 
-      <main className="container mx-auto p-4">
-        <Card className="gradient-card border-border/50 p-6 shadow-card">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm">Nome do Evento *</Label>
+      <main className="px-3 py-3 max-w-2xl mx-auto h-[calc(100vh-80px)] flex flex-col">
+        <form onSubmit={handleSubmit} className="space-y-3 flex-1 overflow-y-auto">
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="name" className="text-xs font-semibold">Nome do Evento *</Label>
               <Input
                 id="name"
                 type="text"
@@ -293,15 +295,13 @@ const toggleTypeSelection = (typeId: string) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={loading}
-                className={errors.name ? 'border-destructive' : ''}
+                className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.name ? 'border-red-500' : ''}`}
               />
-              {errors.name && (
-                <p className="text-xs text-destructive">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="cover">Imagem de Capa</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="cover" className="text-xs font-semibold">Imagem de Capa</Label>
               <div className="space-y-4">
                 {coverImageUrl ? (
                   <div className="relative aspect-video overflow-hidden rounded-lg border border-border">
@@ -355,8 +355,8 @@ const toggleTypeSelection = (typeId: string) => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-sm">Data *</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="date" className="text-xs font-semibold">Data *</Label>
               <div className="relative">
                 <Input
                   id="date"
@@ -364,17 +364,15 @@ const toggleTypeSelection = (typeId: string) => {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   disabled={loading}
-                  className={errors.date ? 'border-destructive' : ''}
+                  className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.date ? 'border-red-500' : ''}`}
                 />
-                <Calendar className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               </div>
-              {errors.date && (
-                <p className="text-xs text-destructive">{errors.date}</p>
-              )}
+              {errors.date && <p className="text-xs text-red-500">{errors.date}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm">Local</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="location" className="text-xs font-semibold">Local</Label>
               <Input
                 id="location"
                 type="text"
@@ -382,15 +380,13 @@ const toggleTypeSelection = (typeId: string) => {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 disabled={loading}
-                className={errors.location ? 'border-destructive' : ''}
+                className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.location ? 'border-red-500' : ''}`}
               />
-              {errors.location && (
-                <p className="text-xs text-destructive">{errors.location}</p>
-              )}
+              {errors.location && <p className="text-xs text-red-500">{errors.location}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-sm">Observações</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label htmlFor="notes" className="text-xs font-semibold">Observações</Label>
               <Textarea
                 id="notes"
                 placeholder="Notas sobre o evento..."
@@ -398,15 +394,13 @@ const toggleTypeSelection = (typeId: string) => {
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={loading}
                 rows={4}
-                className={errors.notes ? 'border-destructive' : ''}
+                className={`rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.notes ? 'border-red-500' : ''}`}
               />
-              {errors.notes && (
-                <p className="text-xs text-destructive">{errors.notes}</p>
-              )}
+              {errors.notes && <p className="text-xs text-red-500">{errors.notes}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm">Tipos de música deste evento</Label>
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label className="text-xs font-semibold">Tipos de música deste evento</Label>
               <p className="text-xs text-muted-foreground">
                 Selecione quais tipos litúrgicos serão utilizados neste evento. Todos vêm
                 selecionados por padrão.
@@ -432,7 +426,7 @@ const toggleTypeSelection = (typeId: string) => {
 
             <Button
               type="submit"
-              className="w-full gradient-primary shadow-glow"
+              className="w-full gradient-primary shadow-glow mt-2"
               disabled={loading || uploadingImage}
             >
               {loading || uploadingImage ? (
@@ -445,7 +439,6 @@ const toggleTypeSelection = (typeId: string) => {
               )}
             </Button>
           </form>
-        </Card>
       </main>
     </div>
   );

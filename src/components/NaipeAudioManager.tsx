@@ -5,7 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { FileAudio, Trash2, Plus, Paperclip, Mic } from 'lucide-react';
 import { AudioRecorder } from './AudioRecorder';
-import { YouTubeDownloadDialog } from './YouTubeDownloadDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -120,10 +119,6 @@ export const NaipeAudioManager = ({
           <AudioRecorder
             naipeName={naipe}
             onRecordingComplete={(file) => handleFileChange(file)}
-            disabled={disabled}
-          />
-          <YouTubeDownloadDialog
-            onDownloadComplete={(file) => handleFileChange(file)}
             disabled={disabled}
           />
         </div>
