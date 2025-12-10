@@ -203,7 +203,7 @@ const Home = () => {
             </div>
 
             <div className="space-y-2">
-              {upcomingEvents.map((event) => (
+              {upcomingEvents.map((event, index) => (
                 <Card
                   key={event.id}
                   className="overflow-hidden cursor-pointer hover:shadow-md transition-all border-0 group flex flex-row"
@@ -214,8 +214,9 @@ const Home = () => {
                       <img
                         src={event.cover_image_url}
                         alt={event.name}
-                        loading="lazy"
-                        decoding="async"
+                        loading={index < 2 ? "eager" : "lazy"}
+                        decoding={index < 2 ? "sync" : "async"}
+                        fetchPriority={index === 0 ? "high" : undefined}
                         className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
