@@ -70,12 +70,12 @@ const Home = () => {
       const [songs, audios] = await Promise.all([
         supabase
           .from('songs')
-          .select('id, title, created_at')
+          .select('id, name, created_at')
           .order('created_at', { ascending: false })
           .limit(5),
         supabase
           .from('song_audios')
-          .select('id, created_at, songs(title, voice_type)')
+          .select('id, created_at, songs(name, naipe)')
           .order('created_at', { ascending: false })
           .limit(5),
       ]);
@@ -83,10 +83,10 @@ const Home = () => {
       const items: FeedItem[] = [];
       
       if (songs.data) {
-        items.push(...songs.data.map(s => ({
+        items.push(...songs.data.map((s: any) => ({
           id: s.id,
           type: 'song' as const,
-          title: s.title,
+          title: s.name,
           date: s.created_at,
         })));
       }
@@ -95,8 +95,8 @@ const Home = () => {
         items.push(...audios.data.map((a: any) => ({
           id: a.id,
           type: 'audio' as const,
-          title: a.songs?.title || 'Áudio adicionado',
-          voiceType: a.songs?.voice_type || undefined,
+          title: a.songs?.name || 'Áudio adicionado',
+          voiceType: a.songs?.naipe || undefined,
           date: a.created_at,
         })));
       }
