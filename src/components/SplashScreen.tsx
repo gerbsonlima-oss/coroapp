@@ -109,6 +109,9 @@ export const SplashScreen = () => {
           <img
             src={logoImage}
             alt="Coro Diocesano de Quixadá"
+            width={224}
+            height={224}
+            fetchPriority="high"
             className="relative w-56 h-56 md:w-72 md:h-72 object-contain drop-shadow-[0_15px_50px_rgba(120,119,198,0.5)]"
           />
         </div>

@@ -214,6 +214,8 @@ const Home = () => {
                       <img
                         src={event.cover_image_url}
                         alt={event.name}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>

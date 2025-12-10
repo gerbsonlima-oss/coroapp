@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, Calendar, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { compressEventCoverImage } from '@/utils/imageCompression';
 
 const eventSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100, 'Nome muito longo'),
@@ -180,13 +181,14 @@ const toggleTypeSelection = (typeId: string) => {
 
     setUploadingImage(true);
     try {
-      const fileExt = coverImageFile.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      // Compress image to WebP format for better performance
+      const compressedFile = await compressEventCoverImage(coverImageFile);
+      const fileName = `${userId}/${Date.now()}.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from('event-covers')
-        .upload(fileName, coverImageFile, {
-          cacheControl: '3600',
+        .upload(fileName, compressedFile, {
+          cacheControl: '31536000', // 1 year cache
           upsert: true
         });
 
