@@ -1,16 +1,30 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Crown, Heart, Gift, Sun, Zap } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { format } from 'date-fns';
+import { format, addMonths, getDaysInMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useLiturgy } from '@/hooks/useLiturgy';
+import { getLiturgicalDay } from '@/data/liturgicalCalendar';
+
+interface DayCard {
+  date: Date;
+  dayNum: number;
+  monthDay: string;
+  saint: string;
+  season: string;
+  celebration: string;
+}
 
 const Liturgy = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const today = new Date();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+  const [monthDays, setMonthDays] = useState<DayCard[]>([]);
   const { data: liturgyData, loading, error } = useLiturgy(selectedDate);
 
   useEffect(() => {
@@ -18,6 +32,111 @@ const Liturgy = () => {
       setSelectedDate(location.state.selectedDate);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    const selectedMonthDate = addMonths(today, selectedMonthIndex);
+    const year = selectedMonthDate.getFullYear();
+    const month = selectedMonthDate.getMonth() + 1;
+    const daysInMonth = getDaysInMonth(selectedMonthDate);
+    
+    const days: DayCard[] = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const liturgy = getLiturgicalDay(date);
+      
+      days.push({
+        date,
+        dayNum: day,
+        monthDay: `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}`,
+        saint: liturgy?.saint || 'Dia Comum',
+        season: liturgy?.liturgicalSeason || 'Tempo Comum',
+        celebration: liturgy?.celebration || 'Féria',
+      });
+    }
+    
+    setMonthDays(days);
+  }, [selectedMonthIndex, today]);
+
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  const handlePrevMonth = () => {
+    setSelectedMonthIndex(prev => Math.max(prev - 1, -24));
+  };
+
+  const handleNextMonth = () => {
+    setSelectedMonthIndex(prev => Math.min(prev + 1, 24));
+  };
+
+  const getSelectedMonthStr = () => {
+    const selectedMonthDate = addMonths(today, selectedMonthIndex);
+    return format(selectedMonthDate, 'MMM/yyyy', { locale: ptBR }).toUpperCase();
+  };
+
+  const getCelebrationCode = (celebration: string): string => {
+    const normalized = celebration.toLowerCase().trim();
+    
+    if (normalized.includes('solenidade')) return 'S';
+    if (normalized.includes('festa')) return 'F';
+    if (normalized === 'memória' || normalized === 'memória obrigatória') return 'M';
+    if (normalized === 'memória facultativa') return 'm';
+    if (normalized.includes('comemoração')) return 'm*';
+    if (normalized.includes('domingo')) return 'D';
+    if (normalized.includes('féria')) return 'Féria';
+    
+    return '-';
+  };
+
+  const getCelebrationLabel = (celebration: string): string => {
+    const normalized = celebration.toLowerCase().trim();
+    
+    if (normalized.includes('solenidade')) return 'Solenidade';
+    if (normalized.includes('festa')) return 'Festa';
+    if (normalized === 'memória' || normalized === 'memória obrigatória') return 'Memória Obrigatória';
+    if (normalized === 'memória facultativa') return 'Memória Facultativa';
+    if (normalized.includes('comemoração')) return 'Comemoração Facultativa';
+    if (normalized.includes('domingo')) return 'Domingo';
+    if (normalized.includes('féria')) return 'Féria';
+    
+    return celebration;
+  };
+
+  const getCelebrationIcon = (celebration: string) => {
+    const normalized = celebration.toLowerCase();
+    
+    if (normalized.includes('solenidade')) return <Crown className="h-5 w-5" />;
+    if (normalized.includes('domingo')) return <Sun className="h-5 w-5" />;
+    if (normalized.includes('festa')) return <Gift className="h-5 w-5" />;
+    if (normalized.includes('memória')) return <Heart className="h-5 w-5" />;
+    if (normalized.includes('féria')) return <Zap className="h-5 w-5" />;
+    
+    return <Calendar className="h-5 w-5" />;
+  };
+
+  const getLiturgicalColor = (season: string): string => {
+    const colors: Record<string, string> = {
+      'Advento': 'bg-purple-600 dark:bg-purple-900',
+      'Tempo do Natal': 'bg-red-600 dark:bg-red-900',
+      'Tempo Comum': 'bg-green-600 dark:bg-green-900',
+      'Quaresma': 'bg-violet-600 dark:bg-violet-900',
+      'Semana Santa': 'bg-slate-900 dark:bg-black',
+      'Tempo Pascal': 'bg-yellow-600 dark:bg-yellow-900',
+    };
+    return colors[season] || 'bg-blue-600 dark:bg-blue-900';
+  };
+
+  const getSeasonTextColor = (season: string): string => {
+    const colors: Record<string, string> = {
+      'Semana Santa': 'text-white',
+      'Advento': 'text-white',
+      'Tempo do Natal': 'text-white',
+      'Quaresma': 'text-white',
+      'Tempo Comum': 'text-white',
+      'Tempo Pascal': 'text-white',
+    };
+    return colors[season] || 'text-white';
+  };
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -36,9 +155,77 @@ const Liturgy = () => {
       </div>
 
       {/* Content */}
-      <div className="px-4 py-4 space-y-4">
-        {/* Navigation Buttons */}
-        <div className="flex gap-2">
+      <div className="px-4 py-6 space-y-6">
+        {/* Calendar */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-lg">Calendário Litúrgico</h3>
+          </div>
+
+          {/* Month Selector */}
+          <div className="flex items-center justify-between gap-3 px-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePrevMonth}
+              disabled={selectedMonthIndex === -24}
+              className="h-8 w-8"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="font-bold text-lg min-w-[120px] text-center">
+              {getSelectedMonthStr()}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleNextMonth}
+              disabled={selectedMonthIndex === 24}
+              className="h-8 w-8"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Days Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {monthDays.map((day) => (
+              <Card
+                key={day.monthDay}
+                className={`p-3 cursor-pointer hover:shadow-lg transition-all border-0 ${getLiturgicalColor(day.season)} ${getSeasonTextColor(day.season)} ${
+                  format(day.date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') ? 'ring-2 ring-offset-2 ring-primary' : ''
+                }`}
+                onClick={() => handleDayClick(day.date)}
+                title={getCelebrationLabel(day.celebration)}
+              >
+                <div className="flex gap-2 items-start">
+                  <div className="flex-shrink-0 mt-0.5 opacity-90">
+                    {getCelebrationIcon(day.celebration)}
+                  </div>
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold">
+                        {day.monthDay}
+                      </p>
+                      <span className="text-xs font-bold opacity-85 bg-white/20 px-1.5 py-0.5 rounded">
+                        {getCelebrationCode(day.celebration)}
+                      </span>
+                    </div>
+                    <p className="text-xs opacity-90 line-clamp-2 leading-tight">
+                      {day.saint}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Liturgy Section */}
+        <div className="space-y-4">
+          {/* Navigation Buttons */}
+          <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -108,6 +295,7 @@ const Liturgy = () => {
             <p className="text-muted-foreground">Nenhum dado disponível</p>
           </div>
         )}
+        </div>
       </div>
 
       <BottomNavigation />

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Music, BookOpen, Calendar, Brain } from 'lucide-react';
+import { Home, Music, BookOpen, Calendar } from 'lucide-react';
 
 export function BottomNavigation() {
   const navigate = useNavigate();
@@ -9,13 +9,11 @@ export function BottomNavigation() {
   const isEventsActive = location.pathname.startsWith('/events');
   const isSongsActive = location.pathname.startsWith('/songs');
   const isLiturgyActive = location.pathname.startsWith('/liturgy');
-  const isQuizActive = location.pathname.startsWith('/quiz');
 
   const navItems = [
     { label: 'Início', icon: Home, path: '/', isActive: isHomeActive },
     { label: 'Eventos', icon: Calendar, path: '/events', isActive: isEventsActive },
     { label: 'Repertório', icon: Music, path: '/songs', isActive: isSongsActive },
-    { label: 'Quiz', icon: Brain, path: '/quiz', isActive: isQuizActive },
     { label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isLiturgyActive },
   ];
 

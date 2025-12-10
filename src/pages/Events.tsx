@@ -215,19 +215,21 @@ const Events = () => {
                  </div>
                ))}
             </div>
-            {user && (
-              <Button
-                onClick={() => navigate('/events/new')}
-                className="mt-8 gradient-primary shadow-glow hover:shadow-glow/50 transition-all w-full md:w-auto"
-                size="lg"
-              >
-                <Plus className="mr-2 h-5 w-5" />
-                Novo Evento
-              </Button>
-            )}
           </>
         )}
       </main>
+
+      {/* Floating Action Button - Mobile */}
+      {user && (
+        <button
+          onClick={() => navigate('/events/new')}
+          className="fixed bottom-24 right-4 z-20 md:hidden h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-glow hover:shadow-glow/50 transition-all active:scale-95 flex items-center justify-center text-white hover:scale-110 duration-200"
+          title="Novo Evento"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
+
       <BottomNavigation />
     </div>
   );

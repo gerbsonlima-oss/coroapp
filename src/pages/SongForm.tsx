@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Upload, FileText, Loader2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { convertPdfToImages, createCombinedImage } from '@/utils/pdfToImage';
@@ -17,7 +18,6 @@ import { uploadFileToBucket } from '@/utils/storageUpload';
 const songSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100, 'Nome muito longo'),
   type: z.string().min(1, 'Tipo é obrigatório'),
-  notes: z.string().max(1000, 'Notas muito longas').optional(),
 });
 
 const NAIPES = [
@@ -25,7 +25,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
-  { key: 'original', label: 'TODOS' },
+  { key: 'original', label: 'Todas as Vozes' },
 ];
 
 interface SongTypeOption {
@@ -38,7 +38,6 @@ interface Song {
   id: string;
   name: string;
   type: string;
-  notes: string | null;
   sheet_music_url: string | null;
 }
 
@@ -58,7 +57,7 @@ const SongForm = () => {
   const [existingAudios, setExistingAudios] = useState<ExistingAudio[]>([]);
   const [name, setName] = useState('');
   const [type, setType] = useState('');
-  const [notes, setNotes] = useState('');
+  const [openTypeSelect, setOpenTypeSelect] = useState(false);
   const [naipeAudios, setNaipeAudios] = useState<Record<string, NaipeAudio[]>>({
     soprano: [],
     contralto: [],
@@ -66,6 +65,7 @@ const SongForm = () => {
     baixo: [],
     original: [],
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [sheetMusic, setSheetMusic] = useState<File | null>(null);
   const [originalPdf, setOriginalPdf] = useState<File | null>(null);
   const [convertingPdf, setConvertingPdf] = useState(false);
@@ -115,7 +115,6 @@ const SongForm = () => {
       setSong(data);
       setName(data.name);
       setType(data.type);
-      setNotes(data.notes || '');
 
       await fetchAudios();
     } catch (error: any) {
@@ -212,7 +211,7 @@ const SongForm = () => {
     setLoading(true);
 
     try {
-      const data = { name, type, notes };
+      const data = { name, type };
       songSchema.parse(data);
 
       let sheetMusicUrl = isEditMode ? (song?.sheet_music_url || null) : null;
@@ -238,7 +237,6 @@ const SongForm = () => {
         const updateData: any = {
           name,
           type,
-          notes: notes || null,
         };
         
         if (sheetMusicUrl) {
@@ -261,7 +259,6 @@ const SongForm = () => {
           user_id: user?.id,
           name,
           type,
-          notes: notes || null,
           sheet_music_url: sheetMusicUrl,
         };
         
@@ -359,8 +356,8 @@ const SongForm = () => {
 
   if (isEditMode && fetchLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#121212]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1DB954] border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -368,13 +365,13 @@ const SongForm = () => {
   if (isEditMode && !song) return null;
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5 pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-[#121212] border-b border-[#282828]">
-        <div className="flex items-center gap-4 p-4">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
+        <div className="flex items-center gap-4 px-4 py-3">
           <button 
             onClick={() => navigate(eventId ? `/events/${eventId}` : (isEditMode ? `/songs/${id}` : '/songs'))}
-            className="p-2 rounded-full hover:bg-[#282828] transition-colors"
+            className="p-2 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
           </button>
@@ -382,14 +379,12 @@ const SongForm = () => {
         </div>
       </header>
 
-      <main className="p-4">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Informações Básicas */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-white">Informações Básicas</h2>
-            
+      <main className="px-3 py-3 max-w-2xl mx-auto h-[calc(100vh-80px)] flex flex-col">
+        <form onSubmit={handleSubmit} className="space-y-3 flex-1 overflow-y-auto">
+          {/* Informações Básicas Card */}
+          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white text-sm font-medium">Nome da Música *</Label>
+              <Label htmlFor="name" className="text-xs font-semibold">Nome *</Label>
               <Input
                 id="name"
                 type="text"
@@ -397,105 +392,119 @@ const SongForm = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={loading}
-                className={`bg-[#282828] border-[#3e3e3e] text-white placeholder:text-[#a7a7a7] ${errors.name ? 'border-red-500' : ''}`}
+                className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.name ? 'border-red-500' : ''}`}
               />
-              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="type" className="text-white text-sm font-medium">Tipo *</Label>
-              <Select value={type} onValueChange={setType} disabled={loading}>
-                <SelectTrigger className={`bg-[#282828] border-[#3e3e3e] text-white ${errors.type ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#282828] border-[#3e3e3e]">
-                  {songTypes.map((songType) => (
-                    <SelectItem
-                      key={songType.id}
-                      value={songType.slug}
-                      className="text-white focus:bg-[#3e3e3e] focus:text-white"
-                    >
-                      {songType.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-white text-sm font-medium">Observações</Label>
-              <Textarea
-                id="notes"
-                placeholder="Notas sobre a música..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                disabled={loading}
-                rows={3}
-                className={`bg-[#282828] border-[#3e3e3e] text-white placeholder:text-[#a7a7a7] ${errors.notes ? 'border-red-500' : ''}`}
-              />
-              {errors.notes && <p className="text-sm text-red-500">{errors.notes}</p>}
+            <div>
+              <Label htmlFor="type" className="text-xs font-semibold">Tipo *</Label>
+              <Popover open={openTypeSelect} onOpenChange={setOpenTypeSelect}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openTypeSelect}
+                    className={`w-full h-9 justify-between rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.type ? 'border-red-500' : ''}`}
+                    disabled={loading}
+                  >
+                    {type ? songTypes.find((t) => t.slug === type)?.name : 'Selecione'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar tipo..." />
+                    <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                    <CommandList>
+                      <CommandGroup>
+                        {songTypes.map((songType) => (
+                          <CommandItem
+                            key={songType.id}
+                            value={songType.slug}
+                            onSelect={(currentValue) => {
+                              setType(currentValue === type ? '' : currentValue);
+                              setOpenTypeSelect(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                type === songType.slug ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            {songType.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors.type && <p className="text-xs text-red-500">{errors.type}</p>}
             </div>
           </div>
 
-          {/* Partitura */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-white">Partitura</h2>
-            
+          {/* Partitura Card */}
+          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+            <Label className="text-xs font-semibold">Partitura</Label>
+
             {isEditMode && song?.sheet_music_url && (
-              <div className="flex items-center gap-2 text-sm text-[#1DB954]">
-                <FileText className="h-4 w-4" />
-                <span>Partitura já cadastrada</span>
+              <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-700 dark:text-green-400">
+                <FileText className="h-3 w-3" />
+                <span>Cadastrada</span>
               </div>
             )}
             
             {convertingPdf && (
-              <div className="rounded-lg bg-[#282828] p-4">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-[#1DB954]" />
+              <div className="rounded bg-primary/5 border border-primary/20 p-2">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-white">Convertendo PDF...</p>
-                    <p className="text-xs text-[#a7a7a7]">
-                      Página {pdfProgress.current} de {pdfProgress.total}
+                    <p className="text-xs font-medium">Convertendo...</p>
+                    <p className="text-xs text-muted-foreground">
+                      {pdfProgress.current}/{pdfProgress.total}
                     </p>
                   </div>
                 </div>
               </div>
             )}
             
-            <div className="space-y-2">
-              <Input
-                id="sheet-music"
-                type="file"
-                accept=".pdf,image/*"
-                onChange={(e) => handleSheetMusicChange(e.target.files?.[0] || null)}
+            <Input
+              ref={fileInputRef}
+              id="sheet-music"
+              type="file"
+              accept=".pdf,image/*"
+              onChange={(e) => handleSheetMusicChange(e.target.files?.[0] || null)}
+              disabled={loading || convertingPdf}
+              className="hidden"
+            />
+            
+            <div className="flex gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
                 disabled={loading || convertingPdf}
-                className="bg-[#282828] border-[#3e3e3e] text-white file:mr-4 file:rounded-full file:border-0 file:bg-[#1DB954] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-black hover:file:bg-[#1ed760]"
-              />
+                title="Anexar arquivo"
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50"
+              >
+                <Paperclip className="h-5 w-5 text-primary" />
+              </button>
               {sheetMusic && (
-                <div className="flex items-center gap-2 text-sm text-[#a7a7a7]">
-                  <FileText className="h-4 w-4" />
+                <span className="text-xs truncate bg-primary/5 px-2 py-1 rounded border border-primary/20">
                   {sheetMusic.name}
-                </div>
+                </span>
               )}
-              <p className="text-xs text-[#a7a7a7]">
-                PDFs serão automaticamente convertidos em imagem
-              </p>
             </div>
           </div>
 
-          {/* Áudios por Naipe */}
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Áudios por Naipe</h2>
-              <p className="text-sm text-[#a7a7a7] mt-1">
-                {isEditMode ? 'Adicione novos áudios - os existentes serão mantidos' : 'Podem adicionar múltiplos áudios por naipe'}
-              </p>
-            </div>
+          {/* Áudios por Naipe Card */}
+          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+            <Label className="text-xs font-semibold">Áudios</Label>
             
-            <div className="space-y-4">
+            <div className="space-y-2">
               {NAIPES.map(({ key, label }) => (
-                <div key={key} className="bg-[#181818] rounded-lg p-4">
+                <div key={key} className="bg-secondary/50 rounded p-2 border border-primary/10 hover:border-primary/20 transition-all">
                   <NaipeAudioManager
                     naipe={key}
                     naipeLabel={label}
@@ -509,32 +518,23 @@ const SongForm = () => {
               ))}
             </div>
           </div>
-
-          {/* Botão Salvar */}
-          <Button
-            type="submit"
-            className="w-full rounded-full bg-[#1DB954] text-black hover:bg-[#1ed760] hover:scale-105 transition-all h-12 text-base font-semibold"
-            disabled={loading || convertingPdf}
-          >
-            {loading || convertingPdf ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent" />
-            ) : (
-              <>
-                {isEditMode ? (
-                  <>
-                    <Save className="mr-2 h-5 w-5" />
-                    Salvar Alterações
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-5 w-5" />
-                    Cadastrar Música
-                  </>
-                )}
-              </>
-            )}
-          </Button>
         </form>
+
+        {/* Botão Salvar - Fixed Bottom */}
+        <Button
+          type="submit"
+          onClick={handleSubmit}
+          className="w-full h-12 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:to-primary text-primary-foreground hover:scale-105 transition-all text-sm font-bold shadow-glow hover:shadow-glow/50 mt-3"
+          disabled={loading || convertingPdf}
+        >
+          {loading || convertingPdf ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+          ) : (
+            <>
+              {isEditMode ? 'Salvar' : 'Cadastrar'}
+            </>
+          )}
+        </Button>
       </main>
     </div>
   );

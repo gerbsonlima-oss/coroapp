@@ -4,6 +4,7 @@ import { load } from 'cheerio';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import ytdl from 'ytdl-core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,6 +13,8 @@ const app = express();
 const PORT = 3001;
 
 app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb' }));
 
 const liturgyCache = new Map();
 
@@ -208,6 +211,38 @@ app.get('/api/liturgy', (req, res) => {
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Liturgy API server is running' });
+});
+
+app.post('/api/download-youtube', async (req, res) => {
+  try {
+    const { url, format = 'mp3' } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL é obrigatório' });
+    }
+
+    const audioFormat = format === 'mp4a' ? 'm4a' : 'mp3';
+    const filename = `audio_${Date.now()}.${audioFormat}`;
+    
+    res.setHeader('Content-Type', format === 'mp4a' ? 'audio/mp4' : 'audio/mpeg');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    const stream = ytdl(url, { 
+      quality: 'highestaudio'
+    });
+    
+    stream.on('error', (err) => {
+      console.error('ytdl download error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message || 'Erro ao baixar áudio' });
+      }
+    });
+    
+    stream.pipe(res);
+  } catch (error) {
+    console.error('YouTube download error:', error);
+    res.status(500).json({ error: error.message || 'Erro ao baixar áudio do YouTube' });
+  }
 });
 
 app.listen(PORT, () => {

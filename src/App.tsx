@@ -23,7 +23,6 @@ const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
 const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const EventRegistrations = lazy(() => import("./pages/EventRegistrations"));
 const Liturgy = lazy(() => import("./pages/Liturgy"));
-const Quiz = lazy(() => import("./pages/Quiz"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const LoadingFallback = () => (
@@ -113,7 +112,6 @@ function App() {
             <Route path="/events/:eventId/rehearsals" element={<Rehearsals />} />
             <Route path="/events/:eventId/registrations" element={<EventRegistrations />} />
             <Route path="/liturgy" element={<Liturgy />} />
-            <Route path="/quiz" element={<Quiz />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

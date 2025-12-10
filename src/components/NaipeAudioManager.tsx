@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { FileAudio, Trash2, Plus } from 'lucide-react';
+import { FileAudio, Trash2, Plus, Paperclip, Mic } from 'lucide-react';
 import { AudioRecorder } from './AudioRecorder';
+import { YouTubeDownloadDialog } from './YouTubeDownloadDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -47,6 +48,7 @@ export const NaipeAudioManager = ({
 }: NaipeAudioManagerProps) => {
   const [audioNames, setAudioNames] = useState<Record<number, string>>({});
   const [deletingAudioId, setDeletingAudioId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDeleteExistingAudio = async (audioId: string, audioName: string) => {
     setDeletingAudioId(audioId);
@@ -102,92 +104,91 @@ export const NaipeAudioManager = ({
   };
 
   return (
-    <div className="space-y-3">
-      <Label className="text-sm font-medium">{naipeLabel}</Label>
-      
-      {/* Áudios existentes no banco */}
-      {existingAudios.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Áudios já cadastrados:</p>
-          {existingAudios.map((audio) => (
-            <Card key={audio.id} className="p-3">
-              <div className="flex items-center gap-2">
-                <FileAudio className="h-4 w-4 text-green-500" />
-                <span className="text-sm flex-1">{audio.name}</span>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={disabled || deletingAudioId === audio.id}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir o áudio "{audio.name}"? Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDeleteExistingAudio(audio.id, audio.name)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </Card>
-          ))}
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-muted-foreground">{naipeLabel}</span>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+            title="Anexar áudio"
+            className="p-1.5 rounded bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Paperclip className="h-4 w-4 text-primary" />
+          </button>
+          <AudioRecorder
+            naipeName={naipe}
+            onRecordingComplete={(file) => handleFileChange(file)}
+            disabled={disabled}
+          />
+          <YouTubeDownloadDialog
+            onDownloadComplete={(file) => handleFileChange(file)}
+            disabled={disabled}
+          />
         </div>
-      )}
+      </div>
 
-      {/* Novos áudios sendo adicionados */}
-      {audios.map((audio, index) => (
-        <Card key={index} className="p-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <FileAudio className="h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Nome do áudio"
-              value={audio.name}
-              onChange={(e) => handleNameChange(index, e.target.value)}
-              disabled={disabled}
-              className="flex-1"
-            />
-            <Button
+      <Input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+        disabled={disabled}
+        className="hidden"
+      />
+      
+      {/* Áudios existentes e novos */}
+      <div className="space-y-1">
+        {existingAudios.map((audio) => (
+          <div key={audio.id} className="flex items-center gap-1.5 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs">
+            <FileAudio className="h-3 w-3 text-green-600 flex-shrink-0" />
+            <span className="flex-1 truncate">{audio.name}</span>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  disabled={disabled || deletingAudioId === audio.id}
+                  className="p-0.5 hover:bg-red-500/20 rounded transition-all disabled:opacity-50"
+                >
+                  <Trash2 className="h-3 w-3 text-red-500" />
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir o áudio "{audio.name}"?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDeleteExistingAudio(audio.id, audio.name)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        ))}
+        
+        {audios.map((audio, index) => (
+          <div key={index} className="flex items-center gap-1.5 px-2 py-1 bg-primary/5 border border-primary/20 rounded text-xs">
+            <FileAudio className="h-3 w-3 text-primary flex-shrink-0" />
+            <span className="flex-1 truncate">{audio.name}</span>
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
               onClick={() => removeAudio(index)}
               disabled={disabled}
+              className="p-0.5 hover:bg-red-500/20 rounded transition-all disabled:opacity-50"
             >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+              <Trash2 className="h-3 w-3 text-red-500" />
+            </button>
           </div>
-        </Card>
-      ))}
-
-      {/* Adicionar novo áudio */}
-      <div className="space-y-2">
-        <Input
-          type="file"
-          accept="audio/*"
-          onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-          disabled={disabled}
-          className="file:mr-4 file:rounded-full file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground hover:file:bg-primary/90"
-        />
-        <AudioRecorder
-          naipeName={naipe}
-          onRecordingComplete={(file) => handleFileChange(file)}
-        />
+        ))}
       </div>
     </div>
   );

@@ -10,9 +10,10 @@ interface AudioRecorderProps {
   onRecordingComplete: (file: File) => void;
   naipeName: string;
   compact?: boolean;
+  disabled?: boolean;
 }
 
-export const AudioRecorder = ({ onRecordingComplete, naipeName, compact = false }: AudioRecorderProps) => {
+export const AudioRecorder = ({ onRecordingComplete, naipeName, compact = true, disabled = false }: AudioRecorderProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -161,46 +162,23 @@ export const AudioRecorder = ({ onRecordingComplete, naipeName, compact = false 
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Button
+          <button
             type="button"
-            variant={isRecording ? "destructive" : "outline"}
-            size="icon"
             onClick={isRecording ? stopRecording : startRecording}
+            disabled={disabled}
+            title={isRecording ? "Parar" : "Gravar"}
+            className={`p-1.5 rounded border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRecording 
+                ? 'bg-red-500/20 hover:bg-red-500/30 border-red-500/50' 
+                : 'bg-primary/10 hover:bg-primary/20 border-primary/30 hover:border-primary/50'
+            }`}
           >
             {isRecording ? (
-              <Square className="h-4 w-4" />
+              <Square className="h-4 w-4 text-red-500" />
             ) : (
-              <Mic className="h-4 w-4" />
+              <Mic className="h-4 w-4 text-primary" />
             )}
-          </Button>
-
-          {audioBlob && (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={togglePlayback}
-              >
-                {isPlaying ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                {formatTime(recordingTime)}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={clearRecording}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </>
-          )}
+          </button>
         </div>
 
         {permissionIssue && (

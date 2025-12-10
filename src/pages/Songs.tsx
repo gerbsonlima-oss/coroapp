@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Plus, Music, LogOut, Settings, ListMusic, ChevronRight } from 'lucide-react';
+import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface SongTypeAlbum {
   type: string;
@@ -72,11 +74,23 @@ const typeGradients: Record<string, string> = {
 const Songs = () => {
   const [songTypes, setSongTypes] = useState<SongTypeAlbum[]>([]);
   const [songs, setSongs] = useState<SongListItem[]>([]);
-  const [groupByType, setGroupByType] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [groupBy, setGroupBy] = useState<'tipo' | 'lista'>(() => {
+    const saved = localStorage.getItem('songs_groupBy');
+    return (saved === 'tipo' || saved === 'lista') ? saved : 'tipo';
+  });
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+
+  useEffect(() => {
+    localStorage.setItem('songs_groupBy', groupBy);
+  }, [groupBy]);
 
   useEffect(() => {
     fetchSongTypes();
@@ -103,6 +117,13 @@ const Songs = () => {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
     }
+  };
+
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
   };
 
   const fetchSongTypes = async () => {
@@ -156,6 +177,109 @@ const Songs = () => {
     );
   }
 
+  const filteredSongs = songs.filter(song => 
+    song.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (selectedType === null || song.type === selectedType)
+  );
+
+  const renderSongsContent = () => {
+    if (filteredSongs.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Music className="h-12 w-12 text-muted-foreground/30 mb-3" />
+          <p className="text-muted-foreground font-medium mb-1">Nenhuma música encontrada</p>
+          <p className="text-xs text-muted-foreground">
+            {searchQuery ? 'Tente outro termo de busca' : 'Comece a adicionar músicas ao repertório'}
+          </p>
+        </div>
+      );
+    }
+
+    if (groupBy === 'tipo') {
+      return songTypes.map(type => {
+        const typeGroupSongs = filteredSongs.filter(s => s.type === type.type).sort((a, b) => a.name.localeCompare(b.name));
+        if (typeGroupSongs.length === 0) return null;
+
+        const groupKey = `type:${type.type}`;
+        const isCollapsed = Boolean(collapsedGroups[groupKey]);
+
+        return (
+          <div key={type.type}>
+            <div className="rounded-md bg-card border border-primary/20 overflow-hidden shadow-card hover:shadow-elevated transition-all">
+              <div 
+                className="px-3 py-3.5 bg-gradient-to-r from-primary/8 to-transparent flex items-center justify-between cursor-pointer hover:from-primary/12 transition-all"
+                onClick={e => {
+                  e.stopPropagation();
+                  toggleGroup(groupKey);
+                }}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Badge className="bg-primary/20 text-primary border-primary/30">
+                    {type.name}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                    {typeGroupSongs.length} {typeGroupSongs.length === 1 ? 'música' : 'músicas'}
+                  </span>
+                </div>
+                <ChevronDown className={`h-5 w-5 text-primary/70 transform transition-transform shrink-0 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
+              </div>
+              {!isCollapsed && (
+                <div className="divide-y divide-primary/10">
+                  {typeGroupSongs.map((song) => (
+                    <Card
+                      key={song.id}
+                      className="group cursor-pointer border-0 rounded-none bg-transparent hover:bg-primary/5 transition-all"
+                      onClick={() => navigate(`/songs/${song.id}`)}
+                    >
+                      <div className="flex items-center justify-between gap-3 px-4 py-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                            {song.name}
+                          </h3>
+                        </div>
+                        <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                          <Music className="h-4 w-4 text-primary" />
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }).filter(Boolean);
+    }
+
+    return (
+      <div className="space-y-2">
+        {filteredSongs
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((song) => (
+            <Card
+              key={song.id}
+              className="group cursor-pointer border-border/50 bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-md transition-all"
+              onClick={() => navigate(`/songs/${song.id}`)}
+            >
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1">
+                    {song.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {song.typeName}
+                  </p>
+                </div>
+                <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                  <Music className="h-4 w-4 text-primary" />
+                </div>
+              </div>
+            </Card>
+          ))}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background pb-40">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle px-4 py-3 md:px-6 md:py-4">
@@ -193,112 +317,142 @@ const Songs = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1280px] px-4 py-4 md:px-6 md:py-6">
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1 shadow-subtle">
-                <ListMusic className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground">
-                  {songs.length === 0
-                    ? 'Nenhuma música cadastrada'
-                    : `${songs.length} ${songs.length === 1 ? 'música' : 'músicas'}`}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="group-by-type" className="text-xs md:text-sm text-muted-foreground">
-                Agrupar por tipo
-              </Label>
-              <Switch
-                id="group-by-type"
-                checked={groupByType}
-                onCheckedChange={setGroupByType}
+      <main className="mx-auto max-w-[1280px] px-3 py-3 md:px-6 md:py-6">
+        <section className="space-y-6">
+          {/* Search e Filtros */}
+          <div className="space-y-2 border-b border-primary/15 bg-gradient-to-b from-primary/5 to-transparent px-0 pb-3">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Buscar música..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 w-full h-11 bg-secondary/50 border-primary/30 text-sm rounded-md shadow-subtle focus:shadow-glow focus:border-primary/60 transition-all" 
               />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowGroupModal(true)}
+                className="flex-1 h-10 text-sm px-3 gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+              >
+                <Sliders className="h-4 w-4" />
+                <span>Agrupar</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowFilterModal(true)}
+                className="flex-1 h-10 text-sm px-3 gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+              >
+                <Filter className="h-4 w-4" />
+                <span>Filtrar</span>
+              </Button>
             </div>
           </div>
 
-          {groupByType ? (
-            <div className="space-y-6">
-              {songTypes.map((album) => {
-                const songsForType = songs.filter((song) => song.type === album.type);
-                if (songsForType.length === 0) return null;
-
-                return (
-                  <section key={album.type} className="space-y-2">
-                    <div className="flex items-center justify-between px-0.5">
-                      <h2 className="truncate font-medium text-sm text-primary">
-                        {album.name}
-                      </h2>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs md:text-sm"
-                        onClick={() => navigate(`/songs/type/${album.type}`)}
-                      >
-                        Ver todos
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      {songsForType.map((song) => (
-                        <button
-                          key={song.id}
-                          onClick={() => navigate(`/songs/${song.id}`)}
-                          className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-3 py-2.5 text-left shadow-sm transition-all active:scale-[0.98]"
-                        >
-                          <div className="flex min-w-0 flex-col">
-                            <span className="truncate font-medium text-sm text-primary">
-                              {song.name}
-                            </span>
-                            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                              Ver detalhes
-                            </span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {songs
-                .slice()
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((song) => (
-                  <button
-                    key={song.id}
-                    onClick={() => navigate(`/songs/${song.id}`)}
-                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card px-3 py-2.5 text-left shadow-sm transition-all active:scale-[0.98]"
-                  >
-                    <div className="flex min-w-0 flex-col">
-                      <span className="text-base font-medium line-clamp-1">
-                        {song.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground line-clamp-1">
-                        {song.typeName}
-                      </span>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                ))}
-            </div>
-          )}
-
-          {user && (
-            <Button
-              onClick={() => navigate('/songs/new')}
-              className="mt-4 gradient-primary shadow-glow hover:shadow-glow/50 transition-all w-full md:w-auto"
-              size="lg"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Cadastrar Música
-            </Button>
-          )}
+          {/* Songs List */}
+          <div className="space-y-2.5">
+            {renderSongsContent()}
+          </div>
         </section>
       </main>
+
+      {/* Floating Action Button - Mobile */}
+      {user && (
+        <button
+          onClick={() => navigate('/songs/new')}
+          className="fixed bottom-24 right-4 z-20 md:hidden h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-glow hover:shadow-glow/50 transition-all active:scale-95 flex items-center justify-center text-white hover:scale-110 duration-200"
+          title="Cadastrar Música"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
+
+      {/* Filter Modal */}
+      <Dialog open={showFilterModal} onOpenChange={setShowFilterModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filtrar Músicas</DialogTitle>
+            <DialogDescription>Selecione um tipo de música para filtrar</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setSelectedType(null);
+                setShowFilterModal(false);
+              }}
+              className={`w-full text-left px-3 py-2 rounded-md transition-all ${
+                selectedType === null
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-secondary text-foreground'
+              }`}
+            >
+              Todos ({songs.length})
+            </button>
+            {songTypes.map((type) => {
+              const count = songs.filter(s => s.type === type.type).length;
+              if (count === 0) return null;
+              return (
+                <button
+                  key={type.type}
+                  onClick={() => {
+                    setSelectedType(type.type);
+                    setShowFilterModal(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-md transition-all ${
+                    selectedType === type.type
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-secondary text-foreground'
+                  }`}
+                >
+                  {type.name} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Group Modal */}
+      <Dialog open={showGroupModal} onOpenChange={setShowGroupModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agrupar Músicas</DialogTitle>
+            <DialogDescription>Escolha como exibir as músicas</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setGroupBy('tipo');
+                setShowGroupModal(false);
+              }}
+              className={`w-full text-left px-3 py-2 rounded-md transition-all ${
+                groupBy === 'tipo'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-secondary text-foreground'
+              }`}
+            >
+              Agrupar por Tipo
+            </button>
+            <button
+              onClick={() => {
+                setGroupBy('lista');
+                setShowGroupModal(false);
+              }}
+              className={`w-full text-left px-3 py-2 rounded-md transition-all ${
+                groupBy === 'lista'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-secondary text-foreground'
+              }`}
+            >
+              Lista Simples
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNavigation />
     </div>
   );
