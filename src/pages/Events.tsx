@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAudioCache } from '@/hooks/useAudioCache';
 
-import { EventCard } from '@/components/EventCard';
+import { EventListItem } from '@/components/EventListItem';
 
 interface Event {
   id: string;
@@ -187,13 +187,11 @@ const Events = () => {
             )}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {events.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          </>
+          <div className="space-y-3 md:space-y-4">
+            {events.map((event) => (
+              <EventListItem key={event.id} event={event} />
+            ))}
+          </div>
         )}
       </main>
 

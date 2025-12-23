@@ -297,10 +297,17 @@ const SongForm = () => {
       let uploadCount = 0;
       const totalUploads = Object.values(naipeAudios).reduce((sum, audios) => sum + audios.length, 0);
       
+      let toastId: string | number | undefined;
+      if (totalUploads > 0) {
+        toastId = toast.loading(`Iniciando upload de ${totalUploads} áudios...`);
+      }
+      
       for (const [naipe, audios] of Object.entries(naipeAudios)) {
         for (const audio of audios) {
           uploadCount++;
-          toast.loading(`Fazendo upload do áudio ${uploadCount}/${totalUploads}...`);
+          if (toastId) {
+            toast.loading(`Fazendo upload do áudio ${uploadCount}/${totalUploads}...`, { id: toastId });
+          }
           
           const sanitizedAudioName = sanitizeFileName(audio.file.name);
           const audioPath = `${user?.id}/${naipe}_${Date.now()}_${sanitizedAudioName}`;
@@ -326,6 +333,10 @@ const SongForm = () => {
           .insert(audioInserts);
 
         if (audioError) throw audioError;
+      }
+
+      if (toastId) {
+        toast.dismiss(toastId);
       }
 
       toast.success(isEditMode ? 'Música atualizada com sucesso!' : 'Música cadastrada com sucesso!');

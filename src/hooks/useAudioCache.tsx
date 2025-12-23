@@ -24,6 +24,7 @@ export interface CachedAudio {
 export const useAudioCache = () => {
   const [cachedAudios, setCachedAudios] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     loadCachedAudios();
@@ -120,10 +121,14 @@ export const useAudioCache = () => {
 
   const cacheMultipleAudios = async (urls: string[]): Promise<void> => {
     setIsLoading(true);
+    setProgress({ current: 0, total: urls.length });
     let successCount = 0;
     let failCount = 0;
 
-    for (const url of urls) {
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      setProgress({ current: i + 1, total: urls.length });
+      
       const base = normalizeBase(url);
       if (cachedAudios.has(base)) {
         successCount++;
@@ -139,6 +144,7 @@ export const useAudioCache = () => {
     }
 
     setIsLoading(false);
+    setProgress({ current: 0, total: 0 });
 
     if (failCount === 0) {
       toast.success(`${successCount} arquivos disponíveis offline!`);
@@ -208,5 +214,6 @@ export const useAudioCache = () => {
     clearAllCache,
     isCached,
     getCacheSize,
+    progress,
   };
 };

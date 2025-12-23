@@ -26,7 +26,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { z } from 'zod';
 import { exportEventPDF } from '@/utils/exportEventPDF';
 import { exportEventZIP } from '@/utils/exportEventZIP';
-import { RepertoireExporter } from '@/components/RepertoireExporter';
 interface Event {
   id: string;
   name: string;
@@ -151,7 +150,6 @@ const EventDetails = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
-  const [showRepertoireExporter, setShowRepertoireExporter] = useState(false);
   const [imageClickCount, setImageClickCount] = useState(0);
   const [showMusicRain, setShowMusicRain] = useState(false);
   const [isOfflineSaved, setIsOfflineSaved] = useState(false);
@@ -213,7 +211,8 @@ const EventDetails = () => {
     cacheMultipleAudios,
     isLoading: isCaching,
     getCachedUrl,
-    isCached
+    isCached,
+    progress
   } = useAudioCache();
   const trackRefs = useRef<{
     [key: number]: HTMLDivElement | null;
@@ -714,10 +713,6 @@ const EventDetails = () => {
             <DropdownMenuItem onClick={handleExportZIP}>
               <FileArchive className="mr-2 h-4 w-4" />
               Exportar Áudios
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowRepertoireExporter(true)}>
-              <Download className="mr-2 h-4 w-4" />
-              Exportar Repertório
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -1315,19 +1310,22 @@ const EventDetails = () => {
         </DialogContent>
       </Dialog>
 
-      {event && (
-        <RepertoireExporter
-          event={event}
-          songs={songs.map(s => ({
-            id: s.id,
-            name: s.name,
-            type: s.type,
-            typeName: s.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-          }))}
-          typeLabels={typeLabels}
-          open={showRepertoireExporter}
-          onOpenChange={setShowRepertoireExporter}
-        />
+      {/* Indicador de Progresso Offline */}
+      {isCaching && (
+        <div className="fixed bottom-20 left-4 right-4 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-lg shadow-lg p-4 animate-in slide-in-from-bottom-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Salvando offline...</span>
+            <span className="text-xs text-muted-foreground">
+              {progress.current} de {progress.total}
+            </span>
+          </div>
+          <div className="h-2 bg-secondary rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-300 ease-out"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            />
+          </div>
+        </div>
       )}
 
       <BottomNavigation />
