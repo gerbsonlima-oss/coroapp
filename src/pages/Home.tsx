@@ -53,14 +53,29 @@ const Home = () => {
   const { data: upcomingEventsData } = useQuery({
     queryKey: ['upcoming-events'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('events')
-        .select('id, name, date, location, cover_image_url')
-        .gte('date', format(today, 'yyyy-MM-dd'))
-        .order('date', { ascending: true })
-        .limit(5);
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, name, date, location, cover_image_url')
+          .gte('date', format(today, 'yyyy-MM-dd'))
+          .order('date', { ascending: true })
+          .limit(5);
 
-      return data as Event[] || [];
+        if (error) throw error;
+        return data as Event[] || [];
+      } catch (error) {
+        console.log('Offline mode: fetching upcoming events from cache');
+        const savedEventsJson = localStorage.getItem('cached_events');
+        if (!savedEventsJson) return [];
+        
+        const savedEvents: Event[] = JSON.parse(savedEventsJson);
+        const todayStr = format(today, 'yyyy-MM-dd');
+        
+        return savedEvents
+          .filter(event => event.date >= todayStr)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(0, 5);
+      }
     },
   });
 

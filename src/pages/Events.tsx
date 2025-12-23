@@ -56,16 +56,16 @@ const Events = () => {
       setEvents(data || []);
       setIsOffline(false);
     } catch (error: any) {
-      // Se offline, busca eventos do localStorage que têm áudios em cache
+      // Se offline, busca eventos do localStorage
       const cachedEvents = await getOfflineEvents();
       
       if (cachedEvents.length > 0) {
         setEvents(cachedEvents);
         setIsOffline(true);
-        toast.info('Modo offline: mostrando apenas eventos com áudios baixados');
+        toast.info('Modo offline: mostrando eventos salvos');
       } else {
         setIsOffline(true);
-        toast.error('Você está offline e não há eventos baixados');
+        toast.error('Você está offline e não há eventos salvos');
       }
     } finally {
       setLoading(false);
@@ -78,29 +78,7 @@ const Events = () => {
       const savedEventsJson = localStorage.getItem('cached_events');
       if (!savedEventsJson) return [];
       
-      const savedEvents: Event[] = JSON.parse(savedEventsJson);
-      
-      // Busca quais eventos têm áudios em cache
-      const eventsWithAudios: Event[] = [];
-      
-      for (const event of savedEvents) {
-        const eventAudiosJson = localStorage.getItem(`event_audios_${event.id}`);
-        if (eventAudiosJson) {
-          const audioUrls: string[] = JSON.parse(eventAudiosJson);
-          
-          // Verifica se pelo menos um áudio está em cache
-          const hasAudio = audioUrls.some(url => {
-            const normalizedUrl = url.split('?')[0];
-            return cachedAudios.has(normalizedUrl) || cachedAudios.has(url);
-          });
-          
-          if (hasAudio) {
-            eventsWithAudios.push(event);
-          }
-        }
-      }
-      
-      return eventsWithAudios;
+      return JSON.parse(savedEventsJson);
     } catch (error) {
       console.error('Erro ao buscar eventos offline:', error);
       return [];
