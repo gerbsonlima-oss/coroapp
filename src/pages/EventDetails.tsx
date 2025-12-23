@@ -12,7 +12,7 @@ import { PlaylistPlayer } from '@/components/PlaylistPlayer';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2 } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -154,6 +154,32 @@ const EventDetails = () => {
   const [showRepertoireExporter, setShowRepertoireExporter] = useState(false);
   const [imageClickCount, setImageClickCount] = useState(0);
   const [showMusicRain, setShowMusicRain] = useState(false);
+  const [isOfflineSaved, setIsOfflineSaved] = useState(false);
+
+  const checkOfflineStatus = () => {
+    if (!id) return;
+    const savedEventsJson = localStorage.getItem('cached_events');
+    const savedEvents = savedEventsJson ? JSON.parse(savedEventsJson) : [];
+    const isSaved = savedEvents.some((e: any) => e.id === id);
+    setIsOfflineSaved(isSaved);
+  };
+
+  useEffect(() => {
+    checkOfflineStatus();
+  }, [id]);
+
+  const [sheetMusicSrc, setSheetMusicSrc] = useState<string | null>(null);
+  const [coverImageSrc, setCoverImageSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (event?.cover_image_url) {
+      const loadCover = async () => {
+        const url = await getCachedUrl(event.cover_image_url!);
+        setCoverImageSrc(url);
+      };
+      loadCover();
+    }
+  }, [event?.cover_image_url]);
 
   const handleImageClick = () => {
     setImageClickCount(prev => {
@@ -185,7 +211,9 @@ const EventDetails = () => {
   const navigate = useNavigate();
   const {
     cacheMultipleAudios,
-    isLoading: isCaching
+    isLoading: isCaching,
+    getCachedUrl,
+    isCached
   } = useAudioCache();
   const trackRefs = useRef<{
     [key: number]: HTMLDivElement | null;
@@ -347,7 +375,30 @@ const EventDetails = () => {
       const available = allSongs.filter(s => !usedSongIds.includes(s.id));
       setAvailableSongs(available);
     } catch (error: any) {
-      toast.error('Erro ao carregar detalhes do evento');
+      console.error('Error fetching event details:', error);
+      
+      // Tentar carregar do cache offline
+      const savedEventsJson = localStorage.getItem('cached_events');
+      const savedEvents = savedEventsJson ? JSON.parse(savedEventsJson) : [];
+      const cachedEvent = savedEvents.find((e: any) => e.id === id);
+      
+      if (cachedEvent) {
+        setEvent(cachedEvent);
+        
+        const cachedSongs = localStorage.getItem(`event_songs_data_${id}`);
+        if (cachedSongs) {
+          setSongs(JSON.parse(cachedSongs));
+        }
+        
+        const cachedTypes = localStorage.getItem(`event_types_data_${id}`);
+        if (cachedTypes) {
+          setEventTypes(JSON.parse(cachedTypes));
+        }
+        
+        toast.info('Modo offline: visualizando evento salvo');
+      } else {
+        toast.error('Erro ao carregar detalhes do evento');
+      }
     } finally {
       setLoading(false);
     }
@@ -363,7 +414,8 @@ const EventDetails = () => {
       return;
     }
     try {
-      const response = await fetch(song.sheet_music_pdf_url);
+      const cachedUrl = await getCachedUrl(song.sheet_music_pdf_url);
+      const response = await fetch(cachedUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -505,17 +557,26 @@ const EventDetails = () => {
   const getFilteredTracks = () => {
     return filteredPlaylist;
   };
-  const handleDownloadAll = async () => {
+  const handleSaveOffline = async () => {
     const allAudioUrls = tracks.map(track => track.url);
 
     // Coletar URLs das partituras
     const sheetMusicUrls = songs.filter(song => song.sheet_music_url).map(song => song.sheet_music_url!);
-    const allUrls = [...allAudioUrls, ...sheetMusicUrls];
-    if (allUrls.length === 0) {
-      toast.error('Nenhum arquivo disponível para download');
+    const pdfUrls = songs.filter(song => song.sheet_music_pdf_url).map(song => song.sheet_music_pdf_url!);
+    
+    const allUrls = [...allAudioUrls, ...sheetMusicUrls, ...pdfUrls];
+    if (event?.cover_image_url) {
+      allUrls.push(event.cover_image_url);
+    }
+    
+    if (allUrls.length === 0 && songs.length === 0) {
+      toast.error('Nada para salvar neste evento');
       return;
     }
-    await cacheMultipleAudios(allUrls);
+    
+    if (allUrls.length > 0) {
+      await cacheMultipleAudios(allUrls);
+    }
 
     // Salvar evento e áudios no localStorage para acesso offline
     if (event) {
@@ -534,10 +595,40 @@ const EventDetails = () => {
         localStorage.setItem('cached_events', JSON.stringify(savedEvents));
         localStorage.setItem(`event_audios_${event.id}`, JSON.stringify(allAudioUrls));
         localStorage.setItem(`event_sheets_${event.id}`, JSON.stringify(sheetMusicUrls));
+        
+        // Salvar dados completos das músicas e tipos
+        localStorage.setItem(`event_songs_data_${event.id}`, JSON.stringify(songs));
+        localStorage.setItem(`event_types_data_${event.id}`, JSON.stringify(eventTypes));
+        
         toast.success('Evento salvo para acesso offline!');
+        checkOfflineStatus();
       } catch (error) {
         console.error('Erro ao salvar evento offline:', error);
+        toast.error('Erro ao salvar evento offline');
       }
+    }
+  };
+
+  const handleRemoveOffline = async () => {
+    if (!event) return;
+    try {
+      const savedEventsJson = localStorage.getItem('cached_events');
+      if (savedEventsJson) {
+        const savedEvents: any[] = JSON.parse(savedEventsJson);
+        const newSavedEvents = savedEvents.filter(e => e.id !== event.id);
+        localStorage.setItem('cached_events', JSON.stringify(newSavedEvents));
+      }
+      
+      localStorage.removeItem(`event_audios_${event.id}`);
+      localStorage.removeItem(`event_sheets_${event.id}`);
+      localStorage.removeItem(`event_songs_data_${event.id}`);
+      localStorage.removeItem(`event_types_data_${event.id}`);
+      
+      toast.success('Evento removido do modo offline');
+      checkOfflineStatus();
+    } catch (error) {
+      console.error('Erro ao remover evento offline:', error);
+      toast.error('Erro ao remover evento offline');
     }
   };
   const formatTime = (time: number) => {
@@ -606,10 +697,16 @@ const EventDetails = () => {
               Compartilhar evento
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDownloadAll} disabled={isCaching || tracks.length === 0}>
+            <DropdownMenuItem onClick={handleSaveOffline} disabled={isCaching}>
               <Download className="mr-2 h-4 w-4" />
-              Baixar Tudo
+              {isOfflineSaved ? 'Atualizar Offline' : 'Salvar Offline'}
             </DropdownMenuItem>
+            {isOfflineSaved && (
+              <DropdownMenuItem onClick={handleRemoveOffline}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remover Offline
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={handleExportPDF}>
               <FileText className="mr-2 h-4 w-4" />
               Exportar Partituras
@@ -635,7 +732,7 @@ const EventDetails = () => {
             onClick={handleImageClick}
           >
             {event.cover_image_url ? (
-              <img src={event.cover_image_url} alt={event.name} className="h-full w-full object-cover" />
+              <img src={coverImageSrc || event.cover_image_url} alt={event.name} className="h-full w-full object-cover" />
             ) : (
               <Music className="h-7 w-7 text-primary/70 animate-float" />
             )}
@@ -643,9 +740,14 @@ const EventDetails = () => {
 
           {/* Nome do evento */}
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <h2 className="line-clamp-2 font-bold text-base text-foreground leading-tight mb-1.5">{event.name}</h2>
-            <p className="text-xs text-muted-foreground font-medium">
+            <h2 className="line-clamp-2 font-bold text-base text-foreground leading-tight mb-1.5 flex items-center gap-2">
+              {event.name}
+            </h2>
+            <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
               {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
+              {isOfflineSaved && (
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+              )}
             </p>
           </div>
         </div>
@@ -760,13 +862,18 @@ const EventDetails = () => {
                   }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <button
-                                onClick={e => {
+                                onClick={async e => {
                                   e.stopPropagation();
                                   if (song.sheet_music_url || song.sheet_music_pdf_url) {
                                     if (globalIndex >= 0) {
                                       playTrack(globalIndex);
                                     }
-                                    setShowSheetViewer(true);
+                                    const url = song.sheet_music_pdf_url || song.sheet_music_url;
+                                    if (url) {
+                                      const cached = await getCachedUrl(url);
+                                      setSheetMusicSrc(cached);
+                                      setShowSheetViewer(true);
+                                    }
                                   }
                                 }}
                                 className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${song.sheet_music_url || song.sheet_music_pdf_url ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}
@@ -775,9 +882,14 @@ const EventDetails = () => {
                                 <Music className="h-5 w-5 shrink-0" />
                               </button>
                               <div className="flex-1 min-w-0">
-                                <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
-                                  {song.name}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                                    {song.name}
+                                  </p>
+                                  {isOfflineSaved && (
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                   {audio.naipe === 'original' ? 'Todas as Vozes' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
                                 </p>
@@ -794,7 +906,8 @@ const EventDetails = () => {
                                 <DropdownMenuItem onClick={async e => {
                                   e.stopPropagation();
                                   try {
-                                    const response = await fetch(audio.audio_url);
+                                    const cachedUrl = await getCachedUrl(audio.audio_url);
+                                    const response = await fetch(cachedUrl);
                                     const blob = await response.blob();
                                     const url = window.URL.createObjectURL(blob);
                                     const a = document.createElement('a');
@@ -904,9 +1017,14 @@ const EventDetails = () => {
 
                     {/* Nome da música */}
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-sm text-primary">
-                        {song.name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium text-sm text-primary">
+                          {song.name}
+                        </p>
+                        {isOfflineSaved && (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                        )}
+                      </div>
                       {hasSongAudios && <p className="text-xs text-muted-foreground mt-1">
                           {songAudios.length} {songAudios.length === 1 ? 'áudio' : 'áudios'} disponível
                         </p>}
@@ -925,13 +1043,18 @@ const EventDetails = () => {
               }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <button
-                              onClick={e => {
+                              onClick={async e => {
                                 e.stopPropagation();
                                 if (hasSheetMusic) {
                                   if (globalIndex >= 0) {
                                     playTrack(globalIndex);
                                   }
-                                  setShowSheetViewer(true);
+                                  const url = song.sheet_music_pdf_url || song.sheet_music_url;
+                                  if (url) {
+                                    const cached = await getCachedUrl(url);
+                                    setSheetMusicSrc(cached);
+                                    setShowSheetViewer(true);
+                                  }
                                 }
                               }}
                               className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}
@@ -1012,10 +1135,15 @@ const EventDetails = () => {
             {/* Ícone + Info */}
             <div 
               className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" 
-              onClick={() => {
+              onClick={async () => {
                 const song = songs.find(s => s.id === currentTrack.songId);
                 if (song?.sheet_music_url || song?.sheet_music_pdf_url) {
-                  setShowSheetViewer(true);
+                  const url = song.sheet_music_pdf_url || song.sheet_music_url;
+                  if (url) {
+                    const cached = await getCachedUrl(url);
+                    setSheetMusicSrc(cached);
+                    setShowSheetViewer(true);
+                  }
                 }
               }}
             >
@@ -1103,9 +1231,12 @@ const EventDetails = () => {
       {showSheetViewer && currentTrack && (() => {
       const currentSong = songs.find(s => s.id === currentTrack.songId);
       if (!currentSong) return null;
-      const sheetUrl = currentSong.sheet_music_pdf_url || currentSong.sheet_music_url;
+      const sheetUrl = sheetMusicSrc || currentSong.sheet_music_pdf_url || currentSong.sheet_music_url;
       if (!sheetUrl) return null;
-      return <SheetViewer currentTrack={currentTrack} isPlaying={isPlaying} onPlayPause={togglePlay} onNext={playNext} onPrevious={playPrevious} onClose={() => setShowSheetViewer(false)} onTrackEnd={() => {
+      return <SheetViewer currentTrack={currentTrack} isPlaying={isPlaying} onPlayPause={togglePlay} onNext={playNext} onPrevious={playPrevious} onClose={() => {
+        setShowSheetViewer(false);
+        setSheetMusicSrc(null);
+      }} onTrackEnd={() => {
         if (repeatMode === 'track') {
           if (audioRef.current) {
             audioRef.current.currentTime = 0;

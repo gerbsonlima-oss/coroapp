@@ -180,7 +180,10 @@ const Home = () => {
         </div>
 
         {liturgicalDay && (
-          <div className="bg-white/15 backdrop-blur-sm rounded-lg p-2 border border-white/20 mt-3">
+          <div 
+            className="bg-white/15 backdrop-blur-sm rounded-lg p-2 border border-white/20 mt-3 cursor-pointer hover:bg-white/20 transition-colors"
+            onClick={() => navigate('/liturgy')}
+          >
             <div className="flex items-center gap-1 mb-1">
               <Sparkles className="h-4 w-4" />
               <p className="text-xs font-semibold">{liturgicalDay.liturgicalSeason}</p>
