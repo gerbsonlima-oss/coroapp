@@ -105,6 +105,7 @@ export type Database = {
           name: string
           notes: string | null
           pdf_theme: string
+          tenant_id: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -117,6 +118,7 @@ export type Database = {
           name: string
           notes?: string | null
           pdf_theme?: string
+          tenant_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -129,10 +131,19 @@ export type Database = {
           name?: string
           notes?: string | null
           pdf_theme?: string
+          tenant_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -144,6 +155,7 @@ export type Database = {
           naipe: string | null
           parish: string | null
           phone: string | null
+          tenant_id: string | null
         }
         Insert: {
           birth_date?: string | null
@@ -154,6 +166,7 @@ export type Database = {
           naipe?: string | null
           parish?: string | null
           phone?: string | null
+          tenant_id?: string | null
         }
         Update: {
           birth_date?: string | null
@@ -164,8 +177,17 @@ export type Database = {
           naipe?: string | null
           parish?: string | null
           phone?: string | null
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rehearsal_attendance: {
         Row: {
@@ -214,6 +236,7 @@ export type Database = {
           id: string
           location: string | null
           notes: string | null
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -223,6 +246,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -232,6 +256,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
+          tenant_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -240,6 +265,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rehearsals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -252,6 +284,7 @@ export type Database = {
           naipe: string
           name: string
           song_id: string
+          tenant_id: string | null
         }
         Insert: {
           audio_url: string
@@ -260,6 +293,7 @@ export type Database = {
           naipe: string
           name: string
           song_id: string
+          tenant_id?: string | null
         }
         Update: {
           audio_url?: string
@@ -268,6 +302,7 @@ export type Database = {
           naipe?: string
           name?: string
           song_id?: string
+          tenant_id?: string | null
         }
         Relationships: [
           {
@@ -275,6 +310,13 @@ export type Database = {
             columns: ["song_id"]
             isOneToOne: false
             referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "song_audios_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -287,6 +329,7 @@ export type Database = {
           name: string
           order_index: number
           slug: string
+          tenant_id: string | null
         }
         Insert: {
           created_at?: string
@@ -295,6 +338,7 @@ export type Database = {
           name: string
           order_index?: number
           slug: string
+          tenant_id?: string | null
         }
         Update: {
           created_at?: string
@@ -303,8 +347,17 @@ export type Database = {
           name?: string
           order_index?: number
           slug?: string
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "song_types_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       songs: {
         Row: {
@@ -314,6 +367,7 @@ export type Database = {
           notes: string | null
           sheet_music_pdf_url: string | null
           sheet_music_url: string | null
+          tenant_id: string | null
           type: string
           updated_at: string | null
           user_id: string | null
@@ -325,6 +379,7 @@ export type Database = {
           notes?: string | null
           sheet_music_pdf_url?: string | null
           sheet_music_url?: string | null
+          tenant_id?: string | null
           type: string
           updated_at?: string | null
           user_id?: string | null
@@ -336,9 +391,45 @@ export type Database = {
           notes?: string | null
           sheet_music_pdf_url?: string | null
           sheet_music_url?: string | null
+          tenant_id?: string | null
           type?: string
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "songs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -347,32 +438,49 @@ export type Database = {
           created_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
+          tenant_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          tenant_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_tenant_admin: {
+        Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
     }
