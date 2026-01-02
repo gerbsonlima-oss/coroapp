@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -87,15 +88,18 @@ const Songs = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { tenantId } = useTenant();
 
   useEffect(() => {
     localStorage.setItem('songs_groupBy', groupBy);
   }, [groupBy]);
 
   useEffect(() => {
-    fetchSongTypes();
+    if (tenantId) {
+      fetchSongTypes();
+    }
     checkAdminStatus();
-  }, [user]);
+  }, [user, tenantId]);
 
   const checkAdminStatus = async () => {
     if (!user) {
@@ -127,11 +131,13 @@ const Songs = () => {
   };
 
   const fetchSongTypes = async () => {
+    if (!tenantId) return;
+    
     try {
       const [{ data: songTypesData, error: songTypesError }, { data: songsData, error: songsError }] =
         await Promise.all([
-          supabase.from('song_types').select('id, slug, name, order_index').order('order_index'),
-          supabase.from('songs').select('id, name, type'),
+          supabase.from('song_types').select('id, slug, name, order_index').eq('tenant_id', tenantId).order('order_index'),
+          supabase.from('songs').select('id, name, type').eq('tenant_id', tenantId),
         ]);
 
       if (songTypesError) throw songTypesError;

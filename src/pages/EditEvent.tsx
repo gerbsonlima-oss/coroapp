@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,14 +62,15 @@ const EditEvent = () => {
   const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
   const [pdfTheme, setPdfTheme] = useState<string>('deep_blue_gold');
   const { user } = useAuth();
+  const { tenantId } = useTenant();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (id) {
+    if (id && tenantId) {
       fetchEventData();
       fetchEventSongTypes(id);
     }
-  }, [id]);
+  }, [id, tenantId]);
 
   useEffect(() => {
     if (!id) return;
@@ -114,10 +116,12 @@ const EditEvent = () => {
   };
 
   const fetchEventSongTypes = async (eventId: string) => {
+    if (!tenantId) return;
+    
     try {
       const [{ data: allTypes, error: typesError }, { data: eventTypes, error: eventTypesError }] =
         await Promise.all([
-          supabase.from('song_types').select('*').order('order_index'),
+          supabase.from('song_types').select('*').eq('tenant_id', tenantId).order('order_index'),
           supabase.from('event_song_types').select('song_type_id').eq('event_id', eventId),
         ]);
 

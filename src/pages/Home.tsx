@@ -49,19 +49,22 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isSuperAdmin } = useSuperAdmin();
-  const { tenant } = useTenant();
+  const { tenant, tenantId } = useTenant();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
 
   const { data: upcomingEventsData } = useQuery({
-    queryKey: ['upcoming-events'],
+    queryKey: ['upcoming-events', tenantId],
     queryFn: async () => {
+      if (!tenantId) return [];
+      
       try {
         const { data, error } = await supabase
           .from('events')
           .select('id, name, date, location, cover_image_url')
+          .eq('tenant_id', tenantId)
           .gte('date', format(today, 'yyyy-MM-dd'))
           .order('date', { ascending: true })
           .limit(5);
@@ -82,20 +85,25 @@ const Home = () => {
           .slice(0, 5);
       }
     },
+    enabled: !!tenantId,
   });
 
   const { data: feedData } = useQuery({
-    queryKey: ['feed-updates'],
+    queryKey: ['feed-updates', tenantId],
     queryFn: async () => {
+      if (!tenantId) return [];
+      
       const [songs, audios] = await Promise.all([
         supabase
           .from('songs')
           .select('id, name, created_at')
+          .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false })
           .limit(5),
         supabase
           .from('song_audios')
-          .select('id, created_at, songs(name, naipe)')
+          .select('id, created_at, songs(name)')
+          .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false })
           .limit(5),
       ]);
@@ -116,7 +124,7 @@ const Home = () => {
           id: a.id,
           type: 'audio' as const,
           title: a.songs?.name || 'Áudio adicionado',
-          voiceType: a.songs?.naipe || undefined,
+          voiceType: undefined,
           date: a.created_at,
         })));
       }
@@ -125,6 +133,7 @@ const Home = () => {
         new Date(b.date).getTime() - new Date(a.date).getTime()
       ).slice(0, 10);
     },
+    enabled: !!tenantId,
   });
 
   useEffect(() => {
