@@ -4,9 +4,11 @@ import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogO
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
+import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { useTenant } from '@/contexts/TenantContext';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { format, addMonths, addDays, getDaysInMonth, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -47,6 +49,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isSuperAdmin } = useSuperAdmin();
+  const { tenant } = useTenant();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
@@ -169,18 +172,27 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-28">
       {/* Header with Auth and Install buttons */}
-      <div className="flex items-center justify-end gap-2 px-4 py-3">
-        {isSuperAdmin && (
-          <Button
-            onClick={() => navigate('/admin/tenants')}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Admin</span>
-          </Button>
-        )}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2">
+          {tenant && (
+            <span className="text-sm font-medium text-muted-foreground truncate max-w-[150px]">
+              {tenant.name}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <TenantSwitcher />
+          {isSuperAdmin && (
+            <Button
+              onClick={() => navigate('/admin/tenants')}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Admin</span>
+            </Button>
+          )}
         {user ? (
           <Button
             onClick={() => signOut()}
@@ -202,7 +214,8 @@ const Home = () => {
             Entrar
           </Button>
         )}
-        <InstallPWAButton />
+          <InstallPWAButton />
+        </div>
       </div>
 
       {/* Hero Section */}
