@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
 import { toast } from 'sonner';
 import { Mic, Pause, Play, Save, Trash2, RotateCcw, X } from 'lucide-react';
 import { uploadFileToBucket } from '@/utils/storageUpload';
@@ -36,6 +37,7 @@ const NAIPES = [
 ];
 
 export const QuickAudioRecorder = ({ open, onOpenChange, mode, eventId, initialSongName, onSuccess }: QuickAudioRecorderProps) => {
+  const { tenantId } = useTenant();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -244,7 +246,7 @@ export const QuickAudioRecorder = ({ open, onOpenChange, mode, eventId, initialS
 
         const { data: songData, error: songError } = await supabase
           .from('songs')
-          .insert([{ name: newSongName, type: 'outro' }])
+          .insert([{ name: newSongName, type: 'outro', tenant_id: tenantId }])
           .select()
           .single();
 
@@ -254,6 +256,7 @@ export const QuickAudioRecorder = ({ open, onOpenChange, mode, eventId, initialS
           .from('song_audios')
           .insert([{
             song_id: songData.id,
+            tenant_id: tenantId,
             naipe,
             audio_url: audioUrl,
             name: `${newSongName} - ${naipe.charAt(0).toUpperCase() + naipe.slice(1)}`,
@@ -272,6 +275,7 @@ export const QuickAudioRecorder = ({ open, onOpenChange, mode, eventId, initialS
           .from('song_audios')
           .insert([{
             song_id: selectedSongId,
+            tenant_id: tenantId,
             naipe,
             audio_url: audioUrl,
             name: `Áudio - ${naipe.charAt(0).toUpperCase() + naipe.slice(1)}`,
@@ -290,6 +294,7 @@ export const QuickAudioRecorder = ({ open, onOpenChange, mode, eventId, initialS
           .from('song_audios')
           .insert([{
             song_id: selectedSongId,
+            tenant_id: tenantId,
             naipe,
             audio_url: audioUrl,
             name: `Áudio - ${naipe.charAt(0).toUpperCase() + naipe.slice(1)}`,

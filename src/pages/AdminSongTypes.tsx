@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,6 +51,7 @@ interface SongType {
 
 const AdminSongTypes = () => {
   const navigate = useNavigate();
+  const { tenantId } = useTenant();
   const [songTypes, setSongTypes] = useState<SongType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -143,6 +145,7 @@ const AdminSongTypes = () => {
               slug: validatedData.slug,
               description: validatedData.description || null,
               order_index: maxOrderIndex + 1,
+              tenant_id: tenantId,
             },
           ]);
 

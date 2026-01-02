@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,7 @@ const NewEvent = () => {
   const [songTypes, setSongTypes] = useState<SongType[]>([]);
   const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
+  const { tenantId } = useTenant();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -121,6 +123,7 @@ const handleSongCreate = async (type: string, songName: string) => {
       .insert([
         {
           user_id: user?.id,
+          tenant_id: tenantId,
           name: songName,
           type: type,
           notes: '',
@@ -225,6 +228,7 @@ const toggleTypeSelection = (typeId: string) => {
         .insert([
           {
             user_id: user?.id,
+            tenant_id: tenantId,
             name,
             date,
             location: location || null,

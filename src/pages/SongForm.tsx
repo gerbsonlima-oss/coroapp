@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +76,7 @@ const SongForm = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [songTypes, setSongTypes] = useState<SongTypeOption[]>([]);
   const { user } = useAuth();
+  const { tenantId } = useTenant();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -257,6 +259,7 @@ const SongForm = () => {
         // Modo Criação
         const insertData: any = {
           user_id: user?.id,
+          tenant_id: tenantId,
           name,
           type,
           sheet_music_url: sheetMusicUrl,
@@ -316,6 +319,7 @@ const SongForm = () => {
           
           audioInserts.push({
             song_id: songId,
+            tenant_id: tenantId,
             naipe,
             audio_url: audioUrl,
             name: audio.name,

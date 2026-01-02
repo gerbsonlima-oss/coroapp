@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -174,6 +175,7 @@ const ReorderSongItem = ({
 const EventQuickEdit = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { tenantId } = useTenant();
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [songs, setSongs] = useState<QuickSong[]>([]);
   const [loading, setLoading] = useState(true);
@@ -695,6 +697,7 @@ const EventQuickEdit = () => {
         .from('songs')
         .insert({
           user_id: user.id,
+          tenant_id: tenantId,
           name: trimmed,
           type: row.type || 'outro',
           notes: '',
@@ -795,6 +798,7 @@ const EventQuickEdit = () => {
         .insert([
           {
             user_id: user.id,
+            tenant_id: tenantId,
             name: validatedData.name,
             type: validatedData.type,
             notes: '',
