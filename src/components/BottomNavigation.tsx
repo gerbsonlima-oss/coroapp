@@ -1,20 +1,38 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Music, BookOpen, Calendar } from 'lucide-react';
+import { useTenant } from '@/contexts/TenantContext';
 
 export function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { tenantSlug } = useTenant();
   
-  const isHomeActive = location.pathname === '/';
-  const isEventsActive = location.pathname.startsWith('/events');
-  const isSongsActive = location.pathname.startsWith('/songs');
-  const isLiturgyActive = location.pathname.startsWith('/liturgy');
+  // Build tenant-aware path
+  const buildPath = (path: string): string => {
+    if (!tenantSlug) return path;
+    if (path === '/') return `/${tenantSlug}`;
+    return `/${tenantSlug}${path}`;
+  };
+  
+  // Check if current path matches (with or without tenant prefix)
+  const isActive = (basePath: string): boolean => {
+    const pathname = location.pathname;
+    
+    if (basePath === '/') {
+      // Home is active if path is / or /:tenantSlug
+      return pathname === '/' || pathname === `/${tenantSlug}`;
+    }
+    
+    // Check both with and without tenant prefix
+    return pathname.startsWith(basePath) || 
+           pathname.startsWith(`/${tenantSlug}${basePath}`);
+  };
 
   const navItems = [
-    { label: 'Início', icon: Home, path: '/', isActive: isHomeActive },
-    { label: 'Eventos', icon: Calendar, path: '/events', isActive: isEventsActive },
-    { label: 'Repertório', icon: Music, path: '/songs', isActive: isSongsActive },
-    { label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isLiturgyActive },
+    { label: 'Início', icon: Home, path: '/', isActive: isActive('/') },
+    { label: 'Eventos', icon: Calendar, path: '/events', isActive: isActive('/events') },
+    { label: 'Repertório', icon: Music, path: '/songs', isActive: isActive('/songs') },
+    { label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isActive('/liturgy') },
   ];
 
   return (
@@ -23,7 +41,7 @@ export function BottomNavigation() {
         {navItems.map((item) => (
           <button
             key={item.path}
-            onClick={() => navigate(item.path)}
+            onClick={() => navigate(buildPath(item.path))}
             className={`flex flex-col items-center gap-1 flex-1 py-3 px-2 transition-all duration-200 active:scale-95 ${
               item.isActive
                 ? 'text-primary'
