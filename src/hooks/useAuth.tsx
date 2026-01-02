@@ -3,6 +3,25 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 
+function getTenantSlugFromHostname(): string {
+  const hostname = window.location.hostname;
+  
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'quixada';
+  }
+  
+  if (hostname.endsWith('.lovable.app')) {
+    return 'quixada';
+  }
+  
+  const parts = hostname.split('.');
+  if (parts.length >= 3) {
+    return parts[0];
+  }
+  
+  return 'quixada';
+}
+
 interface SignUpData {
   email: string;
   password: string;
@@ -50,6 +69,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (data: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
+      const tenantSlug = getTenantSlugFromHostname();
+      
       const { error, data: authData } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -57,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: data.fullName,
+            tenant_slug: tenantSlug,
           },
         },
       });
@@ -131,12 +153,17 @@ export const useAuth = () => {
       loading: false,
       signUp: async (data: SignUpData) => {
         const redirectUrl = `${window.location.origin}/`;
+        const tenantSlug = getTenantSlugFromHostname();
+        
         const { error, data: authData } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
           options: {
             emailRedirectTo: redirectUrl,
-            data: { full_name: data.fullName },
+            data: { 
+              full_name: data.fullName,
+              tenant_slug: tenantSlug,
+            },
           },
         });
         if (error) throw error;
