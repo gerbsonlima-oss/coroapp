@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -48,6 +49,7 @@ const Rehearsals = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { tenantId } = useTenant();
   const [rehearsals, setRehearsals] = useState<Rehearsal[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [attendance, setAttendance] = useState<Record<string, Attendance[]>>({});
@@ -163,6 +165,7 @@ const Rehearsals = () => {
           .from('rehearsals')
           .insert({
             event_id: eventId || null,
+            tenant_id: tenantId,
             date: formDate,
             location: formLocation || null,
             notes: formNotes || null,

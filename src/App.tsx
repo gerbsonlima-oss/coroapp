@@ -1,12 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { TenantProvider } from "@/contexts/TenantContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
 import { SplashScreen } from "@/components/SplashScreen";
 import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
 const Home = lazy(() => import("./pages/Home"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Events = lazy(() => import("./pages/Events"));
@@ -39,6 +39,7 @@ function App() {
       <SplashScreen />
       <BrowserRouter>
       <QueryClientProvider client={queryClient}>
+      <TenantProvider>
       <AuthProvider>
         <RouteTracker />
         <Toaster />
@@ -116,6 +117,7 @@ function App() {
           </Routes>
         </Suspense>
       </AuthProvider>
+      </TenantProvider>
       </QueryClientProvider>
       </BrowserRouter>
     </>
