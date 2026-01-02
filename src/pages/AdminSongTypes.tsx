@@ -68,14 +68,19 @@ const AdminSongTypes = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetchSongTypes();
-  }, []);
+    if (tenantId) {
+      fetchSongTypes();
+    }
+  }, [tenantId]);
 
   const fetchSongTypes = async () => {
+    if (!tenantId) return;
+    
     try {
       const { data, error } = await supabase
         .from('song_types')
         .select('*')
+        .eq('tenant_id', tenantId)
         .order('order_index');
 
       if (error) throw error;

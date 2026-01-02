@@ -81,10 +81,13 @@ const SongForm = () => {
 
   useEffect(() => {
     const fetchSongTypes = async () => {
+      if (!tenantId) return;
+      
       try {
         const { data, error } = await supabase
           .from('song_types')
           .select('id, slug, name')
+          .eq('tenant_id', tenantId)
           .order('order_index');
 
         if (error) throw error;
@@ -96,7 +99,7 @@ const SongForm = () => {
     };
 
     fetchSongTypes();
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     if (isEditMode && id) {

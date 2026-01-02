@@ -70,8 +70,10 @@ const Rehearsals = () => {
 
   useEffect(() => {
     checkAdminStatus();
-    fetchData();
-  }, [eventId, user]);
+    if (tenantId) {
+      fetchData();
+    }
+  }, [eventId, user, tenantId]);
 
   const checkAdminStatus = async () => {
     if (!user) {
@@ -100,8 +102,11 @@ const Rehearsals = () => {
         if (eventData) setEventName(eventData.name);
       }
 
-      // Fetch rehearsals
+      // Fetch rehearsals - filter by tenant
       let query = supabase.from('rehearsals').select('*').order('date', { ascending: false });
+      if (tenantId) {
+        query = query.eq('tenant_id', tenantId);
+      }
       if (eventId) {
         query = query.eq('event_id', eventId);
       }
@@ -109,11 +114,12 @@ const Rehearsals = () => {
       if (rehearsalsError) throw rehearsalsError;
       setRehearsals(rehearsalsData || []);
 
-      // Fetch all profiles
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, naipe, phone')
-        .order('full_name');
+      // Fetch all profiles for this tenant
+      let profilesQuery = supabase.from('profiles').select('id, full_name, email, naipe, phone').order('full_name');
+      if (tenantId) {
+        profilesQuery = profilesQuery.eq('tenant_id', tenantId);
+      }
+      const { data: profilesData, error: profilesError } = await profilesQuery;
       if (profilesError) throw profilesError;
       setProfiles(profilesData || []);
 

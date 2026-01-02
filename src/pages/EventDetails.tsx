@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -123,6 +124,7 @@ const EventDetails = () => {
   const {
     user
   } = useAuth();
+  const { tenantId } = useTenant();
   const [event, setEvent] = useState<Event | null>(null);
   const [songs, setSongs] = useState<EventSong[]>([]);
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
@@ -218,14 +220,18 @@ const EventDetails = () => {
     [key: number]: HTMLDivElement | null;
   }>({});
   useEffect(() => {
-    fetchSongTypes();
-  }, []);
+    if (tenantId) {
+      fetchSongTypes();
+    }
+  }, [tenantId]);
   const fetchSongTypes = async () => {
+    if (!tenantId) return;
+    
     try {
       const {
         data,
         error
-      } = await supabase.from('song_types').select('*');
+      } = await supabase.from('song_types').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       const labels: Record<string, string> = {};
       (data || []).forEach(type => {
@@ -365,13 +371,19 @@ const EventDetails = () => {
         audios: audiosData?.filter((a: any) => a.song_id === es.songs.id) || []
       }));
       setSongs(formattedSongs);
+      
+      // Fetch available songs filtered by tenant
+      let songsQuery = supabase.from('songs').select('*').order('name');
+      if (tenantId) {
+        songsQuery = songsQuery.eq('tenant_id', tenantId);
+      }
       const {
         data: allSongs,
         error: allSongsError
-      } = await supabase.from('songs').select('*').order('name');
+      } = await songsQuery;
       if (allSongsError) throw allSongsError;
       const usedSongIds = formattedSongs.map((s: any) => s.id);
-      const available = allSongs.filter(s => !usedSongIds.includes(s.id));
+      const available = (allSongs || []).filter(s => !usedSongIds.includes(s.id));
       setAvailableSongs(available);
     } catch (error: any) {
       console.error('Error fetching event details:', error);

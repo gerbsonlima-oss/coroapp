@@ -59,18 +59,23 @@ const NewEvent = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchInitialData();
-  }, []);
+    if (tenantId) {
+      fetchInitialData();
+    }
+  }, [tenantId]);
 
   const fetchInitialData = async () => {
     await Promise.all([fetchAvailableSongs(), fetchDefaultSongTypes()]);
   };
 
 const fetchDefaultSongTypes = async () => {
+  if (!tenantId) return;
+  
   try {
     const { data, error } = await supabase
       .from('song_types')
       .select('*')
+      .eq('tenant_id', tenantId)
       .order('order_index');
 
     if (error) throw error;
@@ -91,10 +96,13 @@ const fetchDefaultSongTypes = async () => {
 };
 
   const fetchAvailableSongs = async () => {
+    if (!tenantId) return;
+    
     try {
       const { data, error } = await supabase
         .from('songs')
         .select('*')
+        .eq('tenant_id', tenantId)
         .order('name');
 
       if (error) throw error;

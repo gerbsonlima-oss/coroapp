@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -28,12 +29,15 @@ const Events = () => {
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
   const { user, signOut } = useAuth();
+  const { tenantId } = useTenant();
   const navigate = useNavigate();
   const { cachedAudios } = useAudioCache();
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    if (tenantId) {
+      fetchEvents();
+    }
+  }, [tenantId]);
 
   useEffect(() => {
     if (isOffline) {
@@ -44,10 +48,13 @@ const Events = () => {
   }, [cachedAudios, isOffline]);
 
   const fetchEvents = async () => {
+    if (!tenantId) return;
+    
     try {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .eq('tenant_id', tenantId)
         .order('date', { ascending: false });
 
       if (error) throw error;
