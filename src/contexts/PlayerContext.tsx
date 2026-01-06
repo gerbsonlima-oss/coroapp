@@ -12,7 +12,8 @@ export interface PlayerContextType {
   volume: number;
   isMuted: boolean;
   currentTrackIndex: number;
-  isExpanded?: boolean;
+  isExpanded: boolean;
+  tracks: Track[];
   
   // Refs
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -27,9 +28,9 @@ export interface PlayerContextType {
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   setPlaylist: (tracks: Track[]) => void;
+  setIsExpanded: (expanded: boolean) => void;
   setIsPlaying?: (playing: boolean) => void;
   setAudioElement?: (audio: HTMLAudioElement | null) => void;
-  setIsExpanded?: (expanded: boolean) => void;
   setCurrentTime?: (time: number) => void;
   setDuration?: (duration: number) => void;
 }
@@ -38,6 +39,7 @@ const PlayerContext = createContext<PlayerContextType | null>(null);
 
 export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   const [playlist, setPlaylistState] = useState<Track[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const {
     state: playerState,
@@ -67,6 +69,8 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     volume,
     isMuted,
     currentTrackIndex,
+    isExpanded,
+    tracks: playlist,
     audioRef,
     playTrack,
     playNext,
@@ -77,6 +81,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     setVolume,
     toggleMute,
     setPlaylist: setPlaylistState,
+    setIsExpanded,
   }), [
     currentTrack,
     currentTime,
@@ -87,6 +92,7 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     volume,
     isMuted,
     currentTrackIndex,
+    isExpanded,
     playlist,
   ]);
 
