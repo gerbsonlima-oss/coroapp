@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ const Events = () => {
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { tenantId } = useTenant();
   const navigate = useNavigate();
   const { cachedAudios } = useAudioCache();
@@ -149,9 +151,9 @@ const Events = () => {
             </div>
             <h2 className="mb-3 text-xl md:text-2xl font-semibold">Nenhum evento ainda</h2>
             <p className="mb-8 text-muted-foreground max-w-sm">
-              {user ? 'Crie seu primeiro evento para começar' : 'Faça login para criar eventos'}
+              {user ? (isAdmin ? 'Crie seu primeiro evento para começar' : 'Nenhum evento agendado para esta organização') : 'Faça login para visualizar os eventos'}
             </p>
-            {user && (
+            {user && isAdmin && (
               <Button
                 onClick={() => navigate('/events/new')}
                 className="gradient-primary shadow-glow hover:shadow-glow/50 transition-all"
@@ -181,7 +183,7 @@ const Events = () => {
       </main>
 
       {/* Floating Action Button - Mobile */}
-      {user && (
+      {user && isAdmin && (
         <button
           onClick={() => navigate('/events/new')}
           className="fixed bottom-24 right-4 z-20 md:hidden h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-glow hover:shadow-glow/50 transition-all active:scale-95 flex items-center justify-center text-white hover:scale-110 duration-200"

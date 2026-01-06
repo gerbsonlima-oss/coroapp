@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -175,6 +177,8 @@ const ReorderSongItem = ({
 const EventQuickEdit = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { tenantId } = useTenant();
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [songs, setSongs] = useState<QuickSong[]>([]);
@@ -243,6 +247,13 @@ const EventQuickEdit = () => {
       document.title = 'Edição rápida de músicas do evento';
     }
   }, [event]);
+
+  useEffect(() => {
+    if (!adminLoading && !isAdmin) {
+      toast.error('Você não tem permissão para acessar esta página');
+      navigate('/events');
+    }
+  }, [isAdmin, adminLoading, navigate]);
 
 
   const fetchData = async (eventId: string) => {

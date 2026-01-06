@@ -1,80 +1,112 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { usePlaylistPlayer, Track } from '@/hooks/usePlaylistPlayer';
+import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
+import { useEventPlayer, type Track } from '@/hooks/useEventPlayer';
 
-interface PlayerContextType {
-  tracks: Track[];
-  setPlaylist: (tracks: Track[], startIndex?: number) => void;
-  clearPlaylist: () => void;
+export interface PlayerContextType {
+  // State
   currentTrack: Track | null;
-  currentTrackIndex: number;
+  currentTime: number;
+  duration: number;
   isPlaying: boolean;
+  isLoading: boolean;
   repeatMode: 'off' | 'playlist' | 'track';
+  volume: number;
+  isMuted: boolean;
+  currentTrackIndex: number;
+  isExpanded?: boolean;
+  
+  // Refs
+  audioRef: React.RefObject<HTMLAudioElement>;
+  
+  // Actions
   playTrack: (index: number) => void;
   playNext: () => void;
   playPrevious: () => void;
   toggleRepeat: () => void;
   togglePlay: () => void;
-  setIsPlaying: (playing: boolean) => void;
-  setAudioElement: (audio: HTMLAudioElement | null) => void;
-  totalTracks: number;
-  isExpanded: boolean;
-  setIsExpanded: (expanded: boolean) => void;
+  seek: (time: number) => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
+  setPlaylist: (tracks: Track[]) => void;
+  setIsPlaying?: (playing: boolean) => void;
+  setAudioElement?: (audio: HTMLAudioElement | null) => void;
+  setIsExpanded?: (expanded: boolean) => void;
+  setCurrentTime?: (time: number) => void;
+  setDuration?: (duration: number) => void;
 }
 
-const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
+const PlayerContext = createContext<PlayerContextType | null>(null);
 
-export function PlayerProvider({ children }: { children: ReactNode }) {
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [isExpanded, setIsExpanded] = useState(false);
+export const PlayerProvider = ({ children }: { children: ReactNode }) => {
+  const [playlist, setPlaylistState] = useState<Track[]>([]);
   
-  const player = usePlaylistPlayer(tracks);
+  const {
+    state: playerState,
+    currentTrack,
+    currentTrackIndex,
+    audioRef,
+    playTrack,
+    playNext,
+    playPrevious,
+    toggleRepeat,
+    togglePlay,
+    seek,
+    setVolume,
+    toggleMute,
+  } = useEventPlayer(playlist);
 
-  const setPlaylist = useCallback((newTracks: Track[], startIndex = 0) => {
-    setTracks(newTracks);
-    if (newTracks.length > 0) {
-      // Pequeno delay para garantir que os tracks foram atualizados
-      setTimeout(() => {
-        player.playTrack(startIndex);
-      }, 100);
-    }
-  }, [player]);
+  const { currentTime, duration, isPlaying, repeatMode, isLoading, volume, isMuted } = playerState;
 
-  const clearPlaylist = useCallback(() => {
-    setTracks([]);
-    player.setIsPlaying(false);
-  }, [player]);
+  // ✅ Memoize o valor do contexto
+  const contextValue = useMemo<PlayerContextType>(() => ({
+    currentTrack,
+    currentTime,
+    duration,
+    isPlaying,
+    isLoading,
+    repeatMode,
+    volume,
+    isMuted,
+    currentTrackIndex,
+    audioRef,
+    playTrack,
+    playNext,
+    playPrevious,
+    toggleRepeat,
+    togglePlay,
+    seek,
+    setVolume,
+    toggleMute,
+    setPlaylist: setPlaylistState,
+  }), [
+    currentTrack,
+    currentTime,
+    duration,
+    isPlaying,
+    isLoading,
+    repeatMode,
+    volume,
+    isMuted,
+    currentTrackIndex,
+    playlist,
+  ]);
 
   return (
-    <PlayerContext.Provider
-      value={{
-        tracks,
-        setPlaylist,
-        clearPlaylist,
-        currentTrack: player.currentTrack,
-        currentTrackIndex: player.currentTrackIndex,
-        isPlaying: player.isPlaying,
-        repeatMode: player.repeatMode,
-        playTrack: player.playTrack,
-        playNext: player.playNext,
-        playPrevious: player.playPrevious,
-        toggleRepeat: player.toggleRepeat,
-        togglePlay: player.togglePlay,
-        setIsPlaying: player.setIsPlaying,
-        setAudioElement: player.setAudioElement,
-        totalTracks: player.totalTracks,
-        isExpanded,
-        setIsExpanded,
-      }}
-    >
+    <PlayerContext.Provider value={contextValue}>
       {children}
+      <audio 
+        ref={audioRef}
+        preload="metadata"
+        crossOrigin="anonymous"
+        className="hidden"
+      />
     </PlayerContext.Provider>
   );
-}
+};
 
-export function usePlayer() {
+export const usePlayer = () => {
   const context = useContext(PlayerContext);
-  if (context === undefined) {
-    throw new Error('usePlayer must be used within a PlayerProvider');
+  if (!context) {
+    throw new Error('usePlayer must be used within PlayerProvider');
   }
   return context;
-}
+};

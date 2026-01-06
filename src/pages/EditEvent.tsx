@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 const eventSchema = z.object({
   name: z
@@ -64,6 +65,14 @@ const EditEvent = () => {
   const { user } = useAuth();
   const { tenantId } = useTenant();
   const navigate = useNavigate();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+
+  useEffect(() => {
+    if (!adminLoading && !isAdmin) {
+      toast.error('Você não tem permissão para acessar esta página');
+      navigate('/events');
+    }
+  }, [isAdmin, adminLoading, navigate]);
 
   useEffect(() => {
     if (id && tenantId) {

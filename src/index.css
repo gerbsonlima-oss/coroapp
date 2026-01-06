@@ -192,6 +192,39 @@ All colors MUST be HSL.
 
     /* Bordas com verde Spotify */
     --border-glow: 0 0 0 1px hsl(135 61% 41% / 0.2);
+
+    /* Player Design Tokens */
+    --player-bg: 0 0% 7% / 0.98;
+    --player-border: 0 0% 15% / 0.5;
+    --player-active: 135 61% 41%;
+    --player-inactive: 0 0% 70%;
+    
+    /* Progress Bar */
+    --progress-bg: 0 0% 30% / 0.3;
+    --progress-fill: 135 61% 41%;
+    --progress-height: 8px;
+    --progress-thumb: 16px;
+    
+    /* Touch Targets - WCAG AAA */
+    --touch-min: 48px;
+    --touch-comfortable: 56px;
+    
+    /* Animations */
+    --animation-fast: 150ms;
+    --animation-base: 300ms;
+    --animation-slow: 500ms;
+    --easing-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
+    --easing-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1);
+    --easing-accelerate: cubic-bezier(0.4, 0.0, 1, 1);
+    
+    /* Spacing Scale */
+    --space-mini: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
   }
 
   .dark {
@@ -309,6 +342,20 @@ All colors MUST be HSL.
 
   .touch-action-pan-y {
     touch-action: pan-y;
+  }
+
+  .touch-target {
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+  }
+
+  .touch-target-comfortable {
+    min-width: var(--touch-comfortable);
+    min-height: var(--touch-comfortable);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .text-display {

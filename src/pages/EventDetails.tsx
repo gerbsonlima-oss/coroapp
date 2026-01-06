@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,11 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlaylistPlayer } from '@/components/PlaylistPlayer';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -22,7 +22,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAudioCache } from '@/hooks/useAudioCache';
-import { usePlaylistPlayer, type Track } from '@/hooks/usePlaylistPlayer';
+import { type Track } from '@/hooks/useEventPlayer';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { z } from 'zod';
 import { exportEventPDF } from '@/utils/exportEventPDF';
@@ -124,6 +125,7 @@ const EventDetails = () => {
   const {
     user
   } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { tenantId } = useTenant();
   const [event, setEvent] = useState<Event | null>(null);
   const [songs, setSongs] = useState<EventSong[]>([]);
@@ -155,6 +157,7 @@ const EventDetails = () => {
   const [imageClickCount, setImageClickCount] = useState(0);
   const [showMusicRain, setShowMusicRain] = useState(false);
   const [isOfflineSaved, setIsOfflineSaved] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
 
   const checkOfflineStatus = () => {
     if (!id) return;
@@ -199,8 +202,6 @@ const EventDetails = () => {
   const [newSongType, setNewSongType] = useState('');
   const [isCreatingSong, setIsCreatingSong] = useState(false);
   const [showSheetViewer, setShowSheetViewer] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
   const [eventTypes, setEventTypes] = useState<{
     id: string;
@@ -219,19 +220,17 @@ const EventDetails = () => {
   const trackRefs = useRef<{
     [key: number]: HTMLDivElement | null;
   }>({});
+
   useEffect(() => {
     if (tenantId) {
       fetchSongTypes();
     }
   }, [tenantId]);
+
   const fetchSongTypes = async () => {
     if (!tenantId) return;
-    
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('song_types').select('*').eq('tenant_id', tenantId);
+      const { data, error } = await supabase.from('song_types').select('*').eq('tenant_id', tenantId);
       if (error) throw error;
       const labels: Record<string, string> = {};
       (data || []).forEach(type => {
@@ -243,53 +242,53 @@ const EventDetails = () => {
     }
   };
 
-  // Playlist filtrada baseada no naipe selecionado
-  const filteredPlaylist = selectedNaipe === 'todas' ? tracks : selectedNaipe === 'nenhum' ? [] : tracks.filter(track => {
-    const audioNaipe = track.naipe.toLowerCase();
-    const targetNaipe = selectedNaipe.toLowerCase();
-    if (targetNaipe === 'todas as vozes') {
-      return audioNaipe === 'original';
-    }
-    return audioNaipe === targetNaipe;
-  });
+  // ✅ Playlist filtrada baseada no naipe selecionado
+  const filteredPlaylist = useMemo(() => {
+    if (selectedNaipe === 'todas') return tracks;
+    if (selectedNaipe === 'nenhum') return [];
+    return tracks.filter(track => {
+      const audioNaipe = track.naipe.toLowerCase();
+      const targetNaipe = selectedNaipe.toLowerCase();
+      if (targetNaipe === 'todas as vozes') {
+        return audioNaipe === 'original';
+      }
+      return audioNaipe === targetNaipe;
+    });
+  }, [tracks, selectedNaipe]);
+
+  // ✅ Usar o player do contexto global
   const {
     currentTrack,
     currentTrackIndex,
-    isPlaying,
-    repeatMode,
+    audioRef,
     playTrack,
     playNext,
     playPrevious,
     toggleRepeat,
     togglePlay,
-    setAudioElement
-  } = usePlaylistPlayer(filteredPlaylist);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isScrubbing, setIsScrubbing] = useState(false);
-  const [scrubTime, setScrubTime] = useState<number | null>(null);
+    seek,
+    setVolume,
+    toggleMute,
+    currentTime,
+    duration,
+    isPlaying,
+    repeatMode,
+    isLoading,
+    volume,
+    isMuted,
+    setPlaylist
+  } = usePlayer();
+
+  // Atualizar playlist no contexto quando mudar
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const handleTimeUpdate = () => {
-      if (!isScrubbing) {
-        setCurrentTime(audio.currentTime || 0);
-      }
-    };
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration || 0);
-    };
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-    };
-  }, [currentTrack?.id, isScrubbing]);
+    setPlaylist(filteredPlaylist);
+  }, [filteredPlaylist, setPlaylist]);
   useEffect(() => {
     if (id) {
       fetchEventDetails();
     }
   }, [id]);
+
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => ({
       ...prev,
@@ -649,10 +648,9 @@ const EventDetails = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
   const handleSeek = (value: number[]) => {
-    if (!audioRef.current || !duration) return;
-    const newTime = value[0];
-    audioRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
+    setIsScrubbing(true);
+    seek(value[0]);
+    setIsScrubbing(false);
   };
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">
@@ -679,7 +677,7 @@ const EventDetails = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {user && <>
+            {user && isAdmin && <>
               <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
                 <Edit className="mr-2 h-4 w-4" />
                 Editar evento
@@ -1002,7 +1000,7 @@ const EventDetails = () => {
                             <FileText className="mr-2 h-4 w-4 text-primary" />
                             Baixar partitura (PDF)
                           </DropdownMenuItem>
-                          {user && <>
+                          {user && isAdmin && <>
                             <DropdownMenuItem onClick={e => {
                               e.stopPropagation();
                               navigate(`/songs/${song.id}/edit?eventId=${id}`);
@@ -1126,20 +1124,28 @@ const EventDetails = () => {
         })}
       </div>
 
-      {/* Ultra Minimal Player */}
-      {currentTrack && <div className="fixed bottom-16 left-0 right-0 z-40 bg-card border-t border-primary/20 shadow-elevated">
-          {/* Barra de progresso fina - única linha decorativa */}
-          <Slider 
-            value={[duration ? Math.min(currentTime, duration) : 0]} 
-            max={duration || 0} 
-            step={0.1} 
-            onValueChange={handleSeek} 
-            className="w-full cursor-pointer touch-action-pan-y px-0 py-0 h-1 [&>span]:h-0.5 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
-          />
+      {/* ✅ Ultra Minimal Player - Refactored */}
+      {currentTrack && (
+        <div className="fixed bottom-16 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-primary/20 shadow-elevated animate-in slide-in-from-bottom-full duration-300">
+          {/* Enhanced Progress Bar */}
+          <div className="relative w-full px-4 pt-2 group">
+            <div className="flex justify-between text-[10px] mb-1 font-medium text-muted-foreground tabular-nums">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+            <Slider 
+              value={[duration ? Math.min(currentTime, duration) : 0]} 
+              max={duration || 100} 
+              step={0.1}
+              onValueChange={handleSeek}
+              disabled={isLoading}
+              className="w-full cursor-pointer"
+            />
+          </div>
 
-          {/* Tudo em uma linha */}
+          {/* Controls Row */}
           <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-            {/* Ícone + Info */}
+            {/* Info Section */}
             <div 
               className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" 
               onClick={async () => {
@@ -1155,12 +1161,18 @@ const EventDetails = () => {
               }}
             >
               <div className="gradient-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sm text-white relative shadow-glow animate-float">
-                ♫
-                {(() => {
-                  const song = songs.find(s => s.id === currentTrack.songId);
-                  const hasSheet = Boolean(song?.sheet_music_url || song?.sheet_music_pdf_url);
-                  return hasSheet ? <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-success animate-glow-pulse" /> : null;
-                })()}
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    ♫
+                    {(() => {
+                      const song = songs.find(s => s.id === currentTrack.songId);
+                      const hasSheet = Boolean(song?.sheet_music_url || song?.sheet_music_pdf_url);
+                      return hasSheet ? <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-success animate-glow-pulse" /> : null;
+                    })()}
+                  </>
+                )}
               </div>
               <div className="min-w-0">
                 <p className="truncate font-medium text-sm text-primary">
@@ -1172,67 +1184,73 @@ const EventDetails = () => {
               </div>
             </div>
 
-            {/* Controles compactos */}
+            {/* Compact Controls */}
             <div className="flex items-center gap-1.5 shrink-0">
               <button 
                 onClick={playPrevious}
-                className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md"
+                disabled={isLoading}
+                className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <SkipBack className="h-4 w-4" />
               </button>
 
               <button 
                 onClick={togglePlay}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-90 transition shadow-glow hover:shadow-elevated"
+                disabled={isLoading}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-90 transition shadow-glow hover:shadow-elevated disabled:opacity-70"
               >
-                {isPlaying ? <Pause className="h-5 w-5 ml-0.5" /> : <Play className="h-5 w-5 ml-0.5" />}
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : isPlaying ? (
+                  <Pause className="h-5 w-5 ml-0.5" />
+                ) : (
+                  <Play className="h-5 w-5 ml-0.5" />
+                )}
               </button>
 
               <button 
                 onClick={playNext}
-                className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md"
+                disabled={isLoading}
+                className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <SkipForward className="h-4 w-4" />
               </button>
 
+              {/* ✅ NOVO: Volume Control (Desktop only) */}
+              <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-2 border-l border-primary/20">
+                <button
+                  onClick={toggleMute}
+                  className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md"
+                  title={isMuted ? "Desmutecer" : "Mutecer"}
+                >
+                  {isMuted ? (
+                    <VolumeX className="h-4 w-4" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
+                </button>
+                
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  max={1}
+                  step={0.01}
+                  onValueChange={(value) => setVolume(value[0])}
+                  className="w-20 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+                />
+              </div>
+
               <button 
                 onClick={toggleRepeat}
                 className={`flex h-9 w-9 items-center justify-center active:scale-90 transition-all rounded-md ${repeatMode !== 'off' ? 'text-primary bg-primary/15' : 'text-muted-foreground hover:text-primary hover:bg-primary/15'}`}
-                title={repeatMode === 'off' ? 'Sem repetição' : repeatMode === 'playlist' ? 'Repetir' : 'Repetir música'}
+                title={repeatMode === 'off' ? 'Sem repetição' : repeatMode === 'playlist' ? 'Repetir playlist' : 'Repetir música'}
               >
                 {repeatMode === 'track' ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
-          {/* Audio player oculto */}
-          <div style={{ display: 'none' }}>
-            <PlaylistPlayer 
-              currentTrack={currentTrack} 
-              isPlaying={isPlaying} 
-              repeatMode={repeatMode} 
-              onPlayPause={togglePlay} 
-              onNext={playNext} 
-              onPrevious={playPrevious} 
-              onToggleRepeat={toggleRepeat} 
-              onTrackEnd={() => {
-                if (repeatMode === 'track') {
-                  if (audioRef.current) {
-                    audioRef.current.currentTime = 0;
-                    audioRef.current.play();
-                  }
-                } else {
-                  playNext();
-                }
-              }} 
-              onSetAudioElement={audio => {
-                audioRef.current = audio;
-                setAudioElement(audio);
-              }} 
-              showDownloadButton={false} 
-            />
-          </div>
-        </div>}
+        </div>
+      )}
 
       {/* Visualizador de partitura */}
       {showSheetViewer && currentTrack && (() => {

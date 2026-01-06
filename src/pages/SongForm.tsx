@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,14 @@ const SongForm = () => {
   const { user } = useAuth();
   const { tenantId } = useTenant();
   const navigate = useNavigate();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+
+  useEffect(() => {
+    if (!adminLoading && !isAdmin) {
+      toast.error('Você não tem permissão para acessar esta página');
+      navigate('/songs');
+    }
+  }, [isAdmin, adminLoading, navigate]);
 
   useEffect(() => {
     const fetchSongTypes = async () => {

@@ -2,9 +2,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/contexts/TenantContext";
+import { PlayerProvider } from "@/contexts/PlayerContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
 import { SplashScreen } from "@/components/SplashScreen";
+import { EnhancedMiniPlayer } from "@/components/EnhancedMiniPlayer";
 import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -128,8 +130,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
       <TenantProvider>
       <AuthProvider>
+      <PlayerProvider>
         <RouteTracker />
         <Toaster />
+        <EnhancedMiniPlayer />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             {/* Routes without tenant prefix */}
@@ -285,6 +289,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+      </PlayerProvider>
       </AuthProvider>
       </TenantProvider>
       </QueryClientProvider>

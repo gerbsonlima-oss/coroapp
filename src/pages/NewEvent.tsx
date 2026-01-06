@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -55,8 +56,16 @@ const NewEvent = () => {
   const [songTypes, setSongTypes] = useState<SongType[]>([]);
   const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { tenantId } = useTenant();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!adminLoading && !isAdmin) {
+      toast.error('Apenas administradores podem criar eventos');
+      navigate('/events');
+    }
+  }, [isAdmin, adminLoading, navigate]);
 
   useEffect(() => {
     if (tenantId) {
@@ -230,6 +239,13 @@ const toggleTypeSelection = (typeId: string) => {
 
       // Upload da imagem se houver
       const uploadedImageUrl = await uploadCoverImage(user?.id || '');
+
+      console.log('Tentando criar evento:', {
+        user_id: user?.id,
+        tenant_id: tenantId,
+        name,
+        date
+      });
 
       const { data: eventData, error: eventError } = await supabase
         .from('events')

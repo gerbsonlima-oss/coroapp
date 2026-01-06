@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -50,11 +51,11 @@ const Rehearsals = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { tenantId } = useTenant();
+  const { isAdmin } = useIsAdmin();
   const [rehearsals, setRehearsals] = useState<Rehearsal[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [attendance, setAttendance] = useState<Record<string, Attendance[]>>({});
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [eventName, setEventName] = useState('');
   
   // Form state
@@ -69,25 +70,10 @@ const Rehearsals = () => {
   const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
 
   useEffect(() => {
-    checkAdminStatus();
     if (tenantId) {
       fetchData();
     }
   }, [eventId, user, tenantId]);
-
-  const checkAdminStatus = async () => {
-    if (!user) {
-      setIsAdmin(false);
-      return;
-    }
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-    setIsAdmin(!!data);
-  };
 
   const fetchData = async () => {
     setLoading(true);
