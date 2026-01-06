@@ -105,6 +105,7 @@ export type Database = {
           name: string
           notes: string | null
           pdf_theme: string
+          song_sheet_url: string | null
           tenant_id: string | null
           updated_at: string | null
           user_id: string | null
@@ -118,6 +119,7 @@ export type Database = {
           name: string
           notes?: string | null
           pdf_theme?: string
+          song_sheet_url?: string | null
           tenant_id?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -131,6 +133,7 @@ export type Database = {
           name?: string
           notes?: string | null
           pdf_theme?: string
+          song_sheet_url?: string | null
           tenant_id?: string | null
           updated_at?: string | null
           user_id?: string | null

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -35,6 +35,7 @@ interface Event {
   location: string | null;
   cover_image_url: string | null;
   pdf_theme: string | null;
+  song_sheet_url: string | null;
 }
 interface Song {
   id: string;
@@ -158,6 +159,8 @@ const EventDetails = () => {
   const [showMusicRain, setShowMusicRain] = useState(false);
   const [isOfflineSaved, setIsOfflineSaved] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
+  const [isUploadingSongSheet, setIsUploadingSongSheet] = useState(false);
+  const songSheetInputRef = useRef<HTMLInputElement>(null);
 
   const checkOfflineStatus = () => {
     if (!id) return;
@@ -652,6 +655,90 @@ const EventDetails = () => {
     seek(value[0]);
     setIsScrubbing(false);
   };
+
+  // Upload da folha de cantos
+  const handleSongSheetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !event) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Por favor, selecione um arquivo PDF');
+      return;
+    }
+
+    setIsUploadingSongSheet(true);
+    try {
+      const fileName = `${event.id}-folha-cantos-${Date.now()}.pdf`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('sheet-music')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('sheet-music')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({ song_sheet_url: publicUrl })
+        .eq('id', event.id);
+
+      if (updateError) throw updateError;
+
+      setEvent({ ...event, song_sheet_url: publicUrl });
+      toast.success('Folha de cantos enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer upload da folha de cantos:', error);
+      toast.error('Erro ao fazer upload da folha de cantos');
+    } finally {
+      setIsUploadingSongSheet(false);
+      if (songSheetInputRef.current) {
+        songSheetInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveSongSheet = async () => {
+    if (!event?.song_sheet_url) return;
+
+    try {
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({ song_sheet_url: null })
+        .eq('id', event.id);
+
+      if (updateError) throw updateError;
+
+      setEvent({ ...event, song_sheet_url: null });
+      toast.success('Folha de cantos removida!');
+    } catch (error) {
+      console.error('Erro ao remover folha de cantos:', error);
+      toast.error('Erro ao remover folha de cantos');
+    }
+  };
+
+  const handleDownloadSongSheet = async () => {
+    if (!event?.song_sheet_url) return;
+
+    try {
+      const cachedUrl = await getCachedUrl(event.song_sheet_url);
+      const response = await fetch(cachedUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${event.name} - Folha de Cantos.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Download iniciado!');
+    } catch (error) {
+      console.error('Erro ao baixar folha de cantos:', error);
+      toast.error('Erro ao baixar folha de cantos');
+    }
+  };
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -700,7 +787,24 @@ const EventDetails = () => {
                 Gerenciar Inscrições
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {event.song_sheet_url ? (
+                <DropdownMenuItem onClick={handleRemoveSongSheet}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remover Folha de Cantos
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => songSheetInputRef.current?.click()} disabled={isUploadingSongSheet}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {isUploadingSongSheet ? 'Enviando...' : 'Adicionar Folha de Cantos'}
+                </DropdownMenuItem>
+              )}
             </>}
+            {event.song_sheet_url && (
+              <DropdownMenuItem onClick={handleDownloadSongSheet}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Baixar Folha de Cantos
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={handleShare}>
               <Share2 className="mr-2 h-4 w-4" />
               Compartilhar evento
@@ -726,6 +830,15 @@ const EventDetails = () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        
+        {/* Hidden input for song sheet upload */}
+        <input
+          ref={songSheetInputRef}
+          type="file"
+          accept="application/pdf"
+          onChange={handleSongSheetUpload}
+          className="hidden"
+        />
       </div>
 
       {/* Album Card - Sticky Minimal Header */}
