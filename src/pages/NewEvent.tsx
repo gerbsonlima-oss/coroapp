@@ -57,7 +57,7 @@ const NewEvent = () => {
   const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
-  const { tenantId } = useTenant();
+  const { tenantId, loading: tenantLoading } = useTenant();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -234,14 +234,27 @@ const toggleTypeSelection = (typeId: string) => {
     setLoading(true);
 
     try {
+      // Verificar se tenantId está disponível
+      if (!tenantId) {
+        toast.error('Erro: organização não identificada. Recarregue a página.');
+        setLoading(false);
+        return;
+      }
+
+      if (!user?.id) {
+        toast.error('Erro: você precisa estar logado.');
+        setLoading(false);
+        return;
+      }
+
       const data = { name, date, location, notes };
       eventSchema.parse(data);
 
       // Upload da imagem se houver
-      const uploadedImageUrl = await uploadCoverImage(user?.id || '');
+      const uploadedImageUrl = await uploadCoverImage(user.id);
 
       console.log('Tentando criar evento:', {
-        user_id: user?.id,
+        user_id: user.id,
         tenant_id: tenantId,
         name,
         date
@@ -457,7 +470,7 @@ const toggleTypeSelection = (typeId: string) => {
             <Button
               type="submit"
               className="w-full gradient-primary shadow-glow mt-2"
-              disabled={loading || uploadingImage}
+              disabled={loading || uploadingImage || tenantLoading || !tenantId}
             >
               {loading || uploadingImage ? (
                 <div className="flex items-center gap-2">
