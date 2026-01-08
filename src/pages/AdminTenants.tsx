@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Users, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Shield, Upload, X } from 'lucide-react';
 
 interface Tenant {
   id: string;
@@ -58,6 +58,9 @@ export default function AdminTenants() {
     logo_url: '',
   });
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -98,6 +101,7 @@ export default function AdminTenants() {
   function openCreateDialog() {
     setEditingTenant(null);
     setFormData({ slug: '', name: '', logo_url: '' });
+    setLogoPreview(null);
     setDialogOpen(true);
   }
 
@@ -108,12 +112,64 @@ export default function AdminTenants() {
       name: tenant.name,
       logo_url: tenant.logo_url || '',
     });
+    setLogoPreview(tenant.logo_url);
     setDialogOpen(true);
   }
 
   function openDeleteDialog(tenant: Tenant) {
     setTenantToDelete(tenant);
     setDeleteDialogOpen(true);
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 2MB');
+      return;
+    }
+
+    setUploadingLogo(true);
+
+    try {
+      const fileName = `${formData.slug || 'tenant'}-${Date.now()}.${file.name.split('.').pop()}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('tenant-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('tenant-logos')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, logo_url: data.publicUrl });
+      setLogoPreview(data.publicUrl);
+      toast.success('Logo enviado com sucesso!');
+    } catch (error: any) {
+      console.error('Error uploading logo:', error);
+      toast.error('Erro ao enviar logo: ' + (error.message || 'Erro desconhecido'));
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  function removeLogo() {
+    setFormData({ ...formData, logo_url: '' });
+    setLogoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -234,7 +290,7 @@ export default function AdminTenants() {
                 Nova Organização
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>
                   {editingTenant ? 'Editar Organização' : 'Nova Organização'}
@@ -261,19 +317,78 @@ export default function AdminTenants() {
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Será usado como subdomínio: <code className="bg-muted px-1 rounded">{formData.slug || 'slug'}.seudominio.com</code>
+                    Será usado na URL: <code className="bg-muted px-1 rounded">/{formData.slug || 'slug'}</code>
                   </p>
                 </div>
+                
+                {/* Logo Upload Section */}
                 <div className="space-y-2">
-                  <Label htmlFor="logo_url">URL do Logo (opcional)</Label>
+                  <Label>Logo (usado na splash screen)</Label>
+                  
+                  {logoPreview ? (
+                    <div className="relative w-32 h-32 mx-auto">
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="w-full h-full object-contain rounded-lg border bg-muted"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={removeLogo}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    >
+                      <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Clique para enviar logo
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PNG, JPG até 2MB
+                      </p>
+                    </div>
+                  )}
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    disabled={uploadingLogo}
+                  />
+                  
+                  {uploadingLogo && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                      Enviando...
+                    </div>
+                  )}
+                </div>
+
+                {/* Manual URL input as fallback */}
+                <div className="space-y-2">
+                  <Label htmlFor="logo_url">Ou cole a URL do logo</Label>
                   <Input
                     id="logo_url"
                     type="url"
                     value={formData.logo_url}
-                    onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, logo_url: e.target.value });
+                      setLogoPreview(e.target.value || null);
+                    }}
                     placeholder="https://exemplo.com/logo.png"
                   />
                 </div>
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
@@ -282,7 +397,7 @@ export default function AdminTenants() {
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={saving}>
+                  <Button type="submit" disabled={saving || uploadingLogo}>
                     {saving ? 'Salvando...' : editingTenant ? 'Atualizar' : 'Criar'}
                   </Button>
                 </div>
@@ -326,12 +441,12 @@ export default function AdminTenants() {
               <Card key={tenant.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="py-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                       {tenant.logo_url ? (
                         <img
                           src={tenant.logo_url}
                           alt={tenant.name}
-                          className="h-10 w-10 object-contain rounded"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <Building2 className="h-6 w-6 text-primary" />
@@ -341,7 +456,7 @@ export default function AdminTenants() {
                       <h3 className="font-semibold truncate">{tenant.name}</h3>
                       <p className="text-sm text-muted-foreground">
                         <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
-                          {tenant.slug}
+                          /{tenant.slug}
                         </code>
                       </p>
                     </div>

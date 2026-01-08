@@ -124,11 +124,10 @@ function App() {
   const queryClient = useMemo(() => new QueryClient(), []);
 
   return (
-    <>
-      <SplashScreen />
-      <BrowserRouter>
+    <BrowserRouter>
       <QueryClientProvider client={queryClient}>
       <TenantProvider>
+        <SplashScreen />
       <AuthProvider>
       <PlayerProvider>
         <RouteTracker />
@@ -293,8 +292,7 @@ function App() {
       </AuthProvider>
       </TenantProvider>
       </QueryClientProvider>
-      </BrowserRouter>
-    </>
+    </BrowserRouter>
   );
 }
 

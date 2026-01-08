@@ -1,18 +1,38 @@
 import { useEffect, useState } from 'react';
-import logoImage from '@/assets/coro-logo.png';
+import { useTenant } from '@/contexts/TenantContext';
+import logoImageFallback from '@/assets/coro-logo.png';
 
 export const SplashScreen = () => {
   const [show, setShow] = useState(true);
+  const { tenant, loading: tenantLoading } = useTenant();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShow(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
+    // Wait for tenant to load, then show for 2.5s
+    if (!tenantLoading) {
+      const timer = setTimeout(() => {
+        setShow(false);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [tenantLoading]);
 
   if (!show) return null;
+
+  // Use tenant logo or fallback
+  const logoSrc = tenant?.logo_url || logoImageFallback;
+  
+  // Parse tenant name for display (e.g. "Coro Diocese Quixadá" -> "Coro Diocese" + "de Quixadá")
+  const tenantName = tenant?.name || 'Coro Diocesano';
+  const nameParts = tenantName.split(' ');
+  let mainTitle = tenantName;
+  let subtitle = '';
+  
+  // If name has "de" or "da" or "do", split there
+  const deIndex = nameParts.findIndex(p => ['de', 'da', 'do', 'das', 'dos'].includes(p.toLowerCase()));
+  if (deIndex > 0) {
+    mainTitle = nameParts.slice(0, deIndex).join(' ');
+    subtitle = nameParts.slice(deIndex).join(' ');
+  }
 
   return (
     <div
@@ -107,8 +127,8 @@ export const SplashScreen = () => {
 
           {/* Logo Image */}
           <img
-            src={logoImage}
-            alt="Coro Diocesano de Quixadá"
+            src={logoSrc}
+            alt={tenantName}
             width={224}
             height={224}
             fetchPriority="high"
@@ -131,18 +151,20 @@ export const SplashScreen = () => {
               fontWeight: 300
             }}
           >
-            Coro Diocesano
+            {mainTitle}
           </h1>
-          <p
-            className="text-2xl md:text-3xl lg:text-4xl font-light text-primary/90"
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              letterSpacing: '0.12em',
-              fontWeight: 300
-            }}
-          >
-            de Quixadá
-          </p>
+          {subtitle && (
+            <p
+              className="text-2xl md:text-3xl lg:text-4xl font-light text-primary/90"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                letterSpacing: '0.12em',
+                fontWeight: 300
+              }}
+            >
+              {subtitle}
+            </p>
+          )}
           <div className="h-px w-12 mx-auto bg-gradient-to-r from-transparent via-primary/40 to-transparent mt-4" />
           <p
             className="text-xs md:text-sm text-muted-foreground/80 tracking-widest uppercase mt-4"
