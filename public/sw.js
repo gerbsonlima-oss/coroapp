@@ -8,8 +8,13 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 precacheAndRoute(self.__WB_MANIFEST || []);
 
 // Estratégia para API do Supabase (REST)
+// IMPORTANTE: nunca interceptar mutações (POST/PUT/PATCH/DELETE), pois isso pode
+// causar falhas de autenticação/RLS quando o request passa pelo Service Worker.
 registerRoute(
-  ({ url }) => url.hostname.includes('supabase.co') && url.pathname.startsWith('/rest/'),
+  ({ url, request }) =>
+    request.method === 'GET' &&
+    url.hostname.includes('supabase.co') &&
+    url.pathname.startsWith('/rest/'),
   new NetworkFirst({
     cacheName: 'supabase-api-cache',
     plugins: [
