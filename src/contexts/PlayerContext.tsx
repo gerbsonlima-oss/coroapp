@@ -14,6 +14,8 @@ export interface PlayerContextType {
   currentTrackIndex: number;
   isExpanded: boolean;
   tracks: Track[];
+  showSheetViewer: boolean;
+  sheetMusicSrc: string | null;
   
   // Refs
   audioRef: React.RefObject<HTMLAudioElement>;
@@ -29,6 +31,8 @@ export interface PlayerContextType {
   toggleMute: () => void;
   setPlaylist: (tracks: Track[]) => void;
   setIsExpanded: (expanded: boolean) => void;
+  setShowSheetViewer: (show: boolean) => void;
+  setSheetMusicSrc: (src: string | null) => void;
   setIsPlaying?: (playing: boolean) => void;
   setAudioElement?: (audio: HTMLAudioElement | null) => void;
   setCurrentTime?: (time: number) => void;
@@ -40,6 +44,8 @@ const PlayerContext = createContext<PlayerContextType | null>(null);
 export const PlayerProvider = ({ children }: { children: ReactNode }) => {
   const [playlist, setPlaylistState] = useState<Track[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showSheetViewer, setShowSheetViewer] = useState(false);
+  const [sheetMusicSrc, setSheetMusicSrc] = useState<string | null>(null);
   
   const {
     state: playerState,
@@ -71,6 +77,8 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     currentTrackIndex,
     isExpanded,
     tracks: playlist,
+    showSheetViewer,
+    sheetMusicSrc,
     audioRef,
     playTrack,
     playNext,
@@ -82,6 +90,8 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     toggleMute,
     setPlaylist: setPlaylistState,
     setIsExpanded,
+    setShowSheetViewer,
+    setSheetMusicSrc,
   }), [
     currentTrack,
     currentTime,
@@ -94,6 +104,8 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     currentTrackIndex,
     isExpanded,
     playlist,
+    showSheetViewer,
+    sheetMusicSrc,
   ]);
 
   return (

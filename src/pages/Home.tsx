@@ -24,15 +24,6 @@ interface Event {
   cover_image_url: string | null;
 }
 
-interface FeedItem {
-  id: string;
-  type: 'event' | 'song' | 'audio';
-  title: string;
-  subtitle?: string;
-  date: string;
-  voiceType?: string;
-}
-
 const getLiturgicalColor = (season: string): string => {
   const colors: Record<string, string> = {
     'Advento': 'from-purple-600 to-purple-900',
@@ -52,7 +43,6 @@ const Home = () => {
   const { tenant, tenantId } = useTenant();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
 
   const { data: upcomingEventsData } = useQuery({
@@ -88,95 +78,15 @@ const Home = () => {
     enabled: !!tenantId,
   });
 
-  const { data: feedData } = useQuery({
-    queryKey: ['feed-updates', tenantId],
-    queryFn: async () => {
-      if (!tenantId) return [];
-      
-      const [songs, audios] = await Promise.all([
-        supabase
-          .from('songs')
-          .select('id, name, created_at')
-          .eq('tenant_id', tenantId)
-          .order('created_at', { ascending: false })
-          .limit(5),
-        supabase
-          .from('song_audios')
-          .select('id, created_at, songs(name)')
-          .eq('tenant_id', tenantId)
-          .order('created_at', { ascending: false })
-          .limit(5),
-      ]);
-
-      const items: FeedItem[] = [];
-      
-      if (songs.data) {
-        items.push(...songs.data.map((s: any) => ({
-          id: s.id,
-          type: 'song' as const,
-          title: s.name,
-          date: s.created_at,
-        })));
-      }
-      
-      if (audios.data) {
-        items.push(...audios.data.map((a: any) => ({
-          id: a.id,
-          type: 'audio' as const,
-          title: a.songs?.name || 'Áudio adicionado',
-          voiceType: undefined,
-          date: a.created_at,
-        })));
-      }
-
-      return items.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      ).slice(0, 10);
-    },
-    enabled: !!tenantId,
-  });
-
   useEffect(() => {
     if (upcomingEventsData) {
       setUpcomingEvents(upcomingEventsData);
     }
   }, [upcomingEventsData]);
 
-  useEffect(() => {
-    if (feedData) {
-      setFeedItems(feedData);
-    }
-  }, [feedData]);
-
   const liturgicalColor = liturgicalDay 
     ? getLiturgicalColor(liturgicalDay.liturgicalSeason)
     : 'from-blue-600 to-blue-900';
-
-  const getFeedIcon = (type: string) => {
-    switch (type) {
-      case 'event':
-        return '📅';
-      case 'song':
-        return '🎵';
-      case 'audio':
-        return '🎙️';
-      default:
-        return '✨';
-    }
-  };
-
-  const getFeedTypeLabel = (type: string) => {
-    switch (type) {
-      case 'event':
-        return 'Novo Evento';
-      case 'song':
-        return 'Nova Canção';
-      case 'audio':
-        return 'Novo Áudio';
-      default:
-        return 'Atualização';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-28">
@@ -227,32 +137,33 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className={`bg-gradient-to-br ${liturgicalColor} text-white pt-6 pb-8 px-4 rounded-b-2xl shadow-lg`}>
-        <div className="text-center space-y-1">
-          <p className="text-xs font-medium opacity-90">Hoje,</p>
-          <h1 className="text-2xl font-bold">
-            {format(today, "dd 'de' MMMM", { locale: ptBR })}
-          </h1>
-          <p className="text-xs opacity-80">
-            {format(today, 'EEEE', { locale: ptBR })}
-          </p>
-        </div>
-
-        {liturgicalDay && (
-          <div 
-            className="bg-white/15 backdrop-blur-sm rounded-lg p-2 border border-white/20 mt-3 cursor-pointer hover:bg-white/20 transition-colors"
-            onClick={() => navigate('/liturgy')}
-          >
-            <div className="flex items-center gap-1 mb-1">
-              <Sparkles className="h-4 w-4" />
-              <p className="text-xs font-semibold">{liturgicalDay.liturgicalSeason}</p>
-            </div>
-            <h2 className="text-sm font-bold leading-snug line-clamp-2">
-              {liturgicalDay.saint || liturgicalDay.celebration}
-            </h2>
+      {/* Compact Liturgy Strip */}
+      <div className={`bg-gradient-to-r ${liturgicalColor} text-white py-2.5 px-4 rounded-b-xl shadow-md border-t border-white/10`}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="shrink-0">
+            <p className="text-[10px] font-medium opacity-80 leading-none mb-0.5">Hoje,</p>
+            <h1 className="text-sm font-bold leading-none">
+              {format(today, "dd 'de' MMMM", { locale: ptBR })}
+            </h1>
           </div>
-        )}
+
+          {liturgicalDay && (
+            <div 
+              className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg px-2.5 py-1.5 border border-white/10 cursor-pointer hover:bg-white/20 transition-all flex items-center gap-2 min-w-0"
+              onClick={() => navigate('/liturgy')}
+            >
+              <Sparkles className="h-3.5 w-3.5 text-yellow-300 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold opacity-70 leading-none uppercase tracking-wider truncate">
+                  {liturgicalDay.liturgicalSeason}
+                </p>
+                <h2 className="text-[11px] font-bold leading-tight truncate">
+                  {liturgicalDay.saint || liturgicalDay.celebration}
+                </h2>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -307,44 +218,6 @@ const Home = () => {
           </div>
         )}
 
-        {/* Feed Updates */}
-        {feedItems.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-lg">Últimas Atualizações</h3>
-            </div>
-
-            <div className="space-y-2">
-              {feedItems.map((item) => (
-                <Card
-                  key={`${item.type}-${item.id}`}
-                  className="p-4 border-0 bg-card hover:bg-secondary/50 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl flex-shrink-0">{getFeedIcon(item.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/20 text-primary">
-                          {getFeedTypeLabel(item.type)}
-                        </span>
-                        {item.voiceType && item.type === 'audio' && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                            {item.voiceType}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="font-semibold text-sm mb-1 truncate">{item.title}</h4>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(item.date), "dd MMM, HH:mm", { locale: ptBR })}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <BottomNavigation />

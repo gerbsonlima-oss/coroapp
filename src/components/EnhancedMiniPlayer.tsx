@@ -25,8 +25,11 @@ export function EnhancedMiniPlayer() {
     duration,
     isLoading,
     seek,
+    setShowSheetViewer,
+    setSheetMusicSrc,
   } = usePlayer();
 
+  const { getCachedUrl } = useAudioCache();
   const [isExpanded, setIsExpanded] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -115,7 +118,22 @@ export function EnhancedMiniPlayer() {
               className="flex-1 flex items-center gap-3 min-w-0 text-left hover:opacity-80 transition-opacity active:scale-[0.98] touch-target"
             >
               {/* Ícone/Artwork */}
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shadow-subtle">
+              <div 
+                onClick={async (e) => {
+                  if (currentTrack.sheetMusicUrl) {
+                    e.stopPropagation();
+                    const cached = await getCachedUrl(currentTrack.sheetMusicUrl);
+                    setSheetMusicSrc(cached);
+                    setShowSheetViewer(true);
+                  }
+                }}
+                className={cn(
+                  "flex-shrink-0 w-12 h-12 rounded-lg border flex items-center justify-center shadow-subtle transition-all",
+                  currentTrack.sheetMusicUrl 
+                    ? "bg-primary/20 border-primary/40 hover:bg-primary/30 cursor-pointer active:scale-90" 
+                    : "bg-primary/15 border-primary/20"
+                )}
+              >
                 {isPlaying ? (
                   <div className="flex gap-0.5 items-end h-4">
                     <div className="w-1 bg-primary animate-pulse" style={{ height: '40%', animationDelay: '0ms' }} />

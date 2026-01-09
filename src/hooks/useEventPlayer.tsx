@@ -10,6 +10,7 @@ export interface Track {
   songType: string;
   naipe: string;
   url: string;
+  sheetMusicUrl?: string | null;
 }
 
 export interface PlayerState {
@@ -100,7 +101,7 @@ export const useEventPlayer = (tracks: Track[]) => {
       const track = tracks[index];
       setState(prev => ({
         ...prev,
-        currentTrackId: track.id,  // ✅ Save track ID, not index
+        currentTrackId: track.id,
         isPlaying: true,
       }));
     }
@@ -204,6 +205,19 @@ export const useEventPlayer = (tracks: Track[]) => {
       console.error('Audio error:', audioTarget.error);
       setIsLoading(false);
       setIsPlaying(false);
+      
+      // Show user-friendly error message
+      const errorMessages: Record<number, string> = {
+        1: 'Erro ao carregar áudio',
+        2: 'Erro de rede ao carregar áudio',
+        3: 'Formato de áudio não suportado',
+        4: 'Áudio não encontrado ou inacessível'
+      };
+      const errorCode = audioTarget.error?.code || 4;
+      const message = errorMessages[errorCode] || 'Erro ao reproduzir áudio';
+      
+      // We'll emit a custom event that can be caught by the UI
+      window.dispatchEvent(new CustomEvent('audio-error', { detail: { message, track: currentTrack } }));
     };
 
     const handleStalled = () => {
@@ -250,6 +264,7 @@ export const useEventPlayer = (tracks: Track[]) => {
     
     if (state.isPlaying && !isActuallyPlaying) {
       audio.play().catch(err => {
+        if (err.name === 'AbortError') return;
         console.error('Erro ao reproduzir:', err);
         setIsPlaying(false);
       });
@@ -263,26 +278,28 @@ export const useEventPlayer = (tracks: Track[]) => {
     if (!currentTrack || !audioRef.current) return;
 
     const loadTrackAsync = async () => {
-      // ✅ Only set loading if the src actually changed
+      if (!audioRef.current) return;
+      
       const cachedUrl = await getCachedUrl(currentTrack.url);
       
-      if (audioRef.current && audioRef.current.src !== cachedUrl) {
+      if (audioRef.current.getAttribute('src') !== cachedUrl) {
         setIsLoading(true);
         
-        // ✅ Add timeout to prevent infinite loading
-        const loadingTimeout = setTimeout(() => {
-          console.warn(`Loading timeout for track: ${currentTrack.id}`);
-          setIsLoading(false);
-        }, 10000);
-
         try {
+          // Pause and reset before source change
+          audioRef.current.pause();
           audioRef.current.src = cachedUrl;
           audioRef.current.load();
+          
+          // If we were playing, try to play the new source
+          if (state.isPlaying) {
+            audioRef.current.play().catch(err => {
+              if (err.name !== 'AbortError') console.error('Erro ao reproduzir após carga:', err);
+            });
+          }
         } catch (error) {
           console.error('Error loading track:', error);
           setIsLoading(false);
-        } finally {
-          clearTimeout(loadingTimeout);
         }
       }
     };

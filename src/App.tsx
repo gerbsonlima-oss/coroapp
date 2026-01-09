@@ -6,7 +6,6 @@ import { PlayerProvider } from "@/contexts/PlayerContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
 import { SplashScreen } from "@/components/SplashScreen";
-import { EnhancedMiniPlayer } from "@/components/EnhancedMiniPlayer";
 import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -132,7 +131,6 @@ function App() {
       <PlayerProvider>
         <RouteTracker />
         <Toaster />
-        <EnhancedMiniPlayer />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             {/* Routes without tenant prefix */}

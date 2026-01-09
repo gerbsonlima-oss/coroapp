@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
+import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
 import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -177,7 +178,6 @@ const EventDetails = () => {
     checkOfflineStatus();
   }, [id]);
 
-  const [sheetMusicSrc, setSheetMusicSrc] = useState<string | null>(null);
   const [coverImageSrc, setCoverImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -207,7 +207,7 @@ const EventDetails = () => {
   const [newSongName, setNewSongName] = useState('');
   const [newSongType, setNewSongType] = useState('');
   const [isCreatingSong, setIsCreatingSong] = useState(false);
-  const [showSheetViewer, setShowSheetViewer] = useState(false);
+
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
   const [eventTypes, setEventTypes] = useState<{
     id: string;
@@ -283,7 +283,11 @@ const EventDetails = () => {
     isLoading,
     volume,
     isMuted,
-    setPlaylist
+    setPlaylist,
+    showSheetViewer,
+    setShowSheetViewer,
+    sheetMusicSrc,
+    setSheetMusicSrc
   } = usePlayer();
 
   useEffect(() => {
@@ -295,6 +299,19 @@ const EventDetails = () => {
       fetchEventDetails();
     }
   }, [id]);
+
+  // Listen for audio errors
+  useEffect(() => {
+    const handleAudioError = (e: Event) => {
+      const event = e as CustomEvent;
+      if (event.detail?.message) {
+        toast.error(event.detail.message);
+      }
+    };
+    
+    window.addEventListener('audio-error', handleAudioError);
+    return () => window.removeEventListener('audio-error', handleAudioError);
+  }, []);
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => ({
@@ -312,7 +329,8 @@ const EventDetails = () => {
           songName: song.name,
           songType: song.type,
           naipe: audio.naipe,
-          url: audio.audio_url
+          url: audio.audio_url,
+          sheetMusicUrl: song.sheet_music_pdf_url || song.sheet_music_url
         });
       });
     });
@@ -627,6 +645,7 @@ const EventDetails = () => {
   return (
     <div className="min-h-screen bg-background pb-28">
       {showMusicRain && <MusicRain onComplete={() => setShowMusicRain(false)} />}
+      <EnhancedMiniPlayer />
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-background/95 backdrop-blur-md">
         <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-8 w-8 shrink-0 text-foreground">
           <ArrowLeft className="h-4 w-4" />
@@ -835,10 +854,14 @@ const EventDetails = () => {
                                 </button>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>{song.name}</p>
+                                    <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                                      {getTypeLabel(song.type, typeLabels)}
+                                    </p>
                                     {isOfflineSaved && <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />}
                                   </div>
-                                  <p className="text-xs text-muted-foreground">{audio.naipe === 'original' ? 'Todas as Vozes' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}</p>
+                                  <p className="text-xs text-muted-foreground truncate font-medium">
+                                    {song.name} • {audio.naipe === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                                  </p>
                                 </div>
                               </div>
                               <DropdownMenu>
@@ -910,10 +933,12 @@ const EventDetails = () => {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="truncate font-medium text-sm text-primary">{song.name}</p>
+                        <p className="truncate font-bold text-sm uppercase tracking-tight text-primary">
+                          {getTypeLabel(song.type, typeLabels)}
+                        </p>
                         {isOfflineSaved && <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />}
                       </div>
-                      {songAudios.length > 0 && <p className="text-xs text-muted-foreground mt-1">{songAudios.length} {songAudios.length === 1 ? 'áudio' : 'áudios'} disponível</p>}
+                      <p className="text-xs text-muted-foreground mt-0.5 font-medium truncate">{song.name}</p>
                     </div>
                   </div>
                 </div>
@@ -938,8 +963,12 @@ const EventDetails = () => {
                               }
                             }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
                             <div className="flex-1 min-w-0">
-                              <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>{song.name}</p>
-                              <p className="truncate text-xs text-muted-foreground">{audio.naipe.toLowerCase() === 'original' ? 'Todas as Vozes' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}</p>
+                              <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                                {getTypeLabel(song.type, typeLabels)}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground font-medium">
+                                {song.name} • {audio.naipe.toLowerCase() === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                              </p>
                             </div>
                           </div>
                           <DropdownMenu>
@@ -1003,8 +1032,17 @@ const EventDetails = () => {
                         }
                       }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
                       <div className="flex-1 min-w-0">
-                        <p className={`truncate font-medium text-sm ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>{song.name}</p>
-                        <p className="text-xs text-muted-foreground truncate"><Badge variant="outline" className="mr-1 py-0 px-1 text-[10px] h-4 bg-primary/5 border-primary/20">{getTypeLabel(song.type, typeLabels)}</Badge>{audio.naipe.toLowerCase() === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}</p>
+                        <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                          {getTypeLabel(song.type, typeLabels)}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-xs text-muted-foreground truncate font-medium flex-1">
+                            {song.name}
+                          </p>
+                          <Badge variant="outline" className="py-0 px-1 text-[9px] h-3.5 bg-secondary/30 border-primary/10 text-muted-foreground shrink-0 uppercase tracking-tighter">
+                            {audio.naipe.toLowerCase() === 'original' ? 'Completa' : audio.naipe}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1016,48 +1054,7 @@ const EventDetails = () => {
         )}
       </div>
 
-      {currentTrack && (
-        <div className="fixed bottom-16 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-primary/20 shadow-elevated animate-in slide-in-from-bottom-full duration-300">
-          <div className="relative w-full px-4 pt-2 group">
-            <div className="flex justify-between text-[10px] mb-1 font-medium text-muted-foreground tabular-nums"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
-            <Slider value={[duration ? Math.min(currentTime, duration) : 0]} max={duration || 100} step={0.1} onValueChange={handleSeek} disabled={isLoading} className="w-full cursor-pointer" />
-          </div>
-          <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" onClick={async () => {
-              const song = songs.find(s => s.id === currentTrack.songId);
-              if (song?.sheet_music_url || song?.sheet_music_pdf_url) {
-                const url = song.sheet_music_pdf_url || song.sheet_music_url;
-                if (url) {
-                  const cached = await getCachedUrl(url);
-                  setSheetMusicSrc(cached);
-                  setShowSheetViewer(true);
-                }
-              }
-            }}>
-              <div className="gradient-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sm text-white relative shadow-glow animate-float">
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>♫{(() => {
-                  const song = songs.find(s => s.id === currentTrack.songId);
-                  return Boolean(song?.sheet_music_url || song?.sheet_music_pdf_url) ? <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-success animate-glow-pulse" /> : null;
-                })()}</>}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-medium text-sm text-primary">{currentTrack.songName}</p>
-                <p className="truncate text-xs text-muted-foreground">{currentTrack.naipe.charAt(0).toUpperCase() + currentTrack.naipe.slice(1).toLowerCase()}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button onClick={playPrevious} disabled={isLoading} className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md disabled:opacity-50"><SkipBack className="h-4 w-4" /></button>
-              <button onClick={togglePlay} disabled={isLoading} className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-90 transition shadow-glow hover:shadow-elevated disabled:opacity-70">{isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : isPlaying ? <Pause className="h-5 w-5 ml-0.5" /> : <Play className="h-5 w-5 ml-0.5" />}</button>
-              <button onClick={playNext} disabled={isLoading} className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md disabled:opacity-50"><SkipForward className="h-4 w-4" /></button>
-              <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-2 border-l border-primary/20">
-                <button onClick={toggleMute} className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/15 active:scale-90 transition-all rounded-md">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
-                <Slider value={[isMuted ? 0 : volume]} max={1} step={0.01} onValueChange={(value) => setVolume(value[0])} className="w-20 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3" />
-              </div>
-              <button onClick={toggleRepeat} className={`flex h-9 w-9 items-center justify-center active:scale-90 transition-all rounded-md ${repeatMode !== 'off' ? 'text-primary bg-primary/15' : 'text-muted-foreground hover:text-primary hover:bg-primary/15'}`}>{repeatMode === 'track' ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}</button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {showSheetViewer && currentTrack && (() => {
         const currentSong = songs.find(s => s.id === currentTrack.songId);
@@ -1094,12 +1091,7 @@ const EventDetails = () => {
         </DialogContent>
       </Dialog>
 
-      {event.song_sheet_url && (
-        <div className="fixed bottom-36 right-4 z-30 flex flex-col items-center animate-in zoom-in duration-300">
-          <Button onClick={handleDownloadSongSheet} className="h-14 w-14 rounded-full shadow-elevated gradient-primary text-white border-2 border-white/20 hover:scale-110 active:scale-95 transition-all shadow-glow" size="icon" title="Baixar Folha de Cantos"><FileDown className="h-7 w-7" /></Button>
-          <span className="mt-1 bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-primary border border-primary/20 shadow-sm uppercase tracking-tighter">Folha</span>
-        </div>
-      )}
+
 
       {isCaching && (
         <div className="fixed bottom-20 left-4 right-4 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-lg shadow-lg p-4 animate-in slide-in-from-bottom-4">
