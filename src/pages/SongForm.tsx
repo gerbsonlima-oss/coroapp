@@ -27,6 +27,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
+  { key: 'unissono', label: 'Uníssono' },
   { key: 'original', label: 'Todas as Vozes' },
 ];
 
@@ -65,6 +66,7 @@ const SongForm = () => {
     contralto: [],
     tenor: [],
     baixo: [],
+    unissono: [],
     original: [],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,13 +92,10 @@ const SongForm = () => {
 
   useEffect(() => {
     const fetchSongTypes = async () => {
-      if (!tenantId) return;
-      
       try {
         const { data, error } = await supabase
           .from('song_types')
           .select('id, slug, name')
-          .eq('tenant_id', tenantId)
           .order('order_index');
 
         if (error) throw error;

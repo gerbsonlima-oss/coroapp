@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -78,7 +79,6 @@ const Songs = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupBy, setGroupBy] = useState<'tipo' | 'lista'>(() => {
@@ -89,6 +89,8 @@ const Songs = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { tenantId } = useTenant();
+  const { buildPath } = useTenantPath();
+  const { isAdmin } = useIsAdmin();
 
   useEffect(() => {
     localStorage.setItem('songs_groupBy', groupBy);
@@ -98,30 +100,7 @@ const Songs = () => {
     if (tenantId) {
       fetchSongTypes();
     }
-    checkAdminStatus();
   }, [user, tenantId]);
-
-  const checkAdminStatus = async () => {
-    if (!user) {
-      setIsAdmin(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (error) throw error;
-      setIsAdmin(!!data);
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-      setIsAdmin(false);
-    }
-  };
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => ({
@@ -131,12 +110,11 @@ const Songs = () => {
   };
 
   const fetchSongTypes = async () => {
-    if (!tenantId) return;
-    
     try {
       const [{ data: songTypesData, error: songTypesError }, { data: songsData, error: songsError }] =
         await Promise.all([
-          supabase.from('song_types').select('id, slug, name, order_index').eq('tenant_id', tenantId).order('order_index'),
+          // ✅ Tipos de música agora são globais
+          supabase.from('song_types').select('id, slug, name, order_index').order('order_index'),
           supabase.from('songs').select('id, name, type').eq('tenant_id', tenantId),
         ]);
 
@@ -235,7 +213,7 @@ const Songs = () => {
                     <Card
                       key={song.id}
                       className="group cursor-pointer border-0 rounded-none bg-transparent hover:bg-primary/5 transition-all"
-                      onClick={() => navigate(`/songs/${song.id}`)}
+                      onClick={() => navigate(buildPath(`/songs/${song.id}`)) }
                     >
                       <div className="flex items-center justify-between gap-3 px-4 py-3">
                         <div className="flex-1 min-w-0">
@@ -265,7 +243,7 @@ const Songs = () => {
             <Card
               key={song.id}
               className="group cursor-pointer border-border/50 bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-md transition-all"
-              onClick={() => navigate(`/songs/${song.id}`)}
+              onClick={() => navigate(buildPath(`/songs/${song.id}`))}
             >
               <div className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
@@ -299,15 +277,24 @@ const Songs = () => {
           <div className="flex items-center gap-1.5 md:gap-2">
             <InstallPWAButton size="icon" showText={false} />
             {isAdmin && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => navigate('/songs/admin/types')}
-                className="hover:bg-accent/80"
-                title="Gerenciar tipos de música"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
+              <>
+                <Button 
+                  onClick={() => navigate(buildPath('/songs/new'))}
+                  className="hidden md:flex gradient-primary shadow-glow hover:shadow-glow/50 transition-all h-9 px-3 text-xs"
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Nova Música
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => navigate(buildPath('/songs/admin/types'))}
+                  className="hover:bg-accent/80"
+                  title="Gerenciar tipos de música"
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </>
             )}
             {user && (
               <Button 
@@ -365,11 +352,11 @@ const Songs = () => {
         </section>
       </main>
 
-      {/* Floating Action Button - Mobile */}
-      {user && (
+      {/* Floating Action Button */}
+      {isAdmin && (
         <button
-          onClick={() => navigate('/songs/new')}
-          className="fixed bottom-24 right-4 z-20 md:hidden h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-glow hover:shadow-glow/50 transition-all active:scale-95 flex items-center justify-center text-white hover:scale-110 duration-200"
+          onClick={() => navigate(buildPath('/songs/new'))}
+          className="fixed bottom-24 right-4 z-20 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-glow hover:shadow-glow/50 transition-all active:scale-95 flex items-center justify-center text-white hover:scale-110 duration-200"
           title="Cadastrar Música"
         >
           <Plus className="h-6 w-6" />

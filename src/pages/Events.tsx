@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,10 @@ const Events = () => {
   const [isOffline, setIsOffline] = useState(false);
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
+  
+  const canCreateEvent = isAdmin || isSuperAdmin;
   const navigate = useNavigate();
   const { cachedAudios } = useAudioCache();
 
@@ -151,9 +155,9 @@ const Events = () => {
             </div>
             <h2 className="mb-3 text-xl md:text-2xl font-semibold">Nenhum evento ainda</h2>
             <p className="mb-8 text-muted-foreground max-w-sm">
-              {user ? (isAdmin ? 'Crie seu primeiro evento para começar' : 'Nenhum evento agendado para esta organização') : 'Faça login para visualizar os eventos'}
+              {user ? (canCreateEvent ? 'Crie seu primeiro evento para começar' : 'Nenhum evento agendado para esta organização') : 'Faça login para visualizar os eventos'}
             </p>
-            {user && isAdmin && (
+            {user && canCreateEvent && (
               <Button
                 onClick={() => navigate('/events/new')}
                 className="gradient-primary shadow-glow hover:shadow-glow/50 transition-all"
@@ -183,7 +187,7 @@ const Events = () => {
       </main>
 
       {/* Floating Action Button - Mobile */}
-      {user && isAdmin && (
+      {user && canCreateEvent && (
         <button
           onClick={() => navigate('/events/new')}
           className="fixed bottom-24 right-4 z-20 md:hidden h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-glow hover:shadow-glow/50 transition-all active:scale-95 flex items-center justify-center text-white hover:scale-110 duration-200"

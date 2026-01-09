@@ -72,9 +72,11 @@ const fetchPdfAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
 
 const loadTypeLabels = async (): Promise<Record<string, string>> => {
   try {
+    // ✅ Tipos de música agora são globais
     const { data, error } = await supabase
       .from('song_types')
-      .select('slug, name');
+      .select('slug, name')
+      .order('order_index');
 
     if (error) throw error;
 

@@ -218,9 +218,11 @@ const EventQuickEdit = () => {
 
   const fetchSongTypes = async () => {
     try {
+      // ✅ Tipos de música agora são globais
       const { data, error } = await supabase
         .from('song_types')
-        .select('*');
+        .select('*')
+        .order('order_index');
 
       if (error) throw error;
 

@@ -125,12 +125,11 @@ const EditEvent = () => {
   };
 
   const fetchEventSongTypes = async (eventId: string) => {
-    if (!tenantId) return;
-    
     try {
       const [{ data: allTypes, error: typesError }, { data: eventTypes, error: eventTypesError }] =
         await Promise.all([
-          supabase.from('song_types').select('*').eq('tenant_id', tenantId).order('order_index'),
+          // ✅ Tipos de música agora são globais
+          supabase.from('song_types').select('*').order('order_index'),
           supabase.from('event_song_types').select('song_type_id').eq('event_id', eventId),
         ]);
 

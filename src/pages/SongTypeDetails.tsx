@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useTenantPath } from '@/contexts/TenantContext';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { ChevronLeft, Play, Pause, MoreVertical, Download, Plus, Edit, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -89,6 +91,8 @@ const SongTypeDetails = () => {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
+  const { buildPath } = useTenantPath();
   const [songs, setSongs] = useState<Song[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,7 +248,7 @@ const SongTypeDetails = () => {
         <div className={`h-64 bg-gradient-to-b ${typeGradients[type]} flex items-end`}>
           <div className="w-full px-4 pb-6">
             <button 
-              onClick={() => navigate('/songs')}
+              onClick={() => navigate(buildPath('/songs'))}
               className="absolute top-4 left-4 p-2 rounded-full bg-black/40 text-white"
             >
               <ChevronLeft className="w-6 h-6" />

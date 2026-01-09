@@ -83,13 +83,11 @@ const AdminSongTypes = () => {
   }, [tenantId]);
 
   const fetchSongTypes = async () => {
-    if (!tenantId) return;
-    
     try {
+      // ✅ Tipos de música agora são globais
       const { data, error } = await supabase
         .from('song_types')
         .select('*')
-        .eq('tenant_id', tenantId)
         .order('order_index');
 
       if (error) throw error;
