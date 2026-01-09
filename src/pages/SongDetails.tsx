@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AudioPlayer } from '@/components/AudioPlayer';
+import { CopySongToTenantDialog } from '@/components/CopySongToTenantDialog';
 import { ArrowLeft, Music2, FileText, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -78,6 +81,8 @@ const SongDetails = () => {
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
+  const { isSuperAdmin } = useSuperAdmin();
+  const { tenantId } = useTenant();
 
   useEffect(() => {
     fetchSong();
@@ -155,6 +160,13 @@ const SongDetails = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            {isSuperAdmin && song && tenantId && (
+              <CopySongToTenantDialog
+                songId={song.id}
+                songName={song.name}
+                currentTenantId={tenantId}
+              />
+            )}
             {isAdmin && (
               <>
                 <Button 
