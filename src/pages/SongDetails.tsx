@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { CopySongToTenantDialog } from '@/components/CopySongToTenantDialog';
-import { ArrowLeft, Music2, FileText, Trash2, Pencil } from 'lucide-react';
+import { ArrowLeft, Music2, FileText, Trash2, Pencil, FileType } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -29,6 +29,7 @@ interface Song {
   type: string;
   notes: string | null;
   sheet_music_url: string | null;
+  lyrics_url: string | null;
 }
 
 interface SongAudio {
@@ -77,6 +78,8 @@ const SongDetails = () => {
   const { id } = useParams();
   const [song, setSong] = useState<Song | null>(null);
   const [audios, setAudios] = useState<SongAudio[]>([]);
+  const [lyrics, setLyrics] = useState<string | null>(null);
+  const [loadingLyrics, setLoadingLyrics] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
@@ -108,11 +111,31 @@ const SongDetails = () => {
 
       if (audiosError) throw audiosError;
       setAudios(audiosData || []);
+
+      // Buscar letra se existir
+      if (data.lyrics_url) {
+        fetchLyrics(data.lyrics_url);
+      }
     } catch (error: any) {
       toast.error('Erro ao carregar música');
       navigate('/songs');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLyrics = async (url: string) => {
+    setLoadingLyrics(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Erro ao carregar letra');
+      const text = await response.text();
+      setLyrics(text);
+    } catch (error) {
+      console.error('Erro ao carregar letra:', error);
+      toast.error('Erro ao carregar letra da música');
+    } finally {
+      setLoadingLyrics(false);
     }
   };
 
@@ -232,6 +255,35 @@ const SongDetails = () => {
               <FileText className="mr-2 h-4 w-4" />
               Visualizar Partitura
             </Button>
+          </Card>
+        )}
+
+        {song.lyrics_url && (
+          <Card className="gradient-card border-border/50 p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <FileType className="h-4 w-4" />
+              Letra
+            </h2>
+            {loadingLyrics ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : lyrics ? (
+              <div className="rounded-lg bg-secondary/30 p-4 max-h-96 overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed text-foreground">
+                  {lyrics}
+                </pre>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => song.lyrics_url && window.open(song.lyrics_url, '_blank')}
+              >
+                <FileType className="mr-2 h-4 w-4" />
+                Baixar Letra
+              </Button>
+            )}
           </Card>
         )}
 

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown } from 'lucide-react';
+import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown, FileType } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -42,6 +42,7 @@ interface Song {
   name: string;
   type: string;
   sheet_music_url: string | null;
+  lyrics_url: string | null;
 }
 
 interface ExistingAudio {
@@ -70,8 +71,10 @@ const SongForm = () => {
     original: [],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lyricsInputRef = useRef<HTMLInputElement>(null);
   const [sheetMusic, setSheetMusic] = useState<File | null>(null);
   const [originalPdf, setOriginalPdf] = useState<File | null>(null);
+  const [lyricsFile, setLyricsFile] = useState<File | null>(null);
   const [convertingPdf, setConvertingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -229,6 +232,7 @@ const SongForm = () => {
 
       let sheetMusicUrl = isEditMode ? (song?.sheet_music_url || null) : null;
       let sheetMusicPdfUrl = null;
+      let lyricsUrl = isEditMode ? (song?.lyrics_url || null) : null;
       
       if (sheetMusic) {
         const sanitizedSheetName = sanitizeFileName(sheetMusic.name);
@@ -241,6 +245,13 @@ const SongForm = () => {
         const sanitizedPdfName = sanitizeFileName(originalPdf.name);
         const pdfPath = `${user?.id}/${Date.now()}_original_${sanitizedPdfName}`;
         sheetMusicPdfUrl = await uploadFileToBucket(originalPdf, 'sheet-music', pdfPath);
+      }
+      
+      // Upload da letra se existir
+      if (lyricsFile) {
+        const sanitizedLyricsName = sanitizeFileName(lyricsFile.name);
+        const lyricsPath = `${user?.id}/${Date.now()}_${sanitizedLyricsName}`;
+        lyricsUrl = await uploadFileToBucket(lyricsFile, 'sheet-music', lyricsPath);
       }
 
       let songId = id;
@@ -258,6 +269,10 @@ const SongForm = () => {
         
         if (sheetMusicPdfUrl) {
           updateData.sheet_music_pdf_url = sheetMusicPdfUrl;
+        }
+        
+        if (lyricsUrl) {
+          updateData.lyrics_url = lyricsUrl;
         }
         
         const { error } = await supabase
@@ -278,6 +293,10 @@ const SongForm = () => {
         
         if (sheetMusicPdfUrl) {
           insertData.sheet_music_pdf_url = sheetMusicPdfUrl;
+        }
+        
+        if (lyricsUrl) {
+          insertData.lyrics_url = lyricsUrl;
         }
         
         const { data: songData, error: songError } = await supabase
@@ -522,6 +541,46 @@ const SongForm = () => {
                 </span>
               )}
             </div>
+          </div>
+
+          {/* Letra Card */}
+          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+            <Label className="text-xs font-semibold">Letra</Label>
+
+            {isEditMode && song?.lyrics_url && (
+              <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-700 dark:text-green-400">
+                <FileType className="h-3 w-3" />
+                <span>Cadastrada</span>
+              </div>
+            )}
+            
+            <Input
+              ref={lyricsInputRef}
+              id="lyrics-file"
+              type="file"
+              accept=".txt"
+              onChange={(e) => setLyricsFile(e.target.files?.[0] || null)}
+              disabled={loading || convertingPdf}
+              className="hidden"
+            />
+            
+            <div className="flex gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => lyricsInputRef.current?.click()}
+                disabled={loading || convertingPdf}
+                title="Anexar arquivo TXT"
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50"
+              >
+                <Paperclip className="h-5 w-5 text-primary" />
+              </button>
+              {lyricsFile && (
+                <span className="text-xs truncate bg-primary/5 px-2 py-1 rounded border border-primary/20">
+                  {lyricsFile.name}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Apenas arquivos .txt são aceitos</p>
           </div>
 
           {/* Áudios por Naipe Card */}

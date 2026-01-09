@@ -168,9 +168,17 @@ const EventDetails = () => {
 
   const checkOfflineStatus = () => {
     if (!id) return;
+    
     const savedEventsJson = localStorage.getItem('cached_events');
     const savedEvents = savedEventsJson ? JSON.parse(savedEventsJson) : [];
     const isSaved = savedEvents.some((e: any) => e.id === id);
+    
+    console.log('[Offline] Status check:', {
+      eventId: id,
+      isSaved,
+      totalSavedEvents: savedEvents.length
+    });
+    
     setIsOfflineSaved(isSaved);
   };
 
@@ -516,55 +524,123 @@ const EventDetails = () => {
   const filterOptions = ['Soprano', 'Contralto', 'Tenor', 'Baixo', 'Uníssono', 'Música Completa'];
 
   const handleSaveOffline = async () => {
-    const allAudioUrls = tracks.map(track => track.url);
-    const sheetMusicUrls = songs.filter(song => song.sheet_music_url).map(song => song.sheet_music_url!);
-    const pdfUrls = songs.filter(song => song.sheet_music_pdf_url).map(song => song.sheet_music_pdf_url!);
-    const allUrls = [...allAudioUrls, ...sheetMusicUrls, ...pdfUrls];
-    if (event?.cover_image_url) allUrls.push(event.cover_image_url);
+    if (!event) {
+      toast.error('Evento não encontrado');
+      return;
+    }
+
+    console.log('[Offline] Starting offline save for event:', event.name);
     
-    if (allUrls.length === 0 && songs.length === 0) {
-      toast.error('Nada para salvar neste evento');
+    // Coleta todas as URLs que precisam ser cacheadas
+    const allAudioUrls = tracks.map(track => track.url);
+    const sheetMusicUrls = songs
+      .filter(song => song.sheet_music_url)
+      .map(song => song.sheet_music_url!);
+    const pdfUrls = songs
+      .filter(song => song.sheet_music_pdf_url)
+      .map(song => song.sheet_music_pdf_url!);
+    
+    const allUrls = [
+      ...allAudioUrls,
+      ...sheetMusicUrls,
+      ...pdfUrls
+    ];
+    
+    if (event.cover_image_url) {
+      allUrls.push(event.cover_image_url);
+    }
+    
+    console.log('[Offline] URLs to cache:', {
+      audios: allAudioUrls.length,
+      sheets: sheetMusicUrls.length,
+      pdfs: pdfUrls.length,
+      cover: event.cover_image_url ? 1 : 0,
+      total: allUrls.length
+    });
+    
+    if (allUrls.length === 0) {
+      toast.error('Nenhum arquivo para salvar neste evento');
       return;
     }
     
-    if (allUrls.length > 0) await cacheMultipleAudios(allUrls);
+    try {
+      // Cachea todos os arquivos
+      await cacheMultipleAudios(allUrls);
 
-    if (event) {
-      try {
-        const savedEventsJson = localStorage.getItem('cached_events');
-        const savedEvents: any[] = savedEventsJson ? JSON.parse(savedEventsJson) : [];
-        const eventIndex = savedEvents.findIndex(e => e.id === event.id);
-        if (eventIndex >= 0) savedEvents[eventIndex] = event;
-        else savedEvents.push(event);
-        localStorage.setItem('cached_events', JSON.stringify(savedEvents));
-        localStorage.setItem(`event_audios_${event.id}`, JSON.stringify(allAudioUrls));
-        localStorage.setItem(`event_sheets_${event.id}`, JSON.stringify(sheetMusicUrls));
-        localStorage.setItem(`event_songs_data_${event.id}`, JSON.stringify(songs));
-        localStorage.setItem(`event_types_data_${event.id}`, JSON.stringify(eventTypes));
-        toast.success('Evento salvo para acesso offline!');
-        checkOfflineStatus();
-      } catch (error) {
-        toast.error('Erro ao salvar evento offline');
+      // Salva os metadados do evento no localStorage
+      const savedEventsJson = localStorage.getItem('cached_events');
+      const savedEvents: any[] = savedEventsJson ? JSON.parse(savedEventsJson) : [];
+      
+      const eventIndex = savedEvents.findIndex(e => e.id === event.id);
+      if (eventIndex >= 0) {
+        savedEvents[eventIndex] = event;
+      } else {
+        savedEvents.push(event);
       }
+      
+      localStorage.setItem('cached_events', JSON.stringify(savedEvents));
+      localStorage.setItem(`event_audios_${event.id}`, JSON.stringify(allAudioUrls));
+      localStorage.setItem(`event_sheets_${event.id}`, JSON.stringify(sheetMusicUrls));
+      localStorage.setItem(`event_songs_data_${event.id}`, JSON.stringify(songs));
+      localStorage.setItem(`event_types_data_${event.id}`, JSON.stringify(eventTypes));
+      
+      console.log('[Offline] Event metadata saved to localStorage');
+      
+      checkOfflineStatus();
+      
+      // Força o player a recarregar a track atual com a versão cacheada
+      if (currentTrack) {
+        const currentIndex = filteredPlaylist.findIndex(t => t.id === currentTrack.id);
+        if (currentIndex >= 0) {
+          console.log('[Offline] Reloading current track from cache');
+          playTrack(currentIndex);
+        }
+      }
+      
+      toast.success('Evento salvo para acesso offline!');
+    } catch (error) {
+      console.error('[Offline] Error saving event:', error);
+      toast.error('Erro ao salvar evento offline');
     }
   };
 
   const handleRemoveOffline = async () => {
     if (!event) return;
+    
+    console.log('[Offline] Removing offline data for event:', event.name);
+    
     try {
+      // Remove metadados do localStorage
       const savedEventsJson = localStorage.getItem('cached_events');
       if (savedEventsJson) {
         const savedEvents: any[] = JSON.parse(savedEventsJson);
         const newSavedEvents = savedEvents.filter(e => e.id !== event.id);
         localStorage.setItem('cached_events', JSON.stringify(newSavedEvents));
       }
+      
       localStorage.removeItem(`event_audios_${event.id}`);
       localStorage.removeItem(`event_sheets_${event.id}`);
       localStorage.removeItem(`event_songs_data_${event.id}`);
       localStorage.removeItem(`event_types_data_${event.id}`);
-      toast.success('Evento removido do modo offline');
+      
+      // Nota: Não removemos do Cache API porque outros eventos podem usar os mesmos arquivos
+      // O cache será gerenciado automaticamente pelo browser
+      
+      console.log('[Offline] Event metadata removed from localStorage');
+      
       checkOfflineStatus();
+      toast.success('Evento removido do modo offline');
+      
+      // Recarrega a track atual para usar a URL original
+      if (currentTrack) {
+        const currentIndex = filteredPlaylist.findIndex(t => t.id === currentTrack.id);
+        if (currentIndex >= 0) {
+          console.log('[Offline] Reloading current track from network');
+          playTrack(currentIndex);
+        }
+      }
     } catch (error) {
+      console.error('[Offline] Error removing event:', error);
       toast.error('Erro ao remover evento offline');
     }
   };
@@ -658,62 +734,16 @@ const EventDetails = () => {
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {user && canEdit && <>
-                {event.song_sheet_url ? (
-                  <DropdownMenuItem onClick={handleRemoveSongSheet} className="text-destructive focus:text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Remover Folha de Cantos
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem onClick={() => songSheetInputRef.current?.click()} disabled={isUploadingSongSheet}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    {isUploadingSongSheet ? 'Enviando...' : 'Adicionar Folha de Cantos'}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar evento
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
-                  <Music className="mr-2 h-4 w-4" />
-                  Editar músicas
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar música
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate(`/events/${id}/rehearsals`)}>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Ensaios
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate(`/events/${id}/registrations`)}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Gerenciar Inscrições
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>}
+            <DropdownMenuContent align="end" className="w-56">
+              {/* Ações Principais */}
+              <DropdownMenuItem onClick={handleShare}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Compartilhar
+              </DropdownMenuItem>
               {event.song_sheet_url && (
                 <DropdownMenuItem onClick={handleDownloadSongSheet}>
                   <FileDown className="mr-2 h-4 w-4" />
                   Baixar Folha de Cantos
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={handleShare}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Compartilhar evento
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSaveOffline} disabled={isCaching}>
-                <Download className="mr-2 h-4 w-4" />
-                {isOfflineSaved ? 'Atualizar Offline' : 'Salvar Offline'}
-              </DropdownMenuItem>
-              {isOfflineSaved && (
-                <DropdownMenuItem onClick={handleRemoveOffline}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Remover Offline
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={handleExportPDF}>
@@ -724,15 +754,75 @@ const EventDetails = () => {
                 <FileArchive className="mr-2 h-4 w-4" />
                 Exportar Áudios
               </DropdownMenuItem>
+
+              {/* Edição (Admin) */}
+              {user && canEdit && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar Evento
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
+                    <Music className="mr-2 h-4 w-4" />
+                    Editar Músicas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Música
+                  </DropdownMenuItem>
+                  {event.song_sheet_url ? (
+                    <DropdownMenuItem onClick={handleRemoveSongSheet} className="text-destructive focus:text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remover Folha de Cantos
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => songSheetInputRef.current?.click()} disabled={isUploadingSongSheet}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      {isUploadingSongSheet ? 'Enviando...' : 'Adicionar Folha de Cantos'}
+                    </DropdownMenuItem>
+                  )}
+                </>
+              )}
+
+              {/* Gerenciamento (Admin) */}
+              {user && canEdit && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/rehearsals`)}>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Ensaios
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/registrations`)}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Inscrições
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {/* Configurações de Visualização */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setShowGroupModal(true)}>
                 <Sliders className="mr-2 h-4 w-4" />
-                Opções de Agrupamento
+                Agrupamento
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowFilterModal(true)}>
                 <Filter className="mr-2 h-4 w-4" />
-                Opções de Filtro (Voz)
+                Filtro de Voz
               </DropdownMenuItem>
+
+              {/* Modo Offline */}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSaveOffline} disabled={isCaching}>
+                <Download className="mr-2 h-4 w-4" />
+                {isCaching ? 'Salvando...' : (isOfflineSaved ? 'Atualizar Offline' : 'Salvar Offline')}
+              </DropdownMenuItem>
+              {isOfflineSaved && (
+                <DropdownMenuItem onClick={handleRemoveOffline} className="text-destructive focus:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remover Offline
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <input ref={songSheetInputRef} type="file" accept="application/pdf" onChange={handleSongSheetUpload} className="hidden" />
@@ -754,7 +844,12 @@ const EventDetails = () => {
             </h2>
             <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
               {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
-              {isOfflineSaved && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+              {isOfflineSaved && (
+                <span className="flex items-center gap-1 text-green-600 dark:text-green-500">
+                  <WifiOff className="h-3 w-3" />
+                  <span className="text-[10px] font-bold">OFFLINE</span>
+                </span>
+              )}
             </p>
             <div className="flex gap-2 mt-2">
               {event.song_sheet_url && (
@@ -844,7 +939,9 @@ const EventDetails = () => {
                                     if (globalIndex >= 0) playTrack(globalIndex);
                                     const url = song.sheet_music_pdf_url || song.sheet_music_url;
                                     if (url) {
+                                      console.log('[EventDetails] Opening sheet music, original URL:', url);
                                       const cached = await getCachedUrl(url);
+                                      console.log('[EventDetails] Cached URL:', cached);
                                       setSheetMusicSrc(cached);
                                       setShowSheetViewer(true);
                                     }
@@ -1058,10 +1155,47 @@ const EventDetails = () => {
 
       {showSheetViewer && currentTrack && (() => {
         const currentSong = songs.find(s => s.id === currentTrack.songId);
-        if (!currentSong) return null;
+        if (!currentSong) {
+          console.warn('[EventDetails] Current song not found for sheet viewer');
+          return null;
+        }
+        
         const sheetUrl = sheetMusicSrc || currentSong.sheet_music_pdf_url || currentSong.sheet_music_url;
-        if (!sheetUrl) return null;
-        return <SheetViewer currentTrack={currentTrack} isPlaying={isPlaying} onPlayPause={togglePlay} onNext={playNext} onPrevious={playPrevious} onClose={() => { setShowSheetViewer(false); setSheetMusicSrc(null); }} onTrackEnd={() => { if (repeatMode === 'track' && audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play(); } else playNext(); }} sheetMusicUrl={sheetUrl} allTracks={filteredPlaylist} currentTrackIndex={currentTrackIndex ?? 0} onTrackSelect={index => playTrack(index)} audioElement={audioRef.current} currentTime={currentTime} duration={duration} />;
+        if (!sheetUrl) {
+          console.warn('[EventDetails] No sheet music URL available');
+          return null;
+        }
+        
+        console.log('[EventDetails] Rendering SheetViewer with URL:', sheetUrl);
+        console.log('[EventDetails] Is blob URL:', sheetUrl.startsWith('blob:'));
+        
+        return <SheetViewer 
+          currentTrack={currentTrack} 
+          isPlaying={isPlaying} 
+          onPlayPause={togglePlay} 
+          onNext={playNext} 
+          onPrevious={playPrevious} 
+          onClose={() => { 
+            console.log('[EventDetails] Closing SheetViewer');
+            setShowSheetViewer(false); 
+            setSheetMusicSrc(null); 
+          }} 
+          onTrackEnd={() => { 
+            if (repeatMode === 'track' && audioRef.current) { 
+              audioRef.current.currentTime = 0; 
+              audioRef.current.play(); 
+            } else {
+              playNext(); 
+            }
+          }} 
+          sheetMusicUrl={sheetUrl} 
+          allTracks={filteredPlaylist} 
+          currentTrackIndex={currentTrackIndex ?? 0} 
+          onTrackSelect={index => playTrack(index)} 
+          audioElement={audioRef.current} 
+          currentTime={currentTime} 
+          duration={duration} 
+        />;
       })()}
 
       <Dialog open={showGroupModal} onOpenChange={setShowGroupModal}>

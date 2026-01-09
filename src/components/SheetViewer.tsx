@@ -67,6 +67,7 @@ export const SheetViewer = ({
   const [pdfPages, setPdfPages] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -78,25 +79,46 @@ export const SheetViewer = ({
   // Carregar PDF e converter para imagens
   useEffect(() => {
     if (isPdf && sheetMusicUrl) {
+      console.log('[SheetViewer] Sheet music URL changed:', sheetMusicUrl);
+      console.log('[SheetViewer] Is PDF:', isPdf);
       loadPdfPages(sheetMusicUrl);
+    } else if (!isPdf && sheetMusicUrl) {
+      console.log('[SheetViewer] Loading image sheet:', sheetMusicUrl);
     }
   }, [sheetMusicUrl, isPdf]);
 
   const loadPdfPages = async (url: string) => {
+    console.log('[SheetViewer] Loading PDF from URL:', url);
     setLoadingPdf(true);
+    setPdfError(null);
+    setPdfPages([]);
+    
+    // Timeout de segurança: se o PDF não carregar em 15 segundos, reseta o loading
+    const loadingTimeout = setTimeout(() => {
+      console.warn('[SheetViewer] PDF loading timeout - resetting loading state');
+      setLoadingPdf(false);
+      setPdfError('Tempo limite excedido ao carregar PDF');
+    }, 15000);
+    
     try {
+      console.log('[SheetViewer] Fetching PDF document...');
       const pdf = await pdfjsLib.getDocument(url).promise;
       const totalPages = pdf.numPages;
+      console.log(`[SheetViewer] PDF loaded with ${totalPages} pages`);
       const pages: string[] = [];
 
       for (let i = 1; i <= totalPages; i++) {
+        console.log(`[SheetViewer] Rendering page ${i}/${totalPages}`);
         const page = await pdf.getPage(i);
         const scale = 2;
         const viewport = page.getViewport({ scale });
         
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        if (!context) continue;
+        if (!context) {
+          console.error(`[SheetViewer] Failed to get canvas context for page ${i}`);
+          continue;
+        }
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
@@ -110,10 +132,15 @@ export const SheetViewer = ({
       }
 
       setPdfPages(pages);
-    } catch (error) {
-      console.error('Erro ao carregar PDF:', error);
+      console.log(`[SheetViewer] Successfully loaded ${pages.length} pages`);
+      clearTimeout(loadingTimeout);
+    } catch (error: any) {
+      console.error('[SheetViewer] Error loading PDF:', error);
+      setPdfError(error?.message || 'Erro ao carregar PDF');
+      clearTimeout(loadingTimeout);
     } finally {
       setLoadingPdf(false);
+      console.log('[SheetViewer] PDF loading finished');
     }
   };
 
@@ -331,18 +358,23 @@ export const SheetViewer = ({
       >
         <div className="flex min-h-full items-center justify-center p-4">
           {loadingPdf ? (
-            <div className="text-white">Carregando partitura...</div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              <div className="text-white">Carregando partitura...</div>
+            </div>
           ) : isPdf && pdfPages.length === 0 ? (
             <div className="flex flex-col items-center gap-4 text-white">
               <FileText className="h-16 w-16 text-white/40" />
-              <p className="text-white/60">Erro ao carregar PDF</p>
-              <Button
-                onClick={() => window.open(sheetMusicUrl, '_blank')}
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                Abrir em nova aba
-              </Button>
+              <p className="text-white/60">{pdfError || 'Erro ao carregar PDF'}</p>
+              {sheetMusicUrl && (
+                <Button
+                  onClick={() => window.open(sheetMusicUrl, '_blank')}
+                  variant="outline"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Abrir em nova aba
+                </Button>
+              )}
             </div>
           ) : (
             <div className="relative">

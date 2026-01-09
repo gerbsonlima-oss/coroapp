@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-
 
 const CACHE_NAME = 'media-cache-v1';
 
+// Map para gerenciar blob URLs e evitar memory leaks
+const blobUrlMap = new Map<string, string>();
+
 // Normaliza a URL removendo query params
-const normalizeBase = (rawUrl: string) => {
+const normalizeUrl = (rawUrl: string): string => {
   try {
     const u = new URL(rawUrl);
     return u.origin + u.pathname;
@@ -25,96 +27,130 @@ export const useAudioCache = () => {
   const [cachedAudios, setCachedAudios] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const activeBlobUrls = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     loadCachedAudios();
+
+    // Cleanup: revoke blob URLs when component unmounts
+    return () => {
+      activeBlobUrls.current.forEach(blobUrl => {
+        try {
+          URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+          console.error('Error revoking blob URL:', e);
+        }
+      });
+      activeBlobUrls.current.clear();
+      blobUrlMap.clear();
+    };
   }, []);
 
   const loadCachedAudios = async () => {
     try {
       const cache = await caches.open(CACHE_NAME);
       const requests = await cache.keys();
-      const urls = requests.map(req => {
-        // Normaliza a URL removendo query params para comparação
-        const url = new URL(req.url);
-        return url.origin + url.pathname;
-      });
+      const urls = requests.map(req => normalizeUrl(req.url));
       setCachedAudios(new Set(urls));
+      console.log(`[Cache] Loaded ${urls.length} cached files`);
     } catch (error) {
-      console.error('Erro ao carregar cache:', error);
+      console.error('[Cache] Error loading cache:', error);
     }
   };
 
   const getCachedUrl = async (url: string): Promise<string> => {
+    const normalizedUrl = normalizeUrl(url);
+    
+    // Se já temos um blob URL ativo para esta URL, reutilize
+    if (blobUrlMap.has(normalizedUrl)) {
+      const existingBlob = blobUrlMap.get(normalizedUrl)!;
+      console.log(`[Cache] Reusing existing blob URL for:`, normalizedUrl);
+      return existingBlob;
+    }
+
     try {
       const cache = await caches.open(CACHE_NAME);
       
-      // Tenta buscar com a URL exata primeiro
-      let response = await cache.match(url);
+      // Tenta buscar com a URL normalizada
+      let response = await cache.match(normalizedUrl);
       
-      // Se não encontrar, tenta buscar ignorando query params
-      if (!response) {
-        const normalizedUrl = new URL(url);
-        const baseUrl = normalizedUrl.origin + normalizedUrl.pathname;
-        response = await cache.match(baseUrl);
+      // Se não encontrar, tenta com a URL original
+      if (!response && url !== normalizedUrl) {
+        response = await cache.match(url);
       }
       
       if (response) {
+        console.log(`[Cache] HIT - Found in cache:`, normalizedUrl);
         const blob = await response.blob();
-        return URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Armazena o blob URL para reutilização
+        blobUrlMap.set(normalizedUrl, blobUrl);
+        activeBlobUrls.current.add(blobUrl);
+        
+        return blobUrl;
+      } else {
+        console.log(`[Cache] MISS - Not in cache, using original URL:`, normalizedUrl);
       }
     } catch (error) {
-      console.error('Erro ao buscar áudio em cache:', error);
+      console.error('[Cache] Error fetching from cache:', error);
     }
+    
+    // Retorna a URL original se não estiver em cache
     return url;
   };
 
   const cacheAudio = async (url: string): Promise<boolean> => {
+    const normalizedUrl = normalizeUrl(url);
+    
     try {
+      console.log(`[Cache] Caching file:`, normalizedUrl);
       const cache = await caches.open(CACHE_NAME);
       
-      // Normaliza a URL para salvar sem query params
-      const urlObj = new URL(url);
-      const baseUrl = urlObj.origin + urlObj.pathname;
-      
-      // Busca o arquivo (pode ser áudio ou PDF)
-      const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
+      // Verifica se já está em cache
+      const existingResponse = await cache.match(normalizedUrl);
+      if (existingResponse) {
+        console.log(`[Cache] Already cached:`, normalizedUrl);
+        setCachedAudios(prev => new Set([...prev, normalizedUrl]));
+        return true;
+      }
 
-      // Detecta o tipo de conteúdo (áudio ou PDF)
+      // Faz o download do arquivo
+      const response = await fetch(url, { 
+        mode: 'cors', 
+        credentials: 'omit',
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Detecta o tipo de conteúdo
       const contentType = response.headers.get('Content-Type') || 
                          (url.toLowerCase().includes('.pdf') ? 'application/pdf' : 'audio/mpeg');
 
-      let responseToCache: Response;
-      try {
-        if (response.status === 200) {
-          responseToCache = response.clone();
-        } else {
-          // Constrói uma resposta 200 a partir do blob para evitar problemas com 206
-          const blob = await response.blob();
-          responseToCache = new Response(blob, {
-            status: 200,
-            headers: { 'Content-Type': contentType }
-          });
+      // Cria uma resposta válida para o cache
+      const blob = await response.blob();
+      const responseToCache = new Response(blob, {
+        status: 200,
+        statusText: 'OK',
+        headers: { 
+          'Content-Type': contentType,
+          'Content-Length': blob.size.toString()
         }
-      } catch (e) {
-        // Fallback para blob caso o clone falhe
-        const blob = await response.blob();
-        responseToCache = new Response(blob, {
-          status: 200,
-          headers: { 'Content-Type': contentType }
-        });
-      }
+      });
 
-      // Armazena no cache usando a URL base normalizada
-      await cache.put(baseUrl, responseToCache);
+      // Armazena no cache usando a URL normalizada
+      await cache.put(normalizedUrl, responseToCache);
 
       // Atualiza o estado
-      setCachedAudios(prev => new Set([...prev, baseUrl]));
+      setCachedAudios(prev => new Set([...prev, normalizedUrl]));
 
-      console.log('Arquivo cacheado com sucesso:', baseUrl);
+      console.log(`[Cache] Successfully cached:`, normalizedUrl);
       return true;
     } catch (error) {
-      console.error('Erro ao cachear áudio:', error);
+      console.error(`[Cache] Error caching file:`, normalizedUrl, error);
       return false;
     }
   };
@@ -122,15 +158,19 @@ export const useAudioCache = () => {
   const cacheMultipleAudios = async (urls: string[]): Promise<void> => {
     setIsLoading(true);
     setProgress({ current: 0, total: urls.length });
+    
     let successCount = 0;
     let failCount = 0;
 
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
+      const normalizedUrl = normalizeUrl(url);
+      
       setProgress({ current: i + 1, total: urls.length });
       
-      const base = normalizeBase(url);
-      if (cachedAudios.has(base)) {
+      // Verifica se já está em cache antes de tentar cachear
+      if (cachedAudios.has(normalizedUrl)) {
+        console.log(`[Cache] Skipping already cached:`, normalizedUrl);
         successCount++;
         continue;
       }
@@ -141,31 +181,46 @@ export const useAudioCache = () => {
       } else {
         failCount++;
       }
+
+      // Pequeno delay para não sobrecarregar
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     setIsLoading(false);
     setProgress({ current: 0, total: 0 });
 
     if (failCount === 0) {
-      toast.success(`${successCount} arquivos disponíveis offline!`);
+      toast.success(`${successCount} ${successCount === 1 ? 'arquivo disponível' : 'arquivos disponíveis'} offline!`);
     } else {
-      toast.warning(`${successCount} arquivos salvos, ${failCount} falharam`);
+      toast.warning(`${successCount} salvos, ${failCount} falharam`);
     }
   };
 
   const removeFromCache = async (url: string): Promise<void> => {
     try {
       const cache = await caches.open(CACHE_NAME);
-      const base = normalizeBase(url);
-      await cache.delete(base);
+      const normalizedUrl = normalizeUrl(url);
+      
+      await cache.delete(normalizedUrl);
+      
+      // Remove do mapa de blob URLs
+      const blobUrl = blobUrlMap.get(normalizedUrl);
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        blobUrlMap.delete(normalizedUrl);
+        activeBlobUrls.current.delete(blobUrl);
+      }
+      
       setCachedAudios(prev => {
         const newSet = new Set(prev);
-        newSet.delete(base);
+        newSet.delete(normalizedUrl);
         return newSet;
       });
+      
+      console.log(`[Cache] Removed from cache:`, normalizedUrl);
       toast.success('Áudio removido do cache');
     } catch (error) {
-      console.error('Erro ao remover do cache:', error);
+      console.error('[Cache] Error removing from cache:', error);
       toast.error('Erro ao remover áudio');
     }
   };
@@ -173,23 +228,30 @@ export const useAudioCache = () => {
   const clearAllCache = async (): Promise<void> => {
     try {
       await caches.delete(CACHE_NAME);
+      
+      // Revoga todos os blob URLs ativos
+      activeBlobUrls.current.forEach(blobUrl => {
+        try {
+          URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+          console.error('Error revoking blob URL:', e);
+        }
+      });
+      activeBlobUrls.current.clear();
+      blobUrlMap.clear();
+      
       setCachedAudios(new Set());
+      console.log('[Cache] Cache cleared');
       toast.success('Cache limpo com sucesso');
     } catch (error) {
-      console.error('Erro ao limpar cache:', error);
+      console.error('[Cache] Error clearing cache:', error);
       toast.error('Erro ao limpar cache');
     }
   };
 
   const isCached = (url: string): boolean => {
-    // Normaliza a URL para comparação
-    try {
-      const urlObj = new URL(url);
-      const baseUrl = urlObj.origin + urlObj.pathname;
-      return cachedAudios.has(baseUrl);
-    } catch {
-      return cachedAudios.has(url);
-    }
+    const normalizedUrl = normalizeUrl(url);
+    return cachedAudios.has(normalizedUrl);
   };
 
   const getCacheSize = async (): Promise<number> => {
@@ -199,7 +261,7 @@ export const useAudioCache = () => {
         return estimate.usage || 0;
       }
     } catch (error) {
-      console.error('Erro ao obter tamanho do cache:', error);
+      console.error('[Cache] Error getting cache size:', error);
     }
     return 0;
   };

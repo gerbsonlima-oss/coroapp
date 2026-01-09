@@ -180,6 +180,7 @@ export const useEventPlayer = (tracks: Track[]) => {
     };
 
     const handleLoadedMetadata = () => {
+      console.log('[Player] Metadata loaded');
       setDuration(audio.duration);
       setIsLoading(false);
     };
@@ -194,11 +195,20 @@ export const useEventPlayer = (tracks: Track[]) => {
     };
 
     const handleCanPlay = () => {
+      console.log('[Player] Can play - resetting loading state');
       setIsLoading(false);
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => {
+      console.log('[Player] Playing');
+      setIsPlaying(true);
+      setIsLoading(false);
+    };
+    
+    const handlePause = () => {
+      console.log('[Player] Paused');
+      setIsPlaying(false);
+    };
 
     const handleError = (e: Event) => {
       const audioTarget = e.target as HTMLAudioElement;
@@ -277,35 +287,77 @@ export const useEventPlayer = (tracks: Track[]) => {
   useEffect(() => {
     if (!currentTrack || !audioRef.current) return;
 
+    let loadingTimeout: NodeJS.Timeout;
+
     const loadTrackAsync = async () => {
       if (!audioRef.current) return;
       
-      const cachedUrl = await getCachedUrl(currentTrack.url);
+      console.log('[Player] Loading track:', currentTrack.songName, '-', currentTrack.naipe);
       
-      if (audioRef.current.getAttribute('src') !== cachedUrl) {
-        setIsLoading(true);
+      try {
+        // Obtém a URL cacheada (ou original se não estiver em cache)
+        const cachedUrl = await getCachedUrl(currentTrack.url);
+        const currentSrc = audioRef.current.src;
         
-        try {
-          // Pause and reset before source change
+        console.log('[Player] Current src:', currentSrc);
+        console.log('[Player] New src:', cachedUrl);
+        console.log('[Player] Is cached:', isCached(currentTrack.url));
+        
+        // Só atualiza se a URL mudou
+        if (currentSrc !== cachedUrl) {
+          setIsLoading(true);
+          
+          // Timeout de segurança: se o áudio não carregar em 10 segundos, reseta o loading
+          loadingTimeout = setTimeout(() => {
+            console.warn('[Player] Loading timeout - resetting loading state');
+            setIsLoading(false);
+          }, 10000);
+          
+          // Pause e reset antes de mudar a source
           audioRef.current.pause();
+          audioRef.current.currentTime = 0;
           audioRef.current.src = cachedUrl;
           audioRef.current.load();
           
-          // If we were playing, try to play the new source
+          console.log('[Player] Source updated to:', cachedUrl);
+          
+          // Se estava tocando, tenta tocar a nova source
           if (state.isPlaying) {
             audioRef.current.play().catch(err => {
-              if (err.name !== 'AbortError') console.error('Erro ao reproduzir após carga:', err);
+              if (err.name !== 'AbortError') {
+                console.error('[Player] Error playing after load:', err);
+                setIsPlaying(false);
+                setIsLoading(false);
+                clearTimeout(loadingTimeout);
+              }
             });
           }
-        } catch (error) {
-          console.error('Error loading track:', error);
-          setIsLoading(false);
+        } else {
+          console.log('[Player] Source unchanged, skipping reload');
+          // Se a source não mudou e não está carregando, pode tocar imediatamente
+          if (state.isPlaying && audioRef.current.paused) {
+            audioRef.current.play().catch(err => {
+              if (err.name !== 'AbortError') {
+                console.error('[Player] Error playing:', err);
+                setIsPlaying(false);
+              }
+            });
+          }
         }
+      } catch (error) {
+        console.error('[Player] Error loading track:', error);
+        setIsLoading(false);
+        setIsPlaying(false);
+        if (loadingTimeout) clearTimeout(loadingTimeout);
       }
     };
 
     loadTrackAsync();
-  }, [currentTrack?.id, getCachedUrl]);
+
+    return () => {
+      if (loadingTimeout) clearTimeout(loadingTimeout);
+    };
+  }, [currentTrack?.id, getCachedUrl, isCached]);
 
   // ✅ Handle filter changes - if current track no longer exists in playlist
   useEffect(() => {
