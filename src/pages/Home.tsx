@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut } from 'lucide-react';
+import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -9,6 +9,7 @@ import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { format, addMonths, addDays, getDaysInMonth, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,9 +42,11 @@ const Home = () => {
   const { user, signOut } = useAuth();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenant, tenantId } = useTenant();
+  const { saveEvents } = useOfflineStorage();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
 
   const { data: upcomingEventsData } = useQuery({
     queryKey: ['upcoming-events', tenantId],
@@ -78,11 +81,67 @@ const Home = () => {
     enabled: !!tenantId,
   });
 
+  const { data: pastEventsData } = useQuery({
+    queryKey: ['past-events', tenantId],
+    queryFn: async () => {
+      if (!tenantId) return [];
+      
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, name, date, location, cover_image_url')
+          .eq('tenant_id', tenantId)
+          .lt('date', format(today, 'yyyy-MM-dd'))
+          .order('date', { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+        return data as Event[] || [];
+      } catch (error) {
+        console.log('Offline mode: fetching past events from cache');
+        const savedEventsJson = localStorage.getItem('cached_events');
+        if (!savedEventsJson) return [];
+        
+        const savedEvents: Event[] = JSON.parse(savedEventsJson);
+        const todayStr = format(today, 'yyyy-MM-dd');
+        
+        return savedEvents
+          .filter(event => event.date < todayStr)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 5);
+      }
+    },
+    enabled: !!tenantId,
+  });
+
   useEffect(() => {
     if (upcomingEventsData) {
       setUpcomingEvents(upcomingEventsData);
     }
-  }, [upcomingEventsData]);
+    if (pastEventsData) {
+      setPastEvents(pastEventsData);
+    }
+    
+    // Save combined events to offline storage
+    if (upcomingEventsData || pastEventsData) {
+      const allEvents = [
+        ...(upcomingEventsData || []),
+        ...(pastEventsData || []),
+      ];
+      
+      if (allEvents.length > 0 && tenantId) {
+        saveEvents(allEvents.map(event => ({
+          id: event.id,
+          name: event.name,
+          date: event.date,
+          location: event.location,
+          cover_image_url: event.cover_image_url,
+          notes: null,
+          tenant_id: tenantId,
+        })));
+      }
+    }
+  }, [upcomingEventsData, pastEventsData, saveEvents, tenantId]);
 
   const liturgicalColor = liturgicalDay 
     ? getLiturgicalColor(liturgicalDay.liturgicalSeason)
@@ -208,6 +267,54 @@ const Home = () => {
                         <div className="flex items-center gap-1.5">
                           <MapPin className="h-3 w-3 flex-shrink-0" />
                           <span className="line-clamp-1 truncate">{event.location}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Eventos Recentes */}
+        {pastEvents.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-semibold text-lg">Eventos Recentes</h3>
+            </div>
+
+            <div className="space-y-2">
+              {pastEvents.map((event, index) => (
+                <Card
+                  key={event.id}
+                  className="overflow-hidden cursor-pointer hover:shadow-md transition-all border-0 group flex flex-row bg-muted/30"
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
+                  {event.cover_image_url && (
+                    <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden bg-muted">
+                      <img
+                        src={event.cover_image_url}
+                        alt={event.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-300"
+                      />
+                    </div>
+                  )}
+                  <div className="p-3 flex-1 flex flex-col justify-between min-w-0">
+                    <h3 className="font-bold text-sm line-clamp-1 group-hover:text-primary transition-colors">{event.name}</h3>
+                    <div className="space-y-1 text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 flex-shrink-0" />
+                        <span>
+                          {format(new Date(event.date), "dd MMM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      {event.location && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{event.location}</span>
                         </div>
                       )}
                     </div>

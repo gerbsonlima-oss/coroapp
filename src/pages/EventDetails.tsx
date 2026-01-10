@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { OfflineBadge } from '@/components/OfflineBadge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +17,7 @@ import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -119,8 +121,10 @@ const EventDetails = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
+  const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canEdit = isAdmin || isSuperAdmin;
+  const isAvailableOffline = id ? isEventAvailableOffline(id) : false;
   const [event, setEvent] = useState<Event | null>(null);
   const [songs, setSongs] = useState<EventSong[]>([]);
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
@@ -164,6 +168,7 @@ const EventDetails = () => {
   const [isOfflineSaved, setIsOfflineSaved] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [isUploadingSongSheet, setIsUploadingSongSheet] = useState(false);
+  const [isSavingOffline, setIsSavingOffline] = useState(false);
   const songSheetInputRef = useRef<HTMLInputElement>(null);
 
   const checkOfflineStatus = () => {
@@ -179,12 +184,12 @@ const EventDetails = () => {
       totalSavedEvents: savedEvents.length
     });
     
-    setIsOfflineSaved(isSaved);
+    setIsOfflineSaved(isSaved || isAvailableOffline);
   };
 
   useEffect(() => {
     checkOfflineStatus();
-  }, [id]);
+  }, [id, isAvailableOffline]);
 
   const [coverImageSrc, setCoverImageSrc] = useState<string | null>(null);
 
@@ -752,6 +757,63 @@ const EventDetails = () => {
     }
   };
 
+  const handleSaveForOffline = async () => {
+    if (!event || !tenantId) return;
+    
+    setIsSavingOffline(true);
+    try {
+      // 1. Save event data
+      saveEvents([{
+        id: event.id,
+        name: event.name,
+        date: event.date,
+        location: event.location,
+        cover_image_url: event.cover_image_url,
+        notes: null,
+        tenant_id: tenantId,
+      }]);
+
+      // 2. Collect all audio URLs to cache
+      const audioUrls: string[] = [];
+      songs.forEach(song => {
+        song.audios.forEach(audio => {
+          audioUrls.push(audio.audio_url);
+        });
+      });
+
+      // 3. Cache the cover image if exists
+      if (event.cover_image_url) {
+        audioUrls.push(event.cover_image_url);
+      }
+
+      // 4. Cache song sheet if exists
+      if (event.song_sheet_url) {
+        audioUrls.push(event.song_sheet_url);
+      }
+
+      // 5. Cache all sheet music PDFs
+      songs.forEach(song => {
+        if (song.sheet_music_pdf_url) {
+          audioUrls.push(song.sheet_music_pdf_url);
+        }
+      });
+
+      // 6. Cache all audio files
+      if (audioUrls.length > 0) {
+        await cacheMultipleAudios(audioUrls);
+      }
+
+      setIsOfflineSaved(true);
+      checkOfflineStatus();
+      toast.success('Evento salvo para acesso offline!');
+    } catch (error) {
+      console.error('Error saving for offline:', error);
+      toast.error('Erro ao salvar evento offline');
+    } finally {
+      setIsSavingOffline(false);
+    }
+  };
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!event) return <div className="flex min-h-screen items-center justify-center"><p>Evento não encontrado</p></div>;
 
@@ -773,6 +835,12 @@ const EventDetails = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {/* Ações Principais */}
+              {!isOfflineSaved && (
+                <DropdownMenuItem onClick={handleSaveForOffline} disabled={isSavingOffline}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSavingOffline ? 'Salvando...' : 'Salvar para Offline'}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={handleShare}>
                 <Share2 className="mr-2 h-4 w-4" />
                 Compartilhar
@@ -848,18 +916,6 @@ const EventDetails = () => {
                 Filtro de Voz
               </DropdownMenuItem>
 
-              {/* Modo Offline */}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSaveOffline} disabled={isCaching}>
-                <Download className="mr-2 h-4 w-4" />
-                {isCaching ? 'Salvando...' : (isOfflineSaved ? 'Atualizar Offline' : 'Salvar Offline')}
-              </DropdownMenuItem>
-              {isOfflineSaved && (
-                <DropdownMenuItem onClick={handleRemoveOffline} className="text-destructive focus:text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Remover Offline
-                </DropdownMenuItem>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <input ref={songSheetInputRef} type="file" accept="application/pdf" onChange={handleSongSheetUpload} className="hidden" />
@@ -876,8 +932,9 @@ const EventDetails = () => {
             )}
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <h2 className="line-clamp-2 font-bold text-base text-foreground leading-tight mb-1.5 flex items-center gap-2">
+            <h2 className="line-clamp-2 font-bold text-base text-foreground leading-tight mb-1.5 flex items-center gap-2 flex-wrap">
               {event.name}
+              {isOfflineSaved && <OfflineBadge variant="small" />}
             </h2>
             <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
               {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}

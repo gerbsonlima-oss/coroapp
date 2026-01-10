@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#1a1a2e",
         background_color: "#0f0f1e",
         display: "standalone",
-        start_url: "/events",
+        start_url: "/",
         icons: [
           {
             src: "icon-512.png",

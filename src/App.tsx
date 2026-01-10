@@ -6,6 +6,7 @@ import { PlayerProvider } from "@/contexts/PlayerContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
 import { SplashScreen } from "@/components/SplashScreen";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -130,6 +131,7 @@ function App() {
       <AuthProvider>
       <PlayerProvider>
         <RouteTracker />
+        <OfflineIndicator />
         <Toaster />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>

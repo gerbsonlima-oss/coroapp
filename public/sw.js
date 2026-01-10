@@ -10,23 +10,42 @@ precacheAndRoute(self.__WB_MANIFEST || []);
 // Estratégia para API do Supabase (REST)
 // IMPORTANTE: nunca interceptar mutações (POST/PUT/PATCH/DELETE), pois isso pode
 // causar falhas de autenticação/RLS quando o request passa pelo Service Worker.
+// Usa NetworkFirst quando online, CacheFirst quando offline
 registerRoute(
   ({ url, request }) =>
     request.method === 'GET' &&
     url.hostname.includes('supabase.co') &&
     url.pathname.startsWith('/rest/'),
-  new NetworkFirst({
-    cacheName: 'supabase-api-cache',
-    plugins: [
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
-      new ExpirationPlugin({
-        maxEntries: 100,
-        maxAgeSeconds: 60 * 60 * 24, // 24 horas
-      }),
-    ],
-  })
+  async ({ request, event }) => {
+    // Check if online
+    if (navigator.onLine) {
+      // Online: try network first
+      const networkFirst = new NetworkFirst({
+        cacheName: 'supabase-api-cache',
+        plugins: [
+          new CacheableResponsePlugin({
+            statuses: [0, 200],
+          }),
+          new ExpirationPlugin({
+            maxEntries: 100,
+            maxAgeSeconds: 60 * 60 * 24, // 24 horas
+          }),
+        ],
+      });
+      return networkFirst.handle({ request, event });
+    } else {
+      // Offline: use cache first
+      const cacheFirst = new CacheFirst({
+        cacheName: 'supabase-api-cache',
+        plugins: [
+          new CacheableResponsePlugin({
+            statuses: [0, 200],
+          }),
+        ],
+      });
+      return cacheFirst.handle({ request, event });
+    }
+  }
 );
 
 // Estratégia para Storage do Supabase (imagens, PDFs, áudios)

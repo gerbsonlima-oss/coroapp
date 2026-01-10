@@ -2,7 +2,7 @@
   "name": "Repertório - Gestão de Coral",
   "short_name": "Repertório",
   "description": "App para gestão de repertório de coral",
-  "start_url": "/events",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f1e",
   "theme_color": "#1a1a2e",

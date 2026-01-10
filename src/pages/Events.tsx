@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -16,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { useAudioCache } from '@/hooks/useAudioCache';
 
 import { EventListItem } from '@/components/EventListItem';
+import { OfflineBadge } from '@/components/OfflineBadge';
 
 interface Event {
   id: string;
@@ -34,6 +36,7 @@ const Events = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
+  const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canCreateEvent = isAdmin || isSuperAdmin;
   const navigate = useNavigate();
@@ -65,9 +68,25 @@ const Events = () => {
 
       if (error) throw error;
       
-      // Se online, mostra todos os eventos
+      // Se online, mostra todos os eventos E salva no cache offline
       setEvents(data || []);
       setIsOffline(false);
+      
+      // Save events to offline storage
+      if (data && data.length > 0) {
+        saveEvents(data.map(event => ({
+          id: event.id,
+          name: event.name,
+          date: event.date,
+          location: event.location,
+          cover_image_url: event.cover_image_url,
+          notes: event.notes,
+          tenant_id: event.tenant_id,
+        })));
+        
+        // Also save to legacy cache for backward compatibility
+        localStorage.setItem('cached_events', JSON.stringify(data));
+      }
     } catch (error: any) {
       // Se offline, busca eventos do localStorage
       const cachedEvents = await getOfflineEvents();

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { CachedImage } from './CachedImage';
+import { OfflineBadge } from './OfflineBadge';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 
 interface Event {
   id: string;
@@ -29,10 +31,13 @@ interface EventListItemProps {
 
 export const EventListItem = ({ event }: EventListItemProps) => {
   const navigate = useNavigate();
+  const { isEventAvailableOffline } = useOfflineStorage();
   const [expanded, setExpanded] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
   const [loadingSongs, setLoadingSongs] = useState(false);
   const [songsLoaded, setSongsLoaded] = useState(false);
+  
+  const isOffline = isEventAvailableOffline(event.id);
 
   const handleExpand = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -106,7 +111,10 @@ export const EventListItem = ({ event }: EventListItemProps) => {
         {/* Conteúdo */}
         <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
           <div>
-            <h3 className="font-bold text-base sm:text-lg line-clamp-2 mb-1">{event.name}</h3>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h3 className="font-bold text-base sm:text-lg line-clamp-2 flex-1">{event.name}</h3>
+              {isOffline && <OfflineBadge variant="small" className="shrink-0 mt-0.5" />}
+            </div>
             <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 flex-shrink-0" />

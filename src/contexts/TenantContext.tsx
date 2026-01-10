@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 
 export interface Tenant {
   id: string;
@@ -78,6 +79,7 @@ function getTenantSlugFromHostname(): string | null {
 export function TenantProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { saveTenantConfig, getTenantConfig } = useOfflineStorage();
   
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
@@ -134,7 +136,16 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
         if (fetchError) {
           console.error('Error fetching tenant:', fetchError);
-          setError('Erro ao carregar organização');
+          
+          // Try to load from offline storage
+          const cachedTenant = getTenantConfig();
+          if (cachedTenant) {
+            console.log('[Tenant] Using cached tenant config');
+            setTenant(cachedTenant);
+            setError(null);
+          } else {
+            setError('Erro ao carregar organização');
+          }
           setLoading(false);
           return;
         }
@@ -149,6 +160,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           
           if (defaultData) {
             setTenant(defaultData);
+            saveTenantConfig(defaultData);
             localStorage.setItem(TENANT_STORAGE_KEY, defaultData.slug);
           } else {
             setError('Organização não encontrada');
@@ -158,18 +170,28 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         }
 
         setTenant(data);
+        saveTenantConfig(data);
         localStorage.setItem(TENANT_STORAGE_KEY, data.slug);
         setError(null);
       } catch (err) {
         console.error('Error in tenant fetch:', err);
-        setError('Erro ao carregar organização');
+        
+        // Try to load from offline storage
+        const cachedTenant = getTenantConfig();
+        if (cachedTenant) {
+          console.log('[Tenant] Using cached tenant config (catch block)');
+          setTenant(cachedTenant);
+          setError(null);
+        } else {
+          setError('Erro ao carregar organização');
+        }
       } finally {
         setLoading(false);
       }
     }
 
     fetchTenant();
-  }, [location.pathname]);
+  }, [location.pathname, saveTenantConfig, getTenantConfig]);
 
   const switchTenant = (slug: string) => {
     localStorage.setItem(TENANT_STORAGE_KEY, slug);
