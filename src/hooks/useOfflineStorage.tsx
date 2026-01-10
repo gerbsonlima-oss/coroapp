@@ -20,6 +20,7 @@ interface TenantConfig {
   id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
 }
 
 const STORAGE_KEYS = {
