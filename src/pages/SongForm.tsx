@@ -42,7 +42,8 @@ interface Song {
   name: string;
   type: string;
   sheet_music_url: string | null;
-  lyrics_url: string | null;
+  sheet_music_pdf_url?: string | null;
+  lyrics_url?: string | null;
 }
 
 interface ExistingAudio {
@@ -128,7 +129,7 @@ const SongForm = () => {
 
       if (error) throw error;
       
-      setSong(data);
+      setSong(data as Song);
       setName(data.name);
       setType(data.type);
 

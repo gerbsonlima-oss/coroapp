@@ -29,7 +29,8 @@ interface Song {
   type: string;
   notes: string | null;
   sheet_music_url: string | null;
-  lyrics_url: string | null;
+  sheet_music_pdf_url?: string | null;
+  lyrics_url?: string | null;
 }
 
 interface SongAudio {
@@ -100,7 +101,7 @@ const SongDetails = () => {
         .single();
 
       if (error) throw error;
-      setSong(data);
+      setSong(data as Song);
 
       // Buscar áudios da música
       const { data: audiosData, error: audiosError } = await supabase
@@ -113,8 +114,9 @@ const SongDetails = () => {
       setAudios(audiosData || []);
 
       // Buscar letra se existir
-      if (data.lyrics_url) {
-        fetchLyrics(data.lyrics_url);
+      const songData = data as Song;
+      if (songData.lyrics_url) {
+        fetchLyrics(songData.lyrics_url);
       }
     } catch (error: any) {
       toast.error('Erro ao carregar música');

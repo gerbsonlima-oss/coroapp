@@ -310,10 +310,10 @@ const EventDetails = () => {
 
   // Listen for audio errors
   useEffect(() => {
-    const handleAudioError = (e: Event) => {
-      const event = e as CustomEvent;
-      if (event.detail?.message) {
-        toast.error(event.detail.message);
+    const handleAudioError = (e: globalThis.Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.message) {
+        toast.error(customEvent.detail.message);
       }
     };
     
@@ -1142,6 +1142,37 @@ const EventDetails = () => {
                         </div>
                       </div>
                     </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0" onClick={e => e.stopPropagation()}>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={async e => {
+                          e.stopPropagation();
+                          try {
+                            const cachedUrl = await getCachedUrl(audio.audio_url);
+                            const response = await fetch(cachedUrl);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            toast.success('Download do áudio iniciado!');
+                          } catch (error) { toast.error('Erro ao baixar áudio'); }
+                        }}>
+                          <Download className="mr-2 h-4 w-4" /> Baixar Áudio
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}>
+                          <FileText className="mr-2 h-4 w-4" /> Baixar Partitura
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 );
               });
