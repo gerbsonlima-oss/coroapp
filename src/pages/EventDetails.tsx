@@ -468,25 +468,32 @@ const EventDetails = () => {
   const handleShareWhatsApp = async (audioUrl: string, songName: string, songType: string, naipe: string) => {
     try {
       const cachedUrl = await getCachedUrl(audioUrl);
-      const response = await fetch(cachedUrl);
-      const blob = await response.blob();
-      const fileName = `${getTypeLabel(songType, typeLabels)} - ${songName} - ${naipe}.mp3`;
-      const file = new File([blob], fileName, { type: 'audio/mpeg' });
+      
+      // Tenta usar Web Share API primeiro (funciona melhor em mobile)
+      if (navigator.share) {
+        try {
+          const response = await fetch(cachedUrl);
+          const blob = await response.blob();
+          const fileName = `${getTypeLabel(songType, typeLabels)} - ${songName} - ${naipe}.mp3`;
+          const file = new File([blob], fileName, { type: 'audio/mpeg' });
 
-      // Verifica se o navegador suporta Web Share API com arquivos
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: songName,
-          text: `🎵 ${getTypeLabel(songType, typeLabels)} - ${songName} (${naipe})`
-        });
-        toast.success('Compartilhado com sucesso!');
-      } else {
-        // Fallback: abre o WhatsApp com uma mensagem (sem arquivo)
-        const text = encodeURIComponent(`🎵 Ouça: ${getTypeLabel(songType, typeLabels)} - ${songName} (${naipe})`);
-        window.open(`https://wa.me/?text=${text}`, '_blank');
-        toast.info('Para compartilhar o arquivo, use um dispositivo móvel');
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: songName,
+              text: `🎵 ${getTypeLabel(songType, typeLabels)} - ${songName} (${naipe})`
+            });
+            toast.success('Compartilhado com sucesso!');
+            return;
+          }
+        } catch (fetchError) {
+          console.log('Web Share com arquivo não disponível, usando fallback');
+        }
       }
+      
+      // Fallback: abre o WhatsApp com link direto do áudio
+      const text = encodeURIComponent(`🎵 ${getTypeLabel(songType, typeLabels)} - ${songName} (${naipe})\n\n${cachedUrl}`);
+      window.open(`https://wa.me/?text=${text}`, '_blank');
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('Erro ao compartilhar:', error);
