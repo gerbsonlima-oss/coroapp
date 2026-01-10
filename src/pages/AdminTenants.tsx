@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useAuth } from '@/hooks/useAuth';
+import { useCopyTenantData } from '@/hooks/useCopyTenantData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,8 +25,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Shield, Upload, X } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Shield, Upload, X, Copy } from 'lucide-react';
 
 interface Tenant {
   id: string;
@@ -41,15 +51,25 @@ interface TenantFormData {
   logo_url: string;
 }
 
+interface CopyDialogData {
+  sourceTenantId: string | null;
+  targetTenantId: string | null;
+  dataType: 'songTypes' | 'songs' | 'events' | null;
+  selectedItems: string[];
+  availableItems: Array<{ id: string; name: string }>;
+}
+
 export default function AdminTenants() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdmin();
+  const { copyData, progress: copyProgress, reset: resetCopyProgress } = useCopyTenantData();
   
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [formData, setFormData] = useState<TenantFormData>({
@@ -61,6 +81,13 @@ export default function AdminTenants() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copyData_state, setCopyData] = useState<CopyDialogData>({
+    sourceTenantId: null,
+    targetTenantId: null,
+    dataType: null,
+    selectedItems: [],
+    availableItems: [],
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -249,6 +276,79 @@ export default function AdminTenants() {
     }
   }
 
+  async function loadAvailableItems() {
+    if (!copyData_state.sourceTenantId || !copyData_state.dataType) return;
+
+    try {
+      let items: Array<{ id: string; name: string }> = [];
+
+      if (copyData_state.dataType === 'songTypes') {
+        const { data } = await supabase
+          .from('song_types')
+          .select('id, name')
+          .eq('tenant_id', copyData_state.sourceTenantId)
+          .order('order_index');
+        items = data || [];
+      } else if (copyData_state.dataType === 'songs') {
+        const { data } = await supabase
+          .from('songs')
+          .select('id, name')
+          .eq('tenant_id', copyData_state.sourceTenantId)
+          .order('name');
+        items = data || [];
+      } else if (copyData_state.dataType === 'events') {
+        const { data } = await supabase
+          .from('events')
+          .select('id, name')
+          .eq('tenant_id', copyData_state.sourceTenantId)
+          .order('date');
+        items = data || [];
+      }
+
+      setCopyData(prev => ({ ...prev, availableItems: items, selectedItems: [] }));
+    } catch (error) {
+      console.error('Erro ao carregar itens:', error);
+      toast.error('Erro ao carregar itens disponíveis');
+    }
+  }
+
+  async function handleCopyData() {
+    if (!copyData_state.sourceTenantId || !copyData_state.targetTenantId || 
+        !copyData_state.dataType || copyData_state.selectedItems.length === 0) {
+      toast.error('Selecione os dados para copiar');
+      return;
+    }
+
+    try {
+      await copyData(
+        copyData_state.sourceTenantId,
+        copyData_state.targetTenantId,
+        copyData_state.dataType,
+        copyData_state.selectedItems
+      );
+      setCopyDialogOpen(false);
+      resetCopyData();
+    } catch (error) {
+      console.error('Erro ao copiar dados:', error);
+    }
+  }
+
+  function resetCopyData() {
+    setCopyData({
+      sourceTenantId: null,
+      targetTenantId: null,
+      dataType: null,
+      selectedItems: [],
+      availableItems: [],
+    });
+    resetCopyProgress();
+  }
+
+  function openCopyDialog() {
+    resetCopyData();
+    setCopyDialogOpen(true);
+  }
+
   if (authLoading || superAdminLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -283,13 +383,183 @@ export default function AdminTenants() {
               Gerencie as organizações/coros do sistema
             </p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openCreateDialog}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Organização
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" onClick={openCopyDialog}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar Dados
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Copiar Dados Entre Organizações</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {/* Tenant Source */}
+                  <div className="space-y-2">
+                    <Label htmlFor="source-tenant">Organização Origem</Label>
+                    <Select 
+                      value={copyData_state.sourceTenantId || ''} 
+                      onValueChange={(value) => {
+                        setCopyData(prev => ({
+                          ...prev,
+                          sourceTenantId: value,
+                          dataType: null,
+                          availableItems: [],
+                          selectedItems: []
+                        }));
+                      }}
+                    >
+                      <SelectTrigger id="source-tenant">
+                        <SelectValue placeholder="Selecione a origem..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenants.map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Data Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="data-type">Tipo de Dado</Label>
+                    <Select 
+                      value={copyData_state.dataType || ''} 
+                      onValueChange={(value: any) => {
+                        setCopyData(prev => ({
+                          ...prev,
+                          dataType: value,
+                          availableItems: [],
+                          selectedItems: []
+                        }));
+                        if (copyData_state.sourceTenantId) {
+                          setTimeout(() => loadAvailableItems(), 0);
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="data-type">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="songTypes">Tipos de Música</SelectItem>
+                        <SelectItem value="songs">Músicas + Áudios</SelectItem>
+                        <SelectItem value="events">Eventos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Target Tenant */}
+                  <div className="space-y-2">
+                    <Label htmlFor="target-tenant">Organização Destino</Label>
+                    <Select 
+                      value={copyData_state.targetTenantId || ''} 
+                      onValueChange={(value) => {
+                        setCopyData(prev => ({
+                          ...prev,
+                          targetTenantId: value
+                        }));
+                      }}
+                    >
+                      <SelectTrigger id="target-tenant">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenants.filter(t => t.id !== copyData_state.sourceTenantId).map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Items List */}
+                  {copyData_state.availableItems.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Selecione os itens ({copyData_state.selectedItems.length}/{copyData_state.availableItems.length})</Label>
+                      <ScrollArea className="h-48 border rounded-lg p-3">
+                        <div className="space-y-2">
+                          {copyData_state.availableItems.map(item => (
+                            <div key={item.id} className="flex items-center gap-2">
+                              <Checkbox
+                                id={item.id}
+                                checked={copyData_state.selectedItems.includes(item.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setCopyData(prev => ({
+                                      ...prev,
+                                      selectedItems: [...prev.selectedItems, item.id]
+                                    }));
+                                  } else {
+                                    setCopyData(prev => ({
+                                      ...prev,
+                                      selectedItems: prev.selectedItems.filter(id => id !== item.id)
+                                    }));
+                                  }
+                                }}
+                              />
+                              <label htmlFor={item.id} className="text-sm cursor-pointer flex-1">
+                                {item.name}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+
+                  {/* Progress Indicator */}
+                  {copyProgress.status === 'loading' && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                      Copiando... {copyProgress.copied}/{copyProgress.total}
+                    </div>
+                  )}
+
+                  {copyProgress.status === 'success' && (
+                    <div className="text-sm text-green-600">
+                      ✓ {copyProgress.copied} itens copiados com sucesso!
+                    </div>
+                  )}
+
+                  {copyProgress.status === 'error' && (
+                    <div className="text-sm text-red-600">
+                      ✗ {copyProgress.error}
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCopyDialogOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleCopyData} 
+                      disabled={
+                        copyProgress.status === 'loading' ||
+                        !copyData_state.sourceTenantId || 
+                        !copyData_state.targetTenantId || 
+                        !copyData_state.dataType ||
+                        copyData_state.selectedItems.length === 0
+                      }
+                    >
+                      Copiar {copyData_state.selectedItems.length} itens
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Organização
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>
@@ -404,6 +674,7 @@ export default function AdminTenants() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Stats */}
