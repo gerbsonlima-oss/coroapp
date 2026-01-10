@@ -15,7 +15,7 @@ import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2 } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -462,6 +462,36 @@ const EventDetails = () => {
     } catch (error) {
       console.error('Erro ao baixar PDF da partitura:', error);
       toast.error('Erro ao baixar PDF da partitura');
+    }
+  };
+
+  const handleShareWhatsApp = async (audioUrl: string, songName: string, songType: string, naipe: string) => {
+    try {
+      const cachedUrl = await getCachedUrl(audioUrl);
+      const response = await fetch(cachedUrl);
+      const blob = await response.blob();
+      const fileName = `${getTypeLabel(songType, typeLabels)} - ${songName} - ${naipe}.mp3`;
+      const file = new File([blob], fileName, { type: 'audio/mpeg' });
+
+      // Verifica se o navegador suporta Web Share API com arquivos
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: songName,
+          text: `🎵 ${getTypeLabel(songType, typeLabels)} - ${songName} (${naipe})`
+        });
+        toast.success('Compartilhado com sucesso!');
+      } else {
+        // Fallback: abre o WhatsApp com uma mensagem (sem arquivo)
+        const text = encodeURIComponent(`🎵 Ouça: ${getTypeLabel(songType, typeLabels)} - ${songName} (${naipe})`);
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+        toast.info('Para compartilhar o arquivo, use um dispositivo móvel');
+      }
+    } catch (error: any) {
+      if (error.name !== 'AbortError') {
+        console.error('Erro ao compartilhar:', error);
+        toast.error('Erro ao compartilhar via WhatsApp');
+      }
     }
   };
 
@@ -982,6 +1012,7 @@ const EventDetails = () => {
                                     } catch (error) { toast.error('Erro ao baixar áudio'); }
                                   }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
                                   <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -1088,6 +1119,7 @@ const EventDetails = () => {
                                 } catch (error) { toast.error('Erro ao baixar áudio'); }
                               }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
                               <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
+                              <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1170,6 +1202,9 @@ const EventDetails = () => {
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}>
                           <FileText className="mr-2 h-4 w-4" /> Baixar Partitura
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}>
+                          <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
