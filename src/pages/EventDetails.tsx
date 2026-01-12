@@ -6,6 +6,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { OfflineBadge } from '@/components/OfflineBadge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,7 +18,7 @@ import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, WifiOff, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, Check, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -121,7 +122,8 @@ const EventDetails = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
-  const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
+  const { saveEvents, isEventAvailableOffline, removeEventOffline } = useOfflineStorage();
+  const isOnline = useOnlineStatus();
   
   const canEdit = isAdmin || isSuperAdmin;
   const isAvailableOffline = id ? isEventAvailableOffline(id) : false;
@@ -174,7 +176,8 @@ const EventDetails = () => {
   const checkOfflineStatus = () => {
     if (!id) return;
     
-    const savedEventsJson = localStorage.getItem('cached_events');
+    // Usa a mesma chave que useOfflineStorage usa para salvar
+    const savedEventsJson = localStorage.getItem('offline_events');
     const savedEvents = savedEventsJson ? JSON.parse(savedEventsJson) : [];
     const isSaved = savedEvents.some((e: any) => e.id === id);
     
@@ -184,7 +187,7 @@ const EventDetails = () => {
       totalSavedEvents: savedEvents.length
     });
     
-    setIsOfflineSaved(isSaved || isAvailableOffline);
+    setIsOfflineSaved(isSaved);
   };
 
   useEffect(() => {
@@ -234,6 +237,7 @@ const EventDetails = () => {
     isLoading: isCaching,
     getCachedUrl,
     isCached,
+    removeFromCache,
     progress
   } = useAudioCache();
   const trackRefs = useRef<{
@@ -646,47 +650,6 @@ const EventDetails = () => {
     }
   };
 
-  const handleRemoveOffline = async () => {
-    if (!event) return;
-    
-    console.log('[Offline] Removing offline data for event:', event.name);
-    
-    try {
-      // Remove metadados do localStorage
-      const savedEventsJson = localStorage.getItem('cached_events');
-      if (savedEventsJson) {
-        const savedEvents: any[] = JSON.parse(savedEventsJson);
-        const newSavedEvents = savedEvents.filter(e => e.id !== event.id);
-        localStorage.setItem('cached_events', JSON.stringify(newSavedEvents));
-      }
-      
-      localStorage.removeItem(`event_audios_${event.id}`);
-      localStorage.removeItem(`event_sheets_${event.id}`);
-      localStorage.removeItem(`event_songs_data_${event.id}`);
-      localStorage.removeItem(`event_types_data_${event.id}`);
-      
-      // Nota: Não removemos do Cache API porque outros eventos podem usar os mesmos arquivos
-      // O cache será gerenciado automaticamente pelo browser
-      
-      console.log('[Offline] Event metadata removed from localStorage');
-      
-      checkOfflineStatus();
-      toast.success('Evento removido do modo offline');
-      
-      // Recarrega a track atual para usar a URL original
-      if (currentTrack) {
-        const currentIndex = filteredPlaylist.findIndex(t => t.id === currentTrack.id);
-        if (currentIndex >= 0) {
-          console.log('[Offline] Reloading current track from network');
-          playTrack(currentIndex);
-        }
-      }
-    } catch (error) {
-      console.error('[Offline] Error removing event:', error);
-      toast.error('Erro ao remover evento offline');
-    }
-  };
-
   const formatTime = (time: number) => {
     if (!isFinite(time) || !time) return '0:00';
     const minutes = Math.floor(time / 60);
@@ -814,6 +777,33 @@ const EventDetails = () => {
     }
   };
 
+  const handleRemoveOffline = async () => {
+    if (!id) return;
+    
+    try {
+      removeEventOffline(id);
+      
+      // Also remove audios from cache
+      const audioUrls: string[] = [];
+      songs.forEach(song => {
+        song.audios.forEach(audio => {
+          audioUrls.push(audio.audio_url);
+        });
+      });
+      
+      for (const url of audioUrls) {
+        await removeFromCache(url);
+      }
+      
+      setIsOfflineSaved(false);
+      checkOfflineStatus();
+      toast.success('Evento removido do modo offline');
+    } catch (error) {
+      console.error('Error removing offline:', error);
+      toast.error('Erro ao remover evento offline');
+    }
+  };
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!event) return <div className="flex min-h-screen items-center justify-center"><p>Evento não encontrado</p></div>;
 
@@ -835,16 +825,22 @@ const EventDetails = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {/* Ações Principais */}
-              {!isOfflineSaved && (
-                <DropdownMenuItem onClick={handleSaveForOffline} disabled={isSavingOffline}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSavingOffline ? 'Salvando...' : 'Salvar para Offline'}
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem onClick={handleShare}>
                 <Share2 className="mr-2 h-4 w-4" />
                 Compartilhar
               </DropdownMenuItem>
+              
+              {isOfflineSaved ? (
+                <DropdownMenuItem onClick={handleRemoveOffline} className="text-destructive focus:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remover do Modo Offline
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handleSaveForOffline} disabled={isSavingOffline}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSavingOffline ? 'Salvando...' : 'Salvar para Acesso Offline'}
+                </DropdownMenuItem>
+              )}
               {event.song_sheet_url && (
                 <DropdownMenuItem onClick={handleDownloadSongSheet}>
                   <FileDown className="mr-2 h-4 w-4" />
@@ -936,14 +932,8 @@ const EventDetails = () => {
               {event.name}
               {isOfflineSaved && <OfflineBadge variant="small" />}
             </h2>
-            <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+            <p className="text-xs text-muted-foreground font-medium">
               {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
-              {isOfflineSaved && (
-                <span className="flex items-center gap-1 text-green-600 dark:text-green-500">
-                  <WifiOff className="h-3 w-3" />
-                  <span className="text-[10px] font-bold">OFFLINE</span>
-                </span>
-              )}
             </p>
             <div className="flex gap-2 mt-2">
               {event.song_sheet_url && (
@@ -1021,12 +1011,13 @@ const EventDetails = () => {
                     </div>
                     {!isCollapsed && (
                       <div className="divide-y divide-primary/10">
-                        {items.map(({ song, audio }) => {
-                          const track = filteredPlaylist.find(t => t.id === audio.id);
-                          const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
-                          return (
-                            <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                         {items.map(({ song, audio }) => {
+                           const track = filteredPlaylist.find(t => t.id === audio.id);
+                           const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
+                           const isAudioCached = isCached(audio.audio_url);
+                           return (
+                             <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
+                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <button onClick={async e => {
                                   e.stopPropagation();
                                   if (song.sheet_music_url || song.sheet_music_pdf_url) {
@@ -1043,17 +1034,21 @@ const EventDetails = () => {
                                 }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${song.sheet_music_url || song.sheet_music_pdf_url ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}>
                                   <Music className="h-5 w-5 shrink-0" />
                                 </button>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
-                                      {getTypeLabel(song.type, typeLabels)}
-                                    </p>
-                                    {isOfflineSaved && <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground truncate font-medium">
-                                    {song.name} • {audio.naipe === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
-                                  </p>
-                                </div>
+                                 <div className="flex-1 min-w-0">
+                                   <div className="flex items-center gap-2">
+                                     <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                                       {getTypeLabel(song.type, typeLabels)}
+                                     </p>
+                                     {isAudioCached && (
+                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
+                                       </div>
+                                     )}
+                                   </div>
+                                   <p className="text-xs text-muted-foreground truncate font-medium">
+                                     {song.name} • {audio.naipe === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                                   </p>
+                                 </div>
                               </div>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -1136,12 +1131,13 @@ const EventDetails = () => {
                 </div>
                 {!isCollapsed && (
                   <div className="divide-y divide-primary/10">
-                    {songAudios.length > 0 ? songAudios.map(audio => {
-                      const track = filteredPlaylist.find(t => t.id === audio.id);
-                      const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
-                      return (
-                        <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                     {songAudios.length > 0 ? songAudios.map(audio => {
+                       const track = filteredPlaylist.find(t => t.id === audio.id);
+                       const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
+                       const isAudioCached = isCached(audio.audio_url);
+                       return (
+                         <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
+                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <button onClick={async e => {
                               e.stopPropagation();
                               if (hasSheetMusic) {
@@ -1153,15 +1149,22 @@ const EventDetails = () => {
                                   setShowSheetViewer(true);
                                 }
                               }
-                            }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
-                            <div className="flex-1 min-w-0">
-                              <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
-                                {getTypeLabel(song.type, typeLabels)}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground font-medium">
-                                {song.name} • {audio.naipe.toLowerCase() === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
-                              </p>
-                            </div>
+                             }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-center gap-2">
+                                 <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                                   {getTypeLabel(song.type, typeLabels)}
+                                 </p>
+                           {isAudioCached && (
+                             <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                               <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
+                             </div>
+                           )}
+                               </div>
+                               <p className="truncate text-xs text-muted-foreground font-medium">
+                                 {song.name} • {audio.naipe.toLowerCase() === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                               </p>
+                             </div>
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -1205,13 +1208,14 @@ const EventDetails = () => {
                   return audioNaipe === target;
                 });
               }));
-              return songAudios.map(audio => {
-                const track = filteredPlaylist.find(t => t.id === audio.id);
-                const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
-                const hasSheetMusic = Boolean(song.sheet_music_url || song.sheet_music_pdf_url);
-                return (
-                  <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+               return songAudios.map(audio => {
+                 const track = filteredPlaylist.find(t => t.id === audio.id);
+                 const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
+                 const hasSheetMusic = Boolean(song.sheet_music_url || song.sheet_music_pdf_url);
+                 const isAudioCached = isCached(audio.audio_url);
+                 return (
+                   <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
+                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <button onClick={async e => {
                         e.stopPropagation();
                         if (hasSheetMusic) {
@@ -1223,20 +1227,27 @@ const EventDetails = () => {
                             setShowSheetViewer(true);
                           }
                         }
-                      }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
-                      <div className="flex-1 min-w-0">
-                        <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
-                          {getTypeLabel(song.type, typeLabels)}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <p className="text-xs text-muted-foreground truncate font-medium flex-1">
-                            {song.name}
-                          </p>
-                          <Badge variant="outline" className="py-0 px-1 text-[9px] h-3.5 bg-secondary/30 border-primary/10 text-muted-foreground shrink-0 uppercase tracking-tighter">
-                            {audio.naipe.toLowerCase() === 'original' ? 'Completa' : audio.naipe}
-                          </Badge>
-                        </div>
-                      </div>
+                       }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
+                       <div className="flex-1 min-w-0">
+                         <div className="flex items-center gap-2">
+                           <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                             {getTypeLabel(song.type, typeLabels)}
+                           </p>
+                           {isAudioCached && (
+                             <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                               <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
+                             </div>
+                           )}
+                         </div>
+                         <div className="flex items-center gap-1.5 mt-0.5">
+                           <p className="text-xs text-muted-foreground truncate font-medium flex-1">
+                             {song.name}
+                           </p>
+                           <Badge variant="outline" className="py-0 px-1 text-[9px] h-3.5 bg-secondary/30 border-primary/10 text-muted-foreground shrink-0 uppercase tracking-tighter">
+                             {audio.naipe.toLowerCase() === 'original' ? 'Completa' : audio.naipe}
+                           </Badge>
+                         </div>
+                       </div>
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

@@ -111,6 +111,31 @@ export const useOfflineStorage = () => {
     }
   }, []);
 
+  const removeEventOffline = useCallback((eventId: string) => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.EVENTS);
+      if (stored) {
+        const events = JSON.parse(stored) as OfflineEvent[];
+        const filtered = events.filter(e => e.id !== eventId);
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(filtered));
+        setOfflineEvents(filtered);
+        
+        // Update metadata
+        const storedMetadata = localStorage.getItem(STORAGE_KEYS.METADATA);
+        if (storedMetadata) {
+          const metadata = JSON.parse(storedMetadata) as OfflineMetadata;
+          metadata.eventCount = filtered.length;
+          localStorage.setItem(STORAGE_KEYS.METADATA, JSON.stringify(metadata));
+          setMetadata(metadata);
+        }
+        
+        console.log(`[Offline Storage] Removed event ${eventId}`);
+      }
+    } catch (error) {
+      console.error('[Offline Storage] Error removing event:', error);
+    }
+  }, []);
+
   const clearOfflineData = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEYS.EVENTS);
@@ -131,6 +156,7 @@ export const useOfflineStorage = () => {
     isEventAvailableOffline,
     saveTenantConfig,
     getTenantConfig,
+    removeEventOffline,
     clearOfflineData,
     loadOfflineEvents,
   };

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Music2, Maximize2, MoreVertical } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Music2, Maximize2, MoreVertical, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAudioCache } from '@/hooks/useAudioCache';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -29,7 +30,8 @@ export function EnhancedMiniPlayer() {
     setSheetMusicSrc,
   } = usePlayer();
 
-  const { getCachedUrl } = useAudioCache();
+  const { getCachedUrl, isCached } = useAudioCache();
+  const isOnline = useOnlineStatus();
   const [isExpanded, setIsExpanded] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -86,7 +88,7 @@ export function EnhancedMiniPlayer() {
   return (
     <>
       <div 
-        className="fixed bottom-[72px] left-0 right-0 z-50 border-t bg-background/98 backdrop-blur-xl shadow-elevated transition-transform duration-300"
+        className="fixed bottom-[68px] left-0 right-0 z-50 border-t bg-background/98 backdrop-blur-xl shadow-elevated transition-transform duration-300"
         style={{ 
           borderColor: 'hsl(var(--player-border))',
         }}
@@ -148,8 +150,13 @@ export function EnhancedMiniPlayer() {
 
               {/* Texto da música */}
               <div className="flex-1 min-w-0">
-                <div className="marquee-container">
+                <div className="marquee-container flex items-center gap-2">
                   <p className="text-sm font-semibold truncate">{currentTrack.songName}</p>
+                  {isCached(currentTrack.url) && (
+                    <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                      <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
                   <span>{currentTrack.naipe}</span>
