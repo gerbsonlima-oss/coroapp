@@ -366,126 +366,93 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const col2X = margin + colWidth + gutter;
 
   // ============================================
-  // HEADER - Design profissional com background
+  // HEADER - Design sóbrio e elegante para igreja
   // ============================================
   const drawHeader = (pageNum: number) => {
-    // Background do header com gradiente visual (cor mais intensa no topo)
-    const headerBgTop: [number, number, number] = [
-      Math.round(255 - (255 - theme.primary[0]) * 0.15),
-      Math.round(255 - (255 - theme.primary[1]) * 0.15),
-      Math.round(255 - (255 - theme.primary[2]) * 0.15),
+    // Background sólido na cor primária do tema (sóbrio e impactante)
+    pdf.setFillColor(...theme.primary);
+    pdf.rect(0, 0, pageWidth, headerHeight, 'F');
+
+    // Sutil gradiente escurecendo para baixo (refinamento visual)
+    const darkerPrimary: [number, number, number] = [
+      Math.max(0, theme.primary[0] - 25),
+      Math.max(0, theme.primary[1] - 25),
+      Math.max(0, theme.primary[2] - 25),
     ];
-    const headerBgBottom: [number, number, number] = [
-      Math.round(255 - (255 - theme.primary[0]) * 0.05),
-      Math.round(255 - (255 - theme.primary[1]) * 0.05),
-      Math.round(255 - (255 - theme.primary[2]) * 0.05),
-    ];
-    
-    // Simular gradiente com faixas
-    const gradSteps = 10;
+    const gradSteps = 6;
     for (let i = 0; i < gradSteps; i++) {
       const ratio = i / gradSteps;
-      const r = Math.round(headerBgTop[0] + (headerBgBottom[0] - headerBgTop[0]) * ratio);
-      const g = Math.round(headerBgTop[1] + (headerBgBottom[1] - headerBgTop[1]) * ratio);
-      const b = Math.round(headerBgTop[2] + (headerBgBottom[2] - headerBgTop[2]) * ratio);
+      const alpha = ratio * 0.3;
+      const r = Math.round(theme.primary[0] - (theme.primary[0] - darkerPrimary[0]) * alpha);
+      const g = Math.round(theme.primary[1] - (theme.primary[1] - darkerPrimary[1]) * alpha);
+      const b = Math.round(theme.primary[2] - (theme.primary[2] - darkerPrimary[2]) * alpha);
       pdf.setFillColor(r, g, b);
-      pdf.rect(0, (headerHeight / gradSteps) * i, pageWidth, headerHeight / gradSteps + 0.5, 'F');
+      const stepHeight = headerHeight / gradSteps;
+      pdf.rect(0, headerHeight - stepHeight * (i + 1), pageWidth, stepHeight + 0.5, 'F');
     }
 
-    // Borda superior colorida (mais espessa e elegante)
-    pdf.setFillColor(...theme.primary);
-    pdf.rect(0, 0, pageWidth, 5, 'F');
+    // Linha de destaque inferior dourada/accent sutil
+    pdf.setFillColor(...theme.accent);
+    pdf.rect(0, headerHeight - 1.5, pageWidth, 1.5, 'F');
 
     let textStartX = margin;
 
-    // Logo do tenant circular (apenas página 1)
+    // Logo do tenant (apenas página 1) - SEM destaque de cor, apenas logo normal
     if (pageNum === 1 && logoDataUrl && logoWidth > 0) {
       try {
-        const logoY = 8;
+        const logoY = (headerHeight - logoHeight) / 2;
         const logoX = margin;
-        const logoRadius = logoHeight / 2;
-        const logoCenterX = logoX + logoRadius;
-        const logoCenterY = logoY + logoRadius;
 
-        // Criar máscara circular usando clip
-        pdf.saveGraphicsState();
-        
-        // Desenhar borda circular elegante
-        pdf.setFillColor(...theme.accent);
-        pdf.circle(logoCenterX, logoCenterY, logoRadius + 1.5, 'F');
-        pdf.setFillColor(...white);
-        pdf.circle(logoCenterX, logoCenterY, logoRadius + 0.8, 'F');
-
-        // Adicionar imagem (será cortada visualmente pelo círculo desenhado)
+        // Adicionar logo diretamente sem bordas coloridas
         const logoFormat = getJsPdfImageFormatFromDataUrl(logoDataUrl);
         pdf.addImage(logoDataUrl, logoFormat, logoX, logoY, logoWidth, logoHeight);
         
-        // Sobrepor bordas para criar efeito circular (máscara externa)
-        pdf.setFillColor(...headerBgBottom);
-        // Cantos
-        pdf.rect(logoX - 2, logoY - 2, logoWidth + 4, 4, 'F'); // topo
-        pdf.rect(logoX - 2, logoY + logoHeight - 2, logoWidth + 4, 4, 'F'); // baixo
-        pdf.rect(logoX - 2, logoY, 4, logoHeight, 'F'); // esquerda
-        pdf.rect(logoX + logoWidth - 2, logoY, 4, logoHeight, 'F'); // direita
-        
-        // Redesenhar borda circular sobre
-        pdf.setDrawColor(...theme.primary);
-        pdf.setLineWidth(1.2);
-        pdf.circle(logoCenterX, logoCenterY, logoRadius, 'S');
-
-        pdf.restoreGraphicsState();
-        textStartX = margin + logoWidth + 8;
+        textStartX = margin + logoWidth + 10;
       } catch (e) {
         console.warn('Erro ao inserir logo:', e);
         textStartX = margin;
       }
     }
 
-    // Título "FOLHETO DE CANTOS" - mais estilizado
-    pdf.setFont('helvetica', 'bolditalic');
-    pdf.setFontSize(10);
-    pdf.setTextColor(...theme.accent);
-    pdf.text('FOLHETO DE CANTOS', textStartX, 12);
+    // Subtítulo "FOLHETO DE CANTOS" - fonte clássica elegante
+    pdf.setFont('times', 'italic');
+    pdf.setFontSize(11);
+    pdf.setTextColor(...white);
+    pdf.text('FOLHETO DE CANTOS', textStartX, 11);
 
-    // Nome do evento em GRANDE DESTAQUE
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.setTextColor(...theme.primary);
-    const maxEventWidth = pageWidth - textStartX - margin - 55;
+    // Nome do evento - GRANDE, fonte serifada clássica
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(20);
+    pdf.setTextColor(...white);
+    const maxEventWidth = pageWidth - textStartX - margin - 50;
     const eventLines = pdf.splitTextToSize(event.name.toUpperCase(), maxEventWidth);
-    pdf.text(eventLines[0], textStartX, 21);
+    pdf.text(eventLines[0], textStartX, 22);
     if (eventLines[1]) {
-      pdf.setFontSize(12);
-      pdf.text(eventLines[1], textStartX, 27);
+      pdf.setFontSize(14);
+      pdf.text(eventLines[1], textStartX, 29);
     }
 
-    // Data e local (direita) - mais impactante
+    // Data e local (canto direito) - destaque elegante
     const infoX = pageWidth - margin;
     
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(14);
-    pdf.setTextColor(...theme.primary);
+    // Data em destaque
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(16);
+    pdf.setTextColor(...white);
     const dateStr = format(new Date(event.date), "dd/MM/yyyy", { locale: ptBR });
     pdf.text(dateStr, infoX, 14, { align: 'right' });
 
+    // Local em itálico elegante
     if (event.location) {
-      pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(9);
-      pdf.setTextColor(...textMedium);
-      const locationLines = pdf.splitTextToSize(event.location, 55);
-      pdf.text(locationLines[0], infoX, 21, { align: 'right' });
+      pdf.setFont('times', 'italic');
+      pdf.setFontSize(10);
+      pdf.setTextColor(255, 255, 255);
+      const locationLines = pdf.splitTextToSize(event.location, 50);
+      pdf.text(locationLines[0], infoX, 22, { align: 'right' });
       if (locationLines[1]) {
-        pdf.text(locationLines[1], infoX, 25, { align: 'right' });
+        pdf.text(locationLines[1], infoX, 27, { align: 'right' });
       }
     }
-
-    // Linha inferior do header - dupla para elegância
-    pdf.setDrawColor(...theme.accent);
-    pdf.setLineWidth(0.3);
-    pdf.line(margin, headerHeight - 2, pageWidth - margin, headerHeight - 2);
-    pdf.setDrawColor(...theme.primary);
-    pdf.setLineWidth(0.8);
-    pdf.line(margin, headerHeight - 0.5, pageWidth - margin, headerHeight - 0.5);
   };
 
   // ============================================
