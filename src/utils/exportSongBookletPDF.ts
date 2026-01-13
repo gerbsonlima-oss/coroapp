@@ -54,20 +54,76 @@ const liturgicalOrder: Record<string, number> = {
   outro: 12,
 };
 
-// Carrega imagem como base64 via fetch para contornar CORS
-const loadImageAsDataUrl = async (url: string): Promise<string | null> => {
+// Carrega imagem com múltiplos fallbacks para contornar CORS
+const loadImageRobust = async (url: string): Promise<string | null> => {
+  if (!url) return null;
+  
+  // Método 1: Canvas com crossOrigin (funciona para maioria dos casos)
+  const canvasResult = await new Promise<string | null>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    const timeout = setTimeout(() => {
+      console.warn('Timeout ao carregar imagem via canvas:', url);
+      img.src = '';
+      resolve(null);
+    }, 5000);
+    
+    img.onload = () => {
+      clearTimeout(timeout);
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const dataUrl = canvas.toDataURL('image/png');
+          console.log('Imagem carregada via canvas:', url.substring(0, 50));
+          resolve(dataUrl);
+        } else {
+          resolve(null);
+        }
+      } catch (e) {
+        console.warn('Erro ao converter imagem para canvas:', e);
+        resolve(null);
+      }
+    };
+    
+    img.onerror = () => {
+      clearTimeout(timeout);
+      console.warn('Erro canvas ao carregar imagem:', url.substring(0, 50));
+      resolve(null);
+    };
+    
+    img.src = url;
+  });
+  
+  if (canvasResult) return canvasResult;
+  
+  // Método 2: Fetch direto (funciona para Supabase Storage público)
   try {
-    const response = await fetch(url, { mode: 'cors' });
-    if (!response.ok) return null;
+    console.log('Tentando fetch direto:', url.substring(0, 50));
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.warn('Fetch falhou com status:', response.status);
+      return null;
+    }
     const blob = await response.blob();
-    return new Promise((resolve) => {
+    return await new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
+      reader.onloadend = () => {
+        console.log('Imagem carregada via fetch:', url.substring(0, 50));
+        resolve(reader.result as string);
+      };
+      reader.onerror = () => {
+        console.warn('FileReader erro');
+        resolve(null);
+      };
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.warn('Erro ao carregar imagem:', url, error);
+    console.warn('Erro ao carregar imagem via fetch:', url.substring(0, 50), error);
     return null;
   }
 };
@@ -226,8 +282,10 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
   // Carregar logo do tenant
   if (tenant?.logo_url) {
-    logoDataUrl = await loadImageAsDataUrl(tenant.logo_url);
+    console.log('Carregando logo do tenant:', tenant.logo_url.substring(0, 60));
+    logoDataUrl = await loadImageRobust(tenant.logo_url);
     if (logoDataUrl) {
+      console.log('Logo carregado com sucesso!');
       const dims = await getImageDimensions(logoDataUrl);
       logoHeight = 18; // altura fixa
       logoWidth = (dims.width / dims.height) * logoHeight;
@@ -235,13 +293,17 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         logoWidth = 35;
         logoHeight = (dims.height / dims.width) * logoWidth;
       }
+    } else {
+      console.warn('Não foi possível carregar o logo do tenant');
     }
   }
 
   // Carregar imagem do evento
   if (event.cover_image_url) {
-    eventImageDataUrl = await loadImageAsDataUrl(event.cover_image_url);
+    console.log('Carregando imagem do evento:', event.cover_image_url.substring(0, 60));
+    eventImageDataUrl = await loadImageRobust(event.cover_image_url);
     if (eventImageDataUrl) {
+      console.log('Imagem do evento carregada com sucesso!');
       const dims = await getImageDimensions(eventImageDataUrl);
       eventImageWidth = colWidth - 6;
       eventImageHeight = (dims.height / dims.width) * eventImageWidth;
@@ -249,6 +311,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         eventImageHeight = 70;
         eventImageWidth = (dims.width / dims.height) * eventImageHeight;
       }
+    } else {
+      console.warn('Não foi possível carregar a imagem do evento');
     }
   }
 
