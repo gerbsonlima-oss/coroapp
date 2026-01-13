@@ -410,37 +410,26 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const col2X = margin + colWidth + gutter;
 
   // ============================================
-  // HEADER - Design moderno e elegante
+  // HEADER - Design limpo com fundo claro
   // ============================================
   const drawHeader = (pageNum: number) => {
-    // Background sólido na cor primária do tema
-    pdf.setFillColor(...theme.primary);
+    // Criar cor esmaecida (muito clara) baseada no tema primário
+    const lightBg: [number, number, number] = [
+      Math.min(255, theme.primary[0] + Math.round((255 - theme.primary[0]) * 0.85)),
+      Math.min(255, theme.primary[1] + Math.round((255 - theme.primary[1]) * 0.85)),
+      Math.min(255, theme.primary[2] + Math.round((255 - theme.primary[2]) * 0.85)),
+    ];
+    
+    // Background claro esmaecido
+    pdf.setFillColor(...lightBg);
     pdf.rect(0, 0, pageWidth, headerHeight, 'F');
 
-    // Sutil gradiente escurecendo para baixo (refinamento visual)
-    const darkerPrimary: [number, number, number] = [
-      Math.max(0, theme.primary[0] - 25),
-      Math.max(0, theme.primary[1] - 25),
-      Math.max(0, theme.primary[2] - 25),
-    ];
-    const gradSteps = 6;
-    for (let i = 0; i < gradSteps; i++) {
-      const ratio = i / gradSteps;
-      const alpha = ratio * 0.3;
-      const r = Math.round(theme.primary[0] - (theme.primary[0] - darkerPrimary[0]) * alpha);
-      const g = Math.round(theme.primary[1] - (theme.primary[1] - darkerPrimary[1]) * alpha);
-      const b = Math.round(theme.primary[2] - (theme.primary[2] - darkerPrimary[2]) * alpha);
-      pdf.setFillColor(r, g, b);
-      const stepHeight = headerHeight / gradSteps;
-      pdf.rect(0, headerHeight - stepHeight * (i + 1), pageWidth, stepHeight + 0.5, 'F');
-    }
-
-    // Linha de destaque inferior dourada/accent
-    pdf.setFillColor(...theme.accent);
-    pdf.rect(0, headerHeight - 1.5, pageWidth, 1.5, 'F');
+    // Linha inferior na cor primária para destaque sutil
+    pdf.setFillColor(...theme.primary);
+    pdf.rect(0, headerHeight - 1, pageWidth, 1, 'F');
 
     let textStartX = margin;
-    const logoSize = 26; // Logo circular maior
+    const logoSize = 22;
 
     // Logo do tenant (apenas página 1)
     if (pageNum === 1 && logoDataUrl && logoWidth > 0) {
@@ -448,66 +437,48 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         const logoY = (headerHeight - logoSize) / 2;
         const logoX = margin;
 
-        // Adicionar logo circular
         const logoFormat = getJsPdfImageFormatFromDataUrl(logoDataUrl);
         pdf.addImage(logoDataUrl, logoFormat, logoX, logoY, logoSize, logoSize);
         
-        textStartX = margin + logoSize + 8;
+        textStartX = margin + logoSize + 6;
       } catch (e) {
         console.warn('Erro ao inserir logo:', e);
         textStartX = margin;
       }
     }
 
-    // Calcular área de texto disponível (evitar sobreposição com data/local)
-    const rightInfoWidth = 55;
-    const maxTextWidth = pageWidth - textStartX - rightInfoWidth - 5;
+    const maxTextWidth = pageWidth - textStartX - margin - 5;
+    const centerX = textStartX + (maxTextWidth / 2);
 
-    // Linha 1: Nome do Tenant (ou nome genérico)
+    // Linha 1: Nome do Tenant - centralizado
     const tenantName = tenant?.name || 'Coro Paroquial';
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.setTextColor(...white);
-    pdf.text(tenantName.toUpperCase(), textStartX, 10);
+    pdf.setFontSize(12);
+    pdf.setTextColor(...theme.primary);
+    pdf.text(tenantName.toUpperCase(), centerX, 11, { align: 'center' });
 
-    // Linha 2: "Subsídio Litúrgico" (fixo) - estilo itálico elegante
-    pdf.setFont('helvetica', 'italic');
+    // Linha 2: "Subsídio Litúrgico" - cor accent/dourada
+    pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
-    pdf.setTextColor(255, 255, 255, 0.9);
-    pdf.text('Subsídio Litúrgico', textStartX, 16);
+    // Usar uma cor intermediária entre primary e accent para o subtítulo
+    const subtitleColor: [number, number, number] = [
+      Math.round((theme.primary[0] + theme.accent[0]) / 2),
+      Math.round((theme.primary[1] + theme.accent[1]) / 2),
+      Math.round((theme.primary[2] + theme.accent[2]) / 2),
+    ];
+    pdf.setTextColor(...subtitleColor);
+    pdf.text('Subsídio Litúrgico', centerX, 17, { align: 'center' });
 
     // Linha 3: Nome do evento - DESTAQUE PRINCIPAL
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(14);
-    pdf.setTextColor(...white);
+    pdf.setTextColor(...theme.primary);
     const eventLines = pdf.splitTextToSize(event.name, maxTextWidth);
-    let eventY = 24;
-    pdf.text(eventLines[0], textStartX, eventY);
+    let eventY = 26;
+    pdf.text(eventLines[0], centerX, eventY, { align: 'center' });
     if (eventLines[1]) {
       pdf.setFontSize(11);
-      pdf.text(eventLines[1], textStartX, eventY + 6);
-    }
-
-    // Data e local (canto direito) - destaque elegante
-    const infoX = pageWidth - margin;
-    
-    // Data em destaque
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(14);
-    pdf.setTextColor(...white);
-    const dateStr = format(new Date(event.date), "dd/MM/yyyy", { locale: ptBR });
-    pdf.text(dateStr, infoX, 12, { align: 'right' });
-
-    // Local em itálico
-    if (event.location) {
-      pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(9);
-      pdf.setTextColor(255, 255, 255);
-      const locationLines = pdf.splitTextToSize(event.location, 50);
-      pdf.text(locationLines[0], infoX, 20, { align: 'right' });
-      if (locationLines[1]) {
-        pdf.text(locationLines[1], infoX, 25, { align: 'right' });
-      }
+      pdf.text(eventLines[1], centerX, eventY + 6, { align: 'center' });
     }
   };
 
