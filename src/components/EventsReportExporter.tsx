@@ -220,70 +220,83 @@ export const EventsReportExporter = ({
             <>
               <div
                 ref={contentRef}
-                className="w-full bg-white rounded-2xl overflow-hidden shadow-lg"
+                className="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-lg"
+                style={{ aspectRatio: '9/16' }}
               >
                 <div className="bg-gradient-to-b from-primary/90 to-primary/70 p-6 text-white">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-white/20 rounded-xl">
-                      <Calendar className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h1 className="text-xl font-bold">Relatório de Eventos</h1>
-                      <p className="text-white/80 text-sm capitalize">{selectedMonthLabel}</p>
-                    </div>
+                  <div className="mb-4 rounded-lg overflow-hidden h-32 bg-white/20 flex items-center justify-center">
+                    <Calendar className="w-12 h-12 text-white/50" />
                   </div>
+
+                  <h1 className="text-2xl font-bold mb-2 leading-tight capitalize">
+                    {selectedMonthLabel}
+                  </h1>
+                  
+                  <div className="flex items-center gap-2 text-sm text-white/90 mb-1">
+                    <span>📅</span>
+                    <span>{events.length} evento{events.length !== 1 ? 's' : ''}</span>
+                  </div>
+
                   <div className="flex items-center gap-2 text-sm text-white/90">
-                    <span className="font-semibold">{events.length}</span>
-                    <span>evento{events.length !== 1 ? 's' : ''} programado{events.length !== 1 ? 's' : ''}</span>
+                    <span>🎵</span>
+                    <span>{events.reduce((acc, e) => acc + e.songs.length, 0)} música{events.reduce((acc, e) => acc + e.songs.length, 0) !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
 
-                <div className="p-4 space-y-4">
+                <div className="p-6 max-h-[calc(100%-240px)] overflow-y-auto">
+                  <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    Eventos do Mês
+                  </h2>
+
                   {events.map((event) => (
-                    <div key={event.id} className="border border-border rounded-xl overflow-hidden">
-                      <div className="bg-muted/50 px-4 py-3 border-b border-border">
-                        <h3 className="font-bold text-foreground text-sm">{event.name}</h3>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                    <div key={event.id} className="mb-5">
+                      <div
+                        className="px-3 py-2 rounded-lg mb-3 border-2 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30"
+                      >
+                        <h3 className="font-bold text-sm text-primary flex items-center gap-2">
+                          <span>📌</span>
+                          {event.name}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {format(new Date(event.date), 'd MMM', { locale: ptBR })}
+                            📅 {format(new Date(event.date), 'd MMM', { locale: ptBR })}
                           </span>
                           {event.location && (
                             <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {event.location}
+                              📍 {event.location}
                             </span>
                           )}
                         </div>
                       </div>
-                      
-                      {event.songs.length > 0 ? (
-                        <div className="p-3 space-y-1.5">
-                          {event.songs.map((song, index) => {
+
+                      <div className="space-y-2 pl-2">
+                        {event.songs.length > 0 ? (
+                          event.songs.map((song, index) => {
                             const typeColor = getTypeColor(song.type);
                             const typeLabel = typeLabels[song.type] || song.type;
                             return (
-                              <div key={song.id} className="flex items-center gap-2">
+                              <div key={song.id} className="flex items-start gap-3">
                                 <span
-                                  className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0"
+                                  className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 mt-0.5"
                                   style={{
                                     backgroundColor: typeColor.bg,
                                     color: typeColor.text,
                                     border: `1px solid ${typeColor.border}`
                                   }}
                                 >
-                                  {typeLabel.substring(0, 8)}
+                                  {typeLabel.substring(0, 6)}
                                 </span>
-                                <span className="text-xs text-foreground truncate">{song.name}</span>
+                                <span className="text-sm text-foreground font-medium flex-1">
+                                  {song.name}
+                                </span>
                               </div>
                             );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="p-3 text-xs text-muted-foreground text-center">
-                          Sem músicas cadastradas
-                        </div>
-                      )}
+                          })
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Sem músicas</span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
