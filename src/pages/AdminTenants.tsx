@@ -35,7 +35,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Pencil, Trash2, Building2, Shield, Upload, X, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Building2, Shield, Upload, X, Copy, Crop } from 'lucide-react';
+import { ImageCropper } from '@/components/ImageCropper';
 
 interface Tenant {
   id: string;
@@ -80,6 +81,9 @@ export default function AdminTenants() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copyData_state, setCopyData] = useState<CopyDialogData>({
     sourceTenantId: null,
@@ -129,6 +133,7 @@ export default function AdminTenants() {
     setEditingTenant(null);
     setFormData({ slug: '', name: '', logo_url: '' });
     setLogoPreview(null);
+    setLogoFile(null);
     setDialogOpen(true);
   }
 
@@ -140,6 +145,7 @@ export default function AdminTenants() {
       logo_url: tenant.logo_url || '',
     });
     setLogoPreview(tenant.logo_url);
+    setLogoFile(null);
     setDialogOpen(true);
   }
 
@@ -148,7 +154,7 @@ export default function AdminTenants() {
     setDeleteDialogOpen(true);
   }
 
-  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleLogoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -164,36 +170,59 @@ export default function AdminTenants() {
       return;
     }
 
-    setUploadingLogo(true);
+    // Create object URL for cropper
+    const imageUrl = URL.createObjectURL(file);
+    setOriginalImageSrc(imageUrl);
+    setShowCropper(true);
+    
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+  }
 
-    try {
-      const fileName = `${formData.slug || 'tenant'}-${Date.now()}.${file.name.split('.').pop()}`;
-      const filePath = `logos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('tenant-logos')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('tenant-logos')
-        .getPublicUrl(filePath);
-
-      setFormData({ ...formData, logo_url: data.publicUrl });
-      setLogoPreview(data.publicUrl);
-      toast.success('Logo enviado com sucesso!');
-    } catch (error: any) {
-      console.error('Error uploading logo:', error);
-      toast.error('Erro ao enviar logo: ' + (error.message || 'Erro desconhecido'));
-    } finally {
-      setUploadingLogo(false);
+  function handleCropComplete(croppedBlob: Blob) {
+    const file = new File([croppedBlob], `cropped-${Date.now()}.webp`, { type: 'image/webp' });
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(croppedBlob));
+    setFormData({ ...formData, logo_url: '' }); // Clear URL since we have a file
+    
+    // Clean up the original image URL
+    if (originalImageSrc) {
+      URL.revokeObjectURL(originalImageSrc);
+      setOriginalImageSrc('');
     }
+  }
+
+  function handleCropperClose() {
+    setShowCropper(false);
+    if (originalImageSrc) {
+      URL.revokeObjectURL(originalImageSrc);
+      setOriginalImageSrc('');
+    }
+  }
+
+  async function uploadLogo(): Promise<string | null> {
+    if (!logoFile) return logoPreview;
+
+    const fileName = `${formData.slug || 'tenant'}-${Date.now()}.webp`;
+    const filePath = `logos/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('tenant-logos')
+      .upload(filePath, logoFile, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('tenant-logos')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
   }
 
   function removeLogo() {
     setFormData({ ...formData, logo_url: '' });
     setLogoPreview(null);
+    setLogoFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -215,15 +244,19 @@ export default function AdminTenants() {
     }
 
     setSaving(true);
+    setUploadingLogo(!!logoFile);
 
     try {
+      // Upload logo if there's a new file
+      const logoUrl = await uploadLogo();
+
       if (editingTenant) {
         const { error } = await supabase
           .from('tenants')
           .update({
             slug: formData.slug.toLowerCase().trim(),
             name: formData.name.trim(),
-            logo_url: formData.logo_url.trim() || null,
+            logo_url: logoUrl || null,
           })
           .eq('id', editingTenant.id);
 
@@ -235,7 +268,7 @@ export default function AdminTenants() {
           .insert({
             slug: formData.slug.toLowerCase().trim(),
             name: formData.name.trim(),
-            logo_url: formData.logo_url.trim() || null,
+            logo_url: logoUrl || null,
           });
 
         if (error) throw error;
@@ -243,6 +276,7 @@ export default function AdminTenants() {
       }
 
       setDialogOpen(false);
+      setLogoFile(null);
       fetchTenants();
     } catch (error: any) {
       console.error('Error saving tenant:', error);
@@ -592,21 +626,23 @@ export default function AdminTenants() {
                 </div>
                 
                 {/* Logo Upload Section */}
-                <div className="space-y-2">
-                  <Label>Logo (usado na splash screen)</Label>
+                <div className="space-y-3">
+                  <Label>Logo (moldura redonda)</Label>
                   
                   {logoPreview ? (
                     <div className="relative w-32 h-32 mx-auto">
-                      <img
-                        src={logoPreview}
-                        alt="Logo preview"
-                        className="w-full h-full object-contain rounded-lg border bg-muted"
-                      />
+                      <div className="w-full h-full rounded-full overflow-hidden border-4 border-primary/20 bg-muted">
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                       <Button
                         type="button"
                         variant="destructive"
                         size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
                         onClick={removeLogo}
                       >
                         <X className="h-3 w-3" />
@@ -615,33 +651,28 @@ export default function AdminTenants() {
                   ) : (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      className="w-32 h-32 mx-auto border-2 border-dashed border-muted-foreground/30 rounded-full flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors bg-muted/50"
                     >
-                      <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Clique para enviar logo
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        PNG, JPG até 2MB
+                      <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                      <p className="text-xs text-muted-foreground text-center px-2">
+                        Adicionar logo
                       </p>
                     </div>
                   )}
+                  
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <Crop className="h-3 w-3" />
+                    <span>A imagem será recortada em círculo</span>
+                  </div>
                   
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={handleLogoUpload}
+                    onChange={handleLogoSelect}
                     className="hidden"
-                    disabled={uploadingLogo}
+                    disabled={uploadingLogo || saving}
                   />
-                  
-                  {uploadingLogo && (
-                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
-                      Enviando...
-                    </div>
-                  )}
                 </div>
 
                 {/* Manual URL input as fallback */}
@@ -777,6 +808,15 @@ export default function AdminTenants() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Cropper Modal */}
+      <ImageCropper
+        open={showCropper}
+        onClose={handleCropperClose}
+        imageSrc={originalImageSrc}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+      />
     </div>
   );
 }
