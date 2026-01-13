@@ -1,5 +1,7 @@
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Event {
   id: string;
@@ -52,86 +54,6 @@ const liturgicalOrder: Record<string, number> = {
   outro: 12,
 };
 
-// Theme system - matching exportEventPDF themes
-const pdfThemes: Record<string, {
-  primaryColor: [number, number, number];
-  accentColor: [number, number, number];
-  textColor: [number, number, number];
-  textLightColor: [number, number, number];
-  whiteColor: [number, number, number];
-}> = {
-  deep_blue_gold: {
-    primaryColor: [25, 55, 109],
-    accentColor: [218, 165, 32],
-    textColor: [51, 51, 51],
-    textLightColor: [100, 100, 100],
-    whiteColor: [255, 255, 255],
-  },
-  emerald_night: {
-    primaryColor: [6, 78, 59],
-    accentColor: [134, 239, 172],
-    textColor: [24, 24, 27],
-    textLightColor: [80, 80, 85],
-    whiteColor: [250, 250, 250],
-  },
-  violet_sunset: {
-    primaryColor: [88, 28, 135],
-    accentColor: [251, 113, 133],
-    textColor: [30, 41, 59],
-    textLightColor: [100, 100, 115],
-    whiteColor: [255, 255, 255],
-  },
-  graphite_copper: {
-    primaryColor: [15, 23, 42],
-    accentColor: [249, 115, 22],
-    textColor: [24, 24, 27],
-    textLightColor: [75, 75, 80],
-    whiteColor: [248, 250, 252],
-  },
-  crimson_noir: {
-    primaryColor: [127, 29, 29],
-    accentColor: [248, 250, 252],
-    textColor: [24, 24, 27],
-    textLightColor: [80, 80, 85],
-    whiteColor: [255, 255, 255],
-  },
-  sunrise_coral: {
-    primaryColor: [220, 100, 75],
-    accentColor: [251, 146, 60],
-    textColor: [17, 24, 39],
-    textLightColor: [90, 90, 95],
-    whiteColor: [255, 255, 255],
-  },
-  ocean_teal: {
-    primaryColor: [13, 148, 136],
-    accentColor: [45, 212, 191],
-    textColor: [17, 24, 39],
-    textLightColor: [80, 90, 90],
-    whiteColor: [255, 255, 255],
-  },
-  forest_sage: {
-    primaryColor: [22, 101, 52],
-    accentColor: [134, 239, 172],
-    textColor: [20, 30, 26],
-    textLightColor: [70, 85, 75],
-    whiteColor: [255, 255, 255],
-  },
-  midnight_purple: {
-    primaryColor: [76, 29, 149],
-    accentColor: [192, 132, 252],
-    textColor: [30, 20, 50],
-    textLightColor: [90, 80, 110],
-    whiteColor: [255, 255, 255],
-  },
-  wine_burgundy: {
-    primaryColor: [136, 19, 55],
-    accentColor: [251, 207, 232],
-    textColor: [40, 20, 30],
-    textLightColor: [100, 70, 80],
-    whiteColor: [255, 255, 255],
-  },
-};
-
 const loadImage = (url: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -168,11 +90,6 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
 export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?: TenantInfo) => {
   const typeLabels = await loadTypeLabels();
   
-  // Get theme colors based on event's pdf_theme
-  const themeKey = event.pdf_theme || 'deep_blue_gold';
-  const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
-  
-  // Filter songs that have lyrics and sort by liturgical order
   const songsWithLyrics = songs
     .filter(song => song.lyrics && song.lyrics.trim())
     .sort((a, b) => {
@@ -186,316 +103,430 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   }
 
   const pdf = new jsPDF('p', 'mm', 'a4');
-  const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
-  const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
   
-  // Layout settings - matching reference image
-  const margin = 10;
-  const columnGap = 8;
-  const columnWidth = (pageWidth - 2 * margin - columnGap) / 2; // ~91mm each
-  const headerHeight = 22;
-  const footerHeight = 8;
-  const contentStartY = headerHeight + 5;
-  const contentEndY = pageHeight - footerHeight - 3;
+  // Theme system - matching event configuration
+  const pdfThemes: Record<string, {
+    primary: [number, number, number];
+    accent: [number, number, number];
+    dark: [number, number, number];
+    light: [number, number, number];
+  }> = {
+    deep_blue_gold: {
+      primary: [25, 55, 109],
+      accent: [218, 165, 32],
+      dark: [40, 40, 50],
+      light: [248, 250, 253],
+    },
+    emerald_night: {
+      primary: [6, 78, 59],
+      accent: [134, 200, 150],
+      dark: [20, 30, 25],
+      light: [248, 250, 248],
+    },
+    violet_sunset: {
+      primary: [88, 28, 135],
+      accent: [200, 150, 180],
+      dark: [35, 20, 45],
+      light: [250, 248, 252],
+    },
+    graphite_copper: {
+      primary: [50, 50, 60],
+      accent: [180, 110, 60],
+      dark: [30, 30, 35],
+      light: [250, 250, 250],
+    },
+    crimson_noir: {
+      primary: [127, 29, 29],
+      accent: [180, 100, 100],
+      dark: [40, 20, 25],
+      light: [250, 248, 248],
+    },
+    sunrise_coral: {
+      primary: [180, 80, 50],
+      accent: [220, 140, 100],
+      dark: [40, 25, 20],
+      light: [252, 250, 248],
+    },
+    ocean_teal: {
+      primary: [13, 120, 110],
+      accent: [100, 180, 170],
+      dark: [20, 35, 35],
+      light: [248, 251, 250],
+    },
+    forest_sage: {
+      primary: [40, 90, 60],
+      accent: [120, 160, 110],
+      dark: [25, 35, 30],
+      light: [248, 250, 248],
+    },
+    midnight_purple: {
+      primary: [70, 40, 120],
+      accent: [150, 120, 180],
+      dark: [35, 25, 45],
+      light: [250, 248, 252],
+    },
+    wine_burgundy: {
+      primary: [110, 30, 50],
+      accent: [170, 100, 120],
+      dark: [40, 20, 30],
+      light: [252, 248, 250],
+    },
+  };
+
+  const themeKey = event.pdf_theme || 'deep_blue_gold';
+  const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
+
+  const white: [number, number, number] = [255, 255, 255];
+  const textDark: [number, number, number] = [35, 35, 45];
+  const textLight: [number, number, number] = [90, 90, 100];
+  
+  // Layout settings
+  const margin = 12;
+  const gutter = 10;
+  const colWidth = (pageWidth - 2 * margin - gutter) / 2;
+  const headerHeight = 42;
+  const footerHeight = 12;
+  const contentStart = headerHeight + 5;
+  const contentEnd = pageHeight - footerHeight;
+
+  // State
+  let currentPage = 1;
+  let col1Y = contentStart;
+  let col2Y = contentStart;
+  let currentCol = 1;
 
   // ============================================
-  // HELPER: Draw header with theme color
+  // HELPER: Clean, minimal header with logo
   // ============================================
   const drawHeader = async (pageNum: number) => {
-    // Solid background with primary color
-    pdf.setFillColor(...theme.primaryColor);
+    // Clean white background
+    pdf.setFillColor(255, 255, 255);
     pdf.rect(0, 0, pageWidth, headerHeight, 'F');
 
-    // Accent line at bottom of header
-    pdf.setDrawColor(...theme.accentColor);
-    pdf.setLineWidth(0.8);
-    pdf.line(margin, headerHeight - 1, pageWidth - margin, headerHeight - 1);
+    // Top colored border (subtle)
+    pdf.setFillColor(...theme.primary);
+    pdf.rect(0, 0, pageWidth, 2.5, 'F');
 
-    let textStartX = margin;
+    let logoEndX = margin;
 
-    // Add tenant logo if available
-    if (tenant?.logo_url) {
+    // Logo (left side)
+    if (tenant?.logo_url && pageNum === 1) {
       try {
         const logoImg = await loadImage(tenant.logo_url);
-        const maxLogoHeight = 16;
+        const logoHeight = 24;
         const logoAspect = logoImg.width / logoImg.height;
-        const logoHeight = maxLogoHeight;
         const logoWidth = logoHeight * logoAspect;
         
-        const logoY = (headerHeight - logoHeight) / 2;
-        pdf.addImage(logoImg, 'PNG', margin, logoY, logoWidth, logoHeight);
-        textStartX = margin + logoWidth + 6;
+        pdf.addImage(logoImg, 'PNG', margin, 8, logoWidth, logoHeight);
+        logoEndX = margin + logoWidth + 8;
       } catch (error) {
-        console.error('Erro ao carregar logo do tenant:', error);
+        console.error('Logo error:', error);
       }
     }
 
-    // Title and event info
-    pdf.setTextColor(...theme.whiteColor);
-    
-    // Main title
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(14);
-    pdf.text('FOLHETO DE CANTOS', textStartX, 10);
-
-    // Event name
-    pdf.setFont('times', 'normal');
-    pdf.setFontSize(11);
-    const availableWidth = pageWidth - textStartX - margin;
-    const eventNameLines = pdf.splitTextToSize(event.name, availableWidth);
-    pdf.text(eventNameLines[0], textStartX, 16);
-
-    // Location (if available, on right side)
-    if (event.location && pageNum === 1) {
-      pdf.setFontSize(8);
-      pdf.setTextColor(220, 220, 230);
-      const locationText = event.location;
-      const locationWidth = pdf.getTextWidth(locationText);
-      pdf.text(locationText, pageWidth - margin - locationWidth, 16);
-    }
-  };
-
-  // ============================================
-  // HELPER: Draw footer
-  // ============================================
-  const drawFooter = (pageNum: number, totalPages: number) => {
-    const footerY = pageHeight - 5;
-    
-    // Accent line above footer
-    pdf.setDrawColor(...theme.accentColor);
-    pdf.setLineWidth(0.3);
-    pdf.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
-
-    pdf.setFont('times', 'normal');
-    pdf.setFontSize(7);
-    pdf.setTextColor(...theme.textLightColor);
-
-    // Tenant name on the left
-    if (tenant?.name) {
-      pdf.text(tenant.name, margin, footerY);
-    }
-
-    // Page number on the right
-    const pageText = `${pageNum}/${totalPages}`;
-    const pageTextWidth = pdf.getTextWidth(pageText);
-    pdf.text(pageText, pageWidth - margin - pageTextWidth, footerY);
-  };
-
-  // ============================================
-  // INITIAL SETUP - First page
-  // ============================================
-  await drawHeader(1);
-
-  // Column tracking
-  const col1X = margin;
-  const col2X = margin + columnWidth + columnGap;
-  let col1Y = contentStartY;
-  let col2Y = contentStartY;
-  let currentColumn = 1;
-  let pageNum = 1;
-
-  // ============================================
-  // HELPER: Draw section header with BADGE + BAR (reference style)
-  // ============================================
-  const drawSectionHeader = (sectionNumber: number, typeLabel: string): void => {
-    const badgeSize = 6; // Square badge for number
-    const barHeight = 6;
-    const x = currentColumn === 1 ? col1X : col2X;
-    let y = currentColumn === 1 ? col1Y : col2Y;
-    
-    // Check if we need to switch column or page
-    if (y + barHeight + 15 > contentEndY) {
-      if (currentColumn === 1) {
-        currentColumn = 2;
-        y = col2Y;
-      } else {
-        pdf.addPage();
-        pageNum++;
-        drawHeader(pageNum);
-        currentColumn = 1;
-        col1Y = contentStartY;
-        col2Y = contentStartY;
-        y = col1Y;
-      }
-    }
-    
-    // Calculate text width for the label bar
+    // Clean typography
+    pdf.setTextColor(...theme.primary);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
-    const labelText = typeLabel.toUpperCase();
-    const labelWidth = pdf.getTextWidth(labelText) + 6; // padding
-    
-    // Draw number badge (square with number)
-    pdf.setFillColor(...theme.primaryColor);
-    pdf.roundedRect(x, y, badgeSize, badgeSize, 1, 1, 'F');
-    
-    // Number in badge (centered)
-    pdf.setTextColor(...theme.whiteColor);
+    pdf.setFontSize(20);
+    pdf.text('FOLHETO DE CANTOS', logoEndX, 16);
+
+    // Minimal subtitle
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...textLight);
+    pdf.text('celebração litúrgica', logoEndX, 21);
+
+    // Event title (clean)
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10);
-    const numText = String(sectionNumber);
-    const numWidth = pdf.getTextWidth(numText);
-    pdf.text(numText, x + (badgeSize - numWidth) / 2, y + 4.3);
-    
-    // Draw label bar (adjacent to badge)
-    const barX = x + badgeSize + 1.5;
-    const barWidth = Math.min(labelWidth, columnWidth - badgeSize - 4);
-    pdf.setFillColor(...theme.primaryColor);
-    pdf.roundedRect(barX, y, barWidth, barHeight, 1, 1, 'F');
-    
-    // Label text in bar
-    pdf.setTextColor(...theme.whiteColor);
+    pdf.setTextColor(...textDark);
+    const eventLines = pdf.splitTextToSize(event.name.toUpperCase(), pageWidth - logoEndX - margin * 2);
+    pdf.text(eventLines[0], logoEndX, 30);
+
+    // Right side info
+    if (pageNum === 1) {
+      const infoX = pageWidth - margin;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...textLight);
+      
+      const dateStr = format(new Date(event.date), 'dd/MM/yyyy', { locale: ptBR });
+      pdf.text(dateStr, infoX, 14, { align: 'right' });
+
+      if (event.location) {
+        pdf.text(event.location, infoX, 19, { align: 'right' });
+      }
+    }
+
+    // Subtle bottom line
+    pdf.setDrawColor(...theme.primary);
+    pdf.setLineWidth(0.3);
+    pdf.line(margin, headerHeight - 1, pageWidth - margin, headerHeight - 1);
+  };
+
+  // ============================================
+  // HELPER: Clean footer
+  // ============================================
+  const drawFooter = (pageNum: number, totalPages: number) => {
+    const footY = pageHeight - 5;
+
+    // Subtle top line
+    pdf.setDrawColor(...theme.accent);
+    pdf.setLineWidth(0.3);
+    pdf.line(margin, footY - 6, pageWidth - margin, footY - 6);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.setTextColor(...textLight);
+
+    if (tenant?.name) {
+      pdf.text(tenant.name, margin, footY);
+    }
+
+    // Page number
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
-    pdf.text(labelText, barX + 3, y + 4.2);
-    
-    // Update column Y position
-    const newY = y + barHeight + 2;
-    if (currentColumn === 1) {
-      col1Y = newY;
-    } else {
-      col2Y = newY;
-    }
+    const pageStr = `${pageNum}/${totalPages}`;
+    const pageWidth_text = pdf.getTextWidth(pageStr);
+    pdf.text(pageStr, pageWidth - margin - pageWidth_text, footY);
   };
 
-  // ============================================
-  // HELPER: Add content to column with proper flow
-  // ============================================
-  const addContent = (
-    lines: string[],
-    fontSize: number,
-    fontStyle: 'normal' | 'bold' | 'italic',
-    color: [number, number, number],
-    spaceBefore: number = 0,
-    indent: number = 0
-  ): void => {
-    pdf.setFont('times', fontStyle);
-    pdf.setFontSize(fontSize);
-    pdf.setTextColor(...color);
-    
-    const lineHeight = fontSize * 0.4;
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const x = (currentColumn === 1 ? col1X : col2X) + indent;
-      let y = currentColumn === 1 ? col1Y : col2Y;
-      
-      // Add space before first line only
-      if (i === 0) {
-        y += spaceBefore;
-      }
-      
-      // Check if we need to switch column or page
-      if (y + lineHeight > contentEndY) {
-        if (currentColumn === 1) {
-          currentColumn = 2;
-          y = col2Y + (i === 0 ? spaceBefore : 0);
-        } else {
-          // New page
-          pdf.addPage();
-          pageNum++;
-          drawHeader(pageNum);
-          currentColumn = 1;
-          col1Y = contentStartY;
-          col2Y = contentStartY;
-          y = col1Y + (i === 0 ? spaceBefore : 0);
-        }
-      }
-      
-      const currentX = (currentColumn === 1 ? col1X : col2X) + indent;
-      pdf.text(line, currentX, y);
-      
-      const newY = y + lineHeight;
-      if (currentColumn === 1) {
-        col1Y = newY;
-      } else {
-        col2Y = newY;
-      }
-    }
-  };
+  await drawHeader(1);
+
+  const col1X = margin;
+  const col2X = margin + colWidth + gutter;
 
   // ============================================
-  // PROCESS SONGS
+  // Featured image in first column
   // ============================================
-  let songIndex = 0;
-  
-  for (const song of songsWithLyrics) {
-    songIndex++;
-    
-    // Add space before section (except first)
-    if (songIndex > 1) {
-      if (currentColumn === 1) {
-        col1Y += 5; // 5mm between sections
-      } else {
-        col2Y += 5;
-      }
-    }
-    
-    // Type header with badge + bar style (numbered)
-    const typeLabel = typeLabels[song.type] || song.type || 'Outro';
-    drawSectionHeader(songIndex, typeLabel);
-    
-    // Song name (bold, 11pt)
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(11);
-    const nameLines = pdf.splitTextToSize(song.name, columnWidth - 4) as string[];
-    addContent(nameLines, 11, 'bold', theme.textColor, 1.5);
-    
-    // Lyrics
-    if (song.lyrics) {
-      const lyricsLines = song.lyrics.split('\n');
-      let isRefrain = false;
-      let previousWasEmpty = false;
+  if (event.cover_image_url) {
+    try {
+      const img = await loadImage(event.cover_image_url);
       
-      for (const line of lyricsLines) {
-        const trimmedLine = line.trim();
-        
-        // Handle empty lines (add spacing between stanzas)
-        if (!trimmedLine) {
-          if (!previousWasEmpty) {
-            if (currentColumn === 1) {
-              col1Y += 2.5; // 2.5mm between stanzas
-            } else {
-              col2Y += 2.5;
-            }
-          }
-          previousWasEmpty = true;
-          isRefrain = false;
-          continue;
-        }
-        previousWasEmpty = false;
-        
-        // Detect refrain markers
-        const lowerLine = trimmedLine.toLowerCase();
-        if (lowerLine.startsWith('r:') || 
-            lowerLine.startsWith('refrão:') ||
-            lowerLine.startsWith('refrao:') ||
-            lowerLine.startsWith('||:') ||
-            lowerLine === 'refrão' ||
-            lowerLine === 'refrao') {
-          isRefrain = true;
-        }
-        
-        // Detect numbered stanzas (reset refrain)
-        if (/^\d+\./.test(trimmedLine)) {
-          isRefrain = false;
-        }
-        
-        // Format and add line
-        const fontStyle = isRefrain ? 'italic' : 'normal';
-        const indent = isRefrain ? 5 : 0; // 5mm indent for refrains
-        const color: [number, number, number] = isRefrain ? theme.textLightColor : theme.textColor;
-        
-        pdf.setFont('times', fontStyle);
-        pdf.setFontSize(10);
-        const formattedLines = pdf.splitTextToSize(trimmedLine, columnWidth - 4 - indent) as string[];
-        addContent(formattedLines, 10, fontStyle, color, 0, indent);
+      const imgWidth = colWidth - 4;
+      const maxHeight = 90;
+      
+      let imgHeight = (img.height / img.width) * imgWidth;
+      if (imgHeight > maxHeight) {
+        imgHeight = maxHeight;
       }
+      
+      const imgX = col1X + (colWidth - imgWidth) / 2;
+      
+      // Minimal frame
+      pdf.setDrawColor(...theme.accent);
+      pdf.setLineWidth(0.5);
+      pdf.rect(imgX - 1, col1Y - 1, imgWidth + 2, imgHeight + 2);
+      
+      pdf.addImage(img, 'JPEG', imgX, col1Y, imgWidth, imgHeight);
+      col1Y += imgHeight + 8;
+    } catch (e) {
+      console.error('Image error:', e);
     }
   }
 
   // ============================================
-  // ADD FOOTERS TO ALL PAGES
+  // HELPER: Clean song section
+  // ============================================
+  const drawSongSection = (num: number, label: string) => {
+    const x = currentCol === 1 ? col1X : col2X;
+    let y = currentCol === 1 ? col1Y : col2Y;
+
+    if (y + 35 > contentEnd) {
+      if (currentCol === 1) {
+        currentCol = 2;
+        y = col2Y;
+      } else {
+        pdf.addPage();
+        currentPage++;
+        drawHeader(currentPage);
+        currentCol = 1;
+        col1Y = contentStart;
+        col2Y = contentStart;
+        y = col1Y;
+      }
+    }
+
+    // Clean minimal design
+    pdf.setFillColor(...theme.light);
+    pdf.rect(x, y, colWidth, 6.5);
+
+    // Left accent bar
+    pdf.setFillColor(...theme.primary);
+    pdf.rect(x, y, 1.5, 6.5, 'F');
+
+    // Number circle
+    pdf.setFillColor(...theme.accent);
+    pdf.circle(x + 6, y + 3.25, 2.2, 'F');
+    
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    const numText = String(num);
+    const numW = pdf.getTextWidth(numText);
+    pdf.text(numText, x + 6 - (numW / 2), y + 3.6);
+
+    // Label
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(...theme.primary);
+    pdf.text(label.toUpperCase(), x + 10, y + 3.8);
+
+    const newY = y + 8.5;
+    if (currentCol === 1) col1Y = newY;
+    else col2Y = newY;
+  };
+
+  // ============================================
+  // HELPER: Add text with flow
+  // ============================================
+  const addText = (text: string, size: number, style: 'normal' | 'bold' | 'italic', color: [number, number, number], spaceBefore = 0) => {
+    const x = currentCol === 1 ? col1X : col2X;
+    let y = (currentCol === 1 ? col1Y : col2Y) + spaceBefore;
+    const lineHeight = size * 0.38;
+    
+    pdf.setFont('helvetica', style);
+    pdf.setFontSize(size);
+    pdf.setTextColor(...color);
+
+    const lines = pdf.splitTextToSize(text, colWidth - 3) as string[];
+
+    for (const line of lines) {
+      if (y + lineHeight > contentEnd) {
+        if (currentCol === 1) {
+          currentCol = 2;
+          y = col2Y;
+        } else {
+          pdf.addPage();
+          currentPage++;
+          drawHeader(currentPage);
+          currentCol = 1;
+          col1Y = contentStart;
+          col2Y = contentStart;
+          y = col1Y;
+        }
+      }
+
+      pdf.text(line, x + 2, y);
+      y += lineHeight;
+    }
+
+    if (currentCol === 1) col1Y = y;
+    else col2Y = y;
+  };
+
+  // ============================================
+  // Process songs
+  // ============================================
+  let songIndex = 0;
+  for (const song of songsWithLyrics) {
+    songIndex++;
+
+    if (songIndex > 1) {
+      if (currentCol === 1) col1Y += 4;
+      else col2Y += 4;
+    }
+
+    const typeLabel = typeLabels[song.type] || song.type || 'Música';
+    drawSongSection(songIndex, typeLabel);
+
+    // Song title
+    addText(song.name, 10, 'bold', theme.primary, 1.5);
+
+    // Minimal separator
+    const lineX = currentCol === 1 ? col1X : col2X;
+    const lineY = currentCol === 1 ? col1Y : col2Y;
+    pdf.setDrawColor(...theme.accent);
+    pdf.setLineWidth(0.2);
+    pdf.line(lineX + 2, lineY - 0.3, lineX + colWidth - 2, lineY - 0.3);
+
+    if (currentCol === 1) col1Y += 1;
+    else col2Y += 1;
+
+    // Lyrics
+    if (song.lyrics) {
+      const lyricsLines = song.lyrics.split('\n');
+      let isRefrain = false;
+      let prevEmpty = false;
+
+      for (const line of lyricsLines) {
+        const trimmed = line.trim();
+        
+        if (!trimmed) {
+          if (!prevEmpty) {
+            if (currentCol === 1) col1Y += 1.5;
+            else col2Y += 1.5;
+          }
+          prevEmpty = true;
+          isRefrain = false;
+          continue;
+        }
+        prevEmpty = false;
+
+        const hasMarker = /^(PR:|AS:|TODOS:|T:|C:|A:|L:)/i.test(trimmed);
+        const isRefrainLine = /^(R:|REFRÃO:|REFRAO:|REF:)/i.test(trimmed);
+
+        if (isRefrainLine) {
+          isRefrain = true;
+          addText(trimmed, 8.5, 'bold', textDark, 0.8);
+          continue;
+        }
+
+        if (/^\d+\./.test(trimmed)) isRefrain = false;
+
+        let style: 'normal' | 'bold' | 'italic' = 'normal';
+        let color = textDark;
+
+        if (hasMarker) {
+          style = 'bold';
+          color = theme.primary;
+        } else if (isRefrain) {
+          style = 'italic';
+          color = textLight;
+        }
+
+        pdf.setFont('helvetica', style);
+        pdf.setFontSize(8.8);
+        pdf.setTextColor(...color);
+
+        const x = (currentCol === 1 ? col1X : col2X) + 2;
+        let y = (currentCol === 1 ? col1Y : col2Y);
+
+        const textLines = pdf.splitTextToSize(trimmed, colWidth - 4) as string[];
+        const lineHeight = 8.8 * 0.38;
+
+        for (const textLine of textLines) {
+          if (y + lineHeight > contentEnd) {
+            if (currentCol === 1) {
+              currentCol = 2;
+              y = col2Y;
+            } else {
+              pdf.addPage();
+              currentPage++;
+              drawHeader(currentPage);
+              currentCol = 1;
+              col1Y = contentStart;
+              col2Y = contentStart;
+              y = col1Y;
+            }
+          }
+          pdf.text(textLine, x, y);
+          y += lineHeight;
+        }
+
+        if (currentCol === 1) col1Y = y;
+        else col2Y = y;
+      }
+    }
+
+    if (currentCol === 1) col1Y += 2;
+    else col2Y += 2;
+  }
+
+  // ============================================
+  // Add footers
   // ============================================
   const totalPages = pdf.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
@@ -504,8 +535,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   }
 
   // ============================================
-  // SAVE PDF
+  // Save
   // ============================================
-  const fileName = `Folheto de Cantos - ${event.name}.pdf`;
+  const fileName = `Folheto_Cantos_${event.name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
   pdf.save(fileName);
 };
