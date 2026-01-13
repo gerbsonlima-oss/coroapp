@@ -7,6 +7,7 @@ interface Event {
   date: string;
   location: string | null;
   cover_image_url: string | null;
+  pdf_theme?: string | null;
 }
 
 interface Song {
@@ -51,6 +52,86 @@ const liturgicalOrder: Record<string, number> = {
   outro: 12,
 };
 
+// Theme system - matching exportEventPDF themes
+const pdfThemes: Record<string, {
+  primaryColor: [number, number, number];
+  accentColor: [number, number, number];
+  textColor: [number, number, number];
+  textLightColor: [number, number, number];
+  whiteColor: [number, number, number];
+}> = {
+  deep_blue_gold: {
+    primaryColor: [25, 55, 109],
+    accentColor: [218, 165, 32],
+    textColor: [51, 51, 51],
+    textLightColor: [100, 100, 100],
+    whiteColor: [255, 255, 255],
+  },
+  emerald_night: {
+    primaryColor: [6, 78, 59],
+    accentColor: [134, 239, 172],
+    textColor: [24, 24, 27],
+    textLightColor: [80, 80, 85],
+    whiteColor: [250, 250, 250],
+  },
+  violet_sunset: {
+    primaryColor: [88, 28, 135],
+    accentColor: [251, 113, 133],
+    textColor: [30, 41, 59],
+    textLightColor: [100, 100, 115],
+    whiteColor: [255, 255, 255],
+  },
+  graphite_copper: {
+    primaryColor: [15, 23, 42],
+    accentColor: [249, 115, 22],
+    textColor: [24, 24, 27],
+    textLightColor: [75, 75, 80],
+    whiteColor: [248, 250, 252],
+  },
+  crimson_noir: {
+    primaryColor: [127, 29, 29],
+    accentColor: [248, 250, 252],
+    textColor: [24, 24, 27],
+    textLightColor: [80, 80, 85],
+    whiteColor: [255, 255, 255],
+  },
+  sunrise_coral: {
+    primaryColor: [180, 83, 9],
+    accentColor: [251, 146, 60],
+    textColor: [17, 24, 39],
+    textLightColor: [90, 90, 95],
+    whiteColor: [255, 255, 255],
+  },
+  ocean_teal: {
+    primaryColor: [13, 148, 136],
+    accentColor: [45, 212, 191],
+    textColor: [17, 24, 39],
+    textLightColor: [80, 90, 90],
+    whiteColor: [255, 255, 255],
+  },
+  forest_sage: {
+    primaryColor: [22, 101, 52],
+    accentColor: [134, 239, 172],
+    textColor: [20, 30, 26],
+    textLightColor: [70, 85, 75],
+    whiteColor: [255, 255, 255],
+  },
+  midnight_purple: {
+    primaryColor: [76, 29, 149],
+    accentColor: [192, 132, 252],
+    textColor: [30, 20, 50],
+    textLightColor: [90, 80, 110],
+    whiteColor: [255, 255, 255],
+  },
+  wine_burgundy: {
+    primaryColor: [136, 19, 55],
+    accentColor: [251, 207, 232],
+    textColor: [40, 20, 30],
+    textLightColor: [100, 70, 80],
+    whiteColor: [255, 255, 255],
+  },
+};
+
 const loadImage = (url: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -84,25 +165,12 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
   }
 };
 
-// Color system - Based on reference image
-const COLORS = {
-  primary: { r: 25, g: 55, b: 109 },         // #19376D - Deep blue
-  primaryLight: { r: 45, g: 85, b: 149 },    // Lighter blue for gradient
-  sectionBg: { r: 230, g: 100, b: 110 },     // Coral/pink for section headers
-  sectionText: { r: 255, g: 255, b: 255 },   // White text on section headers
-  gold: { r: 218, g: 165, b: 32 },           // #DAA520 - Gold accent
-  text: { r: 51, g: 51, b: 51 },             // #333333
-  textLight: { r: 100, g: 100, b: 100 },     // #646464
-  white: { r: 255, g: 255, b: 255 },         // #FFFFFF
-  background: { r: 250, g: 250, b: 252 },    // #FAFAFC - Subtle off-white
-};
-
-const toRGB = (color: { r: number; g: number; b: number }): [number, number, number] => {
-  return [color.r, color.g, color.b];
-};
-
 export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?: TenantInfo) => {
   const typeLabels = await loadTypeLabels();
+  
+  // Get theme colors based on event's pdf_theme
+  const themeKey = event.pdf_theme || 'deep_blue_gold';
+  const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
   
   // Filter songs that have lyrics and sort by liturgical order
   const songsWithLyrics = songs
@@ -120,85 +188,70 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
   const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
-  const margin = 12;
-  const columnGap = 8;
-  const columnWidth = (pageWidth - 2 * margin - columnGap) / 2;
-  const headerHeight = 45;
-  const footerHeight = 12;
-  const contentStartY = headerHeight + 8;
-  const contentEndY = pageHeight - footerHeight;
+  
+  // Compact layout settings
+  const margin = 10;
+  const columnGap = 6;
+  const columnWidth = (pageWidth - 2 * margin - columnGap) / 2; // 92mm each
+  const headerHeight = 20;
+  const footerHeight = 8;
+  const contentStartY = headerHeight + 4;
+  const contentEndY = pageHeight - footerHeight - 2;
 
   // ============================================
-  // HELPER: Draw gradient header
+  // HELPER: Draw sober header with theme color
   // ============================================
   const drawHeader = async (pageNum: number) => {
-    // Background gradient simulation (multiple rectangles)
-    const gradientSteps = 20;
-    const stepHeight = headerHeight / gradientSteps;
-    
-    for (let i = 0; i < gradientSteps; i++) {
-      const ratio = i / gradientSteps;
-      const r = Math.round(COLORS.primary.r + (COLORS.primaryLight.r - COLORS.primary.r) * ratio * 0.3);
-      const g = Math.round(COLORS.primary.g + (COLORS.primaryLight.g - COLORS.primary.g) * ratio * 0.3);
-      const b = Math.round(COLORS.primary.b + (COLORS.primaryLight.b - COLORS.primary.b) * ratio * 0.3);
-      pdf.setFillColor(r, g, b);
-      pdf.rect(0, i * stepHeight, pageWidth, stepHeight + 0.5, 'F');
-    }
+    // Solid background with primary color
+    pdf.setFillColor(...theme.primaryColor);
+    pdf.rect(0, 0, pageWidth, headerHeight, 'F');
 
-    // Decorative gold line at bottom of header
-    pdf.setDrawColor(...toRGB(COLORS.gold));
-    pdf.setLineWidth(1);
-    pdf.line(margin, headerHeight - 2, pageWidth - margin, headerHeight - 2);
+    // Accent line at bottom of header
+    pdf.setDrawColor(...theme.accentColor);
+    pdf.setLineWidth(0.8);
+    pdf.line(margin, headerHeight - 1, pageWidth - margin, headerHeight - 1);
 
-    let logoEndX = margin;
+    let textStartX = margin;
 
-    // Add tenant logo if available (only on first page)
-    if (pageNum === 1 && tenant?.logo_url) {
+    // Add tenant logo if available (smaller for compact layout)
+    if (tenant?.logo_url) {
       try {
         const logoImg = await loadImage(tenant.logo_url);
-        const maxLogoWidth = 35;
-        const maxLogoHeight = 30;
+        const maxLogoHeight = 14;
         const logoAspect = logoImg.width / logoImg.height;
+        const logoHeight = maxLogoHeight;
+        const logoWidth = logoHeight * logoAspect;
         
-        let logoWidth = maxLogoWidth;
-        let logoHeight = logoWidth / logoAspect;
-        
-        if (logoHeight > maxLogoHeight) {
-          logoHeight = maxLogoHeight;
-          logoWidth = logoHeight * logoAspect;
-        }
-        
-        const logoY = (headerHeight - logoHeight) / 2 - 2;
+        const logoY = (headerHeight - logoHeight) / 2;
         pdf.addImage(logoImg, 'PNG', margin, logoY, logoWidth, logoHeight);
-        logoEndX = margin + logoWidth + 8;
+        textStartX = margin + logoWidth + 6;
       } catch (error) {
         console.error('Erro ao carregar logo do tenant:', error);
       }
     }
 
-    // Title section
-    const textStartX = logoEndX;
-    const availableWidth = pageWidth - textStartX - margin;
-
+    // Title and event info
+    pdf.setTextColor(...theme.whiteColor);
+    
     // Main title
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(22);
-    pdf.setTextColor(...toRGB(COLORS.white));
-    const title = 'Folheto de Cantos';
-    pdf.text(title, textStartX, 18);
+    pdf.setFontSize(14);
+    pdf.text('FOLHETO DE CANTOS', textStartX, 9);
 
     // Event name
     pdf.setFont('times', 'normal');
-    pdf.setFontSize(13);
+    pdf.setFontSize(10);
+    const availableWidth = pageWidth - textStartX - margin;
     const eventNameLines = pdf.splitTextToSize(event.name, availableWidth);
-    pdf.text(eventNameLines[0], textStartX, 28);
+    pdf.text(eventNameLines[0], textStartX, 15);
 
-    // Location if available
-    if (event.location) {
-      pdf.setFontSize(10);
-      pdf.setTextColor(230, 230, 240);
-      const locationText = `📍 ${event.location}`;
-      pdf.text(locationText, textStartX, 36);
+    // Location (if available, on right side)
+    if (event.location && pageNum === 1) {
+      pdf.setFontSize(8);
+      pdf.setTextColor(220, 220, 230);
+      const locationText = event.location;
+      const locationWidth = pdf.getTextWidth(locationText);
+      pdf.text(locationText, pageWidth - margin - locationWidth, 15);
     }
   };
 
@@ -206,16 +259,16 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   // HELPER: Draw footer
   // ============================================
   const drawFooter = (pageNum: number, totalPages: number) => {
-    const footerY = pageHeight - 8;
+    const footerY = pageHeight - 5;
     
-    // Subtle line above footer
-    pdf.setDrawColor(200, 200, 210);
+    // Accent line above footer
+    pdf.setDrawColor(...theme.accentColor);
     pdf.setLineWidth(0.3);
-    pdf.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+    pdf.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
 
     pdf.setFont('times', 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(...toRGB(COLORS.textLight));
+    pdf.setFontSize(7);
+    pdf.setTextColor(...theme.textLightColor);
 
     // Tenant name on the left
     if (tenant?.name) {
@@ -223,7 +276,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     }
 
     // Page number on the right
-    const pageText = `Página ${pageNum} de ${totalPages}`;
+    const pageText = `${pageNum}/${totalPages}`;
     const pageTextWidth = pdf.getTextWidth(pageText);
     pdf.text(pageText, pageWidth - margin - pageTextWidth, footerY);
   };
@@ -242,45 +295,46 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   let pageNum = 1;
 
   // ============================================
-  // EVENT IMAGE (First column, first page)
+  // HELPER: Draw section header with theme color
   // ============================================
-  if (event.cover_image_url) {
-    try {
-      const img = await loadImage(event.cover_image_url);
-      const maxImgHeight = 70;
-      const imgAspect = img.width / img.height;
-      
-      let imgWidth = columnWidth - 4;
-      let imgHeight = imgWidth / imgAspect;
-      
-      if (imgHeight > maxImgHeight) {
-        imgHeight = maxImgHeight;
-        imgWidth = imgHeight * imgAspect;
+  const drawSectionHeader = (text: string): void => {
+    const sectionHeaderHeight = 5.5;
+    const x = currentColumn === 1 ? col1X : col2X;
+    let y = currentColumn === 1 ? col1Y : col2Y;
+    
+    // Check if we need to switch column or page
+    if (y + sectionHeaderHeight + 12 > contentEndY) {
+      if (currentColumn === 1) {
+        currentColumn = 2;
+        y = col2Y;
+      } else {
+        pdf.addPage();
+        pageNum++;
+        drawHeader(pageNum);
+        currentColumn = 1;
+        col1Y = contentStartY;
+        col2Y = contentStartY;
+        y = col1Y;
       }
-      
-      const imgX = col1X + (columnWidth - imgWidth) / 2;
-      
-      // Draw shadow effect
-      pdf.setFillColor(180, 180, 190);
-      pdf.roundedRect(imgX + 2, col1Y + 2, imgWidth, imgHeight, 3, 3, 'F');
-      
-      // Draw image with rounded corners simulation (white border)
-      pdf.setFillColor(...toRGB(COLORS.white));
-      pdf.roundedRect(imgX - 1, col1Y - 1, imgWidth + 2, imgHeight + 2, 3, 3, 'F');
-      
-      // Add the actual image
-      pdf.addImage(img, 'JPEG', imgX, col1Y, imgWidth, imgHeight);
-      
-      // Draw border
-      pdf.setDrawColor(...toRGB(COLORS.gold));
-      pdf.setLineWidth(0.5);
-      pdf.roundedRect(imgX, col1Y, imgWidth, imgHeight, 2, 2, 'S');
-      
-      col1Y += imgHeight + 12;
-    } catch (error) {
-      console.error('Erro ao carregar imagem do evento:', error);
     }
-  }
+    
+    // Draw rounded background rectangle with primary color
+    pdf.setFillColor(...theme.primaryColor);
+    pdf.roundedRect(x, y, columnWidth, sectionHeaderHeight, 1.5, 1.5, 'F');
+    
+    // Draw text on background
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    pdf.setTextColor(...theme.whiteColor);
+    pdf.text(text, x + 3, y + 3.8);
+    
+    // Update column Y position
+    if (currentColumn === 1) {
+      col1Y = y + sectionHeaderHeight + 1.5;
+    } else {
+      col2Y = y + sectionHeaderHeight + 1.5;
+    }
+  };
 
   // ============================================
   // HELPER: Add content to column with proper flow
@@ -338,48 +392,6 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   };
 
   // ============================================
-  // HELPER: Draw section header with background
-  // ============================================
-  const drawSectionHeader = (text: string): void => {
-    const headerHeight = 6;
-    const x = currentColumn === 1 ? col1X : col2X;
-    let y = currentColumn === 1 ? col1Y : col2Y;
-    
-    // Check if we need to switch column or page
-    if (y + headerHeight + 15 > contentEndY) {
-      if (currentColumn === 1) {
-        currentColumn = 2;
-        y = col2Y;
-      } else {
-        pdf.addPage();
-        pageNum++;
-        drawHeader(pageNum);
-        currentColumn = 1;
-        col1Y = contentStartY;
-        col2Y = contentStartY;
-        y = col1Y;
-      }
-    }
-    
-    // Draw background rectangle (coral/pink color)
-    pdf.setFillColor(...toRGB(COLORS.sectionBg));
-    pdf.rect(x, y, columnWidth, headerHeight, 'F');
-    
-    // Draw text on background
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.setTextColor(...toRGB(COLORS.sectionText));
-    pdf.text(text, x + 2, y + 4.2);
-    
-    // Update column Y position
-    if (currentColumn === 1) {
-      col1Y = y + headerHeight + 2;
-    } else {
-      col2Y = y + headerHeight + 2;
-    }
-  };
-
-  // ============================================
   // PROCESS SONGS
   // ============================================
   let songIndex = 0;
@@ -390,22 +402,22 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     // Add space before section (except first)
     if (songIndex > 1) {
       if (currentColumn === 1) {
-        col1Y += 4;
+        col1Y += 3;
       } else {
-        col2Y += 4;
+        col2Y += 3;
       }
     }
     
-    // Type header with colored background (numbered, uppercase)
+    // Type header with theme-colored background (numbered, uppercase)
     const typeLabel = typeLabels[song.type] || song.type || 'Outro';
     const typeHeader = `${songIndex}   ${typeLabel.toUpperCase()}`;
     drawSectionHeader(typeHeader);
     
     // Song name
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(11);
-    const nameLines = pdf.splitTextToSize(song.name, columnWidth - 2) as string[];
-    addContent(nameLines, 11, 'bold', toRGB(COLORS.text), 1);
+    pdf.setFontSize(10);
+    const nameLines = pdf.splitTextToSize(song.name, columnWidth - 4) as string[];
+    addContent(nameLines, 10, 'bold', theme.textColor, 1);
     
     // Lyrics
     if (song.lyrics) {
@@ -420,9 +432,9 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         if (!trimmedLine) {
           if (!previousWasEmpty) {
             if (currentColumn === 1) {
-              col1Y += 1.5;
+              col1Y += 1.2;
             } else {
-              col2Y += 1.5;
+              col2Y += 1.2;
             }
           }
           previousWasEmpty = true;
@@ -447,15 +459,15 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           isRefrain = false;
         }
         
-        // Format and add line - using font size 11 as requested
+        // Format and add line
         const fontStyle = isRefrain ? 'italic' : 'normal';
-        const indent = isRefrain ? 3 : 0;
-        const color = isRefrain ? toRGB(COLORS.textLight) : toRGB(COLORS.text);
+        const indent = isRefrain ? 4 : 0;
+        const color: [number, number, number] = isRefrain ? theme.textLightColor : theme.textColor;
         
         pdf.setFont('times', fontStyle);
-        pdf.setFontSize(11);
+        pdf.setFontSize(10);
         const formattedLines = pdf.splitTextToSize(trimmedLine, columnWidth - 4 - indent) as string[];
-        addContent(formattedLines, 11, fontStyle, color, 0, indent);
+        addContent(formattedLines, 10, fontStyle, color, 0, indent);
       }
     }
   }
