@@ -462,7 +462,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   }
 
   // ============================================
-  // SEÇÃO DE MÚSICA - Design com badge numérico
+  // SEÇÃO DE MÚSICA - Design com background esmaecido
   // ============================================
   const drawSongSection = (num: number, label: string): void => {
     const x = currentCol === 1 ? col1X : col2X;
@@ -484,32 +484,37 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       }
     }
 
-    const badgeSize = 6;
-    const barHeight = 6;
+    const barHeight = 7;
+    const badgeWidth = 8;
 
-    // Badge numérico (quadrado colorido)
+    // Background esmaecido (toda a largura da coluna)
+    // Usando cor primária com opacidade simulada via RGB mais claro
+    const lightBg: [number, number, number] = [
+      Math.min(255, theme.primary[0] + 200),
+      Math.min(255, theme.primary[1] + 200),
+      Math.min(255, theme.primary[2] + 200),
+    ];
+    pdf.setFillColor(...lightBg);
+    pdf.rect(x, y, colWidth, barHeight, 'F');
+
+    // Badge numérico (retângulo colorido sólido)
     pdf.setFillColor(...theme.primary);
-    pdf.roundedRect(x, y, badgeSize, badgeSize, 1, 1, 'F');
+    pdf.rect(x, y, badgeWidth, barHeight, 'F');
     
-    // Número centralizado no badge
+    // Número centralizado no badge (branco, negrito)
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
+    pdf.setFontSize(11);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
-    pdf.text(numText, x + (badgeSize - numW) / 2, y + 4.3);
+    pdf.text(numText, x + (badgeWidth - numW) / 2, y + 5);
 
-    // Barra colorida com texto do tipo
+    // Texto do tipo (negrito, cor primária)
     const labelText = label.toUpperCase();
-    pdf.setFontSize(8);
-    const labelWidth = pdf.getTextWidth(labelText) + 6;
-    
-    pdf.setFillColor(...theme.primary);
-    pdf.roundedRect(x + badgeSize + 1, y, labelWidth, barHeight, 1, 1, 'F');
-    
-    pdf.setTextColor(255, 255, 255);
+    pdf.setTextColor(...theme.primary);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(labelText, x + badgeSize + 4, y + 4.2);
+    pdf.setFontSize(9);
+    pdf.text(labelText, x + badgeWidth + 4, y + 5);
 
     const newY = y + barHeight + 3;
     if (currentCol === 1) col1Y = newY;
