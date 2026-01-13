@@ -366,6 +366,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          lyrics: string | null
           name: string
           notes: string | null
           sheet_music_pdf_url: string | null
@@ -378,6 +379,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          lyrics?: string | null
           name: string
           notes?: string | null
           sheet_music_pdf_url?: string | null
@@ -390,6 +392,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          lyrics?: string | null
           name?: string
           notes?: string | null
           sheet_music_pdf_url?: string | null

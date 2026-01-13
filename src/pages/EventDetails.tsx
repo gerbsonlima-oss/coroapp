@@ -18,7 +18,7 @@ import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, Check, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, Check, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -34,6 +34,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { z } from 'zod';
 import { exportEventPDF } from '@/utils/exportEventPDF';
 import { exportEventZIP } from '@/utils/exportEventZIP';
+import { exportSongBookletPDF } from '@/utils/exportSongBookletPDF';
 
 interface Event {
   id: string;
@@ -50,6 +51,7 @@ interface Song {
   type: string;
   sheet_music_url: string | null;
   sheet_music_pdf_url: string | null;
+  lyrics?: string | null;
 }
 interface SongAudio {
   id: string;
@@ -556,6 +558,39 @@ const EventDetails = () => {
     }
   };
 
+  const handleExportSongBooklet = async () => {
+    if (!event) return;
+    
+    // Fetch songs with lyrics
+    const songIds = songs.map(s => s.id);
+    const { data: songsWithLyrics, error } = await supabase
+      .from('songs')
+      .select('id, name, type, lyrics')
+      .in('id', songIds);
+    
+    if (error) {
+      console.error('Erro ao buscar letras:', error);
+      toast.error('Erro ao buscar letras das músicas');
+      return;
+    }
+    
+    const songsForBooklet = songsWithLyrics?.filter(s => s.lyrics?.trim()) || [];
+    
+    if (songsForBooklet.length === 0) {
+      toast.error('Nenhuma música do evento possui letra cadastrada');
+      return;
+    }
+    
+    try {
+      toast.info('Gerando folheto de cantos...');
+      await exportSongBookletPDF(event, songsForBooklet);
+      toast.success('Folheto de cantos gerado com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao gerar folheto:', error);
+      toast.error(error.message || 'Erro ao gerar folheto de cantos');
+    }
+  };
+
   const removeSongFromEvent = async (eventSongId: string) => {
     try {
       const { error } = await supabase.from('event_songs').delete().eq('id', eventSongId);
@@ -854,6 +889,10 @@ const EventDetails = () => {
               <DropdownMenuItem onClick={handleExportZIP}>
                 <FileArchive className="mr-2 h-4 w-4" />
                 Exportar Áudios
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportSongBooklet}>
+                <BookOpen className="mr-2 h-4 w-4" />
+                Gerar Folheto de Cantos
               </DropdownMenuItem>
 
               {/* Edição (Admin) */}
