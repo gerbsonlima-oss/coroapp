@@ -100,7 +100,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     const storedTenant = localStorage.getItem(TENANT_STORAGE_KEY);
     if (storedTenant) return storedTenant;
     
-    // 4. Default
+    // 4. Default (null if on root to allow selection)
+    if (location.pathname === '/') return '';
     return 'quixada';
   };
 
@@ -128,6 +129,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       try {
         const slug = getTenantSlug();
         
+        if (!slug && location.pathname === '/') {
+          setTenant(null);
+          setLoading(false);
+          return;
+        }
+
         const { data, error: fetchError } = await supabase
           .from('tenants')
           .select('id, slug, name, logo_url')

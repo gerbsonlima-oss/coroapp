@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import logoImageFallback from '@/assets/coro-logo.png';
 
 export const SplashScreen = () => {
   const [show, setShow] = useState(true);
+  const location = useLocation();
   const { tenant, loading: tenantLoading } = useTenant();
+
+  // Don't show splash screen on root selection page or auth pages
+  const isRoot = location.pathname === '/';
+  const isAuth = location.pathname.startsWith('/auth');
+  const isPublic = location.pathname.startsWith('/public');
 
   useEffect(() => {
     // Wait for tenant to load, then show for 2.5s
@@ -16,7 +23,7 @@ export const SplashScreen = () => {
     }
   }, [tenantLoading]);
 
-  if (!show) return null;
+  if (!show || isRoot || isAuth || isPublic || !tenant) return null;
 
   // Use tenant logo or fallback
   const logoSrc = tenant?.logo_url || logoImageFallback;
@@ -131,8 +138,7 @@ export const SplashScreen = () => {
             alt={tenantName}
             width={224}
             height={224}
-            fetchPriority="high"
-            className="relative w-56 h-56 md:w-72 md:h-72 object-contain drop-shadow-[0_15px_50px_rgba(120,119,198,0.5)]"
+            className="relative w-56 h-56 md:w-72 md:h-72 rounded-full object-cover drop-shadow-[0_15px_50px_rgba(120,119,198,0.5)] border-2 border-primary/20"
           />
         </div>
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { 
@@ -36,12 +36,8 @@ interface SheetViewerProps {
   duration?: number;
 }
 
-// Configurar worker do PDF.js
-const pdfWorker = new Worker(
-  new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url),
-  { type: 'module' }
-);
-(pdfjsLib as any).GlobalWorkerOptions.workerPort = pdfWorker;
+// Configurar worker do PDF.js usando CDN para garantir compatibilidade
+(pdfjsLib as any).GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 export const SheetViewer = ({
   currentTrack,
@@ -74,7 +70,12 @@ export const SheetViewer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const sheetAreaRef = useRef<HTMLDivElement>(null);
 
-  const isPdf = sheetMusicUrl?.toLowerCase().endsWith('.pdf');
+  // Melhor detecção de PDF (incluindo URLs do Supabase que podem não terminar em .pdf)
+  const isPdf = useMemo(() => {
+    if (!sheetMusicUrl) return false;
+    const urlLower = sheetMusicUrl.toLowerCase();
+    return urlLower.endsWith('.pdf') || urlLower.includes('pdf') || urlLower.includes('storage/v1/object/public/sheet-music');
+  }, [sheetMusicUrl]);
 
   // Carregar PDF e converter para imagens
   useEffect(() => {

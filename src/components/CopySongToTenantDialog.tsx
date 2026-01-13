@@ -32,12 +32,14 @@ interface CopySongToTenantDialogProps {
   songId: string;
   songName: string;
   currentTenantId: string;
+  trigger?: React.ReactNode;
 }
 
 export const CopySongToTenantDialog = ({
   songId,
   songName,
   currentTenantId,
+  trigger,
 }: CopySongToTenantDialogProps) => {
   const [open, setOpen] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -146,9 +148,11 @@ export const CopySongToTenantDialog = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" title="Copiar para outro coro">
-          <Copy className="h-5 w-5" />
-        </Button>
+        {trigger || (
+          <Button variant="ghost" size="icon" title="Copiar para outro coro">
+            <Copy className="h-5 w-5" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

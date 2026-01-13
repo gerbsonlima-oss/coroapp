@@ -9,6 +9,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LoadingFallback } from "@/components/LoadingFallback";
 
 const Home = lazy(() => import("./pages/Home"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -25,15 +26,12 @@ const AdminSongTypes = lazy(() => import("./pages/AdminSongTypes"));
 const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
 const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const AdminTenants = lazy(() => import("./pages/AdminTenants"));
+const TenantSelection = lazy(() => import("./pages/TenantSelection"));
 
 const Liturgy = lazy(() => import("./pages/Liturgy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-  </div>
-);
+
 
 // Component that renders all app routes (used both at root and under tenant prefix)
 function AppRoutes() {
@@ -284,7 +282,7 @@ function App() {
             <Route path="/rehearsals" element={<Rehearsals />} />
             <Route path="/liturgy" element={<Liturgy />} />
             
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<TenantSelection />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

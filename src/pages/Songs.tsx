@@ -6,13 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown } from 'lucide-react';
+import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { exportSongsPDF } from '@/utils/exportSongsPDF';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface SongTypeAlbum {
   type: string;
@@ -88,7 +95,7 @@ const Songs = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { tenantId } = useTenant();
+  const { tenantId, tenant } = useTenant();
   const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
 
@@ -107,6 +114,76 @@ const Songs = () => {
       ...prev,
       [key]: !prev[key]
     }));
+  };
+
+  const { tenantSlug } = useTenant();
+
+  const handleExportPDF = async () => {
+    if (songs.length === 0) {
+      toast.error('Nenhuma música para exportar');
+      return;
+    }
+    
+    try {
+      toast.info('Gerando catálogo em PDF...');
+      await exportSongsPDF(songs, tenantSlug, tenant?.name || null);
+      toast.success('Catálogo exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao gerar relatório PDF');
+    }
+  };
+
+  const handleShareViaWhatsApp = async (songId: string, songName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      // Fetch song details
+      const { data: songData, error: songError } = await supabase
+        .from('songs')
+        .select('id, name, type, sheet_music_url, sheet_music_pdf_url')
+        .eq('id', songId)
+        .single();
+
+      if (songError) throw songError;
+
+      // Fetch song audios
+      const { data: audiosData, error: audiosError } = await supabase
+        .from('song_audios')
+        .select('*')
+        .eq('song_id', songId);
+
+      if (audiosError) throw audiosError;
+
+      // Build WhatsApp message
+      let message = `🎵 *${songName}*\n\n`;
+
+      // Add sheet music link
+      if (songData?.sheet_music_pdf_url || songData?.sheet_music_url) {
+        const sheetUrl = songData.sheet_music_pdf_url || songData.sheet_music_url;
+        message += `📄 *Partitura:* ${sheetUrl}\n`;
+      }
+
+      // Add audio links
+      if (audiosData && audiosData.length > 0) {
+        message += `\n🎧 *Áudios:*\n`;
+        audiosData.forEach((audio: any) => {
+          const naipeName = audio.naipe === 'original' ? 'Música Completa' : audio.naipe;
+          message += `• ${naipeName}: ${audio.audio_url}\n`;
+        });
+      }
+
+      message += `\nRepositório Litúrgico Digital 🙏`;
+
+      // Open WhatsApp
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+      
+      toast.success('Abrindo WhatsApp com os arquivos!');
+    } catch (error) {
+      console.error('Error sharing via WhatsApp:', error);
+      toast.error('Erro ao compartilhar música');
+    }
   };
 
   const fetchSongTypes = async () => {
@@ -210,22 +287,47 @@ const Songs = () => {
               {!isCollapsed && (
                 <div className="divide-y divide-primary/10">
                   {typeGroupSongs.map((song) => (
-                    <Card
+                    <div 
                       key={song.id}
-                      className="group cursor-pointer border-0 rounded-none bg-transparent hover:bg-primary/5 transition-all"
+                      className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 hover:bg-primary/8 cursor-pointer group`}
                       onClick={() => navigate(buildPath(`/songs/${song.id}`)) }
                     >
-                      <div className="flex items-center justify-between gap-3 px-4 py-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1">
-                            {song.name}
-                          </h3>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="h-6 w-6 flex items-center justify-center rounded transition-colors text-primary">
+                          <Music className="h-5 w-5 shrink-0" />
                         </div>
-                        <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                          <Music className="h-4 w-4 text-primary" />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                              {song.name}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold flex-1">
+                              {song.typeName}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </Card>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
+                            <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   ))}
                 </div>
               )}
@@ -240,25 +342,47 @@ const Songs = () => {
         {filteredSongs
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((song) => (
-            <Card
+            <div 
               key={song.id}
-              className="group cursor-pointer border-border/50 bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-md transition-all"
-              onClick={() => navigate(buildPath(`/songs/${song.id}`))}
+              className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 hover:bg-primary/8 border border-primary/10 cursor-pointer group`}
+              onClick={() => navigate(buildPath(`/songs/${song.id}`)) }
             >
-              <div className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1">
-                    {song.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {song.typeName}
-                  </p>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="h-6 w-6 flex items-center justify-center rounded transition-colors text-primary">
+                  <Music className="h-5 w-5 shrink-0" />
                 </div>
-                <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                  <Music className="h-4 w-4 text-primary" />
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-bold text-sm uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
+                      {song.typeName}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-xs text-muted-foreground truncate font-medium flex-1">
+                      {song.name}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </Card>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
+                    <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ))}
       </div>
     );
@@ -275,6 +399,15 @@ const Songs = () => {
             <h1 className="text-xl md:text-2xl font-bold">Repertório</h1>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleExportPDF}
+              className="hover:bg-accent/80 text-primary"
+              title="Exportar catálogo PDF"
+            >
+              <FileText className="h-5 w-5" />
+            </Button>
             <InstallPWAButton size="icon" showText={false} />
             {isAdmin && (
               <>
