@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import coroLogo from '@/assets/coro-logo.png';
 
 interface Event {
   id: string;
@@ -93,6 +94,33 @@ const fetchImageAsDataUrl = async (url: string, timeoutMs = 15000): Promise<stri
   }
 };
 
+const shouldUseBackendImageProxy = (url: string): boolean => {
+  try {
+    const u = new URL(url);
+    return (
+      u.protocol === 'https:' &&
+      u.hostname.endsWith('supabase.co') &&
+      u.pathname.startsWith('/storage/v1/object/public/')
+    );
+  } catch {
+    return false;
+  }
+};
+
+const fetchImageViaBackendProxy = async (url: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('image-proxy', {
+      body: { url },
+    });
+
+    if (error) throw error;
+    return (data as any)?.dataUrl ?? null;
+  } catch (e) {
+    console.warn('Falha ao buscar imagem via backend:', e);
+    return null;
+  }
+};
+
 // Carrega imagem com múltiplos fallbacks
 const loadImageRobust = async (url: string): Promise<string | null> => {
   if (!url) return null;
@@ -102,7 +130,7 @@ const loadImageRobust = async (url: string): Promise<string | null> => {
   if (fetched) return fetched;
 
   // 2) Fallback: <img> + canvas (requer CORS liberado no servidor)
-  return await new Promise<string | null>((resolve) => {
+  const canvasDataUrl = await new Promise<string | null>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
@@ -136,6 +164,16 @@ const loadImageRobust = async (url: string): Promise<string | null> => {
 
     img.src = url;
   });
+
+  if (canvasDataUrl) return canvasDataUrl;
+
+  // 3) Último fallback: buscar via backend (resolve CORS do Storage)
+  if (shouldUseBackendImageProxy(url)) {
+    const proxied = await fetchImageViaBackendProxy(url);
+    if (proxied) return proxied;
+  }
+
+  return null;
 };
 
 // Calcula dimensões da imagem a partir do base64

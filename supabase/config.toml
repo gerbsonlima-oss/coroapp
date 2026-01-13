@@ -1,1 +1,4 @@
 project_id = "wxagqywobyzntrlkhfao"
+
+[functions.image-proxy]
+verify_jwt = false
