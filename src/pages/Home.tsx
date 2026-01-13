@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
+import { BirthdayPanel } from '@/components/BirthdayPanel';
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
@@ -240,6 +241,9 @@ const Home = () => {
 
       {/* Content */}
       <div className="px-4 py-6 space-y-6 max-w-6xl mx-auto">
+        {/* Birthday Panel */}
+        {tenantId && <BirthdayPanel tenantId={tenantId} />}
+
         {/* Próximos Eventos */}
         {upcomingEvents.length > 0 && (
           <div className="space-y-4">
