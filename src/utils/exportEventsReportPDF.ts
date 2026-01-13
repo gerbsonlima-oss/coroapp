@@ -104,53 +104,113 @@ export const exportEventsReportPDF = async (
   const accentColor: [number, number, number] = [218, 165, 32];
   const textColor: [number, number, number] = [51, 51, 51];
   const whiteColor: [number, number, number] = [255, 255, 255];
+  const overlayColor: [number, number, number] = [0, 0, 0];
+
+  const [year, month] = selectedMonth.split('-').map(Number);
+  const monthLabel = format(new Date(year, month - 1), 'MMMM yyyy', { locale: ptBR });
+  const monthLabelCapitalized = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
   // ============================================
-  // CABEÇALHO EDITORIAL
+  // PÁGINA 1: CAPA PROFISSIONAL
   // ============================================
+  
+  // Fundo primário sólido
   pdf.setFillColor(...primaryColor);
-  pdf.rect(0, 0, pageWidth, 55, 'F');
+  pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
+  // ÁREA RESERVADA PARA LOGO: ocupa o centro superior
+  const logoAreaTop = 15;
+  const logoAreaBottom = 165;
+  const logoAreaHeight = logoAreaBottom - logoAreaTop;
+  
   try {
     const logoImg = await loadImage(coroLogo);
-    const logoHeight = 35;
-    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-    pdf.addImage(logoImg, 'PNG', margin, 10, logoWidth, logoHeight);
+    const maxLogoWidth = pageWidth - 20;
+    const maxLogoHeight = logoAreaHeight;
+    
+    let logoWidth = maxLogoWidth;
+    let logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+    
+    if (logoHeight > maxLogoHeight) {
+      logoHeight = maxLogoHeight;
+      logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+    }
+    
+    const logoX = (pageWidth - logoWidth) / 2;
+    const logoY = logoAreaTop + (logoAreaHeight - logoHeight) / 2;
+    pdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
   } catch (error) {
-    console.error('Erro ao carregar logo no PDF:', error);
+    console.error('Erro ao carregar logo:', error);
   }
 
-  // Título e Mês
+  // ÁREA RESERVADA PARA TÍTULO
+  const titleAreaTop = 168;
+  const titleAreaBottom = 208;
+  const titleMaxWidth = pageWidth - 40;
+  
+  // Título principal
+  let fontSize = 42;
+  pdf.setFont('times', 'bold');
+  pdf.setFontSize(fontSize);
+  pdf.setTextColor(...whiteColor);
+  
+  const title = 'Planejamento Litúrgico';
+  const titleWidth = pdf.getTextWidth(title);
+  const titleY = titleAreaTop + 15;
+  pdf.text(title, (pageWidth - titleWidth) / 2, titleY);
+
+  // Linha decorativa
+  const decorativeLineY = titleY + 8;
+  pdf.setDrawColor(...accentColor);
+  pdf.setLineWidth(0.5);
+  pdf.line(40, decorativeLineY, pageWidth - 40, decorativeLineY);
+
+  // Subtítulo (mês/ano)
+  pdf.setFontSize(28);
+  pdf.setFont('times', 'italic');
+  const subtitleWidth = pdf.getTextWidth(monthLabelCapitalized);
+  pdf.text(monthLabelCapitalized, (pageWidth - subtitleWidth) / 2, decorativeLineY + 15);
+
+  // Informações do rodapé da capa
+  const footerY = pageHeight - 30;
+  pdf.setFontSize(14);
+  pdf.setFont('times', 'normal');
+  
+  if (tenantName) {
+    const tenantWidth = pdf.getTextWidth(tenantName);
+    pdf.text(tenantName, (pageWidth - tenantWidth) / 2, footerY);
+  }
+
+  // Estatísticas
+  const totalSongs = events.reduce((acc, e) => acc + e.songs.length, 0);
+  const statsText = `${events.length} evento${events.length !== 1 ? 's' : ''} • ${totalSongs} música${totalSongs !== 1 ? 's' : ''}`;
+  pdf.setFontSize(12);
+  pdf.setTextColor(200, 200, 220);
+  const statsWidth = pdf.getTextWidth(statsText);
+  pdf.text(statsText, (pageWidth - statsWidth) / 2, footerY + 10);
+
+  // ============================================
+  // PÁGINA 2+: LISTA DE EVENTOS
+  // ============================================
+  pdf.addPage();
+
+  // Cabeçalho da página de conteúdo
+  pdf.setFillColor(...primaryColor);
+  pdf.rect(0, 0, pageWidth, 30, 'F');
+  
+  pdf.setFontSize(18);
   pdf.setTextColor(...whiteColor);
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(26);
-  pdf.text('Relatório de Eventos', pageWidth - margin, 22, { align: 'right' });
-  
-  const monthLabel = format(new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1), 'MMMM yyyy', { locale: ptBR });
-  pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(200, 200, 220);
-  pdf.text(monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1), pageWidth - margin, 30, { align: 'right' });
+  const headerTitle = `Planejamento Litúrgico - ${monthLabelCapitalized}`;
+  const headerTitleWidth = pdf.getTextWidth(headerTitle);
+  pdf.text(headerTitle, (pageWidth - headerTitleWidth) / 2, 20);
 
-  if (tenantName) {
-    pdf.setFontSize(12);
-    pdf.text(tenantName, pageWidth - margin, 38, { align: 'right' });
-  }
+  // Linha decorativa abaixo do cabeçalho
+  pdf.setDrawColor(...accentColor);
+  pdf.setLineWidth(0.5);
+  pdf.line(margin, 32, pageWidth - margin, 32);
 
-  // Linha decorativa no header
-  pdf.setDrawColor(255, 255, 255);
-  pdf.setLineWidth(0.3);
-  pdf.line(pageWidth - 100, 42, pageWidth - margin, 42);
-
-  pdf.setFontSize(8);
-  pdf.setTextColor(180, 180, 200);
-  const dateStr = `Gerado em ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
-  pdf.text(dateStr, pageWidth - margin, 48, { align: 'right' });
-
-  // ============================================
-  // LISTA DE EVENTOS
-  // ============================================
-  let y = 65;
+  let y = 45;
   const rowHeight = 8;
 
   events.forEach((event, eventIndex) => {
@@ -173,7 +233,6 @@ export const exportEventsReportPDF = async (
     pdf.setFontSize(12);
     pdf.setTextColor(...primaryColor);
     pdf.setFont('helvetica', 'bold');
-    const eventNameMaxWidth = pageWidth - (margin * 2) - 60;
     const eventNameTruncated = event.name.length > 45 ? event.name.substring(0, 42) + '...' : event.name;
     pdf.text(eventNameTruncated, margin + 6, y - 1);
     
@@ -201,7 +260,7 @@ export const exportEventsReportPDF = async (
     y += 14;
 
     // Lista de músicas do evento
-    event.songs.forEach((song, songIndex) => {
+    event.songs.forEach((song) => {
       // Nova página se necessário
       if (y > pageHeight - 20) {
         pdf.addPage();
@@ -223,7 +282,6 @@ export const exportEventsReportPDF = async (
       // Nome da música
       pdf.setTextColor(...textColor);
       pdf.setFontSize(9);
-      const songNameMaxWidth = pageWidth - (margin * 2) - 40;
       const songNameTruncated = song.name.length > 55 ? song.name.substring(0, 52) + '...' : song.name;
       pdf.text(songNameTruncated, margin + 35, y);
 
@@ -266,16 +324,16 @@ export const exportEventsReportPDF = async (
     }
   });
 
-  // Rodapé com numeração
+  // Rodapé com numeração (a partir da página 2)
   const totalPages = pdf.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
+  for (let i = 2; i <= totalPages; i++) {
     pdf.setPage(i);
     pdf.setFontSize(8);
     pdf.setTextColor(150, 150, 150);
-    pdf.text(`Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    pdf.text(`Página ${i - 1} de ${totalPages - 1}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
   }
 
-  const monthFileName = format(new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1), 'MMMM_yyyy', { locale: ptBR });
-  const fileName = `Relatorio_Eventos_${monthFileName}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+  const monthFileName = format(new Date(year, month - 1), 'MMMM_yyyy', { locale: ptBR });
+  const fileName = `Planejamento_Liturgico_${monthFileName}_${format(new Date(), 'yyyyMMdd')}.pdf`;
   pdf.save(fileName);
 };
