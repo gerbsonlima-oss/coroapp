@@ -27,6 +27,9 @@ const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
 const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const AdminTenants = lazy(() => import("./pages/AdminTenants"));
 const TenantSelection = lazy(() => import("./pages/TenantSelection"));
+const ChoirMembers = lazy(() => import("./pages/ChoirMembers"));
+const ChoirMemberForm = lazy(() => import("./pages/ChoirMemberForm"));
+const ChoirMemberDetails = lazy(() => import("./pages/ChoirMemberDetails"));
 
 const Liturgy = lazy(() => import("./pages/Liturgy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -212,6 +215,41 @@ function App() {
             />
             <Route path="/:tenantSlug/rehearsals" element={<Rehearsals />} />
             <Route path="/:tenantSlug/liturgy" element={<Liturgy />} />
+            
+            {/* Choir Members Routes with tenant prefix */}
+            <Route
+              path="/:tenantSlug/choir-members"
+              element={
+                <ProtectedRoute>
+                  <ChoirMembers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/:tenantSlug/choir-members/new"
+              element={
+                <ProtectedRoute>
+                  <ChoirMemberForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/:tenantSlug/choir-members/:id"
+              element={
+                <ProtectedRoute>
+                  <ChoirMemberDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/:tenantSlug/choir-members/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <ChoirMemberForm />
+                </ProtectedRoute>
+              }
+            />
+            
             <Route path="/:tenantSlug" element={<Home />} />
             
             {/* Default routes without tenant prefix */}
@@ -281,6 +319,40 @@ function App() {
             />
             <Route path="/rehearsals" element={<Rehearsals />} />
             <Route path="/liturgy" element={<Liturgy />} />
+            
+            {/* Choir Members Routes without tenant prefix */}
+            <Route
+              path="/choir-members"
+              element={
+                <ProtectedRoute>
+                  <ChoirMembers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/choir-members/new"
+              element={
+                <ProtectedRoute>
+                  <ChoirMemberForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/choir-members/:id"
+              element={
+                <ProtectedRoute>
+                  <ChoirMemberDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/choir-members/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <ChoirMemberForm />
+                </ProtectedRoute>
+              }
+            />
             
             <Route path="/" element={<TenantSelection />} />
             <Route path="*" element={<NotFound />} />

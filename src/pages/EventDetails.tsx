@@ -35,6 +35,7 @@ import { z } from 'zod';
 import { exportEventPDF } from '@/utils/exportEventPDF';
 import { exportEventZIP } from '@/utils/exportEventZIP';
 import { exportSongBookletPDF } from '@/utils/exportSongBookletPDF';
+import { EventMembersManager } from '@/components/EventMembersManager';
 
 interface Event {
   id: string;
@@ -936,10 +937,6 @@ const EventDetails = () => {
                     <Calendar className="mr-2 h-4 w-4" />
                     Ensaios
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/registrations`)}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Inscrições
-                  </DropdownMenuItem>
                 </>
               )}
 
@@ -977,7 +974,10 @@ const EventDetails = () => {
             <p className="text-xs text-muted-foreground font-medium">
               {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
             </p>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {canEdit && id && (
+                <EventMembersManager eventId={id} isAdmin={canEdit} />
+              )}
               {event.song_sheet_url && (
                 <Button 
                   variant="outline" 
