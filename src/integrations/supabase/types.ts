@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      choir_members: {
+        Row: {
+          active: boolean | null
+          birth_date: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          naipe: string | null
+          name: string
+          parish: string | null
+          phone: string | null
+          photo_url: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          birth_date?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          naipe?: string | null
+          name: string
+          parish?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          birth_date?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          naipe?: string | null
+          name?: string
+          parish?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "choir_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_members: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_members_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "choir_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_song_types: {
         Row: {
           created_at: string
@@ -197,6 +286,7 @@ export type Database = {
           attended: boolean
           created_at: string
           id: string
+          member_id: string | null
           rehearsal_id: string
           user_id: string
         }
@@ -204,6 +294,7 @@ export type Database = {
           attended?: boolean
           created_at?: string
           id?: string
+          member_id?: string | null
           rehearsal_id: string
           user_id: string
         }
@@ -211,10 +302,18 @@ export type Database = {
           attended?: boolean
           created_at?: string
           id?: string
+          member_id?: string | null
           rehearsal_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "rehearsal_attendance_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "choir_members"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rehearsal_attendance_rehearsal_id_fkey"
             columns: ["rehearsal_id"]
