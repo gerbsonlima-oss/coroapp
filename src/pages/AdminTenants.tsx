@@ -743,12 +743,12 @@ export default function AdminTenants() {
               <Card key={tenant.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="py-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden border-2 border-primary/20">
                       {tenant.logo_url ? (
                         <img
                           src={tenant.logo_url}
                           alt={tenant.name}
-                          className="h-full w-full object-contain"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
                         <Building2 className="h-6 w-6 text-primary" />
