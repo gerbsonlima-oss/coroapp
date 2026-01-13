@@ -702,14 +702,28 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     if (currentCol === 1) col1Y += 2.5;
     else col2Y += 2.5;
 
-    // Processar letra
+    // Processar letra com suporte a tags [REFRÃO]...[/REFRÃO] e numeração de estrofes
     if (song.lyrics) {
       const lyricsLines = song.lyrics.split('\n');
-      let isRefrain = false;
+      let insideRefraoBlock = false;
       let prevEmpty = false;
 
       for (const line of lyricsLines) {
         const trimmed = line.trim();
+        
+        // Detectar abertura de bloco de refrão [REFRÃO]
+        if (/^\[REFR[ÃA]O\]$/i.test(trimmed)) {
+          insideRefraoBlock = true;
+          continue;
+        }
+        
+        // Detectar fechamento de bloco de refrão [/REFRÃO]
+        if (/^\[\/REFR[ÃA]O\]$/i.test(trimmed)) {
+          insideRefraoBlock = false;
+          if (currentCol === 1) col1Y += 2;
+          else col2Y += 2;
+          continue;
+        }
         
         if (!trimmed) {
           if (!prevEmpty) {
@@ -717,21 +731,64 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
             else col2Y += 2;
           }
           prevEmpty = true;
-          isRefrain = false;
           continue;
         }
         prevEmpty = false;
 
         const hasMarker = /^(PR:|AS:|TODOS:|T:|C:|A:|L:)/i.test(trimmed);
-        const isRefrainLine = /^(R:|REFRÃO:|REFRAO:|REF:)/i.test(trimmed);
+        const isRefrainLineMarker = /^(R:|REFRÃO:|REFRAO:|REF:)/i.test(trimmed);
+        const isNumberedVerse = /^(\d+)\.\s*(.*)/.exec(trimmed);
 
-        if (isRefrainLine) {
-          isRefrain = true;
+        // Linha com marcador de refrão legado (R:, REFRÃO:, etc)
+        if (isRefrainLineMarker) {
           addText(trimmed, 11, 'bold', theme.primary, 0, 0.8);
           continue;
         }
 
-        if (/^\d+\./.test(trimmed)) isRefrain = false;
+        // Estrofe numerada: número na cor do tenant, resto normal
+        if (isNumberedVerse) {
+          const verseNumber = isNumberedVerse[1];
+          const verseText = isNumberedVerse[2];
+          
+          // Desenhar número na cor primária
+          const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+          let y = (currentCol === 1 ? col1Y : col2Y);
+          
+          // Verificar overflow
+          if (y + 4 > contentEnd) {
+            if (currentCol === 1) {
+              currentCol = 2;
+              y = col2Y;
+            } else {
+              pdf.addPage();
+              currentPage++;
+              drawHeader(currentPage);
+              currentCol = 1;
+              col1Y = contentStart;
+              col2Y = contentStart;
+              y = col1Y;
+            }
+          }
+          
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(11);
+          pdf.setTextColor(...theme.primary);
+          pdf.text(`${verseNumber}.`, x, y);
+          
+          // Calcular largura do número para posicionar o texto
+          const numWidth = pdf.getTextWidth(`${verseNumber}. `);
+          
+          // Desenhar resto do texto (se houver na mesma linha)
+          if (verseText) {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setTextColor(...textDark);
+            pdf.text(verseText, x + numWidth, y);
+          }
+          
+          if (currentCol === 1) col1Y = y + 4;
+          else col2Y = y + 4;
+          continue;
+        }
 
         let style: 'normal' | 'bold' | 'italic' = 'normal';
         let color = textDark;
@@ -740,10 +797,11 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         if (hasMarker) {
           style = 'bold';
           color = textMedium;
-        } else if (isRefrain) {
-          style = 'italic';
-          color = textMedium;
-          indent = 3;
+        } else if (insideRefraoBlock) {
+          // Dentro do bloco [REFRÃO]...[/REFRÃO]: negrito, cor primária
+          style = 'bold';
+          color = theme.primary;
+          indent = 2;
         }
 
         addText(trimmed, 11, style, color, indent, 0);
