@@ -186,6 +186,42 @@ const getImageDimensions = (dataUrl: string): Promise<{ width: number; height: n
   });
 };
 
+// Cria versão circular da imagem para uso no PDF
+const createCircularImage = async (dataUrl: string, size: number): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const outputSize = size * 4; // Higher resolution for better quality
+        canvas.width = outputSize;
+        canvas.height = outputSize;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(null);
+
+        // Draw circular clip
+        ctx.beginPath();
+        ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        // Draw image centered and covering the circle
+        const imgSize = Math.min(img.width, img.height);
+        const sx = (img.width - imgSize) / 2;
+        const sy = (img.height - imgSize) / 2;
+        ctx.drawImage(img, sx, sy, imgSize, imgSize, 0, 0, outputSize, outputSize);
+
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) {
+        console.warn('Erro ao criar imagem circular:', e);
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+};
+
 
 const loadTypeLabels = async (): Promise<Record<string, string>> => {
   try {
@@ -330,15 +366,23 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   let eventImageWidth = 0;
   let eventImageHeight = 0;
 
-  // Carregar logo do tenant
+  // Carregar logo do tenant e criar versão circular
   if (tenant?.logo_url) {
     console.log('Carregando logo do tenant:', tenant.logo_url.substring(0, 60));
-    logoDataUrl = await loadImageRobust(tenant.logo_url);
-    if (logoDataUrl) {
-      console.log('Logo carregado com sucesso!');
-      const dims = await getImageDimensions(logoDataUrl);
-      logoHeight = 24; // altura maior para mais impacto
-      logoWidth = logoHeight; // circular, então largura = altura
+    const rawLogoDataUrl = await loadImageRobust(tenant.logo_url);
+    if (rawLogoDataUrl) {
+      console.log('Logo carregado, criando versão circular...');
+      logoHeight = 24; // altura/largura do logo circular
+      logoWidth = logoHeight;
+      // Criar versão circular do logo
+      logoDataUrl = await createCircularImage(rawLogoDataUrl, logoHeight * 4);
+      if (logoDataUrl) {
+        console.log('Logo circular criado com sucesso!');
+      } else {
+        // Fallback para logo original se falhar
+        logoDataUrl = rawLogoDataUrl;
+        console.warn('Fallback para logo original (não circular)');
+      }
     } else {
       console.warn('Não foi possível carregar o logo do tenant');
     }
