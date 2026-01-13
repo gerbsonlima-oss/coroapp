@@ -429,18 +429,30 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     pdf.rect(0, headerHeight - 1, pageWidth, 1, 'F');
 
     let textStartX = margin;
-    const logoSize = 22;
+    const logoSize = 38; // Logo maior ocupando altura das 3 linhas
 
-    // Logo do tenant (apenas página 1)
+    // Calcular posições verticais com pouco espaçamento
+    const topPadding = 8;
+    const lineSpacing = 3; // Espaçamento pequeno entre linhas
+    
+    const line1Y = topPadding + 9; // Nome do tenant
+    const line2Y = line1Y + 10 + lineSpacing; // Subsídio Litúrgico
+    const line3Y = line2Y + 10 + lineSpacing; // Nome do evento
+
+    // Logo do tenant (apenas página 1) - centralizada verticalmente com o texto
     if (pageNum === 1 && logoDataUrl && logoWidth > 0) {
       try {
-        const logoY = (headerHeight - logoSize) / 2;
+        // Calcular centro vertical baseado nas 3 linhas de texto
+        const textBlockTop = topPadding;
+        const textBlockBottom = line3Y + 2;
+        const textBlockCenter = (textBlockTop + textBlockBottom) / 2;
+        const logoY = textBlockCenter - (logoSize / 2);
         const logoX = margin;
 
         const logoFormat = getJsPdfImageFormatFromDataUrl(logoDataUrl);
         pdf.addImage(logoDataUrl, logoFormat, logoX, logoY, logoSize, logoSize);
         
-        textStartX = margin + logoSize + 6;
+        textStartX = margin + logoSize + 8;
       } catch (e) {
         console.warn('Erro ao inserir logo:', e);
         textStartX = margin;
@@ -449,16 +461,6 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
     const maxTextWidth = pageWidth - textStartX - margin - 5;
     const centerX = textStartX + (maxTextWidth / 2);
-
-    // Calcular posições verticais com espaçamento equilibrado
-    const padding = 6; // Espaço superior e inferior
-    const totalTextHeight = 9 + 9 + 8; // Altura aproximada das 3 linhas de texto (26pt + 26pt + 22pt)
-    const availableHeight = headerHeight - (padding * 2);
-    const lineSpacing = (availableHeight - totalTextHeight) / 2; // Espaçamento entre linhas
-    
-    const line1Y = padding + 9; // Nome do tenant
-    const line2Y = line1Y + 9 + lineSpacing; // Subsídio Litúrgico
-    const line3Y = line2Y + 9 + lineSpacing; // Nome do evento
 
     // Linha 1: Nome do Tenant - fonte Times, tamanho 26
     const tenantName = tenant?.name || 'Coro Paroquial';
@@ -487,7 +489,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     pdf.text(eventLines[0], centerX, line3Y, { align: 'center' });
     if (eventLines[1]) {
       pdf.setFontSize(18);
-      pdf.text(eventLines[1], centerX, line3Y + 7, { align: 'center' });
+      pdf.text(eventLines[1], centerX, line3Y + 6, { align: 'center' });
     }
   };
 
