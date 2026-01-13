@@ -1232,6 +1232,9 @@ const EventDetails = () => {
                               }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
                               <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                               <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
+                              {user && canEdit && (
+                                <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1326,6 +1329,11 @@ const EventDetails = () => {
                         <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}>
                           <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
                         </DropdownMenuItem>
+                        {user && canEdit && (
+                          <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}>
+                            <Edit className="mr-2 h-4 w-4" /> Editar Música
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
