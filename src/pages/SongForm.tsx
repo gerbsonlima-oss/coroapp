@@ -552,13 +552,6 @@ const SongForm = () => {
           {/* Letra Card */}
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
             <Label className="text-xs font-semibold">Letra</Label>
-
-            {(isEditMode && song?.lyrics) || lyricsText ? (
-              <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-700 dark:text-green-400">
-                <FileType className="h-3 w-3" />
-                <span>Letra cadastrada</span>
-              </div>
-            ) : null}
             
             <Input
               ref={lyricsInputRef}
@@ -602,14 +595,21 @@ const SongForm = () => {
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Anexe .txt ou busque online</p>
+            <p className="text-xs text-muted-foreground">Anexe .txt, busque online ou digite abaixo</p>
             
+            {/* Textarea para editar letra */}
+            <textarea
+              value={lyricsText}
+              onChange={(e) => setLyricsText(e.target.value)}
+              placeholder="Digite ou cole a letra da música aqui..."
+              disabled={loading}
+              rows={8}
+              className="w-full rounded-lg bg-secondary/30 p-3 text-sm font-mono leading-relaxed border border-primary/10 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/20 resize-y min-h-[120px] placeholder:text-muted-foreground/50"
+            />
             {lyricsText && (
-              <div className="mt-2 rounded-lg bg-secondary/30 p-3 max-h-40 overflow-y-auto border border-primary/10">
-                <pre className="whitespace-pre-wrap text-xs font-mono leading-relaxed text-muted-foreground">
-                  {lyricsText.substring(0, 500)}{lyricsText.length > 500 ? '...' : ''}
-                </pre>
-              </div>
+              <p className="text-xs text-muted-foreground text-right">
+                {lyricsText.length} caracteres
+              </p>
             )}
           </div>
 
