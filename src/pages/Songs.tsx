@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download } from 'lucide-react';
+import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download, Eye, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { exportSongsPDF } from '@/utils/exportSongsPDF';
@@ -186,6 +186,33 @@ const Songs = () => {
     }
   };
 
+  const handleDeleteSong = async (songId: string, songName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm(`Tem certeza que deseja excluir "${songName}"?`)) {
+      return;
+    }
+    
+    try {
+      // Delete related song_audios first
+      await supabase.from('song_audios').delete().eq('song_id', songId);
+      
+      // Delete related event_songs
+      await supabase.from('event_songs').delete().eq('song_id', songId);
+      
+      // Delete the song
+      const { error } = await supabase.from('songs').delete().eq('id', songId);
+      
+      if (error) throw error;
+      
+      setSongs(prev => prev.filter(s => s.id !== songId));
+      toast.success('Música excluída com sucesso!');
+    } catch (error) {
+      console.error('Error deleting song:', error);
+      toast.error('Erro ao excluir música');
+    }
+  };
+
   const fetchSongTypes = async () => {
     try {
       const [{ data: songTypesData, error: songTypesError }, { data: songsData, error: songsError }] =
@@ -321,10 +348,26 @@ const Songs = () => {
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-popover border border-border">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
+                            <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
+                          </DropdownMenuItem>
+                          {isAdmin && (
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
+                              <Pencil className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
                             <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
                           </DropdownMenuItem>
+                          {isAdmin && (
+                            <DropdownMenuItem 
+                              onClick={(e) => handleDeleteSong(song.id, song.name, e)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -376,10 +419,26 @@ const Songs = () => {
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-popover border border-border">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
+                    <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
+                      <Pencil className="mr-2 h-4 w-4" /> Editar
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
                     <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem 
+                      onClick={(e) => handleDeleteSong(song.id, song.name, e)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
