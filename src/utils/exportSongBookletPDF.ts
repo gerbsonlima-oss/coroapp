@@ -462,16 +462,16 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const maxTextWidth = pageWidth - textStartX - margin - 5;
     const centerX = textStartX + (maxTextWidth / 2);
 
-    // Linha 1: Nome do Tenant - fonte Times, tamanho 11
+    // Linha 1: Nome do Tenant - fonte Times, tamanho 26
     const tenantName = tenant?.name || 'Coro Paroquial';
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(11);
+    pdf.setFontSize(26);
     pdf.setTextColor(...theme.primary);
     pdf.text(tenantName.toUpperCase(), centerX, line1Y, { align: 'center' });
 
-    // Linha 2: "Subsídio Litúrgico" - fonte Times, tamanho 11
+    // Linha 2: "Subsídio Litúrgico" - fonte Times, tamanho 26
     pdf.setFont('times', 'italic');
-    pdf.setFontSize(11);
+    pdf.setFontSize(26);
     // Usar uma cor intermediária entre primary e accent para o subtítulo
     const subtitleColor: [number, number, number] = [
       Math.round((theme.primary[0] + theme.accent[0]) / 2),
@@ -481,15 +481,15 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     pdf.setTextColor(...subtitleColor);
     pdf.text('Subsídio Litúrgico', centerX, line2Y, { align: 'center' });
 
-    // Linha 3: Nome do evento - fonte Times, tamanho 11
+    // Linha 3: Nome do evento - fonte Times, tamanho 22
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(11);
+    pdf.setFontSize(22);
     pdf.setTextColor(...theme.primary);
     const eventLines = pdf.splitTextToSize(event.name, maxTextWidth);
     pdf.text(eventLines[0], centerX, line3Y, { align: 'center' });
     if (eventLines[1]) {
-      pdf.setFontSize(10);
-      pdf.text(eventLines[1], centerX, line3Y + 4, { align: 'center' });
+      pdf.setFontSize(18);
+      pdf.text(eventLines[1], centerX, line3Y + 6, { align: 'center' });
     }
   };
 
