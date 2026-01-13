@@ -10,10 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Calendar, MapPin, Users, Trash2, Edit2, Phone, MessageCircle, Download } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, MapPin, Users, Trash2, Edit2, Phone, MessageCircle, Download, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { RehearsalAttendanceManager } from '@/components/RehearsalAttendanceManager';
 
 interface Rehearsal {
   id: string;
@@ -406,15 +407,25 @@ const Rehearsals = () => {
                   {rehearsal.notes && (
                     <p className="mt-2 text-sm text-muted-foreground">{rehearsal.notes}</p>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2 gap-2"
-                    onClick={() => openAttendanceDialog(rehearsal)}
-                  >
-                    <Users className="h-4 w-4" />
-                    {getAttendanceCount(rehearsal.id)} participantes
-                  </Button>
+                  <div className="flex gap-2 mt-2">
+                    {eventId && (
+                      <RehearsalAttendanceManager 
+                        rehearsalId={rehearsal.id} 
+                        eventId={eventId}
+                        isAdmin={isAdmin}
+                        onUpdate={() => fetchData()}
+                      />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => openAttendanceDialog(rehearsal)}
+                    >
+                      <Users className="h-4 w-4" />
+                      {getAttendanceCount(rehearsal.id)} usuários
+                    </Button>
+                  </div>
                 </div>
                 {isAdmin && (
                   <div className="flex gap-1">

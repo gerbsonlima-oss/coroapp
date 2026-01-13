@@ -98,7 +98,6 @@ export default function ChoirMemberForm() {
       toast.error('Erro ao processar imagem.');
     }
   };
-    }
 
   const uploadPhoto = async (): Promise<string | null> => {
     if (!photoFile) return photoPreview;

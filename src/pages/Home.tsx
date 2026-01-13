@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History } from 'lucide-react';
+import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -8,6 +8,7 @@ import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
@@ -41,7 +42,8 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isSuperAdmin } = useSuperAdmin();
-  const { tenant, tenantId } = useTenant();
+  const { isAdmin } = useIsAdmin();
+  const { tenant, tenantId, tenantSlug } = useTenant();
   const { saveEvents } = useOfflineStorage();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
@@ -160,6 +162,17 @@ const Home = () => {
         </div>
         <div className="flex items-center gap-2">
           <TenantSwitcher />
+          {(isAdmin || isSuperAdmin) && (
+            <Button
+              onClick={() => navigate(tenantSlug ? `/${tenantSlug}/choir-members` : '/choir-members')}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Coralistas</span>
+            </Button>
+          )}
           {isSuperAdmin && (
             <Button
               onClick={() => navigate('/admin/tenants')}
