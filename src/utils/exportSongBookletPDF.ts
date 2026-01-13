@@ -346,7 +346,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const margin = 10;
   const gutter = 6;
   const colWidth = (pageWidth - 2 * margin - gutter) / 2;
-  const headerHeight = 48; // Aumentado para fontes maiores
+  const headerHeight = 58; // Aumentado para fontes maiores (26/22)
   const footerHeight = 8;
   const contentStart = headerHeight + 5; // Margem extra para não sobrepor
   const contentEnd = pageHeight - footerHeight - 3;
@@ -450,16 +450,16 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const maxTextWidth = pageWidth - textStartX - margin - 5;
     const centerX = textStartX + (maxTextWidth / 2);
 
-    // Linha 1: Nome do Tenant - fonte Times (similar a Bell MT), tamanho 20
+    // Linha 1: Nome do Tenant - fonte Times, tamanho 26
     const tenantName = tenant?.name || 'Coro Paroquial';
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(20);
+    pdf.setFontSize(26);
     pdf.setTextColor(...theme.primary);
-    pdf.text(tenantName.toUpperCase(), centerX, 14, { align: 'center' });
+    pdf.text(tenantName.toUpperCase(), centerX, 16, { align: 'center' });
 
-    // Linha 2: "Subsídio Litúrgico" - fonte Times, tamanho 20
+    // Linha 2: "Subsídio Litúrgico" - fonte Times, tamanho 26
     pdf.setFont('times', 'italic');
-    pdf.setFontSize(20);
+    pdf.setFontSize(26);
     // Usar uma cor intermediária entre primary e accent para o subtítulo
     const subtitleColor: [number, number, number] = [
       Math.round((theme.primary[0] + theme.accent[0]) / 2),
@@ -467,18 +467,18 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       Math.round((theme.primary[2] + theme.accent[2]) / 2),
     ];
     pdf.setTextColor(...subtitleColor);
-    pdf.text('Subsídio Litúrgico', centerX, 24, { align: 'center' });
+    pdf.text('Subsídio Litúrgico', centerX, 28, { align: 'center' });
 
-    // Linha 3: Nome do evento - fonte Times, tamanho 16
+    // Linha 3: Nome do evento - fonte Times, tamanho 22
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(16);
+    pdf.setFontSize(22);
     pdf.setTextColor(...theme.primary);
     const eventLines = pdf.splitTextToSize(event.name, maxTextWidth);
-    let eventY = 36;
+    let eventY = 44;
     pdf.text(eventLines[0], centerX, eventY, { align: 'center' });
     if (eventLines[1]) {
-      pdf.setFontSize(14);
-      pdf.text(eventLines[1], centerX, eventY + 7, { align: 'center' });
+      pdf.setFontSize(18);
+      pdf.text(eventLines[1], centerX, eventY + 9, { align: 'center' });
     }
   };
 
