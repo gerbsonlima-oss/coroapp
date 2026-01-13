@@ -273,17 +273,18 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
 
   const white: [number, number, number] = [255, 255, 255];
-  const textDark: [number, number, number] = [35, 35, 45];
-  const textLight: [number, number, number] = [100, 100, 110];
+  const textDark: [number, number, number] = [30, 30, 38];
+  const textMedium: [number, number, number] = [60, 60, 70];
+  const textLight: [number, number, number] = [90, 90, 100];
   
-  // Layout - medidas em mm
-  const margin = 12;
-  const gutter = 8;
+  // Layout - medidas em mm (otimizado para impressão)
+  const margin = 10;
+  const gutter = 6;
   const colWidth = (pageWidth - 2 * margin - gutter) / 2;
-  const headerHeight = 28;
-  const footerHeight = 10;
-  const contentStart = headerHeight + 4;
-  const contentEnd = pageHeight - footerHeight - 2;
+  const headerHeight = 26;
+  const footerHeight = 8;
+  const contentStart = headerHeight + 3;
+  const contentEnd = pageHeight - footerHeight - 3;
 
   // Estado de paginação
   let currentPage = 1;
@@ -469,7 +470,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     let y = currentCol === 1 ? col1Y : col2Y;
 
     // Verificar se precisa mudar de coluna/página
-    if (y + 30 > contentEnd) {
+    if (y + 25 > contentEnd) {
       if (currentCol === 1) {
         currentCol = 2;
         y = col2Y;
@@ -484,15 +485,14 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       }
     }
 
-    const barHeight = 7;
-    const badgeWidth = 8;
+    const barHeight = 6;
+    const badgeWidth = 7;
 
-    // Background esmaecido (toda a largura da coluna)
-    // Usando cor primária com opacidade simulada via RGB mais claro
+    // Background esmaecido (10% da cor primária)
     const lightBg: [number, number, number] = [
-      Math.min(255, theme.primary[0] + 200),
-      Math.min(255, theme.primary[1] + 200),
-      Math.min(255, theme.primary[2] + 200),
+      Math.round(255 - (255 - theme.primary[0]) * 0.12),
+      Math.round(255 - (255 - theme.primary[1]) * 0.12),
+      Math.round(255 - (255 - theme.primary[2]) * 0.12),
     ];
     pdf.setFillColor(...lightBg);
     pdf.rect(x, y, colWidth, barHeight, 'F');
@@ -504,19 +504,19 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     // Número centralizado no badge (branco, negrito)
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
+    pdf.setFontSize(10);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
-    pdf.text(numText, x + (badgeWidth - numW) / 2, y + 5);
+    pdf.text(numText, x + (badgeWidth - numW) / 2, y + 4.3);
 
     // Texto do tipo (negrito, cor primária)
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
-    pdf.text(labelText, x + badgeWidth + 4, y + 5);
+    pdf.setFontSize(8);
+    pdf.text(labelText, x + badgeWidth + 3, y + 4.3);
 
-    const newY = y + barHeight + 3;
+    const newY = y + barHeight + 2;
     if (currentCol === 1) col1Y = newY;
     else col2Y = newY;
   };
@@ -532,10 +532,10 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    let x = (currentCol === 1 ? col1X : col2X) + 2 + indent;
+    let x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
     let y = (currentCol === 1 ? col1Y : col2Y) + spaceBefore;
-    const lineHeight = size * 0.42;
-    const maxWidth = colWidth - 4 - indent;
+    const lineHeight = size * 0.38;
+    const maxWidth = colWidth - 3 - indent;
     
     pdf.setFont('helvetica', style);
     pdf.setFontSize(size);
@@ -547,7 +547,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       if (y + lineHeight > contentEnd) {
         if (currentCol === 1) {
           currentCol = 2;
-          x = col2X + 2 + indent;
+          x = col2X + 1.5 + indent;
           y = col2Y;
         } else {
           pdf.addPage();
@@ -556,7 +556,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           currentCol = 1;
           col1Y = contentStart;
           col2Y = contentStart;
-          x = col1X + 2 + indent;
+          x = col1X + 1.5 + indent;
           y = col1Y;
         }
       }
@@ -576,27 +576,21 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   for (const song of songsWithLyrics) {
     songIndex++;
 
-    // Espaço entre seções
+    // Espaço entre seções (maior para separação visual)
     if (songIndex > 1) {
-      if (currentCol === 1) col1Y += 5;
-      else col2Y += 5;
+      if (currentCol === 1) col1Y += 4;
+      else col2Y += 4;
     }
 
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
     // Nome da música (destaque)
-    addText(song.name, 10.5, 'bold', theme.primary, 0, 1);
+    addText(song.name, 9.5, 'bold', theme.primary, 0, 0.5);
 
-    // Linha separadora sutil
-    const lineX = currentCol === 1 ? col1X : col2X;
-    const lineY = currentCol === 1 ? col1Y : col2Y;
-    pdf.setDrawColor(...theme.accent);
-    pdf.setLineWidth(0.3);
-    pdf.line(lineX + 2, lineY, lineX + 25, lineY);
-
-    if (currentCol === 1) col1Y += 2;
-    else col2Y += 2;
+    // Espaço após nome
+    if (currentCol === 1) col1Y += 1.5;
+    else col2Y += 1.5;
 
     // Processar letra
     if (song.lyrics) {
@@ -609,8 +603,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         
         if (!trimmed) {
           if (!prevEmpty) {
-            if (currentCol === 1) col1Y += 2.5;
-            else col2Y += 2.5;
+            if (currentCol === 1) col1Y += 2;
+            else col2Y += 2;
           }
           prevEmpty = true;
           isRefrain = false;
@@ -623,7 +617,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
         if (isRefrainLine) {
           isRefrain = true;
-          addText(trimmed, 9, 'bold', theme.primary, 0, 1);
+          addText(trimmed, 8.5, 'bold', theme.primary, 0, 0.8);
           continue;
         }
 
@@ -635,20 +629,20 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
         if (hasMarker) {
           style = 'bold';
-          color = theme.primary;
+          color = textMedium;
         } else if (isRefrain) {
           style = 'italic';
-          color = textLight;
-          indent = 4;
+          color = textMedium;
+          indent = 3;
         }
 
-        addText(trimmed, 9, style, color, indent, 0);
+        addText(trimmed, 8.5, style, color, indent, 0);
       }
     }
 
     // Espaço após a música
-    if (currentCol === 1) col1Y += 2;
-    else col2Y += 2;
+    if (currentCol === 1) col1Y += 1.5;
+    else col2Y += 1.5;
   }
 
   // ============================================
