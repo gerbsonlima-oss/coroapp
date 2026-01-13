@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown, FileType } from 'lucide-react';
+import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown, FileType, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LyricsSearchModal } from '@/components/LyricsSearchModal';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { convertPdfToImages, createCombinedImage } from '@/utils/pdfToImage';
@@ -76,6 +77,7 @@ const SongForm = () => {
   const [sheetMusic, setSheetMusic] = useState<File | null>(null);
   const [originalPdf, setOriginalPdf] = useState<File | null>(null);
   const [lyricsFile, setLyricsFile] = useState<File | null>(null);
+  const [lyricsSearchOpen, setLyricsSearchOpen] = useState(false);
   const [convertingPdf, setConvertingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -575,14 +577,34 @@ const SongForm = () => {
               >
                 <Paperclip className="h-5 w-5 text-primary" />
               </button>
+              <button
+                type="button"
+                onClick={() => setLyricsSearchOpen(true)}
+                disabled={loading || convertingPdf || !name}
+                title="Buscar letra online"
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50"
+              >
+                <Search className="h-5 w-5 text-primary" />
+              </button>
               {lyricsFile && (
                 <span className="text-xs truncate bg-primary/5 px-2 py-1 rounded border border-primary/20">
                   {lyricsFile.name}
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Apenas arquivos .txt são aceitos</p>
+            <p className="text-xs text-muted-foreground">Anexe .txt ou busque online</p>
           </div>
+
+          <LyricsSearchModal
+            open={lyricsSearchOpen}
+            onOpenChange={setLyricsSearchOpen}
+            songName={name}
+            onImport={(lyrics) => {
+              const blob = new Blob([lyrics], { type: 'text/plain' });
+              const file = new File([blob], `${name || 'letra'}.txt`, { type: 'text/plain' });
+              setLyricsFile(file);
+            }}
+          />
 
           {/* Áudios por Naipe Card */}
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
