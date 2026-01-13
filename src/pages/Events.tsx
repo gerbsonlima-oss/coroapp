@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff } from 'lucide-react';
+import { EventsReportExporter } from '@/components/EventsReportExporter';
+import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -32,6 +33,7 @@ const Events = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
+  const [showReportExporter, setShowReportExporter] = useState(false);
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
@@ -144,6 +146,15 @@ const Events = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowReportExporter(true)} 
+              className="hover:bg-accent/80"
+              title="Exportar Relatório"
+            >
+              <FileText className="h-5 w-5" />
+            </Button>
             <InstallPWAButton size="icon" showText={false} className="hidden md:flex" />
             {user ? (
               <Button variant="ghost" size="icon" onClick={signOut} className="hover:bg-accent/80">
@@ -217,6 +228,11 @@ const Events = () => {
       )}
 
       <BottomNavigation />
+
+      <EventsReportExporter 
+        open={showReportExporter} 
+        onOpenChange={setShowReportExporter} 
+      />
     </div>
   );
 };
