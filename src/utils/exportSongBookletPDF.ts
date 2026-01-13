@@ -477,18 +477,54 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   if (eventImageDataUrl && eventImageWidth > 0) {
     try {
       const imgX = col1X + (colWidth - eventImageWidth) / 2;
+      const imgW = eventImageWidth;
+      const imgH = eventImageHeight;
+      const fadeSize = 4; // Tamanho do gradiente de esmaecimento
 
-      // Borda elegante com cantos arredondados (simulado)
-      pdf.setFillColor(...theme.light);
-      pdf.roundedRect(imgX - 2, col1Y - 2, eventImageWidth + 4, eventImageHeight + 4, 2, 2, 'F');
-
-      pdf.setDrawColor(...theme.accent);
-      pdf.setLineWidth(0.8);
-      pdf.roundedRect(imgX - 1, col1Y - 1, eventImageWidth + 2, eventImageHeight + 2, 1.5, 1.5, 'S');
-
+      // Desenhar a imagem primeiro
       const eventImgFormat = getJsPdfImageFormatFromDataUrl(eventImageDataUrl);
-      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, col1Y, eventImageWidth, eventImageHeight);
-      col1Y += eventImageHeight + 8;
+      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, col1Y, imgW, imgH);
+
+      // Criar efeito de bordas esmaecidas com gradiente para branco
+      const bgColor: [number, number, number] = [255, 255, 255];
+      const steps = 8;
+
+      // Gradiente superior
+      for (let i = 0; i < steps; i++) {
+        const alpha = 1 - (i / steps);
+        const r = Math.round(bgColor[0] * alpha + 255 * (1 - alpha));
+        const g = Math.round(bgColor[1] * alpha + 255 * (1 - alpha));
+        const b = Math.round(bgColor[2] * alpha + 255 * (1 - alpha));
+        pdf.setFillColor(255, 255, 255);
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX, col1Y + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+      }
+
+      // Gradiente inferior
+      for (let i = 0; i < steps; i++) {
+        const alpha = i / steps;
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX, col1Y + imgH - fadeSize + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+      }
+
+      // Gradiente esquerdo
+      for (let i = 0; i < steps; i++) {
+        const alpha = 1 - (i / steps);
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX + (i * fadeSize / steps), col1Y, fadeSize / steps, imgH, 'F');
+      }
+
+      // Gradiente direito
+      for (let i = 0; i < steps; i++) {
+        const alpha = i / steps;
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX + imgW - fadeSize + (i * fadeSize / steps), col1Y, fadeSize / steps, imgH, 'F');
+      }
+
+      // Resetar opacidade
+      pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+
+      col1Y += imgH + 8;
     } catch (e) {
       console.warn('Erro ao inserir imagem do evento:', e);
     }
