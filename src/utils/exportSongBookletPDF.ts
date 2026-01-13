@@ -456,37 +456,26 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   };
 
   // ============================================
-  // FOOTER - Design elegante e profissional
+  // FOOTER - Limpo e profissional
   // ============================================
   const drawFooter = (pageNum: number, totalPages: number) => {
-    const footY = pageHeight - 5;
+    const footY = pageHeight - 6;
 
-    // Faixa sutil colorida no footer
-    const footerBg: [number, number, number] = [
-      Math.round(255 - (255 - theme.primary[0]) * 0.05),
-      Math.round(255 - (255 - theme.primary[1]) * 0.05),
-      Math.round(255 - (255 - theme.primary[2]) * 0.05),
-    ];
-    pdf.setFillColor(...footerBg);
-    pdf.rect(0, pageHeight - 10, pageWidth, 10, 'F');
+    // Linha superior
+    pdf.setDrawColor(...theme.light);
+    pdf.setLineWidth(0.3);
+    pdf.line(margin, footY - 3, pageWidth - margin, footY - 3);
 
-    // Linha superior elegante
-    pdf.setDrawColor(...theme.accent);
-    pdf.setLineWidth(0.4);
-    pdf.line(margin, pageHeight - 10, pageWidth - margin, pageHeight - 10);
-
-    // Nome do tenant - fonte serifada
-    pdf.setFont('times', 'italic');
-    pdf.setFontSize(8);
-    pdf.setTextColor(...textMedium);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.setTextColor(...textLight);
 
     if (tenant?.name) {
       pdf.text(tenant.name, margin, footY);
     }
 
-    // Número da página estilizado
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(9);
+    // Número da página com destaque
+    pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...theme.primary);
     const pageStr = `${pageNum} / ${totalPages}`;
     pdf.text(pageStr, pageWidth - margin, footY, { align: 'right' });
@@ -555,7 +544,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   }
 
   // ============================================
-  // SEÇÃO DE MÚSICA - Design profissional com fundo esmaecido
+  // SEÇÃO DE MÚSICA - Design com background esmaecido
   // ============================================
   const drawSongSection = (num: number, label: string): void => {
     const x = currentCol === 1 ? col1X : col2X;
@@ -577,91 +566,39 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       }
     }
 
-    const barHeight = 7;
-    const badgeWidth = 8;
-    const cornerRadius = 1;
+    const barHeight = 6;
+    const badgeWidth = 7;
 
-    // Linha decorativa superior sutil
-    pdf.setDrawColor(
-      Math.round(theme.primary[0] + (255 - theme.primary[0]) * 0.7),
-      Math.round(theme.primary[1] + (255 - theme.primary[1]) * 0.7),
-      Math.round(theme.primary[2] + (255 - theme.primary[2]) * 0.7)
-    );
-    pdf.setLineWidth(0.3);
-    pdf.line(x, y - 1.5, x + colWidth, y - 1.5);
-
-    // Background esmaecido (cor primária bem suave - 8% opacidade visual)
+    // Background esmaecido (10% da cor primária)
     const lightBg: [number, number, number] = [
-      Math.round(255 - (255 - theme.primary[0]) * 0.08),
-      Math.round(255 - (255 - theme.primary[1]) * 0.08),
-      Math.round(255 - (255 - theme.primary[2]) * 0.08),
+      Math.round(255 - (255 - theme.primary[0]) * 0.12),
+      Math.round(255 - (255 - theme.primary[1]) * 0.12),
+      Math.round(255 - (255 - theme.primary[2]) * 0.12),
     ];
     pdf.setFillColor(...lightBg);
     pdf.rect(x, y, colWidth, barHeight, 'F');
 
-    // Gradiente sutil no background (escurecendo levemente à esquerda)
-    const slightlyDarker: [number, number, number] = [
-      Math.round(255 - (255 - theme.primary[0]) * 0.15),
-      Math.round(255 - (255 - theme.primary[1]) * 0.15),
-      Math.round(255 - (255 - theme.primary[2]) * 0.15),
-    ];
-    const gradWidth = 25;
-    for (let i = 0; i < 5; i++) {
-      const ratio = i / 5;
-      const r = Math.round(slightlyDarker[0] + (lightBg[0] - slightlyDarker[0]) * ratio);
-      const g = Math.round(slightlyDarker[1] + (lightBg[1] - slightlyDarker[1]) * ratio);
-      const b = Math.round(slightlyDarker[2] + (lightBg[2] - slightlyDarker[2]) * ratio);
-      pdf.setFillColor(r, g, b);
-      pdf.rect(x + (gradWidth / 5) * i, y, gradWidth / 5 + 0.5, barHeight, 'F');
-    }
-
-    // Badge numérico com sombra sutil
-    // Sombra
-    pdf.setFillColor(
-      Math.max(0, theme.primary[0] - 40),
-      Math.max(0, theme.primary[1] - 40),
-      Math.max(0, theme.primary[2] - 40)
-    );
-    pdf.rect(x + 0.3, y + 0.3, badgeWidth, barHeight, 'F');
-    
-    // Badge principal
+    // Badge numérico (retângulo colorido sólido)
     pdf.setFillColor(...theme.primary);
     pdf.rect(x, y, badgeWidth, barHeight, 'F');
     
-    // Brilho sutil no topo do badge
-    pdf.setFillColor(
-      Math.min(255, theme.primary[0] + 30),
-      Math.min(255, theme.primary[1] + 30),
-      Math.min(255, theme.primary[2] + 30)
-    );
-    pdf.rect(x, y, badgeWidth, barHeight * 0.3, 'F');
-    
     // Número centralizado no badge (branco, negrito)
     pdf.setTextColor(255, 255, 255);
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
-    pdf.text(numText, x + (badgeWidth - numW) / 2, y + 5);
+    pdf.text(numText, x + (badgeWidth - numW) / 2, y + 4.3);
 
-    // Texto do tipo - fonte serifada elegante
+    // Texto do tipo (negrito, cor primária)
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(9);
-    pdf.text(labelText, x + badgeWidth + 4, y + 5);
-
-    // Pequena borda inferior para definição
-    pdf.setDrawColor(
-      Math.round(theme.primary[0] + (255 - theme.primary[0]) * 0.6),
-      Math.round(theme.primary[1] + (255 - theme.primary[1]) * 0.6),
-      Math.round(theme.primary[2] + (255 - theme.primary[2]) * 0.6)
-    );
-    pdf.setLineWidth(0.2);
-    pdf.line(x, y + barHeight, x + colWidth, y + barHeight);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.text(labelText, x + badgeWidth + 3, y + 4.3);
 
     // Mais espaço após a seção do tipo para separar do nome
-    const newY = y + barHeight + 5;
+    const newY = y + barHeight + 4;
     if (currentCol === 1) col1Y = newY;
     else col2Y = newY;
   };
@@ -730,31 +667,13 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
-    // Nome da música (destaque) - fonte serifada elegante
-    const x = currentCol === 1 ? col1X : col2X;
-    let y = currentCol === 1 ? col1Y : col2Y;
-    
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(12);
-    pdf.setTextColor(...theme.primary);
-    const maxWidth = colWidth - 4;
-    const songNameLines = pdf.splitTextToSize(song.name, maxWidth) as string[];
-    for (const line of songNameLines) {
-      pdf.text(line, x + 1.5, y + 1);
-      y += 4.5;
-    }
-    
-    // Linha sutil abaixo do nome
-    pdf.setDrawColor(
-      Math.round(theme.primary[0] + (255 - theme.primary[0]) * 0.75),
-      Math.round(theme.primary[1] + (255 - theme.primary[1]) * 0.75),
-      Math.round(theme.primary[2] + (255 - theme.primary[2]) * 0.75)
-    );
-    pdf.setLineWidth(0.15);
-    pdf.line(x + 1.5, y - 1, x + colWidth * 0.4, y - 1);
-    
-    if (currentCol === 1) col1Y = y + 2;
-    else col2Y = y + 2;
+    // Nome da música (destaque)
+    // Nome da música (destaque) - fonte 11pt
+    addText(song.name, 11, 'bold', theme.primary, 0, 1);
+
+    // Espaço após nome (mais separação)
+    if (currentCol === 1) col1Y += 2.5;
+    else col2Y += 2.5;
 
     // Processar letra
     if (song.lyrics) {
