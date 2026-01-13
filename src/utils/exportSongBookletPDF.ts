@@ -54,97 +54,88 @@ const liturgicalOrder: Record<string, number> = {
   outro: 12,
 };
 
-// Carrega imagem com múltiplos fallbacks para contornar CORS
+// Detecta o formato correto para o jsPDF a partir de um dataURL
+type JsPdfImageFormat = 'PNG' | 'JPEG';
+
+const getJsPdfImageFormatFromDataUrl = (dataUrl: string): JsPdfImageFormat => {
+  const match = /^data:image\/(png|jpe?g)/i.exec(dataUrl);
+  if (!match) return 'JPEG';
+  return match[1].toLowerCase() === 'png' ? 'PNG' : 'JPEG';
+};
+
+// Preferimos fetch->blob->dataURL para evitar canvas "tainted" em imagens externas
+const fetchImageAsDataUrl = async (url: string, timeoutMs = 15000): Promise<string | null> => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      mode: 'cors',
+      cache: 'no-store',
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (!blob.type?.startsWith('image/')) return null;
+
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('FileReader error'));
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('Falha ao buscar imagem via fetch:', e);
+    return null;
+  }
+};
+
+// Carrega imagem com múltiplos fallbacks
 const loadImageRobust = async (url: string): Promise<string | null> => {
   if (!url) return null;
-  
-  const isSupabaseUrl = url.includes('supabase.co/storage');
-  
-  // Para URLs do Supabase Storage público, usar img sem crossOrigin
-  if (isSupabaseUrl) {
-    const result = await new Promise<string | null>((resolve) => {
-      const img = new Image();
-      
-      const timeout = setTimeout(() => {
-        console.warn('Timeout ao carregar imagem Supabase:', url.substring(0, 60));
-        resolve(null);
-      }, 8000);
-      
-      img.onload = () => {
-        clearTimeout(timeout);
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            console.log('Imagem Supabase carregada:', url.substring(0, 60));
-            resolve(dataUrl);
-          } else {
-            resolve(null);
-          }
-        } catch (e) {
-          console.warn('Erro canvas Supabase:', e);
-          resolve(null);
-        }
-      };
-      
-      img.onerror = (e) => {
-        clearTimeout(timeout);
-        console.warn('Erro ao carregar imagem Supabase:', url.substring(0, 60), e);
-        resolve(null);
-      };
-      
-      img.src = url;
-    });
-    
-    if (result) return result;
-  }
-  
-  // Método com crossOrigin para outras URLs
-  const canvasResult = await new Promise<string | null>((resolve) => {
+
+  // 1) Melhor caminho: fetch -> blob -> dataURL (evita problemas de CORS/canvas)
+  const fetched = await fetchImageAsDataUrl(url);
+  if (fetched) return fetched;
+
+  // 2) Fallback: <img> + canvas (requer CORS liberado no servidor)
+  return await new Promise<string | null>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    
+
     const timeout = setTimeout(() => {
-      console.warn('Timeout ao carregar imagem via canvas:', url.substring(0, 60));
-      img.src = '';
+      console.warn('Timeout ao carregar imagem:', url.substring(0, 60));
       resolve(null);
-    }, 5000);
-    
+    }, 15000);
+
     img.onload = () => {
       clearTimeout(timeout);
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
         const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          const dataUrl = canvas.toDataURL('image/png');
-          console.log('Imagem carregada via canvas:', url.substring(0, 60));
-          resolve(dataUrl);
-        } else {
-          resolve(null);
-        }
+        if (!ctx) return resolve(null);
+
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
       } catch (e) {
-        console.warn('Erro ao converter imagem para canvas:', e);
+        console.warn('Erro ao converter imagem para dataURL:', e);
         resolve(null);
       }
     };
-    
-    img.onerror = () => {
+
+    img.onerror = (e) => {
       clearTimeout(timeout);
-      console.warn('Erro canvas ao carregar imagem:', url.substring(0, 60));
+      console.warn('Erro ao carregar imagem:', url.substring(0, 60), e);
       resolve(null);
     };
-    
+
     img.src = url;
   });
-  
-  return canvasResult;
 };
 
 // Calcula dimensões da imagem a partir do base64
@@ -358,7 +349,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     if (pageNum === 1 && logoDataUrl && logoWidth > 0) {
       try {
         const logoY = 6;
-        pdf.addImage(logoDataUrl, 'PNG', margin, logoY, logoWidth, logoHeight);
+        const logoFormat = getJsPdfImageFormatFromDataUrl(logoDataUrl);
+        pdf.addImage(logoDataUrl, logoFormat, margin, logoY, logoWidth, logoHeight);
         textStartX = margin + logoWidth + 6;
       } catch (e) {
         console.warn('Erro ao inserir logo:', e);
@@ -446,16 +438,17 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   if (eventImageDataUrl && eventImageWidth > 0) {
     try {
       const imgX = col1X + (colWidth - eventImageWidth) / 2;
-      
+
       // Borda elegante com cantos arredondados (simulado)
       pdf.setFillColor(...theme.light);
       pdf.roundedRect(imgX - 2, col1Y - 2, eventImageWidth + 4, eventImageHeight + 4, 2, 2, 'F');
-      
+
       pdf.setDrawColor(...theme.accent);
       pdf.setLineWidth(0.8);
       pdf.roundedRect(imgX - 1, col1Y - 1, eventImageWidth + 2, eventImageHeight + 2, 1.5, 1.5, 'S');
-      
-      pdf.addImage(eventImageDataUrl, 'JPEG', imgX, col1Y, eventImageWidth, eventImageHeight);
+
+      const eventImgFormat = getJsPdfImageFormatFromDataUrl(eventImageDataUrl);
+      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, col1Y, eventImageWidth, eventImageHeight);
       col1Y += eventImageHeight + 8;
     } catch (e) {
       console.warn('Erro ao inserir imagem do evento:', e);
