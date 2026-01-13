@@ -1,51 +1,18 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Download, Calendar, MapPin, Music, ExternalLink } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { Download } from 'lucide-react';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import coroLogo from '@/assets/coro-logo.png';
-import html2canvas from 'html2canvas';
-import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
-
-interface EventWithSongs {
-  id: string;
-  name: string;
-  date: string;
-  location: string | null;
-  songs: Array<{
-    id: string;
-    name: string;
-    type: string;
-    typeName: string;
-  }>;
-}
+import { exportEventsReportPDF } from '@/utils/exportEventsReportPDF';
 
 interface EventsReportExporterProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const typeColors: Record<string, { bg: string; text: string; border: string }> = {
-  canto_entrada: { bg: '#EFF6FF', text: '#0369A1', border: '#0EA5E9' },
-  ato_penitencial: { bg: '#FEF2F2', text: '#991B1B', border: '#EF4444' },
-  gloria: { bg: '#FEFCE8', text: '#854D0E', border: '#EAB308' },
-  salmo: { bg: '#F0FDF4', text: '#166534', border: '#22C55E' },
-  aclamacao: { bg: '#FCE7F3', text: '#BE185D', border: '#EC4899' },
-  oferendas: { bg: '#FEF3C7', text: '#92400E', border: '#F59E0B' },
-  santo: { bg: '#F3E8FF', text: '#581C87', border: '#D946EF' },
-  cordeiro: { bg: '#FCE7F3', text: '#BE123C', border: '#F43F5E' },
-  comunhao: { bg: '#F0FDF4', text: '#065F46', border: '#10B981' },
-  acao_gracas: { bg: '#E0E7FF', text: '#3730A3', border: '#6366F1' },
-  final: { bg: '#FFF7ED', text: '#92400E', border: '#FB923C' },
-  adoracao: { bg: '#FDF4FF', text: '#7E22CE', border: '#A855F7' },
-  outro: { bg: '#F3F4F6', text: '#374151', border: '#9CA3AF' },
-};
-
-const defaultTypeColor = { bg: '#F3F4F6', text: '#374151', border: '#9CA3AF' };
 
 const getMonthOptions = () => {
   const options = [];
@@ -64,260 +31,70 @@ export const EventsReportExporter = ({
   open,
   onOpenChange
 }: EventsReportExporterProps) => {
-  const contentRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-  const [events, setEvents] = useState<EventWithSongs[]>([]);
-  const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
-  const { tenantId } = useTenant();
+  const { tenantId, tenantSlug, tenant } = useTenant();
 
   const monthOptions = getMonthOptions();
 
-  useEffect(() => {
-    if (open && tenantId) {
-      fetchEventsForMonth();
-      fetchTypeLabels();
-    }
-  }, [open, selectedMonth, tenantId]);
-
-  const fetchTypeLabels = async () => {
-    const { data } = await supabase
-      .from('song_types')
-      .select('slug, name');
-    
-    if (data) {
-      const labels: Record<string, string> = {};
-      data.forEach(type => {
-        labels[type.slug] = type.name;
-      });
-      setTypeLabels(labels);
-    }
-  };
-
-  const fetchEventsForMonth = async () => {
-    if (!tenantId) return;
-    
-    setIsLoading(true);
-    try {
-      const [year, month] = selectedMonth.split('-').map(Number);
-      const startDate = startOfMonth(new Date(year, month - 1));
-      const endDate = endOfMonth(new Date(year, month - 1));
-
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('events')
-        .select('id, name, date, location')
-        .eq('tenant_id', tenantId)
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'))
-        .order('date', { ascending: true });
-
-      if (eventsError) throw eventsError;
-
-      const eventsWithSongs: EventWithSongs[] = [];
-
-      for (const event of eventsData || []) {
-        const { data: songsData } = await supabase
-          .from('event_songs')
-          .select('id, songs(id, name, type)')
-          .eq('event_id', event.id)
-          .order('order_index', { ascending: true });
-
-        const songs = songsData?.map(es => ({
-          id: es.songs?.id || '',
-          name: es.songs?.name || '',
-          type: es.songs?.type || '',
-          typeName: ''
-        })).filter(s => s.id) || [];
-
-        eventsWithSongs.push({
-          ...event,
-          songs
-        });
-      }
-
-      setEvents(eventsWithSongs);
-    } catch (error) {
-      console.error('Erro ao buscar eventos:', error);
-      toast.error('Erro ao carregar eventos do mês');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    return typeColors[type] || defaultTypeColor;
-  };
-
   const handleExport = async () => {
-    if (!contentRef.current) return;
+    if (!tenantId) {
+      toast.error('Tenant não encontrado');
+      return;
+    }
     
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: '#FFFFFF',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-      });
-
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      const monthLabel = format(parseISO(`${selectedMonth}-01`), 'MMMM_yyyy', { locale: ptBR });
-      link.download = `relatorio_eventos_${monthLabel}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
+      await exportEventsReportPDF(tenantId, tenantSlug, tenant?.name || null, selectedMonth);
       toast.success('Relatório exportado com sucesso!');
       onOpenChange(false);
     } catch (error) {
       console.error('Erro ao exportar relatório:', error);
-      toast.error('Erro ao exportar relatório');
+      if (error instanceof Error && error.message.includes('Nenhum evento')) {
+        toast.error('Nenhum evento encontrado para este mês');
+      } else {
+        toast.error('Erro ao exportar relatório');
+      }
     } finally {
       setIsExporting(false);
     }
   };
 
-  const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || '';
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
           <DialogTitle>Exportar Relatório de Eventos</DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 pb-6">
-          <div className="mb-4">
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Selecione o mês
-            </label>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione o mês" />
-              </SelectTrigger>
-              <SelectContent>
-                {monthOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
-          ) : events.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Nenhum evento encontrado para este mês</p>
-            </div>
-          ) : (
-            <>
-              <div
-                ref={contentRef}
-                className="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-lg"
-                style={{ aspectRatio: '9/16' }}
-              >
-                <div className="bg-gradient-to-b from-primary/90 to-primary/70 p-6 text-white">
-                  <div className="mb-4 rounded-lg overflow-hidden h-32 bg-white/20 flex items-center justify-center">
-                    <Calendar className="w-12 h-12 text-white/50" />
-                  </div>
-
-                  <h1 className="text-2xl font-bold mb-2 leading-tight capitalize">
-                    {selectedMonthLabel}
-                  </h1>
-                  
-                  <div className="flex items-center gap-2 text-sm text-white/90 mb-1">
-                    <span>📅</span>
-                    <span>{events.length} evento{events.length !== 1 ? 's' : ''}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm text-white/90">
-                    <span>🎵</span>
-                    <span>{events.reduce((acc, e) => acc + e.songs.length, 0)} música{events.reduce((acc, e) => acc + e.songs.length, 0) !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-
-                <div className="p-6 max-h-[calc(100%-240px)] overflow-y-auto">
-                  <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    Eventos do Mês
-                  </h2>
-
-                  {events.map((event) => (
-                    <div key={event.id} className="mb-5">
-                      <div
-                        className="px-3 py-2 rounded-lg mb-3 border-2 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30"
-                      >
-                        <h3 className="font-bold text-sm text-primary flex items-center gap-2">
-                          <span>📌</span>
-                          {event.name}
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            📅 {format(new Date(event.date), 'd MMM', { locale: ptBR })}
-                          </span>
-                          {event.location && (
-                            <span className="flex items-center gap-1">
-                              📍 {event.location}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 pl-2">
-                        {event.songs.length > 0 ? (
-                          event.songs.map((song, index) => {
-                            const typeColor = getTypeColor(song.type);
-                            const typeLabel = typeLabels[song.type] || song.type;
-                            return (
-                              <div key={song.id} className="flex items-start gap-3">
-                                <span
-                                  className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 mt-0.5"
-                                  style={{
-                                    backgroundColor: typeColor.bg,
-                                    color: typeColor.text,
-                                    border: `1px solid ${typeColor.border}`
-                                  }}
-                                >
-                                  {typeLabel.substring(0, 6)}
-                                </span>
-                                <span className="text-sm text-foreground font-medium flex-1">
-                                  {song.name}
-                                </span>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic">Sem músicas</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="px-6 py-4 border-t border-border flex items-center justify-center gap-2 text-xs text-muted-foreground bg-muted/50">
-                  <img src={coroLogo} alt="Coro" className="w-5 h-5" />
-                  <span>Coro Diocesano de Quixadá</span>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleExport}
-                disabled={isExporting || events.length === 0}
-                className="w-full mt-6 gap-2"
-              >
-                <Download className="w-4 h-4" />
-                {isExporting ? 'Exportando...' : 'Exportar como Imagem'}
-              </Button>
-            </>
-          )}
+        <div className="py-4">
+          <label className="text-sm font-medium text-muted-foreground mb-2 block">
+            Selecione o mês
+          </label>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Selecione o mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label.charAt(0).toUpperCase() + option.label.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
+        <DialogFooter>
+          <Button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="w-full gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {isExporting ? 'Exportando...' : 'Exportar PDF'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
