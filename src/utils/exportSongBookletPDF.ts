@@ -346,9 +346,9 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const margin = 10;
   const gutter = 6;
   const colWidth = (pageWidth - 2 * margin - gutter) / 2;
-  const headerHeight = 32;
+  const headerHeight = 38; // Aumentado para acomodar 3 linhas de texto
   const footerHeight = 8;
-  const contentStart = headerHeight + 3;
+  const contentStart = headerHeight + 5; // Margem extra para não sobrepor
   const contentEnd = pageHeight - footerHeight - 3;
 
   // Estado de paginação
@@ -410,10 +410,10 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const col2X = margin + colWidth + gutter;
 
   // ============================================
-  // HEADER - Design sóbrio e elegante para igreja
+  // HEADER - Design moderno e elegante
   // ============================================
   const drawHeader = (pageNum: number) => {
-    // Background sólido na cor primária do tema (sóbrio e impactante)
+    // Background sólido na cor primária do tema
     pdf.setFillColor(...theme.primary);
     pdf.rect(0, 0, pageWidth, headerHeight, 'F');
 
@@ -435,66 +435,78 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       pdf.rect(0, headerHeight - stepHeight * (i + 1), pageWidth, stepHeight + 0.5, 'F');
     }
 
-    // Linha de destaque inferior dourada/accent sutil
+    // Linha de destaque inferior dourada/accent
     pdf.setFillColor(...theme.accent);
     pdf.rect(0, headerHeight - 1.5, pageWidth, 1.5, 'F');
 
     let textStartX = margin;
+    const logoSize = 26; // Logo circular maior
 
-    // Logo do tenant (apenas página 1) - SEM destaque de cor, apenas logo normal
+    // Logo do tenant (apenas página 1)
     if (pageNum === 1 && logoDataUrl && logoWidth > 0) {
       try {
-        const logoY = (headerHeight - logoHeight) / 2;
+        const logoY = (headerHeight - logoSize) / 2;
         const logoX = margin;
 
-        // Adicionar logo diretamente sem bordas coloridas
+        // Adicionar logo circular
         const logoFormat = getJsPdfImageFormatFromDataUrl(logoDataUrl);
-        pdf.addImage(logoDataUrl, logoFormat, logoX, logoY, logoWidth, logoHeight);
+        pdf.addImage(logoDataUrl, logoFormat, logoX, logoY, logoSize, logoSize);
         
-        textStartX = margin + logoWidth + 10;
+        textStartX = margin + logoSize + 8;
       } catch (e) {
         console.warn('Erro ao inserir logo:', e);
         textStartX = margin;
       }
     }
 
-    // Subtítulo "FOLHETO DE CANTOS" - fonte clássica elegante
-    pdf.setFont('times', 'italic');
+    // Calcular área de texto disponível (evitar sobreposição com data/local)
+    const rightInfoWidth = 55;
+    const maxTextWidth = pageWidth - textStartX - rightInfoWidth - 5;
+
+    // Linha 1: Nome do Tenant (ou nome genérico)
+    const tenantName = tenant?.name || 'Coro Paroquial';
+    pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
     pdf.setTextColor(...white);
-    pdf.text('FOLHETO DE CANTOS', textStartX, 11);
+    pdf.text(tenantName.toUpperCase(), textStartX, 10);
 
-    // Nome do evento - GRANDE, fonte serifada clássica
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(20);
+    // Linha 2: "Subsídio Litúrgico" (fixo) - estilo itálico elegante
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(9);
+    pdf.setTextColor(255, 255, 255, 0.9);
+    pdf.text('Subsídio Litúrgico', textStartX, 16);
+
+    // Linha 3: Nome do evento - DESTAQUE PRINCIPAL
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
     pdf.setTextColor(...white);
-    const maxEventWidth = pageWidth - textStartX - margin - 50;
-    const eventLines = pdf.splitTextToSize(event.name.toUpperCase(), maxEventWidth);
-    pdf.text(eventLines[0], textStartX, 22);
+    const eventLines = pdf.splitTextToSize(event.name, maxTextWidth);
+    let eventY = 24;
+    pdf.text(eventLines[0], textStartX, eventY);
     if (eventLines[1]) {
-      pdf.setFontSize(14);
-      pdf.text(eventLines[1], textStartX, 29);
+      pdf.setFontSize(11);
+      pdf.text(eventLines[1], textStartX, eventY + 6);
     }
 
     // Data e local (canto direito) - destaque elegante
     const infoX = pageWidth - margin;
     
     // Data em destaque
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
     pdf.setTextColor(...white);
     const dateStr = format(new Date(event.date), "dd/MM/yyyy", { locale: ptBR });
-    pdf.text(dateStr, infoX, 14, { align: 'right' });
+    pdf.text(dateStr, infoX, 12, { align: 'right' });
 
-    // Local em itálico elegante
+    // Local em itálico
     if (event.location) {
-      pdf.setFont('times', 'italic');
-      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setFontSize(9);
       pdf.setTextColor(255, 255, 255);
       const locationLines = pdf.splitTextToSize(event.location, 50);
-      pdf.text(locationLines[0], infoX, 22, { align: 'right' });
+      pdf.text(locationLines[0], infoX, 20, { align: 'right' });
       if (locationLines[1]) {
-        pdf.text(locationLines[1], infoX, 27, { align: 'right' });
+        pdf.text(locationLines[1], infoX, 25, { align: 'right' });
       }
     }
   };
