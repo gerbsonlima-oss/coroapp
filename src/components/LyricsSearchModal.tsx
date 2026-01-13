@@ -21,7 +21,7 @@ export const LyricsSearchModal = ({
 
   const handleSearch = () => {
     const searchQuery = encodeURIComponent(songName);
-    window.open(`https://www.letras.com/busca/?q=${searchQuery}`, '_blank');
+    window.open(`https://www.letras.com/?q=${searchQuery}`, '_blank');
   };
 
   const handleImport = () => {
