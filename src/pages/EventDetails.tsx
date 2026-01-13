@@ -1384,13 +1384,10 @@ const EventDetails = () => {
               { id: 'contralto', label: 'Contralto', icon: Mic, color: 'from-purple-500/20 to-purple-500/10 border-purple-500/30 text-purple-600' },
               { id: 'tenor', label: 'Tenor', icon: Music2, color: 'from-blue-500/20 to-blue-500/10 border-blue-500/30 text-blue-600' },
               { id: 'baixo', label: 'Baixo', icon: Music, color: 'from-emerald-500/20 to-emerald-500/10 border-emerald-500/30 text-emerald-600' },
-              { id: 'unissono', label: 'Uníssono', icon: Users, color: 'from-orange-500/20 to-orange-500/10 border-orange-500/30 text-orange-600' },
             ].map((naipe) => (
               <button key={naipe.id} onClick={() => { setSelectedNaipe([naipe.id]); setShowNaipeSelector(false); toast.success(`Filtro ${naipe.label} aplicado!`); }} className={cn("flex flex-col items-center justify-center p-6 rounded-2xl border-2 bg-gradient-to-br transition-all active:scale-95 hover:shadow-lg", naipe.color)}><naipe.icon className="h-10 w-10 mb-3" /><span className="font-bold text-sm uppercase tracking-wide">{naipe.label}</span></button>
             ))}
           </div>
-          <Button variant="ghost" className="w-full mt-4 text-muted-foreground" onClick={() => { setSelectedNaipe(['música completa']); setShowNaipeSelector(false); }}>Ouvir apenas a Música Completa</Button>
-          <Button variant="ghost" className="w-full text-xs text-muted-foreground/60" onClick={() => { setSelectedNaipe(['todas']); setShowNaipeSelector(false); }}>Ver tudo (Repertório Completo)</Button>
         </DialogContent>
       </Dialog>
       <BottomNavigation />
