@@ -36,6 +36,8 @@ export const EventsReportExporter = ({
   const { tenantId, tenantSlug, tenant } = useTenant();
 
   const monthOptions = getMonthOptions();
+  const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || '';
+  const capitalizedLabel = selectedMonthLabel.charAt(0).toUpperCase() + selectedMonthLabel.slice(1);
 
   const handleExport = async () => {
     if (!tenantId) {
@@ -46,14 +48,14 @@ export const EventsReportExporter = ({
     setIsExporting(true);
     try {
       await exportEventsReportPDF(tenantId, tenantSlug, tenant?.name || null, selectedMonth);
-      toast.success('Relatório exportado com sucesso!');
+      toast.success('Planejamento exportado com sucesso!');
       onOpenChange(false);
     } catch (error) {
-      console.error('Erro ao exportar relatório:', error);
+      console.error('Erro ao exportar planejamento:', error);
       if (error instanceof Error && error.message.includes('Nenhum evento')) {
         toast.error('Nenhum evento encontrado para este mês');
       } else {
-        toast.error('Erro ao exportar relatório');
+        toast.error('Erro ao exportar planejamento');
       }
     } finally {
       setIsExporting(false);
@@ -64,7 +66,7 @@ export const EventsReportExporter = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Exportar Relatório de Eventos</DialogTitle>
+          <DialogTitle>Planejamento Litúrgico ({capitalizedLabel})</DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
