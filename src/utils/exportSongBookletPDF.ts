@@ -16,6 +16,11 @@ interface Song {
   lyrics?: string | null;
 }
 
+interface TenantInfo {
+  name: string;
+  logo_url: string | null;
+}
+
 const defaultTypeLabels: Record<string, string> = {
   canto_entrada: 'Canto de Entrada',
   ato_penitencial: 'Ato Penitencial',
@@ -79,7 +84,22 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
   }
 };
 
-export const exportSongBookletPDF = async (event: Event, songs: Song[]) => {
+// Color system - Deep Blue & Gold theme
+const COLORS = {
+  primary: { r: 25, g: 55, b: 109 },         // #19376D - Deep blue
+  primaryLight: { r: 45, g: 85, b: 149 },    // Lighter blue for gradient
+  gold: { r: 218, g: 165, b: 32 },           // #DAA520 - Gold accent
+  text: { r: 51, g: 51, b: 51 },             // #333333
+  textLight: { r: 100, g: 100, b: 100 },     // #646464
+  white: { r: 255, g: 255, b: 255 },         // #FFFFFF
+  background: { r: 250, g: 250, b: 252 },    // #FAFAFC - Subtle off-white
+};
+
+const toRGB = (color: { r: number; g: number; b: number }): [number, number, number] => {
+  return [color.r, color.g, color.b];
+};
+
+export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?: TenantInfo) => {
   const typeLabels = await loadTypeLabels();
   
   // Filter songs that have lyrics and sort by liturgical order
@@ -98,201 +118,324 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[]) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
   const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
-  const margin = 15;
+  const margin = 12;
   const columnGap = 8;
   const columnWidth = (pageWidth - 2 * margin - columnGap) / 2;
-  
-  // Colors
-  const primaryColor: [number, number, number] = [25, 55, 109]; // Deep blue
-  const textColor: [number, number, number] = [51, 51, 51];
-  const whiteColor: [number, number, number] = [255, 255, 255];
+  const headerHeight = 45;
+  const footerHeight = 12;
+  const contentStartY = headerHeight + 8;
+  const contentEndY = pageHeight - footerHeight;
 
   // ============================================
-  // HEADER (CENTERED, FULL WIDTH)
+  // HELPER: Draw gradient header
   // ============================================
-  let currentY = margin;
-  
-  // Title "Folheto de Cantos"
-  pdf.setFillColor(...primaryColor);
-  pdf.rect(0, 0, pageWidth, 40, 'F');
-  
-  pdf.setFont('times', 'bold');
-  pdf.setFontSize(22);
-  pdf.setTextColor(...whiteColor);
-  const title = 'Folheto de Cantos';
-  const titleWidth = pdf.getTextWidth(title);
-  pdf.text(title, (pageWidth - titleWidth) / 2, 18);
-  
-  // Event name
-  pdf.setFont('times', 'normal');
-  pdf.setFontSize(14);
-  const eventNameWidth = pdf.getTextWidth(event.name);
-  pdf.text(event.name, (pageWidth - eventNameWidth) / 2, 30);
-  
-  currentY = 50;
-  
-  // Decorative line
-  pdf.setDrawColor(...primaryColor);
-  pdf.setLineWidth(0.5);
-  pdf.line(margin, currentY - 5, pageWidth - margin, currentY - 5);
+  const drawHeader = async (pageNum: number) => {
+    // Background gradient simulation (multiple rectangles)
+    const gradientSteps = 20;
+    const stepHeight = headerHeight / gradientSteps;
+    
+    for (let i = 0; i < gradientSteps; i++) {
+      const ratio = i / gradientSteps;
+      const r = Math.round(COLORS.primary.r + (COLORS.primaryLight.r - COLORS.primary.r) * ratio * 0.3);
+      const g = Math.round(COLORS.primary.g + (COLORS.primaryLight.g - COLORS.primary.g) * ratio * 0.3);
+      const b = Math.round(COLORS.primary.b + (COLORS.primaryLight.b - COLORS.primary.b) * ratio * 0.3);
+      pdf.setFillColor(r, g, b);
+      pdf.rect(0, i * stepHeight, pageWidth, stepHeight + 0.5, 'F');
+    }
+
+    // Decorative gold line at bottom of header
+    pdf.setDrawColor(...toRGB(COLORS.gold));
+    pdf.setLineWidth(1);
+    pdf.line(margin, headerHeight - 2, pageWidth - margin, headerHeight - 2);
+
+    let logoEndX = margin;
+
+    // Add tenant logo if available (only on first page)
+    if (pageNum === 1 && tenant?.logo_url) {
+      try {
+        const logoImg = await loadImage(tenant.logo_url);
+        const maxLogoWidth = 35;
+        const maxLogoHeight = 30;
+        const logoAspect = logoImg.width / logoImg.height;
+        
+        let logoWidth = maxLogoWidth;
+        let logoHeight = logoWidth / logoAspect;
+        
+        if (logoHeight > maxLogoHeight) {
+          logoHeight = maxLogoHeight;
+          logoWidth = logoHeight * logoAspect;
+        }
+        
+        const logoY = (headerHeight - logoHeight) / 2 - 2;
+        pdf.addImage(logoImg, 'PNG', margin, logoY, logoWidth, logoHeight);
+        logoEndX = margin + logoWidth + 8;
+      } catch (error) {
+        console.error('Erro ao carregar logo do tenant:', error);
+      }
+    }
+
+    // Title section
+    const textStartX = logoEndX;
+    const availableWidth = pageWidth - textStartX - margin;
+
+    // Main title
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(22);
+    pdf.setTextColor(...toRGB(COLORS.white));
+    const title = 'Folheto de Cantos';
+    pdf.text(title, textStartX, 18);
+
+    // Event name
+    pdf.setFont('times', 'normal');
+    pdf.setFontSize(13);
+    const eventNameLines = pdf.splitTextToSize(event.name, availableWidth);
+    pdf.text(eventNameLines[0], textStartX, 28);
+
+    // Location if available
+    if (event.location) {
+      pdf.setFontSize(10);
+      pdf.setTextColor(230, 230, 240);
+      const locationText = `📍 ${event.location}`;
+      pdf.text(locationText, textStartX, 36);
+    }
+  };
 
   // ============================================
-  // BODY (TWO COLUMNS)
+  // HELPER: Draw footer
   // ============================================
-  
+  const drawFooter = (pageNum: number, totalPages: number) => {
+    const footerY = pageHeight - 8;
+    
+    // Subtle line above footer
+    pdf.setDrawColor(200, 200, 210);
+    pdf.setLineWidth(0.3);
+    pdf.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+
+    pdf.setFont('times', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...toRGB(COLORS.textLight));
+
+    // Tenant name on the left
+    if (tenant?.name) {
+      pdf.text(tenant.name, margin, footerY);
+    }
+
+    // Page number on the right
+    const pageText = `Página ${pageNum} de ${totalPages}`;
+    const pageTextWidth = pdf.getTextWidth(pageText);
+    pdf.text(pageText, pageWidth - margin - pageTextWidth, footerY);
+  };
+
+  // ============================================
+  // INITIAL SETUP - First page
+  // ============================================
+  await drawHeader(1);
+
   // Column tracking
   const col1X = margin;
   const col2X = margin + columnWidth + columnGap;
-  let col1Y = currentY;
-  let col2Y = currentY;
-  let currentColumn = 1; // 1 = left, 2 = right
-  
-  // Track if image has been added to first column
-  let imageAdded = false;
-  const imageHeight = 60; // Height reserved for image
+  let col1Y = contentStartY;
+  let col2Y = contentStartY;
+  let currentColumn = 1;
+  let pageNum = 1;
 
-  // Add event image to first column if available
+  // ============================================
+  // EVENT IMAGE (First column, first page)
+  // ============================================
   if (event.cover_image_url) {
     try {
       const img = await loadImage(event.cover_image_url);
-      const imgWidth = columnWidth;
-      const imgHeight = (img.height / img.width) * imgWidth;
-      const finalHeight = Math.min(imgHeight, imageHeight);
-      const finalWidth = (finalHeight / imgHeight) * imgWidth;
+      const maxImgHeight = 70;
+      const imgAspect = img.width / img.height;
       
-      pdf.addImage(img, 'JPEG', col1X + (columnWidth - finalWidth) / 2, col1Y, finalWidth, finalHeight);
-      col1Y += finalHeight + 10;
-      imageAdded = true;
+      let imgWidth = columnWidth - 4;
+      let imgHeight = imgWidth / imgAspect;
+      
+      if (imgHeight > maxImgHeight) {
+        imgHeight = maxImgHeight;
+        imgWidth = imgHeight * imgAspect;
+      }
+      
+      const imgX = col1X + (columnWidth - imgWidth) / 2;
+      
+      // Draw shadow effect
+      pdf.setFillColor(180, 180, 190);
+      pdf.roundedRect(imgX + 2, col1Y + 2, imgWidth, imgHeight, 3, 3, 'F');
+      
+      // Draw image with rounded corners simulation (white border)
+      pdf.setFillColor(...toRGB(COLORS.white));
+      pdf.roundedRect(imgX - 1, col1Y - 1, imgWidth + 2, imgHeight + 2, 3, 3, 'F');
+      
+      // Add the actual image
+      pdf.addImage(img, 'JPEG', imgX, col1Y, imgWidth, imgHeight);
+      
+      // Draw border
+      pdf.setDrawColor(...toRGB(COLORS.gold));
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(imgX, col1Y, imgWidth, imgHeight, 2, 2, 'S');
+      
+      col1Y += imgHeight + 12;
     } catch (error) {
       console.error('Erro ao carregar imagem do evento:', error);
     }
   }
 
-  // Helper function to add text to current column
-  const addToColumn = (
-    text: string,
+  // ============================================
+  // HELPER: Add content to column with proper flow
+  // ============================================
+  const addContent = (
+    lines: string[],
     fontSize: number,
     fontStyle: 'normal' | 'bold' | 'italic',
-    isTypeHeader: boolean = false,
-    addSpaceBefore: number = 0
-  ): boolean => {
+    color: [number, number, number],
+    spaceBefore: number = 0,
+    indent: number = 0
+  ): void => {
     pdf.setFont('times', fontStyle);
     pdf.setFontSize(fontSize);
+    pdf.setTextColor(...color);
     
-    const x = currentColumn === 1 ? col1X : col2X;
-    let y = currentColumn === 1 ? col1Y : col2Y;
+    const lineHeight = fontSize * 0.38;
     
-    // Add space before if requested
-    y += addSpaceBefore;
-    
-    // Split text to fit column width
-    const lines = pdf.splitTextToSize(text, columnWidth - 2) as string[];
-    const lineHeight = fontSize * 0.35;
-    const totalHeight = lines.length * lineHeight;
-    
-    // Check if we need a new page or switch columns
-    if (y + totalHeight > pageHeight - margin) {
+    for (const line of lines) {
+      const x = (currentColumn === 1 ? col1X : col2X) + indent;
+      let y = currentColumn === 1 ? col1Y : col2Y;
+      
+      // Add space before first line only
+      if (line === lines[0]) {
+        y += spaceBefore;
+      }
+      
+      // Check if we need to switch column or page
+      if (y + lineHeight > contentEndY) {
+        if (currentColumn === 1) {
+          currentColumn = 2;
+          y = col2Y + spaceBefore;
+        } else {
+          // New page
+          pdf.addPage();
+          pageNum++;
+          drawHeader(pageNum);
+          currentColumn = 1;
+          col1Y = contentStartY;
+          col2Y = contentStartY;
+          y = col1Y + spaceBefore;
+        }
+      }
+      
+      const currentX = (currentColumn === 1 ? col1X : col2X) + indent;
+      pdf.text(line, currentX, y);
+      
+      const newY = y + lineHeight;
       if (currentColumn === 1) {
-        // Switch to column 2
-        currentColumn = 2;
-        y = currentY;
+        col1Y = newY;
       } else {
-        // New page
-        pdf.addPage();
-        col1Y = margin;
-        col2Y = margin;
-        currentColumn = 1;
-        y = margin;
+        col2Y = newY;
       }
     }
-    
-    // Set color based on type
-    if (isTypeHeader) {
-      pdf.setTextColor(...primaryColor);
-    } else {
-      pdf.setTextColor(...textColor);
-    }
-    
-    // Draw text
-    const newX = currentColumn === 1 ? col1X : col2X;
-    lines.forEach((line: string) => {
-      pdf.text(line, newX, y);
-      y += lineHeight;
-    });
-    
-    // Update column Y position
-    if (currentColumn === 1) {
-      col1Y = y + 2;
-    } else {
-      col2Y = y + 2;
-    }
-    
-    return true;
   };
 
-  // Process each song
+  // ============================================
+  // PROCESS SONGS
+  // ============================================
   let songIndex = 0;
+  
   for (const song of songsWithLyrics) {
     songIndex++;
     
-    // Type header
+    // Calculate space needed for song header
+    const spaceBefore = songIndex > 1 ? 8 : 2;
+    
+    // Section separator line
+    const separatorY = (currentColumn === 1 ? col1Y : col2Y) + spaceBefore - 2;
+    const separatorX = currentColumn === 1 ? col1X : col2X;
+    
+    if (songIndex > 1 && separatorY < contentEndY - 5) {
+      pdf.setDrawColor(...toRGB(COLORS.gold));
+      pdf.setLineWidth(0.3);
+      pdf.line(separatorX, separatorY, separatorX + columnWidth * 0.3, separatorY);
+    }
+    
+    // Type header (numbered, uppercase)
     const typeLabel = typeLabels[song.type] || song.type || 'Outro';
     const typeHeader = `${songIndex}. ${typeLabel.toUpperCase()}`;
-    addToColumn(typeHeader, 11, 'bold', true, songIndex > 1 ? 6 : 0);
+    
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(10);
+    const headerLines = pdf.splitTextToSize(typeHeader, columnWidth - 2) as string[];
+    addContent(headerLines, 10, 'bold', toRGB(COLORS.primary), spaceBefore);
     
     // Song name
-    addToColumn(song.name, 10, 'bold', false, 2);
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(11);
+    const nameLines = pdf.splitTextToSize(song.name, columnWidth - 2) as string[];
+    addContent(nameLines, 11, 'bold', toRGB(COLORS.text), 2);
     
     // Lyrics
     if (song.lyrics) {
       const lyricsLines = song.lyrics.split('\n');
       let isRefrain = false;
+      let previousWasEmpty = false;
       
       for (const line of lyricsLines) {
         const trimmedLine = line.trim();
         
-        // Skip empty lines but add small space
+        // Handle empty lines (add spacing between stanzas)
         if (!trimmedLine) {
-          if (currentColumn === 1) {
-            col1Y += 2;
-          } else {
-            col2Y += 2;
+          if (!previousWasEmpty) {
+            if (currentColumn === 1) {
+              col1Y += 2;
+            } else {
+              col2Y += 2;
+            }
           }
+          previousWasEmpty = true;
+          isRefrain = false;
           continue;
         }
+        previousWasEmpty = false;
         
-        // Detect refrain (lines starting with R: or Refrão:)
-        if (trimmedLine.toLowerCase().startsWith('r:') || 
-            trimmedLine.toLowerCase().startsWith('refrão:') ||
-            trimmedLine.toLowerCase().startsWith('refrao:')) {
+        // Detect refrain markers
+        const lowerLine = trimmedLine.toLowerCase();
+        if (lowerLine.startsWith('r:') || 
+            lowerLine.startsWith('refrão:') ||
+            lowerLine.startsWith('refrao:') ||
+            lowerLine.startsWith('||:') ||
+            lowerLine === 'refrão' ||
+            lowerLine === 'refrao') {
           isRefrain = true;
         }
         
-        // Add lyrics line
-        const fontStyle = isRefrain ? 'italic' : 'normal';
-        addToColumn(trimmedLine, 9, fontStyle as 'normal' | 'bold' | 'italic', false, 0);
-        
-        // Reset refrain after empty line or end
-        if (trimmedLine === '') {
+        // Detect numbered stanzas (reset refrain)
+        if (/^\d+\./.test(trimmedLine)) {
           isRefrain = false;
         }
+        
+        // Format and add line
+        const fontStyle = isRefrain ? 'italic' : 'normal';
+        const indent = isRefrain ? 3 : 0;
+        const color = isRefrain ? toRGB(COLORS.textLight) : toRGB(COLORS.text);
+        
+        pdf.setFont('times', fontStyle);
+        pdf.setFontSize(9);
+        const formattedLines = pdf.splitTextToSize(trimmedLine, columnWidth - 4 - indent) as string[];
+        addContent(formattedLines, 9, fontStyle, color, 0, indent);
       }
     }
   }
 
-  // Add page numbers
-  const pageCount = pdf.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
+  // ============================================
+  // ADD FOOTERS TO ALL PAGES
+  // ============================================
+  const totalPages = pdf.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
     pdf.setPage(i);
-    pdf.setFont('times', 'normal');
-    pdf.setFontSize(9);
-    pdf.setTextColor(...textColor);
-    const pageText = `Página ${i}`;
-    const pageTextWidth = pdf.getTextWidth(pageText);
-    pdf.text(pageText, pageWidth - margin - pageTextWidth, pageHeight - 10);
+    drawFooter(i, totalPages);
   }
 
-  // Save PDF
+  // ============================================
+  // SAVE PDF
+  // ============================================
   const fileName = `Folheto de Cantos - ${event.name}.pdf`;
   pdf.save(fileName);
 };

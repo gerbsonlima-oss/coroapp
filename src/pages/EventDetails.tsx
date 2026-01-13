@@ -558,6 +558,8 @@ const EventDetails = () => {
     }
   };
 
+  const { tenant } = useTenant();
+  
   const handleExportSongBooklet = async () => {
     if (!event) return;
     
@@ -583,7 +585,8 @@ const EventDetails = () => {
     
     try {
       toast.info('Gerando folheto de cantos...');
-      await exportSongBookletPDF(event, songsForBooklet);
+      const tenantInfo = tenant ? { name: tenant.name, logo_url: tenant.logo_url } : undefined;
+      await exportSongBookletPDF(event, songsForBooklet, tenantInfo);
       toast.success('Folheto de cantos gerado com sucesso!');
     } catch (error: any) {
       console.error('Erro ao gerar folheto:', error);
