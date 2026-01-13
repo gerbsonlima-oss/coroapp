@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Search, Users, Phone, Mail, Church, Music } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowLeft, Plus, Search, Users, Phone, Church, Music, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ChairMember {
@@ -35,6 +36,13 @@ const naipeColors: Record<string, string> = {
   contralto: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
   tenor: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
   baixo: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+};
+
+const naipeGradients: Record<string, string> = {
+  soprano: 'from-pink-500/10 to-pink-600/5',
+  contralto: 'from-purple-500/10 to-purple-600/5',
+  tenor: 'from-blue-500/10 to-blue-600/5',
+  baixo: 'from-green-500/10 to-green-600/5',
 };
 
 export default function ChoirMembers() {
@@ -91,6 +99,22 @@ export default function ChoirMembers() {
     return tenantSlug ? `/${tenantSlug}${path}` : path;
   };
 
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove all non-numeric characters
+    const cleaned = phone.replace(/\D/g, '');
+    // Add Brazil country code if not present
+    if (cleaned.length === 11 || cleaned.length === 10) {
+      return `55${cleaned}`;
+    }
+    return cleaned;
+  };
+
+  const handleWhatsAppClick = (e: React.MouseEvent, phone: string) => {
+    e.stopPropagation();
+    const formattedPhone = formatPhoneForWhatsApp(phone);
+    window.open(`https://wa.me/${formattedPhone}`, '_blank');
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -145,7 +169,7 @@ export default function ChoirMembers() {
         </Select>
       </div>
 
-      {/* Members List */}
+      {/* Members Grid */}
       <div className="px-4 space-y-6">
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -180,51 +204,63 @@ export default function ChoirMembers() {
                 </h2>
                 <Badge variant="secondary">{naipeMembers.length}</Badge>
               </div>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {naipeMembers.map((member) => (
-                  <div
+                  <Card
                     key={member.id}
                     onClick={() => navigate(buildPath(`/choir-members/${member.id}`))}
-                    className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer"
+                    className={`cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] overflow-hidden bg-gradient-to-br ${naipeGradients[member.naipe || ''] || 'from-muted/50 to-muted/30'}`}
                   >
-                    <Avatar className="h-14 w-14">
-                      <AvatarImage src={member.photo_url || undefined} alt={member.name} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                        {getInitials(member.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium truncate">{member.name}</h3>
+                    <CardContent className="p-3 flex flex-col items-center text-center">
+                      <Avatar className="h-20 w-20 mb-3 ring-2 ring-background shadow-md">
+                        <AvatarImage 
+                          src={member.photo_url || undefined} 
+                          alt={member.name}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="space-y-1 w-full">
+                        <h3 className="font-medium text-sm line-clamp-2 leading-tight">
+                          {member.name}
+                        </h3>
+                        
                         {!member.active && (
-                          <Badge variant="outline" className="text-muted-foreground">Inativo</Badge>
+                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                            Inativo
+                          </Badge>
                         )}
-                      </div>
-                      {member.parish && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                          <Church className="h-3 w-3" />
-                          <span className="truncate">{member.parish}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 mt-1">
+                        
+                        {member.parish && (
+                          <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                            <Church className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{member.parish}</span>
+                          </div>
+                        )}
+                        
+                        {member.naipe && (
+                          <Badge className={`text-xs ${naipeColors[member.naipe]}`}>
+                            {naipeLabels[member.naipe]}
+                          </Badge>
+                        )}
+                        
                         {member.phone && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Phone className="h-3 w-3" />
-                          </div>
-                        )}
-                        {member.email && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Mail className="h-3 w-3" />
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full mt-2 h-8 text-xs gap-1 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
+                            onClick={(e) => handleWhatsAppClick(e, member.phone!)}
+                          >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            WhatsApp
+                          </Button>
                         )}
                       </div>
-                    </div>
-                    {member.naipe && (
-                      <Badge className={naipeColors[member.naipe]}>
-                        {naipeLabels[member.naipe]}
-                      </Badge>
-                    )}
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>

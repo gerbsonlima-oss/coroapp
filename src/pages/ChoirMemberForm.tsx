@@ -10,9 +10,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Camera, Loader2, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Trash2, Save, Crop } from 'lucide-react';
 import { toast } from 'sonner';
-import { compressImage } from '@/utils/imageCompression';
+import { ImageCropper } from '@/components/ImageCropper';
 
 interface FormData {
   name: string;
@@ -36,6 +36,8 @@ export default function ChoirMemberForm() {
   const [saving, setSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string>('');
   const [formData, setFormData] = useState<FormData>({
     name: '',
     birth_date: '',
@@ -90,20 +92,39 @@ export default function ChoirMemberForm() {
       return;
     }
 
-    try {
-      const compressed = await compressImage(file);
-      setPhotoFile(compressed);
-      setPhotoPreview(URL.createObjectURL(compressed));
-    } catch (error) {
-      toast.error('Erro ao processar imagem.');
+    // Create object URL for cropper
+    const imageUrl = URL.createObjectURL(file);
+    setOriginalImageSrc(imageUrl);
+    setShowCropper(true);
+    
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], `cropped-${Date.now()}.webp`, { type: 'image/webp' });
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(croppedBlob));
+    
+    // Clean up the original image URL
+    if (originalImageSrc) {
+      URL.revokeObjectURL(originalImageSrc);
+      setOriginalImageSrc('');
+    }
+  };
+
+  const handleCropperClose = () => {
+    setShowCropper(false);
+    if (originalImageSrc) {
+      URL.revokeObjectURL(originalImageSrc);
+      setOriginalImageSrc('');
     }
   };
 
   const uploadPhoto = async (): Promise<string | null> => {
     if (!photoFile) return photoPreview;
 
-    const fileExt = photoFile.name.split('.').pop();
-    const fileName = `${tenantId}/${Date.now()}.${fileExt}`;
+    const fileName = `${tenantId}/${Date.now()}.webp`;
 
     const { error: uploadError } = await supabase.storage
       .from('choir-member-photos')
@@ -256,7 +277,11 @@ export default function ChoirMemberForm() {
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-              <AvatarImage src={photoPreview || undefined} alt={formData.name} />
+              <AvatarImage 
+                src={photoPreview || undefined} 
+                alt={formData.name}
+                className="object-cover"
+              />
               <AvatarFallback className="bg-primary/10 text-primary text-2xl font-medium">
                 {formData.name ? getInitials(formData.name) : '?'}
               </AvatarFallback>
@@ -278,7 +303,10 @@ export default function ChoirMemberForm() {
               className="hidden"
             />
           </div>
-          <p className="text-sm text-muted-foreground">Toque para alterar a foto</p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Crop className="h-4 w-4" />
+            <span>Toque para selecionar e cortar a foto</span>
+          </div>
         </div>
 
         {/* Name */}
@@ -368,6 +396,15 @@ export default function ChoirMemberForm() {
           />
         </div>
       </form>
+
+      {/* Image Cropper Modal */}
+      <ImageCropper
+        open={showCropper}
+        onClose={handleCropperClose}
+        imageSrc={originalImageSrc}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+      />
     </div>
   );
 }
