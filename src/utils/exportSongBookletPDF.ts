@@ -346,7 +346,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const margin = 10;
   const gutter = 6;
   const colWidth = (pageWidth - 2 * margin - gutter) / 2;
-  const headerHeight = 58; // Aumentado para fontes maiores (26/22)
+  const headerHeight = 52; // Otimizado para melhor equilíbrio visual
   const footerHeight = 8;
   const contentStart = headerHeight + 5; // Margem extra para não sobrepor
   const contentEnd = pageHeight - footerHeight - 3;
@@ -450,12 +450,22 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const maxTextWidth = pageWidth - textStartX - margin - 5;
     const centerX = textStartX + (maxTextWidth / 2);
 
+    // Calcular posições verticais com espaçamento equilibrado
+    const padding = 6; // Espaço superior e inferior
+    const totalTextHeight = 9 + 9 + 8; // Altura aproximada das 3 linhas de texto (26pt + 26pt + 22pt)
+    const availableHeight = headerHeight - (padding * 2);
+    const lineSpacing = (availableHeight - totalTextHeight) / 2; // Espaçamento entre linhas
+    
+    const line1Y = padding + 9; // Nome do tenant
+    const line2Y = line1Y + 9 + lineSpacing; // Subsídio Litúrgico
+    const line3Y = line2Y + 9 + lineSpacing; // Nome do evento
+
     // Linha 1: Nome do Tenant - fonte Times, tamanho 26
     const tenantName = tenant?.name || 'Coro Paroquial';
     pdf.setFont('times', 'bold');
     pdf.setFontSize(26);
     pdf.setTextColor(...theme.primary);
-    pdf.text(tenantName.toUpperCase(), centerX, 16, { align: 'center' });
+    pdf.text(tenantName.toUpperCase(), centerX, line1Y, { align: 'center' });
 
     // Linha 2: "Subsídio Litúrgico" - fonte Times, tamanho 26
     pdf.setFont('times', 'italic');
@@ -467,18 +477,17 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       Math.round((theme.primary[2] + theme.accent[2]) / 2),
     ];
     pdf.setTextColor(...subtitleColor);
-    pdf.text('Subsídio Litúrgico', centerX, 28, { align: 'center' });
+    pdf.text('Subsídio Litúrgico', centerX, line2Y, { align: 'center' });
 
     // Linha 3: Nome do evento - fonte Times, tamanho 22
     pdf.setFont('times', 'bold');
     pdf.setFontSize(22);
     pdf.setTextColor(...theme.primary);
     const eventLines = pdf.splitTextToSize(event.name, maxTextWidth);
-    let eventY = 44;
-    pdf.text(eventLines[0], centerX, eventY, { align: 'center' });
+    pdf.text(eventLines[0], centerX, line3Y, { align: 'center' });
     if (eventLines[1]) {
       pdf.setFontSize(18);
-      pdf.text(eventLines[1], centerX, eventY + 9, { align: 'center' });
+      pdf.text(eventLines[1], centerX, line3Y + 7, { align: 'center' });
     }
   };
 
