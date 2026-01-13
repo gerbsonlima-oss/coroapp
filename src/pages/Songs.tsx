@@ -354,13 +354,13 @@ const Songs = () => {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-bold text-sm uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">
-                      {song.typeName}
+                    <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                      {song.name}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className="text-xs text-muted-foreground truncate font-medium flex-1">
-                      {song.name}
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold flex-1">
+                      {song.typeName}
                     </p>
                   </div>
                 </div>
