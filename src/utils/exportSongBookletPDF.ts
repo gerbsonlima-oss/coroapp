@@ -58,13 +58,58 @@ const liturgicalOrder: Record<string, number> = {
 const loadImageRobust = async (url: string): Promise<string | null> => {
   if (!url) return null;
   
-  // Método 1: Canvas com crossOrigin (funciona para maioria dos casos)
+  const isSupabaseUrl = url.includes('supabase.co/storage');
+  
+  // Para URLs do Supabase Storage público, usar img sem crossOrigin
+  if (isSupabaseUrl) {
+    const result = await new Promise<string | null>((resolve) => {
+      const img = new Image();
+      
+      const timeout = setTimeout(() => {
+        console.warn('Timeout ao carregar imagem Supabase:', url.substring(0, 60));
+        resolve(null);
+      }, 8000);
+      
+      img.onload = () => {
+        clearTimeout(timeout);
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            console.log('Imagem Supabase carregada:', url.substring(0, 60));
+            resolve(dataUrl);
+          } else {
+            resolve(null);
+          }
+        } catch (e) {
+          console.warn('Erro canvas Supabase:', e);
+          resolve(null);
+        }
+      };
+      
+      img.onerror = (e) => {
+        clearTimeout(timeout);
+        console.warn('Erro ao carregar imagem Supabase:', url.substring(0, 60), e);
+        resolve(null);
+      };
+      
+      img.src = url;
+    });
+    
+    if (result) return result;
+  }
+  
+  // Método com crossOrigin para outras URLs
   const canvasResult = await new Promise<string | null>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     
     const timeout = setTimeout(() => {
-      console.warn('Timeout ao carregar imagem via canvas:', url);
+      console.warn('Timeout ao carregar imagem via canvas:', url.substring(0, 60));
       img.src = '';
       resolve(null);
     }, 5000);
@@ -79,7 +124,7 @@ const loadImageRobust = async (url: string): Promise<string | null> => {
         if (ctx) {
           ctx.drawImage(img, 0, 0);
           const dataUrl = canvas.toDataURL('image/png');
-          console.log('Imagem carregada via canvas:', url.substring(0, 50));
+          console.log('Imagem carregada via canvas:', url.substring(0, 60));
           resolve(dataUrl);
         } else {
           resolve(null);
@@ -92,40 +137,14 @@ const loadImageRobust = async (url: string): Promise<string | null> => {
     
     img.onerror = () => {
       clearTimeout(timeout);
-      console.warn('Erro canvas ao carregar imagem:', url.substring(0, 50));
+      console.warn('Erro canvas ao carregar imagem:', url.substring(0, 60));
       resolve(null);
     };
     
     img.src = url;
   });
   
-  if (canvasResult) return canvasResult;
-  
-  // Método 2: Fetch direto (funciona para Supabase Storage público)
-  try {
-    console.log('Tentando fetch direto:', url.substring(0, 50));
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.warn('Fetch falhou com status:', response.status);
-      return null;
-    }
-    const blob = await response.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        console.log('Imagem carregada via fetch:', url.substring(0, 50));
-        resolve(reader.result as string);
-      };
-      reader.onerror = () => {
-        console.warn('FileReader erro');
-        resolve(null);
-      };
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.warn('Erro ao carregar imagem via fetch:', url.substring(0, 50), error);
-    return null;
-  }
+  return canvasResult;
 };
 
 // Calcula dimensões da imagem a partir do base64
@@ -137,6 +156,7 @@ const getImageDimensions = (dataUrl: string): Promise<{ width: number; height: n
     img.src = dataUrl;
   });
 };
+
 
 const loadTypeLabels = async (): Promise<Record<string, string>> => {
   try {
