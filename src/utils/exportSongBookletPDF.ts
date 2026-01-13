@@ -651,7 +651,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
         if (isRefrainLine) {
           isRefrain = true;
-          addText(trimmed, 9, 'bold', theme.primary, 0, 0.8);
+          addText(trimmed, 11, 'bold', theme.primary, 0, 0.8);
           continue;
         }
 
@@ -670,7 +670,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           indent = 3;
         }
 
-        addText(trimmed, 9, style, color, indent, 0);
+        addText(trimmed, 11, style, color, indent, 0);
       }
     }
 
