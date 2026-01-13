@@ -44,7 +44,6 @@ interface Song {
   type: string;
   sheet_music_url: string | null;
   sheet_music_pdf_url?: string | null;
-  lyrics_url?: string | null;
 }
 
 interface ExistingAudio {
@@ -235,7 +234,6 @@ const SongForm = () => {
 
       let sheetMusicUrl = isEditMode ? (song?.sheet_music_url || null) : null;
       let sheetMusicPdfUrl = null;
-      let lyricsUrl = isEditMode ? (song?.lyrics_url || null) : null;
       
       if (sheetMusic) {
         const sanitizedSheetName = sanitizeFileName(sheetMusic.name);
@@ -248,13 +246,6 @@ const SongForm = () => {
         const sanitizedPdfName = sanitizeFileName(originalPdf.name);
         const pdfPath = `${user?.id}/${Date.now()}_original_${sanitizedPdfName}`;
         sheetMusicPdfUrl = await uploadFileToBucket(originalPdf, 'sheet-music', pdfPath);
-      }
-      
-      // Upload da letra se existir
-      if (lyricsFile) {
-        const sanitizedLyricsName = sanitizeFileName(lyricsFile.name);
-        const lyricsPath = `${user?.id}/${Date.now()}_${sanitizedLyricsName}`;
-        lyricsUrl = await uploadFileToBucket(lyricsFile, 'sheet-music', lyricsPath);
       }
 
       let songId = id;
@@ -274,9 +265,6 @@ const SongForm = () => {
           updateData.sheet_music_pdf_url = sheetMusicPdfUrl;
         }
         
-        if (lyricsUrl) {
-          updateData.lyrics_url = lyricsUrl;
-        }
         
         const { error } = await supabase
           .from('songs')
@@ -298,9 +286,6 @@ const SongForm = () => {
           insertData.sheet_music_pdf_url = sheetMusicPdfUrl;
         }
         
-        if (lyricsUrl) {
-          insertData.lyrics_url = lyricsUrl;
-        }
         
         const { data: songData, error: songError } = await supabase
           .from('songs')
@@ -550,12 +535,7 @@ const SongForm = () => {
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
             <Label className="text-xs font-semibold">Letra</Label>
 
-            {isEditMode && song?.lyrics_url && (
-              <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-700 dark:text-green-400">
-                <FileType className="h-3 w-3" />
-                <span>Cadastrada</span>
-              </div>
-            )}
+            
             
             <Input
               ref={lyricsInputRef}

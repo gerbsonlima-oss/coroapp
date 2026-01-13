@@ -52,7 +52,6 @@ interface Song {
   notes: string | null;
   sheet_music_url: string | null;
   sheet_music_pdf_url?: string | null;
-  lyrics_url?: string | null;
 }
 
 interface SongAudio {
@@ -192,11 +191,6 @@ const SongDetails = () => {
       if (audiosError) throw audiosError;
       setAudios(audiosData || []);
 
-      // Buscar letra se existir
-      const songData = data as Song;
-      if (songData.lyrics_url) {
-        fetchLyrics(songData.lyrics_url);
-      }
     } catch (error: any) {
       toast.error('Erro ao carregar música');
       navigate('/songs');
@@ -469,34 +463,7 @@ const SongDetails = () => {
           </Card>
         )}
 
-        {song.lyrics_url && (
-          <Card className="gradient-card border-border/50 p-4">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              <FileType className="h-4 w-4" />
-              Letra
-            </h2>
-            {loadingLyrics ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              </div>
-            ) : lyrics ? (
-              <div className="rounded-lg bg-secondary/30 p-4 max-h-96 overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed text-foreground">
-                  {lyrics}
-                </pre>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => song.lyrics_url && window.open(song.lyrics_url, '_blank')}
-              >
-                <FileType className="mr-2 h-4 w-4" />
-                Baixar Letra
-              </Button>
-            )}
-          </Card>
-        )}
+        
 
         {audios.length > 0 ? (
           <div className="space-y-4">
