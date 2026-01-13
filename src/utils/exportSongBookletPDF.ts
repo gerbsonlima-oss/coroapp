@@ -84,10 +84,12 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
   }
 };
 
-// Color system - Deep Blue & Gold theme
+// Color system - Based on reference image
 const COLORS = {
   primary: { r: 25, g: 55, b: 109 },         // #19376D - Deep blue
   primaryLight: { r: 45, g: 85, b: 149 },    // Lighter blue for gradient
+  sectionBg: { r: 230, g: 100, b: 110 },     // Coral/pink for section headers
+  sectionText: { r: 255, g: 255, b: 255 },   // White text on section headers
   gold: { r: 218, g: 165, b: 32 },           // #DAA520 - Gold accent
   text: { r: 51, g: 51, b: 51 },             // #333333
   textLight: { r: 100, g: 100, b: 100 },     // #646464
@@ -336,6 +338,48 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   };
 
   // ============================================
+  // HELPER: Draw section header with background
+  // ============================================
+  const drawSectionHeader = (text: string): void => {
+    const headerHeight = 6;
+    const x = currentColumn === 1 ? col1X : col2X;
+    let y = currentColumn === 1 ? col1Y : col2Y;
+    
+    // Check if we need to switch column or page
+    if (y + headerHeight + 15 > contentEndY) {
+      if (currentColumn === 1) {
+        currentColumn = 2;
+        y = col2Y;
+      } else {
+        pdf.addPage();
+        pageNum++;
+        drawHeader(pageNum);
+        currentColumn = 1;
+        col1Y = contentStartY;
+        col2Y = contentStartY;
+        y = col1Y;
+      }
+    }
+    
+    // Draw background rectangle (coral/pink color)
+    pdf.setFillColor(...toRGB(COLORS.sectionBg));
+    pdf.rect(x, y, columnWidth, headerHeight, 'F');
+    
+    // Draw text on background
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(...toRGB(COLORS.sectionText));
+    pdf.text(text, x + 2, y + 4.2);
+    
+    // Update column Y position
+    if (currentColumn === 1) {
+      col1Y = y + headerHeight + 2;
+    } else {
+      col2Y = y + headerHeight + 2;
+    }
+  };
+
+  // ============================================
   // PROCESS SONGS
   // ============================================
   let songIndex = 0;
@@ -343,33 +387,25 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   for (const song of songsWithLyrics) {
     songIndex++;
     
-    // Calculate space needed for song header
-    const spaceBefore = songIndex > 1 ? 8 : 2;
-    
-    // Section separator line
-    const separatorY = (currentColumn === 1 ? col1Y : col2Y) + spaceBefore - 2;
-    const separatorX = currentColumn === 1 ? col1X : col2X;
-    
-    if (songIndex > 1 && separatorY < contentEndY - 5) {
-      pdf.setDrawColor(...toRGB(COLORS.gold));
-      pdf.setLineWidth(0.3);
-      pdf.line(separatorX, separatorY, separatorX + columnWidth * 0.3, separatorY);
+    // Add space before section (except first)
+    if (songIndex > 1) {
+      if (currentColumn === 1) {
+        col1Y += 4;
+      } else {
+        col2Y += 4;
+      }
     }
     
-    // Type header (numbered, uppercase)
+    // Type header with colored background (numbered, uppercase)
     const typeLabel = typeLabels[song.type] || song.type || 'Outro';
-    const typeHeader = `${songIndex}. ${typeLabel.toUpperCase()}`;
-    
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(10);
-    const headerLines = pdf.splitTextToSize(typeHeader, columnWidth - 2) as string[];
-    addContent(headerLines, 10, 'bold', toRGB(COLORS.primary), spaceBefore);
+    const typeHeader = `${songIndex}   ${typeLabel.toUpperCase()}`;
+    drawSectionHeader(typeHeader);
     
     // Song name
     pdf.setFont('times', 'bold');
     pdf.setFontSize(11);
     const nameLines = pdf.splitTextToSize(song.name, columnWidth - 2) as string[];
-    addContent(nameLines, 11, 'bold', toRGB(COLORS.text), 2);
+    addContent(nameLines, 11, 'bold', toRGB(COLORS.text), 1);
     
     // Lyrics
     if (song.lyrics) {
@@ -384,9 +420,9 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         if (!trimmedLine) {
           if (!previousWasEmpty) {
             if (currentColumn === 1) {
-              col1Y += 2;
+              col1Y += 1.5;
             } else {
-              col2Y += 2;
+              col2Y += 1.5;
             }
           }
           previousWasEmpty = true;
@@ -411,15 +447,15 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           isRefrain = false;
         }
         
-        // Format and add line
+        // Format and add line - using font size 11 as requested
         const fontStyle = isRefrain ? 'italic' : 'normal';
         const indent = isRefrain ? 3 : 0;
         const color = isRefrain ? toRGB(COLORS.textLight) : toRGB(COLORS.text);
         
         pdf.setFont('times', fontStyle);
-        pdf.setFontSize(9);
+        pdf.setFontSize(11);
         const formattedLines = pdf.splitTextToSize(trimmedLine, columnWidth - 4 - indent) as string[];
-        addContent(formattedLines, 9, fontStyle, color, 0, indent);
+        addContent(formattedLines, 11, fontStyle, color, 0, indent);
       }
     }
   }
