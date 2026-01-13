@@ -370,23 +370,28 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const col2X = margin + colWidth + gutter;
 
   // ============================================
-  // HEADER - Design profissional para impressão
+  // HEADER - Design profissional com background
   // ============================================
   const drawHeader = (pageNum: number) => {
-    // Fundo branco limpo
-    pdf.setFillColor(255, 255, 255);
+    // Background do header com cor primária suave
+    const headerBg: [number, number, number] = [
+      Math.round(255 - (255 - theme.primary[0]) * 0.08),
+      Math.round(255 - (255 - theme.primary[1]) * 0.08),
+      Math.round(255 - (255 - theme.primary[2]) * 0.08),
+    ];
+    pdf.setFillColor(...headerBg);
     pdf.rect(0, 0, pageWidth, headerHeight, 'F');
 
-    // Borda superior colorida (elegante)
+    // Borda superior colorida (mais espessa)
     pdf.setFillColor(...theme.primary);
-    pdf.rect(0, 0, pageWidth, 3, 'F');
+    pdf.rect(0, 0, pageWidth, 4, 'F');
 
     let textStartX = margin;
 
     // Logo do tenant (apenas página 1)
     if (pageNum === 1 && logoDataUrl && logoWidth > 0) {
       try {
-        const logoY = 6;
+        const logoY = 7;
         const logoFormat = getJsPdfImageFormatFromDataUrl(logoDataUrl);
         pdf.addImage(logoDataUrl, logoFormat, margin, logoY, logoWidth, logoHeight);
         textStartX = margin + logoWidth + 6;
@@ -396,48 +401,44 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       }
     }
 
-    // Título principal
+    // Título "FOLHETO DE CANTOS"
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
+    pdf.setFontSize(11);
     pdf.setTextColor(...theme.primary);
-    pdf.text('FOLHETO DE CANTOS', textStartX, 12);
+    pdf.text('FOLHETO DE CANTOS', textStartX, 10);
 
-    // Subtítulo
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7);
-    pdf.setTextColor(...textLight);
-    pdf.text('celebração litúrgica', textStartX, 16.5);
-
-    // Nome do evento
+    // Nome do evento em DESTAQUE (maior, negrito)
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
+    pdf.setFontSize(13);
     pdf.setTextColor(...textDark);
-    const maxEventWidth = pageWidth - textStartX - margin - 45;
+    const maxEventWidth = pageWidth - textStartX - margin - 50;
     const eventLines = pdf.splitTextToSize(event.name, maxEventWidth);
-    pdf.text(eventLines[0], textStartX, 22);
+    pdf.text(eventLines[0], textStartX, 17);
+    if (eventLines[1]) {
+      pdf.setFontSize(10);
+      pdf.text(eventLines[1], textStartX, 22);
+    }
 
-    // Data e local (direita) - apenas página 1
-    if (pageNum === 1) {
-      const infoX = pageWidth - margin;
-      
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(9);
-      pdf.setTextColor(...theme.primary);
-      const dateStr = format(new Date(event.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-      pdf.text(dateStr, infoX, 12, { align: 'right' });
+    // Data e local (direita)
+    const infoX = pageWidth - margin;
+    
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(...theme.primary);
+    const dateStr = format(new Date(event.date), "dd/MM/yyyy", { locale: ptBR });
+    pdf.text(dateStr, infoX, 10, { align: 'right' });
 
-      if (event.location) {
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(7);
-        pdf.setTextColor(...textLight);
-        const locationLines = pdf.splitTextToSize(event.location, 50);
-        pdf.text(locationLines[0], infoX, 17, { align: 'right' });
-      }
+    if (event.location) {
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...textLight);
+      const locationLines = pdf.splitTextToSize(event.location, 55);
+      pdf.text(locationLines[0], infoX, 16, { align: 'right' });
     }
 
     // Linha inferior do header
-    pdf.setDrawColor(...theme.accent);
-    pdf.setLineWidth(0.5);
+    pdf.setDrawColor(...theme.primary);
+    pdf.setLineWidth(0.6);
     pdf.line(margin, headerHeight - 1, pageWidth - margin, headerHeight - 1);
   };
 
@@ -547,7 +548,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     pdf.setFontSize(8);
     pdf.text(labelText, x + badgeWidth + 3, y + 4.3);
 
-    const newY = y + barHeight + 2;
+    // Mais espaço após a seção do tipo para separar do nome
+    const newY = y + barHeight + 4;
     if (currentCol === 1) col1Y = newY;
     else col2Y = newY;
   };
@@ -565,8 +567,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   ): void => {
     let x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
     let y = (currentCol === 1 ? col1Y : col2Y) + spaceBefore;
-    const lineHeight = size * 0.38;
-    const maxWidth = colWidth - 3 - indent;
+    const lineHeight = size * 0.40;
+    const maxWidth = colWidth - 4 - indent;
     
     pdf.setFont('helvetica', style);
     pdf.setFontSize(size);
@@ -617,11 +619,12 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     drawSongSection(songIndex, typeLabel);
 
     // Nome da música (destaque)
-    addText(song.name, 9.5, 'bold', theme.primary, 0, 0.5);
+    // Nome da música (destaque) - fonte 11pt
+    addText(song.name, 11, 'bold', theme.primary, 0, 1);
 
-    // Espaço após nome
-    if (currentCol === 1) col1Y += 1.5;
-    else col2Y += 1.5;
+    // Espaço após nome (mais separação)
+    if (currentCol === 1) col1Y += 2.5;
+    else col2Y += 2.5;
 
     // Processar letra
     if (song.lyrics) {
@@ -648,7 +651,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
         if (isRefrainLine) {
           isRefrain = true;
-          addText(trimmed, 8.5, 'bold', theme.primary, 0, 0.8);
+          addText(trimmed, 9, 'bold', theme.primary, 0, 0.8);
           continue;
         }
 
@@ -667,7 +670,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           indent = 3;
         }
 
-        addText(trimmed, 8.5, style, color, indent, 0);
+        addText(trimmed, 9, style, color, indent, 0);
       }
     }
 
