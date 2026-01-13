@@ -52,6 +52,7 @@ interface Song {
   notes: string | null;
   sheet_music_url: string | null;
   sheet_music_pdf_url?: string | null;
+  lyrics?: string | null;
 }
 
 interface SongAudio {
@@ -463,7 +464,19 @@ const SongDetails = () => {
           </Card>
         )}
 
-        
+        {song.lyrics && (
+          <Card className="gradient-card border-border/50 p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <FileType className="h-4 w-4" />
+              Letra
+            </h2>
+            <div className="rounded-lg bg-secondary/30 p-4 max-h-96 overflow-y-auto">
+              <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed text-foreground">
+                {song.lyrics}
+              </pre>
+            </div>
+          </Card>
+        )}
 
         {audios.length > 0 ? (
           <div className="space-y-4">

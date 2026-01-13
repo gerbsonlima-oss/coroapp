@@ -44,6 +44,7 @@ interface Song {
   type: string;
   sheet_music_url: string | null;
   sheet_music_pdf_url?: string | null;
+  lyrics?: string | null;
 }
 
 interface ExistingAudio {
@@ -76,6 +77,7 @@ const SongForm = () => {
   const [sheetMusic, setSheetMusic] = useState<File | null>(null);
   const [originalPdf, setOriginalPdf] = useState<File | null>(null);
   const [lyricsFile, setLyricsFile] = useState<File | null>(null);
+  const [lyricsText, setLyricsText] = useState('');
   const [lyricsSearchOpen, setLyricsSearchOpen] = useState(false);
   const [convertingPdf, setConvertingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
@@ -133,6 +135,9 @@ const SongForm = () => {
       setSong(data as Song);
       setName(data.name);
       setType(data.type);
+      if (data.lyrics) {
+        setLyricsText(data.lyrics);
+      }
 
       await fetchAudios();
     } catch (error: any) {
@@ -249,6 +254,12 @@ const SongForm = () => {
       }
 
       let songId = id;
+      
+      // Get lyrics content from file or text
+      let lyricsContent: string | null = lyricsText || null;
+      if (lyricsFile && !lyricsText) {
+        lyricsContent = await lyricsFile.text();
+      }
 
       if (isEditMode) {
         // Modo Edição
@@ -263,6 +274,10 @@ const SongForm = () => {
         
         if (sheetMusicPdfUrl) {
           updateData.sheet_music_pdf_url = sheetMusicPdfUrl;
+        }
+        
+        if (lyricsContent) {
+          updateData.lyrics = lyricsContent;
         }
         
         
@@ -286,6 +301,9 @@ const SongForm = () => {
           insertData.sheet_music_pdf_url = sheetMusicPdfUrl;
         }
         
+        if (lyricsContent) {
+          insertData.lyrics = lyricsContent;
+        }
         
         const { data: songData, error: songError } = await supabase
           .from('songs')
@@ -535,14 +553,26 @@ const SongForm = () => {
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
             <Label className="text-xs font-semibold">Letra</Label>
 
-            
+            {(isEditMode && song?.lyrics) || lyricsText ? (
+              <div className="flex items-center gap-2 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-700 dark:text-green-400">
+                <FileType className="h-3 w-3" />
+                <span>Letra cadastrada</span>
+              </div>
+            ) : null}
             
             <Input
               ref={lyricsInputRef}
               id="lyrics-file"
               type="file"
               accept=".txt"
-              onChange={(e) => setLyricsFile(e.target.files?.[0] || null)}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setLyricsFile(file);
+                  const text = await file.text();
+                  setLyricsText(text);
+                }
+              }}
               disabled={loading || convertingPdf}
               className="hidden"
             />
@@ -573,6 +603,14 @@ const SongForm = () => {
               )}
             </div>
             <p className="text-xs text-muted-foreground">Anexe .txt ou busque online</p>
+            
+            {lyricsText && (
+              <div className="mt-2 rounded-lg bg-secondary/30 p-3 max-h-40 overflow-y-auto border border-primary/10">
+                <pre className="whitespace-pre-wrap text-xs font-mono leading-relaxed text-muted-foreground">
+                  {lyricsText.substring(0, 500)}{lyricsText.length > 500 ? '...' : ''}
+                </pre>
+              </div>
+            )}
           </div>
 
           <LyricsSearchModal
@@ -580,6 +618,7 @@ const SongForm = () => {
             onOpenChange={setLyricsSearchOpen}
             songName={name}
             onImport={(lyrics) => {
+              setLyricsText(lyrics);
               const blob = new Blob([lyrics], { type: 'text/plain' });
               const file = new File([blob], `${name || 'letra'}.txt`, { type: 'text/plain' });
               setLyricsFile(file);
