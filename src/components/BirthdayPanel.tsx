@@ -37,6 +37,45 @@ const getInitials = (name: string) => {
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
+// Balloon SVG component
+const Balloon = ({ className, color, style }: { className?: string; color: string; style?: React.CSSProperties }) => (
+  <svg
+    viewBox="0 0 24 32"
+    className={className}
+    style={style}
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <ellipse cx="12" cy="10" rx="9" ry="10" fill={color} />
+    <ellipse cx="12" cy="10" rx="9" ry="10" fill="url(#shine)" fillOpacity="0.3" />
+    <path d="M12 20L10 24L12 23L14 24L12 20Z" fill={color} />
+    <path d="M12 24C12 24 11 28 12 32" stroke={color} strokeWidth="0.5" />
+    <defs>
+      <radialGradient id="shine" cx="0.3" cy="0.3" r="0.7">
+        <stop offset="0%" stopColor="white" />
+        <stop offset="100%" stopColor="transparent" />
+      </radialGradient>
+    </defs>
+  </svg>
+);
+
+// Floating balloons decoration
+const FloatingBalloons = () => (
+  <div className="absolute -top-2 -right-2 flex gap-1 opacity-80">
+    <Balloon className="w-6 h-8 animate-float" color="hsl(var(--primary))" />
+    <Balloon className="w-5 h-7 animate-float" color="#f472b6" style={{ animationDelay: '0.2s' }} />
+    <Balloon className="w-4 h-6 animate-float" color="#fbbf24" style={{ animationDelay: '0.4s' }} />
+  </div>
+);
+
+// Small balloons for list items
+const SmallBalloons = () => (
+  <div className="flex gap-0.5">
+    <Balloon className="w-3 h-4" color="#f472b6" />
+    <Balloon className="w-3 h-4" color="#60a5fa" />
+  </div>
+);
+
 export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
@@ -109,10 +148,43 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
           {todayBirthdays.map((member) => (
             <Card
               key={member.id}
-              className="overflow-hidden border-amber-300 dark:border-amber-700 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/30 dark:via-yellow-900/20 dark:to-orange-900/20 shadow-lg"
+              className="relative overflow-hidden border-2 border-amber-400 dark:border-amber-600 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 dark:from-amber-900/40 dark:via-yellow-900/30 dark:to-orange-900/30 shadow-xl"
             >
-              <CardContent className="p-4">
+              <FloatingBalloons />
+              
+              {/* Confetti dots decoration */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(12)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 rounded-full animate-pulse"
+                    style={{
+                      backgroundColor: ['#f472b6', '#fbbf24', '#60a5fa', '#34d399', '#a78bfa'][i % 5],
+                      left: `${10 + (i * 8)}%`,
+                      top: `${15 + (i % 3) * 25}%`,
+                      animationDelay: `${i * 0.1}s`,
+                      opacity: 0.6,
+                    }}
+                  />
+                ))}
+              </div>
+
+              <CardContent className="p-5 relative z-10">
                 <div className="flex items-center gap-4">
+                  {/* Date badge - prominent display */}
+                  <div className="flex flex-col items-center justify-center bg-gradient-to-b from-amber-500 to-orange-500 text-white rounded-xl p-3 min-w-[70px] shadow-lg">
+                    <span className="text-xs font-medium uppercase tracking-wide opacity-90">
+                      {format(new Date(member.birth_date), 'MMM', { locale: ptBR })}
+                    </span>
+                    <span className="text-3xl font-bold leading-none">
+                      {new Date(member.birth_date).getDate()}
+                    </span>
+                    <span className="text-[10px] font-medium mt-1 bg-white/20 px-2 py-0.5 rounded-full">
+                      HOJE!
+                    </span>
+                  </div>
+
+                  {/* Avatar */}
                   <div className="relative">
                     <Avatar className="h-16 w-16 ring-4 ring-amber-300 dark:ring-amber-600 shadow-lg">
                       <AvatarImage
@@ -124,11 +196,12 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
                         {getInitials(member.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-1 shadow-md">
+                    <div className="absolute -bottom-1 -right-1 bg-amber-500 rounded-full p-1.5 shadow-md">
                       <PartyPopper className="h-3.5 w-3.5 text-white" />
                     </div>
                   </div>
 
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <Sparkles className="h-4 w-4 text-amber-500" />
@@ -165,10 +238,21 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
             return (
               <Card
                 key={member.id}
-                className="overflow-hidden border-0 bg-muted/30 hover:bg-muted/50 transition-colors"
+                className="overflow-hidden border bg-card hover:bg-accent/50 transition-colors"
               >
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
+                    {/* Date badge - compact but visible */}
+                    <div className="flex flex-col items-center justify-center bg-gradient-to-b from-primary/80 to-primary text-primary-foreground rounded-lg p-2 min-w-[48px] shadow-sm">
+                      <span className="text-[10px] font-medium uppercase opacity-80">
+                        {format(new Date(member.birth_date), 'MMM', { locale: ptBR })}
+                      </span>
+                      <span className="text-xl font-bold leading-none">
+                        {birthDay}
+                      </span>
+                    </div>
+
+                    {/* Avatar */}
                     <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
                       <AvatarImage
                         src={member.photo_url || undefined}
@@ -180,6 +264,7 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
                       </AvatarFallback>
                     </Avatar>
 
+                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">
                         {member.name}
@@ -191,11 +276,8 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
                       )}
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        dia {birthDay}
-                      </span>
-                    </div>
+                    {/* Balloon decoration */}
+                    <SmallBalloons />
                   </div>
                 </CardContent>
               </Card>
