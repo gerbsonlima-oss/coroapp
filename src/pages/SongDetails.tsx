@@ -24,8 +24,10 @@ import {
   MessageCircle,
   Check,
   Music,
-  Share2
+  Share2,
+  Guitar
 } from 'lucide-react';
+import ChordViewer from '@/components/ChordViewer';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -53,6 +55,7 @@ interface Song {
   sheet_music_url: string | null;
   sheet_music_pdf_url?: string | null;
   lyrics?: string | null;
+  chords?: string | null;
 }
 
 interface SongAudio {
@@ -475,6 +478,16 @@ const SongDetails = () => {
                 {song.lyrics}
               </pre>
             </div>
+          </Card>
+        )}
+
+        {song.chords && (
+          <Card className="gradient-card border-border/50 p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <Guitar className="h-4 w-4" />
+              Cifra
+            </h2>
+            <ChordViewer chords={song.chords} />
           </Card>
         )}
 
