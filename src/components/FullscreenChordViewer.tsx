@@ -72,9 +72,11 @@ const processChords = (text: string, semitones: number): string => {
   return processedLines.join('\n');
 };
 
-const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => {
-  const chordClass = isNightMode ? 'text-amber-400 font-bold' : 'text-primary font-bold';
-  const lyricClass = isNightMode ? 'text-neutral-200' : 'text-foreground/90';
+const renderChordsHtml = (text: string, isNightMode: boolean, fontSize: number): JSX.Element[] => {
+  // Cores otimizadas para astigmatismo - evita preto/branco puro
+  const chordColor = isNightMode ? '#fcd34d' : '#1e40af'; // amber-300 / blue-800
+  const lyricColor = isNightMode ? '#e5e7eb' : '#1f2937'; // gray-200 / gray-800
+  const chordFontSize = fontSize + 2; // 2 unidades maior que letra
   
   // Helper to render a single line with chord highlighting
   const renderLine = (line: string, lineIndex: number, keyPrefix: string = ''): JSX.Element => {
@@ -88,10 +90,22 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
       
       while ((match = regex.exec(line)) !== null) {
         if (match.index > lastIndex) {
-          parts.push(line.substring(lastIndex, match.index));
+          parts.push(
+            <span key={`lyric-${keyPrefix}${lineIndex}-${partKey}`} style={{ color: lyricColor }}>
+              {line.substring(lastIndex, match.index)}
+            </span>
+          );
         }
         parts.push(
-          <span key={`chord-${keyPrefix}${lineIndex}-${partKey++}`} className={chordClass}>
+          <span 
+            key={`chord-${keyPrefix}${lineIndex}-${partKey++}`} 
+            style={{ 
+              color: chordColor, 
+              fontWeight: 700, 
+              fontSize: `${chordFontSize}px`,
+              letterSpacing: '0.02em'
+            }}
+          >
             {match[1]}
           </span>
         );
@@ -99,11 +113,15 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
       }
       
       if (lastIndex < line.length) {
-        parts.push(line.substring(lastIndex));
+        parts.push(
+          <span key={`lyric-end-${keyPrefix}${lineIndex}`} style={{ color: lyricColor }}>
+            {line.substring(lastIndex)}
+          </span>
+        );
       }
       
       return (
-        <div key={`${keyPrefix}${lineIndex}`} className="leading-tight">
+        <div key={`${keyPrefix}${lineIndex}`} style={{ lineHeight: 1.6, color: lyricColor }}>
           {parts.length > 0 ? parts : '\u00A0'}
         </div>
       );
@@ -125,7 +143,15 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
           parts.push(line.substring(lastIndex, match.index));
         }
         parts.push(
-          <span key={`chord-${keyPrefix}${lineIndex}-${partKey++}`} className={chordClass}>
+          <span 
+            key={`chord-${keyPrefix}${lineIndex}-${partKey++}`} 
+            style={{ 
+              color: chordColor, 
+              fontWeight: 700, 
+              fontSize: `${chordFontSize}px`,
+              letterSpacing: '0.02em'
+            }}
+          >
             {match[1]}
           </span>
         );
@@ -137,18 +163,28 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
       }
       
       return (
-        <div key={`${keyPrefix}${lineIndex}`} className={`leading-tight ${chordClass}`}>
+        <div 
+          key={`${keyPrefix}${lineIndex}`} 
+          style={{ lineHeight: 1.6, color: chordColor, fontWeight: 700, fontSize: `${chordFontSize}px` }}
+        >
           {parts}
         </div>
       );
     }
     
     return (
-      <div key={`${keyPrefix}${lineIndex}`} className={`leading-tight ${lyricClass}`}>
+      <div key={`${keyPrefix}${lineIndex}`} style={{ lineHeight: 1.6, color: lyricColor }}>
         {line || '\u00A0'}
       </div>
     );
   };
+
+  // Cores para badges otimizadas para astigmatismo
+  const badgeBgColor = isNightMode ? '#d97706' : '#1e40af'; // amber-600 / blue-800
+  const badgeTextColor = isNightMode ? '#000000' : '#ffffff';
+  const refrainBgColor = isNightMode ? 'rgba(217, 119, 6, 0.2)' : 'rgba(30, 64, 175, 0.1)';
+  const refrainBorderColor = isNightMode ? 'rgba(217, 119, 6, 0.4)' : 'rgba(30, 64, 175, 0.3)';
+  const labelColor = isNightMode ? '#fcd34d' : '#1e40af';
 
   // Parse section markers: [REFRÃO]...[/REFRÃO] and [1]...[/1], [2]...[/2], etc.
   const sectionRegex = /\[(REFRÃO|REFRAO|\d+)\]([\s\S]*?)\[\/\1\]/gi;
@@ -191,27 +227,29 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
     const sectionLines = section.content.trim().split('\n');
 
     if (isRefrain) {
-      // Render refrain section with visual badge
+      // Render refrain section with visual badge - ÍCONES MENORES
       result.push(
         <div 
           key={`refrain-${sectionIdx}`}
-          className={`mb-4 rounded-lg p-3 ${
-            isNightMode 
-              ? 'bg-amber-900/30 border border-amber-700/50' 
-              : 'bg-primary/10 border border-primary/30'
-          }`}
+          className="mb-4 rounded-lg p-3"
+          style={{
+            backgroundColor: refrainBgColor,
+            border: `1px solid ${refrainBorderColor}`
+          }}
         >
-          <div className={`flex items-center gap-2 mb-2 ${
-            isNightMode ? 'text-amber-400' : 'text-primary'
-          }`}>
-            <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm ${
-              isNightMode 
-                ? 'bg-amber-500 text-black' 
-                : 'bg-primary text-primary-foreground'
-            }`}>
-              <RefreshCw className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 mb-2" style={{ color: labelColor }}>
+            <div 
+              className="flex items-center justify-center rounded-full"
+              style={{
+                width: '18px',
+                height: '18px',
+                backgroundColor: badgeBgColor,
+                color: badgeTextColor
+              }}
+            >
+              <RefreshCw style={{ width: '10px', height: '10px' }} />
             </div>
-            <span className="font-bold text-base tracking-wide">REFRÃO</span>
+            <span className="font-bold text-xs tracking-wide">REFRÃO</span>
           </div>
           <div className="pl-1">
             {sectionLines.map((line, idx) => renderLine(line, idx, `refrain-${sectionIdx}-`))}
@@ -219,15 +257,20 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
         </div>
       );
     } else if (verseNumber) {
-      // Render numbered verse with visual badge
+      // Render numbered verse with visual badge - ÍCONES MENORES
       result.push(
         <div key={`verse-${sectionIdx}`} className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold text-lg ${
-              isNightMode 
-                ? 'bg-amber-500 text-black' 
-                : 'bg-primary text-primary-foreground'
-            }`}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <div 
+              className="flex items-center justify-center rounded-full font-bold"
+              style={{
+                width: '18px',
+                height: '18px',
+                fontSize: '11px',
+                backgroundColor: badgeBgColor,
+                color: badgeTextColor
+              }}
+            >
               {verseNumber}
             </div>
           </div>
@@ -380,16 +423,20 @@ const FullscreenChordViewer = ({ chords, songName, onClose }: FullscreenChordVie
       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 active:bg-muted'
   }`;
   
+  // Cores de fundo otimizadas para astigmatismo
+  const bgColor = isNightMode ? '#1a1a2e' : '#fafafa';
+
   return (
-    <div className={`fixed inset-0 z-[100] flex flex-col transition-colors duration-300 ${
-      isNightMode ? 'bg-neutral-950' : 'bg-background'
-    }`}>
+    <div 
+      className="fixed inset-0 z-[100] flex flex-col transition-colors duration-300"
+      style={{ backgroundColor: bgColor }}
+    >
       {/* Header minimalista */}
       <div className={`flex items-center justify-between px-1.5 py-1 border-b shrink-0 transition-colors duration-300 ${
         isNightMode 
-          ? 'border-neutral-800 bg-neutral-950/95' 
-          : 'border-border/30 bg-background/95 backdrop-blur-sm'
-      }`}>
+          ? 'border-neutral-700' 
+          : 'border-border/30 backdrop-blur-sm'
+      }`} style={{ backgroundColor: isNightMode ? 'rgba(26, 26, 46, 0.95)' : 'rgba(250, 250, 250, 0.95)' }}>
         {/* Controles de Tom */}
         <div className="flex items-center gap-0">
           <button onClick={handleTransposeDown} className={buttonClass(isNightMode)}>
@@ -397,7 +444,10 @@ const FullscreenChordViewer = ({ chords, songName, onClose }: FullscreenChordVie
           </button>
           <div className="flex items-center gap-0.5 px-0.5 min-w-[40px] justify-center">
             <Music className={`h-3 w-3 ${isNightMode ? 'text-neutral-500' : 'text-muted-foreground'}`} />
-            <span className={`text-xs font-bold ${isNightMode ? 'text-amber-400' : 'text-primary'}`}>
+            <span 
+              className="text-xs font-bold"
+              style={{ color: isNightMode ? '#fcd34d' : '#1e40af' }}
+            >
               {currentKey || '—'}
             </span>
           </div>
@@ -482,9 +532,9 @@ const FullscreenChordViewer = ({ chords, songName, onClose }: FullscreenChordVie
       >
         <pre 
           className="font-mono whitespace-pre-wrap break-words"
-          style={{ fontSize: `${fontSize}px`, lineHeight: 1.4 }}
+          style={{ fontSize: `${fontSize}px`, lineHeight: 1.6, letterSpacing: '0.02em' }}
         >
-          {renderChordsHtml(transposedChords, isNightMode)}
+          {renderChordsHtml(transposedChords, isNightMode, fontSize)}
         </pre>
         {/* Extra space at bottom for auto-scroll to reach end */}
         <div className="h-[50vh]" />
