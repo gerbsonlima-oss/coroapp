@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -361,34 +361,44 @@ const SimpleEventAudios = () => {
                 {audios.length} áudio{audios.length !== 1 ? 's' : ''}
               </p>
               
-              {/* Booklet export dropdown */}
-              {songs.length > 0 && (
-                <div className="mt-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        disabled={exportingLyrics || exportingChords}
-                      >
-                        <MoreVertical className="h-3.5 w-3.5 mr-1.5" />
-                        {exportingLyrics || exportingChords ? 'Gerando...' : 'Opções'}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="bg-popover">
-                      <DropdownMenuItem onClick={handleExportSongBooklet} disabled={exportingLyrics}>
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        Livreto de Cantos
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleExportChordBooklet} disabled={exportingChords}>
-                        <Guitar className="mr-2 h-4 w-4" />
-                        Livreto de Cifras
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
+              {/* Options dropdown */}
+              <div className="mt-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      disabled={exportingLyrics || exportingChords}
+                    >
+                      <MoreVertical className="h-3.5 w-3.5 mr-1.5" />
+                      {exportingLyrics || exportingChords ? 'Gerando...' : 'Opções'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="bg-popover">
+                    <DropdownMenuItem onClick={() => {
+                      const shareUrl = window.location.href;
+                      const text = `${event.name} - Áudios do evento`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n' + shareUrl)}`, '_blank');
+                    }}>
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Compartilhar via WhatsApp
+                    </DropdownMenuItem>
+                    {songs.length > 0 && (
+                      <>
+                        <DropdownMenuItem onClick={handleExportSongBooklet} disabled={exportingLyrics}>
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Livreto de Cantos
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportChordBooklet} disabled={exportingChords}>
+                          <Guitar className="mr-2 h-4 w-4" />
+                          Livreto de Cifras
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </div>
