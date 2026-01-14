@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,6 +20,7 @@ interface Event {
   date: string;
   location: string | null;
   cover_image_url: string | null;
+  tenant_id: string | null;
 }
 
 // Fallback type labels with liturgical order
@@ -74,11 +75,14 @@ const SimpleEventAudios = () => {
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [audios, setAudios] = useState<SongAudio[]>([]);
+  const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
   const [chordsModalOpen, setChordsModalOpen] = useState(false);
   const [selectedAudio, setSelectedAudio] = useState<SongAudio | null>(null);
+  const [exportingLyrics, setExportingLyrics] = useState(false);
+  const [exportingChords, setExportingChords] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -158,6 +162,21 @@ const SimpleEventAudios = () => {
         };
       });
 
+      // Map songs for PDF export
+      const mappedSongs = eventSongsData.map((es: any) => {
+        const typeSlug = es.type || es.songs?.type || '';
+        const songType = songTypesMap[typeSlug];
+        const defaultType = defaultTypeLabels[typeSlug];
+        return {
+          ...es.songs,
+          type: typeSlug,
+          typeName: songType?.name || defaultType?.name || typeSlug,
+          typeOrder: songType?.order_index ?? defaultType?.order ?? 999,
+          order_index: es.order_index
+        };
+      });
+
+      setSongs(mappedSongs);
       setAudios(sortByTypeOrder(mappedAudios));
     } catch (error) {
       console.error('Error fetching event data:', error);
@@ -223,6 +242,52 @@ const SimpleEventAudios = () => {
   const handleOpenChords = (audio: SongAudio) => {
     setSelectedAudio(audio);
     setChordsModalOpen(true);
+  };
+
+  const handleExportSongBooklet = async () => {
+    if (!event || songs.length === 0) return;
+    setExportingLyrics(true);
+    try {
+      const { exportSongBookletPDF } = await import('@/utils/exportSongBookletPDF');
+      
+      // Get tenant info
+      const { data: tenantData } = await supabase
+        .from('tenants')
+        .select('name, logo_url')
+        .eq('id', (event as any).tenant_id)
+        .single();
+      
+      await exportSongBookletPDF(event, songs, tenantData || undefined);
+      toast.success('Livreto de cantos gerado!');
+    } catch (error) {
+      console.error('Error exporting song booklet:', error);
+      toast.error('Erro ao gerar livreto de cantos');
+    } finally {
+      setExportingLyrics(false);
+    }
+  };
+
+  const handleExportChordBooklet = async () => {
+    if (!event || songs.length === 0) return;
+    setExportingChords(true);
+    try {
+      const { exportChordBookletPDF } = await import('@/utils/exportChordBookletPDF');
+      
+      // Get tenant info
+      const { data: tenantData } = await supabase
+        .from('tenants')
+        .select('name, logo_url')
+        .eq('id', (event as any).tenant_id)
+        .single();
+      
+      await exportChordBookletPDF(event, songs, tenantData || undefined);
+      toast.success('Livreto de cifras gerado!');
+    } catch (error) {
+      console.error('Error exporting chord booklet:', error);
+      toast.error('Erro ao gerar livreto de cifras');
+    } finally {
+      setExportingChords(false);
+    }
   };
 
   // Cleanup audio on unmount
@@ -295,6 +360,30 @@ const SimpleEventAudios = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 {audios.length} áudio{audios.length !== 1 ? 's' : ''}
               </p>
+              
+              {/* Booklet export buttons */}
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportSongBooklet}
+                  disabled={exportingLyrics || songs.length === 0}
+                  className="text-xs"
+                >
+                  <BookOpen className="h-3.5 w-3.5 mr-1.5" />
+                  {exportingLyrics ? 'Gerando...' : 'Livreto de Cantos'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportChordBooklet}
+                  disabled={exportingChords || songs.length === 0}
+                  className="text-xs"
+                >
+                  <Guitar className="h-3.5 w-3.5 mr-1.5" />
+                  {exportingChords ? 'Gerando...' : 'Livreto de Cifras'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
