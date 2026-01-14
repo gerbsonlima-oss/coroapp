@@ -10,6 +10,7 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LoadingFallback } from "@/components/LoadingFallback";
+import { HelmetProvider } from "react-helmet-async";
 
 const Home = lazy(() => import("./pages/Home"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -18,6 +19,7 @@ const NewEvent = lazy(() => import("./pages/NewEvent"));
 const EditEvent = lazy(() => import("./pages/EditEvent"));
 const EventDetails = lazy(() => import("./pages/EventDetails"));
 const EventQuickEdit = lazy(() => import("./pages/EventQuickEdit"));
+const SimpleEventAudios = lazy(() => import("./pages/SimpleEventAudios"));
 const Songs = lazy(() => import("./pages/Songs"));
 const SongForm = lazy(() => import("./pages/SongForm"));
 const SongDetails = lazy(() => import("./pages/SongDetails"));
@@ -125,6 +127,7 @@ function App() {
   const queryClient = useMemo(() => new QueryClient(), []);
 
   return (
+    <HelmetProvider>
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
       <TenantProvider>
@@ -136,6 +139,9 @@ function App() {
         <Toaster />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
+            {/* Simplified event audios - public route */}
+            <Route path="/e/:id" element={<SimpleEventAudios />} />
+            
             {/* Routes without tenant prefix */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/public/*" element={<EventDetails />} />
@@ -363,6 +369,7 @@ function App() {
       </TenantProvider>
       </QueryClientProvider>
     </BrowserRouter>
+    </HelmetProvider>
   );
 }
 

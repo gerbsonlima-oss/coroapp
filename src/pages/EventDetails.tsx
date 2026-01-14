@@ -447,7 +447,7 @@ const EventDetails = () => {
   };
 
   const handleShare = () => {
-    const publicUrl = `${window.location.origin}/public/events/${id}`;
+    const publicUrl = `${window.location.origin}/e/${id}`;
     navigator.clipboard.writeText(publicUrl);
     toast.success('Link copiado para a área de transferência!');
   };
