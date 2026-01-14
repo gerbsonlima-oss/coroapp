@@ -25,6 +25,7 @@ interface Event {
   location: string | null;
   cover_image_url: string | null;
   tenant_id: string | null;
+  pdf_theme: string | null;
 }
 
 // Fallback type labels with liturgical order
@@ -127,8 +128,8 @@ const SimpleEventAudios = () => {
     
     const offlineData = loadOfflineEventData(id);
     if (offlineData) {
-      // Add tenant_id: null for compatibility
-      setEvent({ ...offlineData.event, tenant_id: null } as Event);
+      // Add tenant_id: null and pdf_theme: null for compatibility
+      setEvent({ ...offlineData.event, tenant_id: null, pdf_theme: (offlineData.event as any).pdf_theme || null } as Event);
       
       // Convert offline data to SongAudio format
       const offlineAudios: SongAudio[] = offlineData.audios.map(audio => {
@@ -174,7 +175,7 @@ const SimpleEventAudios = () => {
       // Fetch event
       const { data: eventData, error: eventError } = await supabase
         .from('events')
-        .select('id, name, date, location, cover_image_url, tenant_id')
+        .select('id, name, date, location, cover_image_url, tenant_id, pdf_theme')
         .eq('id', id)
         .single();
       
