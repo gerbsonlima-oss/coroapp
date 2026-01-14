@@ -145,7 +145,7 @@ export function SaveEventOfflineDialog({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Smartphone className="h-5 w-5" />
-              Criar Atalho na Tela Inicial
+              Criar Atalho de Acesso Rápido
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-left">
@@ -181,16 +181,13 @@ export function SaveEventOfflineDialog({
                       </li>
                       <li className="flex items-start gap-3">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
-                        <span>Selecione <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong></span>
+                        <span>Selecione <strong>"Adicionar à tela inicial"</strong></span>
                       </li>
                       <li className="flex items-start gap-3">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">3</span>
                         <span>Confirme tocando em <strong>"Adicionar"</strong></span>
                       </li>
                     </ol>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      💡 Dica: Se estiver usando Samsung Internet, o menu fica na parte inferior da tela.
-                    </p>
                   </>
                 ) : (
                   <>
@@ -202,22 +199,31 @@ export function SaveEventOfflineDialog({
                       </li>
                       <li className="flex items-start gap-3">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
-                        <span>Procure por <strong>"Instalar"</strong> ou <strong>"Adicionar à tela inicial"</strong></span>
+                        <span>Procure por <strong>"Adicionar à tela inicial"</strong></span>
                       </li>
                       <li className="flex items-start gap-3">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">3</span>
-                        <span>Confirme a instalação</span>
+                        <span>Confirme a adição</span>
                       </li>
                     </ol>
                   </>
                 )}
                 
-                <div className="bg-green-500/10 rounded-lg p-3 flex items-center gap-2 mt-4">
-                  <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    O evento já foi salvo offline! Você pode acessá-lo mesmo sem internet.
-                  </p>
+                <div className="bg-green-500/10 rounded-lg p-3 flex items-start gap-2 mt-4">
+                  <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                      Evento salvo com sucesso!
+                    </p>
+                    <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
+                      O atalho abrirá este evento diretamente no app Liturgia+, com todos os dados disponíveis offline.
+                    </p>
+                  </div>
                 </div>
+                
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 <strong>Dica:</strong> Você pode criar atalhos para vários eventos diferentes. Cada um abrirá o evento específico dentro do app.
+                </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
