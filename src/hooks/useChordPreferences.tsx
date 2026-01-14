@@ -14,8 +14,9 @@ const DEFAULT_PREFERENCES: ChordPreferences = {
 
 export const useChordPreferences = (songId: string | undefined) => {
   const { user } = useAuth();
-  const [preferences, setPreferences] = useState<ChordPreferences>(DEFAULT_PREFERENCES);
+  const [savedPreferences, setSavedPreferences] = useState<ChordPreferences>(DEFAULT_PREFERENCES);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load preferences from database
   useEffect(() => {
@@ -36,7 +37,7 @@ export const useChordPreferences = (songId: string | undefined) => {
         if (error) {
           console.error('Error loading chord preferences:', error);
         } else if (data) {
-          setPreferences({
+          setSavedPreferences({
             transpose: data.transpose,
             fontSize: data.font_size,
           });
@@ -51,13 +52,11 @@ export const useChordPreferences = (songId: string | undefined) => {
     loadPreferences();
   }, [user?.id, songId]);
 
-  // Save preferences to database
-  const savePreferences = useCallback(async (newPreferences: Partial<ChordPreferences>) => {
-    if (!user?.id || !songId) return;
+  // Save preferences to database (explicit save)
+  const savePreferences = useCallback(async (transpose: number, fontSize: number) => {
+    if (!user?.id || !songId) return false;
 
-    const updatedPreferences = { ...preferences, ...newPreferences };
-    setPreferences(updatedPreferences);
-
+    setIsSaving(true);
     try {
       const { error } = await supabase
         .from('user_chord_preferences')
@@ -65,8 +64,8 @@ export const useChordPreferences = (songId: string | undefined) => {
           {
             user_id: user.id,
             song_id: songId,
-            transpose: updatedPreferences.transpose,
-            font_size: updatedPreferences.fontSize,
+            transpose,
+            font_size: fontSize,
           },
           {
             onConflict: 'user_id,song_id',
@@ -75,31 +74,25 @@ export const useChordPreferences = (songId: string | undefined) => {
 
       if (error) {
         console.error('Error saving chord preferences:', error);
+        return false;
       }
+
+      setSavedPreferences({ transpose, fontSize });
+      return true;
     } catch (err) {
       console.error('Error saving chord preferences:', err);
+      return false;
+    } finally {
+      setIsSaving(false);
     }
-  }, [user?.id, songId, preferences]);
-
-  const setTranspose = useCallback((transpose: number) => {
-    savePreferences({ transpose });
-  }, [savePreferences]);
-
-  const setFontSize = useCallback((fontSize: number) => {
-    savePreferences({ fontSize });
-  }, [savePreferences]);
-
-  const resetPreferences = useCallback(() => {
-    savePreferences(DEFAULT_PREFERENCES);
-  }, [savePreferences]);
+  }, [user?.id, songId]);
 
   return {
-    transpose: preferences.transpose,
-    fontSize: preferences.fontSize,
-    setTranspose,
-    setFontSize,
-    resetPreferences,
+    savedTranspose: savedPreferences.transpose,
+    savedFontSize: savedPreferences.fontSize,
+    savePreferences,
     isLoading,
+    isSaving,
     isAuthenticated: !!user,
   };
 };

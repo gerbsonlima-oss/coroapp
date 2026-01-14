@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, RotateCcw, Music } from 'lucide-react';
+import { Plus, Minus, RotateCcw, Music, Save, Check } from 'lucide-react';
 import ChordSheetJS from 'chordsheetjs';
 import { useChordPreferences } from '@/hooks/useChordPreferences';
+import { toast } from 'sonner';
 
 interface ChordViewerProps {
   chords: string;
@@ -167,20 +168,29 @@ const renderChordsHtml = (text: string): JSX.Element[] => {
 const ChordViewer = ({ chords, songId }: ChordViewerProps) => {
   // Load saved preferences from database
   const { 
-    transpose: savedTranspose, 
-    setTranspose: saveTranspose,
+    savedTranspose, 
+    savePreferences,
     isLoading: preferencesLoading,
+    isSaving,
     isAuthenticated
   } = useChordPreferences(songId);
 
-  const [transpose, setTransposeState] = useState(0);
+  const [transpose, setTranspose] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Sync with saved preferences when loaded
   useEffect(() => {
     if (!preferencesLoading && isAuthenticated && songId) {
-      setTransposeState(savedTranspose);
+      setTranspose(savedTranspose);
     }
   }, [preferencesLoading, savedTranspose, isAuthenticated, songId]);
+
+  // Track unsaved changes
+  useEffect(() => {
+    if (!preferencesLoading && isAuthenticated && songId) {
+      setHasUnsavedChanges(transpose !== savedTranspose);
+    }
+  }, [transpose, savedTranspose, preferencesLoading, isAuthenticated, songId]);
   
   const originalKey = useMemo(() => detectOriginalKey(chords), [chords]);
   
@@ -192,20 +202,20 @@ const ChordViewer = ({ chords, songId }: ChordViewerProps) => {
     if (!originalKey) return null;
     return transposeChord(originalKey, transpose);
   }, [originalKey, transpose]);
-
-  const setTranspose = useCallback((value: number | ((prev: number) => number)) => {
-    setTransposeState(prev => {
-      const newValue = typeof value === 'function' ? value(prev) : value;
-      if (isAuthenticated && songId) {
-        saveTranspose(newValue);
-      }
-      return newValue;
-    });
-  }, [isAuthenticated, songId, saveTranspose]);
   
-  const handleTransposeUp = () => setTranspose((t: number) => t + 1);
-  const handleTransposeDown = () => setTranspose((t: number) => t - 1);
+  const handleTransposeUp = () => setTranspose(t => t + 1);
+  const handleTransposeDown = () => setTranspose(t => t - 1);
   const handleReset = () => setTranspose(0);
+
+  const handleSave = async () => {
+    const success = await savePreferences(transpose, 16);
+    if (success) {
+      toast.success('Preferências salvas');
+      setHasUnsavedChanges(false);
+    } else {
+      toast.error('Erro ao salvar preferências');
+    }
+  };
   
   return (
     <div className="space-y-3">
@@ -237,6 +247,24 @@ const ChordViewer = ({ chords, songId }: ChordViewerProps) => {
             >
               <RotateCcw className="h-3 w-3 mr-1" />
               Resetar
+            </Button>
+          )}
+          {isAuthenticated && songId && (
+            <Button
+              variant={hasUnsavedChanges ? "default" : "ghost"}
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving || !hasUnsavedChanges}
+              className={`h-8 px-2 text-xs ${hasUnsavedChanges ? '' : 'text-muted-foreground'}`}
+            >
+              {isSaving ? (
+                <RotateCcw className="h-3 w-3 mr-1 animate-spin" />
+              ) : hasUnsavedChanges ? (
+                <Save className="h-3 w-3 mr-1" />
+              ) : (
+                <Check className="h-3 w-3 mr-1" />
+              )}
+              {isSaving ? 'Salvando...' : hasUnsavedChanges ? 'Salvar' : 'Salvo'}
             </Button>
           )}
         </div>
