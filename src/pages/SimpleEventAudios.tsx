@@ -588,6 +588,7 @@ const SimpleEventAudios = () => {
           <FullscreenChordViewer
             chords={selectedAudio.song_chords}
             songName={selectedAudio.song_name}
+            songId={selectedAudio.song_id}
             onClose={() => setChordsModalOpen(false)}
           />
         )}

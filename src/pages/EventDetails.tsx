@@ -1601,6 +1601,7 @@ const EventDetails = () => {
         <FullscreenChordViewer
           chords={selectedSongForModal.chords}
           songName={selectedSongForModal.name}
+          songId={selectedSongForModal.id}
           onClose={() => setChordsModalOpen(false)}
         />
       )}

@@ -1,9 +1,11 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { X, Plus, Minus, Type, Music, Moon, Sun, Play, Pause, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
+import { useChordPreferences } from '@/hooks/useChordPreferences';
 
 interface FullscreenChordViewerProps {
   chords: string;
   songName?: string;
+  songId?: string;
   onClose: () => void;
 }
 
@@ -308,9 +310,20 @@ const SCROLL_SPEEDS = [
   { label: '3x', value: 2.5 },
 ];
 
-const FullscreenChordViewer = ({ chords, songName, onClose }: FullscreenChordViewerProps) => {
-  const [transpose, setTranspose] = useState(0);
-  const [fontSizeIndex, setFontSizeIndex] = useState(2);
+const FullscreenChordViewer = ({ chords, songName, songId, onClose }: FullscreenChordViewerProps) => {
+  // Load saved preferences from database
+  const { 
+    transpose: savedTranspose, 
+    fontSize: savedFontSize, 
+    setTranspose: saveTranspose, 
+    setFontSize: saveFontSize,
+    isLoading: preferencesLoading,
+    isAuthenticated
+  } = useChordPreferences(songId);
+
+  // Local state initialized from saved preferences
+  const [transpose, setTransposeState] = useState(0);
+  const [fontSizeIndex, setFontSizeIndexState] = useState(2);
   const [isNightMode, setIsNightMode] = useState(() => {
     return localStorage.getItem('chordViewer_nightMode') === 'true';
   });
@@ -319,6 +332,17 @@ const FullscreenChordViewer = ({ chords, songName, onClose }: FullscreenChordVie
     const saved = localStorage.getItem('chordViewer_scrollSpeed');
     return saved ? parseInt(saved, 10) : 1; // Default 1x
   });
+
+  // Sync with saved preferences when loaded
+  useEffect(() => {
+    if (!preferencesLoading && isAuthenticated && songId) {
+      setTransposeState(savedTranspose);
+      const savedIndex = FONT_SIZES.indexOf(savedFontSize);
+      if (savedIndex !== -1) {
+        setFontSizeIndexState(savedIndex);
+      }
+    }
+  }, [preferencesLoading, savedTranspose, savedFontSize, isAuthenticated, songId]);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -337,11 +361,32 @@ const FullscreenChordViewer = ({ chords, songName, onClose }: FullscreenChordVie
   
   const fontSize = FONT_SIZES[fontSizeIndex];
   const scrollSpeed = SCROLL_SPEEDS[scrollSpeedIndex].value;
+
+  // Handlers that save to database
+  const setTranspose = useCallback((value: number | ((prev: number) => number)) => {
+    setTransposeState(prev => {
+      const newValue = typeof value === 'function' ? value(prev) : value;
+      if (isAuthenticated && songId) {
+        saveTranspose(newValue);
+      }
+      return newValue;
+    });
+  }, [isAuthenticated, songId, saveTranspose]);
+
+  const setFontSizeIndex = useCallback((value: number | ((prev: number) => number)) => {
+    setFontSizeIndexState(prev => {
+      const newValue = typeof value === 'function' ? value(prev) : value;
+      if (isAuthenticated && songId) {
+        saveFontSize(FONT_SIZES[newValue]);
+      }
+      return newValue;
+    });
+  }, [isAuthenticated, songId, saveFontSize]);
   
-  const handleFontUp = () => setFontSizeIndex(i => Math.min(i + 1, FONT_SIZES.length - 1));
-  const handleFontDown = () => setFontSizeIndex(i => Math.max(i - 1, 0));
-  const handleTransposeUp = () => setTranspose(t => t + 1);
-  const handleTransposeDown = () => setTranspose(t => t - 1);
+  const handleFontUp = () => setFontSizeIndex((i: number) => Math.min(i + 1, FONT_SIZES.length - 1));
+  const handleFontDown = () => setFontSizeIndex((i: number) => Math.max(i - 1, 0));
+  const handleTransposeUp = () => setTranspose((t: number) => t + 1);
+  const handleTransposeDown = () => setTranspose((t: number) => t - 1);
   
   const toggleNightMode = () => {
     setIsNightMode(prev => {

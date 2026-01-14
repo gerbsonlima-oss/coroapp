@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, RotateCcw, Music } from 'lucide-react';
 import ChordSheetJS from 'chordsheetjs';
+import { useChordPreferences } from '@/hooks/useChordPreferences';
 
 interface ChordViewerProps {
   chords: string;
+  songId?: string;
 }
 
 const CHORD_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -162,8 +164,23 @@ const renderChordsHtml = (text: string): JSX.Element[] => {
   });
 };
 
-const ChordViewer = ({ chords }: ChordViewerProps) => {
-  const [transpose, setTranspose] = useState(0);
+const ChordViewer = ({ chords, songId }: ChordViewerProps) => {
+  // Load saved preferences from database
+  const { 
+    transpose: savedTranspose, 
+    setTranspose: saveTranspose,
+    isLoading: preferencesLoading,
+    isAuthenticated
+  } = useChordPreferences(songId);
+
+  const [transpose, setTransposeState] = useState(0);
+
+  // Sync with saved preferences when loaded
+  useEffect(() => {
+    if (!preferencesLoading && isAuthenticated && songId) {
+      setTransposeState(savedTranspose);
+    }
+  }, [preferencesLoading, savedTranspose, isAuthenticated, songId]);
   
   const originalKey = useMemo(() => detectOriginalKey(chords), [chords]);
   
@@ -175,9 +192,19 @@ const ChordViewer = ({ chords }: ChordViewerProps) => {
     if (!originalKey) return null;
     return transposeChord(originalKey, transpose);
   }, [originalKey, transpose]);
+
+  const setTranspose = useCallback((value: number | ((prev: number) => number)) => {
+    setTransposeState(prev => {
+      const newValue = typeof value === 'function' ? value(prev) : value;
+      if (isAuthenticated && songId) {
+        saveTranspose(newValue);
+      }
+      return newValue;
+    });
+  }, [isAuthenticated, songId, saveTranspose]);
   
-  const handleTransposeUp = () => setTranspose(t => t + 1);
-  const handleTransposeDown = () => setTranspose(t => t - 1);
+  const handleTransposeUp = () => setTranspose((t: number) => t + 1);
+  const handleTransposeDown = () => setTranspose((t: number) => t - 1);
   const handleReset = () => setTranspose(0);
   
   return (
