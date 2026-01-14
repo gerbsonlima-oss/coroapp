@@ -676,11 +676,11 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const numW = pdf.getTextWidth(numText);
     pdf.text(numText, (currentCol === 1 ? col1X : col2X) + (badgeWidth - numW) / 2, currentY + 4.3);
 
-    // Texto do tipo (negrito, cor primária)
+    // Texto do tipo (negrito, cor primária, tamanho 12)
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(9);
+    pdf.setFontSize(12);
     pdf.text(labelText, (currentCol === 1 ? col1X : col2X) + badgeWidth + 3, currentY + 4.3);
 
     // Mais espaço após a seção do tipo para separar do nome
@@ -715,6 +715,57 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
       const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
       pdf.text(line, x, currentY);
+      currentY += lineHeight;
+    }
+  };
+
+  // Cor vermelha para marcadores
+  const redColor: [number, number, number] = [180, 30, 30];
+
+  // Função para desenhar texto com "/" em vermelho
+  const addTextWithRedSlashes = (
+    text: string, 
+    size: number, 
+    style: 'normal' | 'bold' | 'italic', 
+    color: [number, number, number], 
+    indent: number = 0,
+    spaceBefore: number = 0
+  ): void => {
+    currentY += spaceBefore;
+    const lineHeight = size * 0.40;
+    const maxWidth = colWidth - 4 - indent;
+    
+    const lines = pdf.splitTextToSize(text, maxWidth) as string[];
+
+    for (const line of lines) {
+      if (currentY + lineHeight > contentEnd) {
+        advanceToNextColumn();
+      }
+
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      
+      // Split by "/" and draw each part
+      const parts = line.split('/');
+      let currentX = x;
+      
+      for (let i = 0; i < parts.length; i++) {
+        // Draw text part
+        if (parts[i]) {
+          pdf.setFont('times', style);
+          pdf.setFontSize(size);
+          pdf.setTextColor(...color);
+          pdf.text(parts[i], currentX, currentY);
+          currentX += pdf.getTextWidth(parts[i]);
+        }
+        
+        // Draw "/" in red (except after last part)
+        if (i < parts.length - 1) {
+          pdf.setTextColor(...redColor);
+          pdf.text('/', currentX, currentY);
+          currentX += pdf.getTextWidth('/');
+        }
+      }
+      
       currentY += lineHeight;
     }
   };
@@ -777,11 +828,34 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
         // Linha com marcador de refrão legado (R:, REFRÃO:, etc)
         if (isRefrainLineMarker) {
-          addText(trimmed, 11, 'bold', theme.primary, 0, 0.8);
+          // Verificar overflow
+          if (currentY + 4 > contentEnd) {
+            advanceToNextColumn();
+          }
+          
+          const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+          
+          // Desenhar "R:" em vermelho
+          pdf.setFont('times', 'bold');
+          pdf.setFontSize(11);
+          pdf.setTextColor(...redColor);
+          pdf.text('R:', x, currentY);
+          
+          // Calcular largura do "R:" para posicionar o texto
+          const markerWidth = pdf.getTextWidth('R: ');
+          
+          // Desenhar resto do texto em preto negrito
+          const textAfterMarker = trimmed.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/i, '');
+          if (textAfterMarker) {
+            pdf.setTextColor(...textDark);
+            pdf.text(textAfterMarker, x + markerWidth, currentY);
+          }
+          
+          currentY += 4.4;
           continue;
         }
 
-        // Estrofe numerada: número na cor do tenant, resto normal
+        // Estrofe numerada: número em vermelho, resto normal
         if (isNumberedVerse) {
           const verseNumber = isNumberedVerse[1];
           const verseText = isNumberedVerse[2];
@@ -793,9 +867,10 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           
           const x = (currentCol === 1 ? col1X : col2X) + 1.5;
           
+          // Número em vermelho
           pdf.setFont('times', 'bold');
           pdf.setFontSize(11);
-          pdf.setTextColor(...theme.primary);
+          pdf.setTextColor(...redColor);
           pdf.text(`${verseNumber}.`, x, currentY);
           
           // Calcular largura do número para posicionar o texto
@@ -820,13 +895,33 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           style = 'bold';
           color = textMedium;
         } else if (insideRefraoBlock) {
-          // Dentro do bloco [REFRÃO]...[/REFRÃO]: negrito, cor primária
-          style = 'bold';
-          color = theme.primary;
-          indent = 2;
+          // Dentro do bloco [REFRÃO]...[/REFRÃO]: "R:" vermelho + texto preto negrito
+          // Verificar overflow
+          if (currentY + 4 > contentEnd) {
+            advanceToNextColumn();
+          }
+          
+          const x = (currentCol === 1 ? col1X : col2X) + 1.5 + 2; // indent
+          
+          // Desenhar "R:" em vermelho
+          pdf.setFont('times', 'bold');
+          pdf.setFontSize(11);
+          pdf.setTextColor(...redColor);
+          pdf.text('R:', x, currentY);
+          
+          // Calcular largura do "R:" para posicionar o texto
+          const markerWidth = pdf.getTextWidth('R: ');
+          
+          // Desenhar texto em preto negrito
+          pdf.setTextColor(...textDark);
+          pdf.text(trimmed, x + markerWidth, currentY);
+          
+          currentY += 4.4;
+          continue;
         }
 
-        addText(trimmed, 11, style, color, indent, 0);
+        // Usar função que destaca "/" em vermelho
+        addTextWithRedSlashes(trimmed, 11, style, color, indent, 0);
       }
     }
 
