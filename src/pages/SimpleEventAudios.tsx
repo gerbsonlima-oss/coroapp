@@ -28,22 +28,27 @@ interface SongAudio {
   audio_url: string;
   name: string;
   song_name: string;
-  song_type: string;
+  song_type_slug: string;
+  song_type_name: string;
+  song_type_order: number;
   song_lyrics: string | null;
 }
 
-const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono', 'original'];
+interface SongType {
+  id: string;
+  slug: string;
+  name: string;
+  order_index: number;
+}
 
-const sortByNaipeOrder = (audios: SongAudio[]): SongAudio[] => {
+const sortByTypeOrder = (audios: SongAudio[]): SongAudio[] => {
   return [...audios].sort((a, b) => {
-    // First sort by song name
-    const nameCompare = a.song_name.localeCompare(b.song_name);
-    if (nameCompare !== 0) return nameCompare;
+    // First sort by song type order
+    const typeOrderCompare = a.song_type_order - b.song_type_order;
+    if (typeOrderCompare !== 0) return typeOrderCompare;
     
-    // Then by naipe order
-    const indexA = NAIPE_ORDER.indexOf(a.naipe.toLowerCase());
-    const indexB = NAIPE_ORDER.indexOf(b.naipe.toLowerCase());
-    return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+    // Then by song name
+    return a.song_name.localeCompare(b.song_name);
   });
 };
 
@@ -68,12 +73,26 @@ const SimpleEventAudios = () => {
       // Fetch event
       const { data: eventData, error: eventError } = await supabase
         .from('events')
-        .select('id, name, date, location, cover_image_url')
+        .select('id, name, date, location, cover_image_url, tenant_id')
         .eq('id', id)
         .single();
       
       if (eventError) throw eventError;
       setEvent(eventData);
+
+      // Fetch song types for this tenant
+      const { data: songTypesData, error: songTypesError } = await supabase
+        .from('song_types')
+        .select('id, slug, name, order_index')
+        .or(`tenant_id.eq.${eventData.tenant_id},tenant_id.is.null`)
+        .order('order_index');
+      
+      if (songTypesError) throw songTypesError;
+      
+      const songTypesMap: Record<string, SongType> = {};
+      (songTypesData || []).forEach((st: SongType) => {
+        songTypesMap[st.slug] = st;
+      });
 
       // Fetch event songs
       const { data: eventSongsData, error: eventSongsError } = await supabase
@@ -101,15 +120,19 @@ const SimpleEventAudios = () => {
       // Map audios with song info
       const mappedAudios: SongAudio[] = (audiosData || []).map((audio: any) => {
         const eventSong = eventSongsData.find((es: any) => es.songs.id === audio.song_id);
+        const typeSlug = eventSong?.songs?.type || '';
+        const songType = songTypesMap[typeSlug];
         return {
           ...audio,
           song_name: eventSong?.songs?.name || 'Música',
-          song_type: eventSong?.songs?.type || '',
+          song_type_slug: typeSlug,
+          song_type_name: songType?.name || typeSlug,
+          song_type_order: songType?.order_index ?? 999,
           song_lyrics: eventSong?.songs?.lyrics || null
         };
       });
 
-      setAudios(sortByNaipeOrder(mappedAudios));
+      setAudios(sortByTypeOrder(mappedAudios));
     } catch (error) {
       console.error('Error fetching event data:', error);
       toast.error('Erro ao carregar dados do evento');
@@ -276,7 +299,7 @@ const SimpleEventAudios = () => {
                   {/* Song Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-foreground truncate">
-                      {audio.song_type}
+                      {audio.song_type_name}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
                       {audio.song_name}
@@ -326,7 +349,7 @@ const SimpleEventAudios = () => {
               <div className="flex items-center justify-between">
                 <div className="pr-8">
                   <DialogTitle className="text-lg font-bold">
-                    {selectedAudio?.song_type}
+                    {selectedAudio?.song_type_name}
                   </DialogTitle>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {selectedAudio?.song_name}
