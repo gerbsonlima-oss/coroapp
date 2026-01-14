@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,8 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Download, CheckCircle, Smartphone, Share, Plus, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { Download, CheckCircle, Smartphone, Plus, MoreVertical } from 'lucide-react';
 
 interface SaveEventOfflineDialogProps {
   open: boolean;
@@ -31,11 +30,9 @@ interface SaveEventOfflineDialogProps {
   isCompleted: boolean;
 }
 
-// Detect iOS
+// Detect platform
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-// Check if app is installed (standalone mode)
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+const isAndroid = /Android/.test(navigator.userAgent);
 
 export function SaveEventOfflineDialog({
   open,
@@ -47,53 +44,30 @@ export function SaveEventOfflineDialog({
   onSave,
   isCompleted
 }: SaveEventOfflineDialogProps) {
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  // Capture beforeinstallprompt event
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [saveComplete, setSaveComplete] = useState(false);
 
   const handleSave = async () => {
     const success = await onSave();
     
     if (success) {
-      // After saving, try to show install prompt or iOS instructions
-      if (isIOS) {
-        setShowIOSInstructions(true);
-      } else if (deferredPrompt) {
-        // Show install prompt for Android/Desktop
-        try {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') {
-            toast.success('Atalho criado na tela inicial!');
-          }
-          setDeferredPrompt(null);
-        } catch (e) {
-          console.log('Install prompt failed:', e);
-        }
-      } else if (!isStandalone) {
-        // If no install prompt available and not already installed
-        toast.success('Evento salvo! Adicione o app à tela inicial para acesso rápido.', {
-          duration: 5000
-        });
-      } else {
-        toast.success('Evento salvo offline com sucesso!');
-      }
+      setSaveComplete(true);
+      // Show instructions after a short delay
+      setTimeout(() => {
+        setShowInstructions(true);
+      }, 1500);
     }
+  };
+
+  const handleClose = () => {
+    setShowInstructions(false);
+    setSaveComplete(false);
+    onOpenChange(false);
   };
 
   return (
     <>
-      <Dialog open={open && !showIOSInstructions} onOpenChange={onOpenChange}>
+      <Dialog open={open && !showInstructions} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -106,7 +80,7 @@ export function SaveEventOfflineDialog({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {!isSaving && !isCompleted && (
+            {!isSaving && !isCompleted && !saveComplete && (
               <>
                 <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                   <div className="flex items-start gap-3">
@@ -123,7 +97,7 @@ export function SaveEventOfflineDialog({
                     <div>
                       <p className="text-sm font-medium">Atalho na tela inicial</p>
                       <p className="text-xs text-muted-foreground">
-                        Crie um atalho para abrir o evento diretamente.
+                        Após salvar, você poderá criar um atalho para acesso rápido.
                       </p>
                     </div>
                   </div>
@@ -148,7 +122,7 @@ export function SaveEventOfflineDialog({
               </div>
             )}
 
-            {isCompleted && !isSaving && (
+            {(isCompleted || saveComplete) && !isSaving && (
               <div className="text-center space-y-3">
                 <div className="mx-auto w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
                   <CheckCircle className="h-6 w-6 text-green-500" />
@@ -156,51 +130,99 @@ export function SaveEventOfflineDialog({
                 <div>
                   <p className="font-medium">Evento salvo!</p>
                   <p className="text-sm text-muted-foreground">
-                    Agora você pode acessar offline.
+                    Preparando instruções para o atalho...
                   </p>
                 </div>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Fechar
-                </Button>
               </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* iOS Instructions Dialog */}
-      <AlertDialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
+      {/* Platform-specific Instructions Dialog */}
+      <AlertDialog open={showInstructions} onOpenChange={setShowInstructions}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Smartphone className="h-5 w-5" />
-              Adicionar à Tela Inicial
+              Criar Atalho na Tela Inicial
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-left">
-                <p>Para criar um atalho no seu iPhone/iPad:</p>
-                <ol className="list-decimal list-inside space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    Toque no ícone de compartilhar
-                    <Share className="h-4 w-4 inline" />
-                  </li>
-                  <li>Role para baixo e selecione "Adicionar à Tela de Início"</li>
-                  <li>Toque em "Adicionar" no canto superior direito</li>
-                </ol>
-                <div className="bg-green-500/10 rounded-lg p-3 flex items-center gap-2">
+                {isIOS ? (
+                  <>
+                    <p className="text-foreground font-medium">No seu iPhone/iPad:</p>
+                    <ol className="list-none space-y-3 text-sm">
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">1</span>
+                        <span>Toque no ícone de <strong>Compartilhar</strong> (quadrado com seta para cima) na barra inferior do Safari</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
+                        <span>Role para baixo e selecione <strong>"Adicionar à Tela de Início"</strong></span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">3</span>
+                        <span>Toque em <strong>"Adicionar"</strong> no canto superior direito</span>
+                      </li>
+                    </ol>
+                  </>
+                ) : isAndroid ? (
+                  <>
+                    <p className="text-foreground font-medium">No seu Android:</p>
+                    <ol className="list-none space-y-3 text-sm">
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">1</span>
+                        <div className="flex items-center gap-1">
+                          <span>Toque no menu</span>
+                          <MoreVertical className="h-4 w-4 inline" />
+                          <span>(três pontos) no canto superior direito do Chrome</span>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
+                        <span>Selecione <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong></span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">3</span>
+                        <span>Confirme tocando em <strong>"Adicionar"</strong></span>
+                      </li>
+                    </ol>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      💡 Dica: Se estiver usando Samsung Internet, o menu fica na parte inferior da tela.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-foreground font-medium">No seu navegador:</p>
+                    <ol className="list-none space-y-3 text-sm">
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">1</span>
+                        <span>Clique no ícone de menu ou nos três pontos do navegador</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
+                        <span>Procure por <strong>"Instalar"</strong> ou <strong>"Adicionar à tela inicial"</strong></span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">3</span>
+                        <span>Confirme a instalação</span>
+                      </li>
+                    </ol>
+                  </>
+                )}
+                
+                <div className="bg-green-500/10 rounded-lg p-3 flex items-center gap-2 mt-4">
                   <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                   <p className="text-sm text-green-600 dark:text-green-400">
-                    O evento já foi salvo offline!
+                    O evento já foi salvo offline! Você pode acessá-lo mesmo sem internet.
                   </p>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => {
-              setShowIOSInstructions(false);
-              onOpenChange(false);
-            }}>
+            <AlertDialogAction onClick={handleClose}>
               Entendi
             </AlertDialogAction>
           </AlertDialogFooter>
