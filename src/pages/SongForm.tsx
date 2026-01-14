@@ -656,18 +656,32 @@ const SongForm = () => {
             <div className="text-xs text-muted-foreground bg-secondary/30 p-2 rounded border border-primary/10">
               <p className="font-medium text-foreground/80 mb-1">Formatos suportados:</p>
               <p>• <strong>ChordPro:</strong> <code className="bg-primary/10 px-1 rounded">[C]Letra[G]aqui</code></p>
-              <p>• <strong>Acordes acima:</strong></p>
-              <pre className="text-[10px] mt-1 bg-background/50 p-1 rounded">{"    C        G       Am\nQuão grande és Tu, Senhor"}</pre>
+              <p>• <strong>Acordes acima:</strong> acordes em linha separada</p>
+              <p className="mt-1 font-medium text-foreground/80">Seções:</p>
+              <p>• Use <code className="bg-primary/10 px-1 rounded">[REFRÃO]</code>...<code className="bg-primary/10 px-1 rounded">[/REFRÃO]</code> para refrão</p>
+              <p>• Use <code className="bg-primary/10 px-1 rounded">[1]</code>...<code className="bg-primary/10 px-1 rounded">[/1]</code>, <code className="bg-primary/10 px-1 rounded">[2]</code>...<code className="bg-primary/10 px-1 rounded">[/2]</code> para estrofes</p>
             </div>
             
             {/* Textarea para editar cifra */}
             <textarea
               value={chordsText}
               onChange={(e) => setChordsText(e.target.value)}
-              placeholder={`[C]Quão grande [G]és Tu, [Am]Senhor\n[F]Quão grande [C]és Tu\n\nOu no formato acordes acima:\n\n    C        G       Am\nQuão grande és Tu, Senhor\n    F        C\nQuão grande és Tu`}
+              placeholder={`[1]
+[C]Quão grande [G]és Tu, [Am]Senhor
+[F]Quão grande [C]és Tu
+[/1]
+
+[REFRÃO]
+[C]Minh'alma [G]canta a [Am]Ti
+[F]Quão grande [C]és Tu
+[/REFRÃO]
+
+[2]
+[C]Segunda estrofe [G]aqui
+[/2]`}
               disabled={loading}
-              rows={8}
-              className="w-full rounded-lg bg-secondary/30 p-3 text-sm font-mono leading-relaxed border border-primary/10 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/20 resize-y min-h-[120px] placeholder:text-muted-foreground/50"
+              rows={10}
+              className="w-full rounded-lg bg-secondary/30 p-3 text-sm font-mono leading-relaxed border border-primary/10 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/20 resize-y min-h-[150px] placeholder:text-muted-foreground/50"
             />
             {chordsText && (
               <p className="text-xs text-muted-foreground text-right">
