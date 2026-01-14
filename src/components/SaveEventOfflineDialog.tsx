@@ -8,10 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Download, CheckCircle, Smartphone, Plus, MoreVertical, Home, Loader2 } from 'lucide-react';
-import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { injectEventManifest } from '@/hooks/useEventOfflineSave';
-import { toast } from 'sonner';
+import { Download, CheckCircle, Smartphone } from 'lucide-react';
 
 interface SaveEventOfflineDialogProps {
   open: boolean;
@@ -26,16 +23,10 @@ interface SaveEventOfflineDialogProps {
   isCompleted: boolean;
 }
 
-// Detect platform
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-const isAndroid = /Android/.test(navigator.userAgent);
-
 export function SaveEventOfflineDialog({
   open,
   onOpenChange,
   eventName,
-  eventId,
-  coverImageUrl,
   isSaving,
   progress,
   progressText,
@@ -43,10 +34,6 @@ export function SaveEventOfflineDialog({
   isCompleted
 }: SaveEventOfflineDialogProps) {
   const [saveComplete, setSaveComplete] = useState(false);
-  const [isInstallingShortcut, setIsInstallingShortcut] = useState(false);
-  const [shortcutInstalled, setShortcutInstalled] = useState(false);
-  
-  const { isInstallable, promptInstall } = usePWAInstall();
 
   const handleSave = async () => {
     const success = await onSave();
@@ -55,89 +42,9 @@ export function SaveEventOfflineDialog({
     }
   };
 
-  const handleInstallShortcut = async () => {
-    setIsInstallingShortcut(true);
-    try {
-      // Inject manifest with event-specific name and cover image
-      await injectEventManifest({
-        id: eventId,
-        name: eventName,
-        cover_image_url: coverImageUrl
-      });
-      
-      // Small delay to ensure manifest is applied
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Trigger the native install prompt
-      const installed = await promptInstall();
-      
-      if (installed) {
-        setShortcutInstalled(true);
-        toast.success('Atalho criado com sucesso!');
-      } else {
-        // User dismissed or cancelled - show message but don't treat as error
-        toast.info('Instalação cancelada. Você pode tentar novamente.');
-      }
-    } catch (error) {
-      console.error('Error installing shortcut:', error);
-      toast.error('Erro ao criar atalho');
-    } finally {
-      setIsInstallingShortcut(false);
-    }
-  };
-
   const handleClose = () => {
     setSaveComplete(false);
-    setShortcutInstalled(false);
     onOpenChange(false);
-  };
-
-  // Get platform-specific instructions
-  const getInstructions = () => {
-    if (isIOS) {
-      return (
-        <ol className="list-none space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">1</span>
-            <span>Toque no ícone de <strong className="text-foreground">Compartilhar</strong> (quadrado com seta)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
-            <span>Selecione <strong className="text-foreground">"Adicionar à Tela de Início"</strong></span>
-          </li>
-        </ol>
-      );
-    } else if (isAndroid) {
-      return (
-        <ol className="list-none space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">1</span>
-            <div className="flex items-center gap-1 flex-wrap">
-              <span>Toque no menu</span>
-              <MoreVertical className="h-4 w-4 inline" />
-              <span>(três pontos)</span>
-            </div>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
-            <span>Selecione <strong className="text-foreground">"Adicionar à tela inicial"</strong></span>
-          </li>
-        </ol>
-      );
-    } else {
-      return (
-        <ol className="list-none space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">1</span>
-            <span>Clique no menu do navegador (⋮ ou ⋯)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">2</span>
-            <span>Selecione <strong className="text-foreground">"Adicionar à tela inicial"</strong></span>
-          </li>
-        </ol>
-      );
-    }
   };
 
   return (
@@ -164,15 +71,6 @@ export function SaveEventOfflineDialog({
                     <p className="text-sm font-medium">Acesso offline</p>
                     <p className="text-xs text-muted-foreground">
                       Todos os áudios e informações ficarão disponíveis sem conexão.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Plus className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Atalho na tela inicial</p>
-                    <p className="text-xs text-muted-foreground">
-                      Após salvar, você poderá criar um atalho para acesso rápido.
                     </p>
                   </div>
                 </div>
@@ -206,62 +104,13 @@ export function SaveEventOfflineDialog({
                   <CheckCircle className="h-6 w-6 text-green-500" />
                 </div>
                 <p className="font-medium">Evento salvo!</p>
-                {!shortcutInstalled && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Agora crie um atalho para acesso rápido.
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground mt-1">
+                  Agora você pode acessá-lo mesmo sem internet.
+                </p>
               </div>
               
-              {!shortcutInstalled && (
-                <>
-                  {/* Auto install button if available */}
-                  {isInstallable ? (
-                    <Button 
-                      onClick={handleInstallShortcut} 
-                      className="w-full" 
-                      size="lg"
-                      disabled={isInstallingShortcut}
-                    >
-                      {isInstallingShortcut ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Criando atalho...
-                        </>
-                      ) : (
-                        <>
-                          <Home className="mr-2 h-4 w-4" />
-                          Adicionar à Tela Inicial
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    /* Manual instructions inline */
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                      <p className="text-sm font-medium flex items-center gap-2">
-                        <Home className="h-4 w-4 text-primary" />
-                        Para criar o atalho:
-                      </p>
-                      {getInstructions()}
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {shortcutInstalled && (
-                <div className="bg-green-500/10 rounded-lg p-3 text-center">
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                    Atalho criado com sucesso!
-                  </p>
-                </div>
-              )}
-              
-              <Button 
-                onClick={handleClose} 
-                variant={shortcutInstalled ? "default" : "outline"}
-                className="w-full"
-              >
-                {shortcutInstalled ? 'Concluído' : 'Fechar'}
+              <Button onClick={handleClose} className="w-full">
+                Concluído
               </Button>
             </div>
           )}

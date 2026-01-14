@@ -3,16 +3,15 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Home } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
-import { useEventOfflineSave, loadOfflineEventData, isOfflineMode, injectEventManifest } from '@/hooks/useEventOfflineSave';
+import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -110,43 +109,8 @@ const SimpleEventAudios = () => {
   // Offline sync hook
   const { isSyncing, syncSingleEvent, isOnline } = useOfflineSync();
 
-  // PWA Install hook for direct shortcut creation
-  const { isInstallable, promptInstall } = usePWAInstall();
-
   // Check if we're in offline mode
   const offlineMode = isOfflineMode();
-
-  // Handle direct shortcut creation (without saving offline)
-  const handleCreateShortcut = async () => {
-    if (!event || !isInstallable) {
-      toast.error('Atalho não disponível neste navegador');
-      return;
-    }
-
-    try {
-      // Inject manifest with event-specific name and cover image
-      await injectEventManifest({
-        id: event.id,
-        name: event.name,
-        cover_image_url: event.cover_image_url
-      });
-      
-      // Small delay to ensure manifest is applied
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Trigger the native install prompt
-      const installed = await promptInstall();
-      
-      if (installed) {
-        toast.success('Atalho criado com sucesso!');
-      } else {
-        toast.info('Instalação cancelada');
-      }
-    } catch (error) {
-      console.error('Error creating shortcut:', error);
-      toast.error('Erro ao criar atalho');
-    }
-  };
 
   useEffect(() => {
     if (id) {
@@ -561,14 +525,6 @@ const SimpleEventAudios = () => {
                     <DropdownMenuItem onClick={() => setSaveOfflineDialogOpen(true)}>
                       <CloudDownload className="mr-2 h-4 w-4" />
                       Salvar offline
-                    </DropdownMenuItem>
-                  )}
-                  
-                  {/* Direct shortcut option - only show if PWA install is available */}
-                  {isInstallable && (
-                    <DropdownMenuItem onClick={handleCreateShortcut}>
-                      <Home className="mr-2 h-4 w-4" />
-                      Adicionar à Tela Inicial
                     </DropdownMenuItem>
                   )}
                   
