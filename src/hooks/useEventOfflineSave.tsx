@@ -255,15 +255,16 @@ async function injectEventManifest(event: { id: string; name: string; cover_imag
     theme_color: '#1a1a2e',
     icons: [
       {
-        src: event.cover_image_url || '/icon-192.png',
+        src: event.cover_image_url || '/liturgia-plus-logo.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'any maskable'
+        purpose: 'any'
       },
       {
-        src: '/icon-512.png',
+        src: '/liturgia-plus-logo.png',
         sizes: '512x512',
-        type: 'image/png'
+        type: 'image/png',
+        purpose: 'any'
       }
     ]
   };
