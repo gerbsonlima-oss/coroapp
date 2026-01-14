@@ -26,19 +26,19 @@ export default defineConfig(({ mode }) => ({
         start_url: "/",
         icons: [
           {
-            src: "liturgia-plus-logo.png",
+            src: "liturgia-plus-icon.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any"
           },
           {
-            src: "liturgia-plus-logo.png",
+            src: "liturgia-plus-icon.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any"
           },
           {
-            src: "liturgia-plus-logo.png",
+            src: "liturgia-plus-icon.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable"
