@@ -3,10 +3,11 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ChordViewer from '@/components/ChordViewer';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -48,6 +49,7 @@ interface SongAudio {
   song_type_name: string;
   song_type_order: number;
   song_lyrics: string | null;
+  song_chords: string | null;
 }
 
 interface SongType {
@@ -75,6 +77,7 @@ const SimpleEventAudios = () => {
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
+  const [chordsModalOpen, setChordsModalOpen] = useState(false);
   const [selectedAudio, setSelectedAudio] = useState<SongAudio | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -118,7 +121,7 @@ const SimpleEventAudios = () => {
           id,
           order_index,
           type,
-          songs (id, name, type, lyrics)
+          songs (id, name, type, lyrics, chords)
         `)
         .eq('event_id', id)
         .order('order_index');
@@ -150,7 +153,8 @@ const SimpleEventAudios = () => {
           song_type_slug: typeSlug,
           song_type_name: songType?.name || defaultType?.name || typeSlug,
           song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
-          song_lyrics: eventSong?.songs?.lyrics || null
+          song_lyrics: eventSong?.songs?.lyrics || null,
+          song_chords: eventSong?.songs?.chords || null
         };
       });
 
@@ -214,6 +218,11 @@ const SimpleEventAudios = () => {
   const handleOpenLyrics = (audio: SongAudio) => {
     setSelectedAudio(audio);
     setLyricsModalOpen(true);
+  };
+
+  const handleOpenChords = (audio: SongAudio) => {
+    setSelectedAudio(audio);
+    setChordsModalOpen(true);
   };
 
   // Cleanup audio on unmount
@@ -335,8 +344,22 @@ const SimpleEventAudios = () => {
                       size="icon"
                       className="h-8 w-8 shrink-0"
                       onClick={() => handleOpenLyrics(audio)}
+                      title="Ver letra"
                     >
                       <FileText className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+
+                  {/* Chords Button */}
+                  {audio.song_chords && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => handleOpenChords(audio)}
+                      title="Ver cifra"
+                    >
+                      <Guitar className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
 
@@ -448,6 +471,55 @@ const SimpleEventAudios = () => {
               <Button
                 variant="outline"
                 onClick={() => setLyricsModalOpen(false)}
+                className="min-w-[120px]"
+              >
+                Fechar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Chords Modal */}
+        <Dialog open={chordsModalOpen} onOpenChange={setChordsModalOpen}>
+          <DialogContent className="max-w-2xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 gap-0 rounded-xl overflow-hidden">
+            <DialogHeader className="relative px-5 py-4 shrink-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+                    {selectedAudio?.song_type_name}
+                  </p>
+                  <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+                    {selectedAudio?.song_name} - Cifra
+                  </DialogTitle>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setChordsModalOpen(false)}
+                  className="shrink-0 h-8 w-8 rounded-full hover:bg-background/80"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            
+            <ScrollArea className="flex-1 overflow-auto">
+              <div className="px-5 py-6 sm:px-8 sm:py-8">
+                {selectedAudio?.song_chords ? (
+                  <ChordViewer chords={selectedAudio.song_chords} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <Guitar className="h-12 w-12 mb-3 opacity-40" />
+                    <p className="text-base">Cifra não disponível</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            
+            <div className="shrink-0 px-5 py-3 border-t bg-muted/30 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setChordsModalOpen(false)}
                 className="min-w-[120px]"
               >
                 Fechar

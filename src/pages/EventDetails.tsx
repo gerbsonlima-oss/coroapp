@@ -18,12 +18,14 @@ import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, Check, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save, BookOpen } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, Check, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save, BookOpen, Guitar, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import ChordViewer from '@/components/ChordViewer';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -53,6 +55,7 @@ interface Song {
   sheet_music_url: string | null;
   sheet_music_pdf_url: string | null;
   lyrics?: string | null;
+  chords?: string | null;
 }
 interface SongAudio {
   id: string;
@@ -174,6 +177,9 @@ const EventDetails = () => {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [isUploadingSongSheet, setIsUploadingSongSheet] = useState(false);
   const [isSavingOffline, setIsSavingOffline] = useState(false);
+  const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
+  const [chordsModalOpen, setChordsModalOpen] = useState(false);
+  const [selectedSongForModal, setSelectedSongForModal] = useState<EventSong | null>(null);
   const songSheetInputRef = useRef<HTMLInputElement>(null);
 
   const checkOfflineStatus = () => {
@@ -1112,6 +1118,12 @@ const EventDetails = () => {
                                       toast.success('Download do áudio iniciado!');
                                     } catch (error) { toast.error('Erro ao baixar áudio'); }
                                   }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
+                                  {song.lyrics && (
+                                    <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}><FileText className="mr-2 h-4 w-4" /> Ver Letra</DropdownMenuItem>
+                                  )}
+                                  {song.chords && (
+                                    <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}><Guitar className="mr-2 h-4 w-4" /> Ver Cifra</DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                   <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                   {user && canEdit && (
@@ -1155,6 +1167,12 @@ const EventDetails = () => {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors"><MoreVertical className="h-5 w-5" /></Button></DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="z-50">
+                          {song.lyrics && (
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}><FileText className="mr-2 h-4 w-4" /> Ver letra</DropdownMenuItem>
+                          )}
+                          {song.chords && (
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}><Guitar className="mr-2 h-4 w-4" /> Ver cifra</DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4 text-primary" /> Baixar partitura (PDF)</DropdownMenuItem>
                           {user && canEdit && <>
                             <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
@@ -1230,6 +1248,12 @@ const EventDetails = () => {
                                   toast.success('Download do áudio iniciado!');
                                 } catch (error) { toast.error('Erro ao baixar áudio'); }
                               }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
+                              {song.lyrics && (
+                                <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}><FileText className="mr-2 h-4 w-4" /> Ver Letra</DropdownMenuItem>
+                              )}
+                              {song.chords && (
+                                <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}><Guitar className="mr-2 h-4 w-4" /> Ver Cifra</DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                               <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                               {user && canEdit && (
@@ -1323,6 +1347,16 @@ const EventDetails = () => {
                         }}>
                           <Download className="mr-2 h-4 w-4" /> Baixar Áudio
                         </DropdownMenuItem>
+                        {song.lyrics && (
+                          <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}>
+                            <FileText className="mr-2 h-4 w-4" /> Ver Letra
+                          </DropdownMenuItem>
+                        )}
+                        {song.chords && (
+                          <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}>
+                            <Guitar className="mr-2 h-4 w-4" /> Ver Cifra
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}>
                           <FileText className="mr-2 h-4 w-4" /> Baixar Partitura
                         </DropdownMenuItem>
@@ -1443,6 +1477,107 @@ const EventDetails = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Lyrics Modal */}
+      <Dialog open={lyricsModalOpen} onOpenChange={setLyricsModalOpen}>
+        <DialogContent className="max-w-2xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 gap-0 rounded-xl overflow-hidden">
+          <DialogHeader className="relative px-5 py-4 shrink-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+                  {getTypeLabel(selectedSongForModal?.type, typeLabels)}
+                </p>
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+                  {selectedSongForModal?.name}
+                </DialogTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLyricsModalOpen(false)}
+                className="shrink-0 h-8 w-8 rounded-full hover:bg-background/80"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          <ScrollArea className="flex-1 overflow-auto">
+            <div className="px-5 py-6 sm:px-8 sm:py-8">
+              {selectedSongForModal?.lyrics ? (
+                <div className="whitespace-pre-wrap text-base sm:text-lg leading-[1.9] text-foreground/90 font-normal tracking-wide">
+                  {selectedSongForModal.lyrics.split('\n').map((line, index) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return <div key={index} className="h-4" />;
+                    if (/^\[REFR[ÃA]O\]$/i.test(trimmed) || /^\[\/REFR[ÃA]O\]$/i.test(trimmed)) return null;
+                    if (/^(R:|REFRÃO:|REFRAO:|REF:)/i.test(trimmed)) {
+                      return <p key={index} className="font-bold text-primary mt-4 mb-2">{trimmed}</p>;
+                    }
+                    const numberedVerse = /^(\d+)\.\s*(.*)/.exec(trimmed);
+                    if (numberedVerse) {
+                      return <p key={index} className="mt-4 first:mt-0"><span className="font-bold text-primary">{numberedVerse[1]}.</span><span className="ml-1">{numberedVerse[2]}</span></p>;
+                    }
+                    return <p key={index} className="leading-[1.9]">{trimmed}</p>;
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <FileText className="h-12 w-12 mb-3 opacity-40" />
+                  <p className="text-base">Letra não disponível</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+          
+          <div className="shrink-0 px-5 py-3 border-t bg-muted/30 flex justify-center">
+            <Button variant="outline" onClick={() => setLyricsModalOpen(false)} className="min-w-[120px]">Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chords Modal */}
+      <Dialog open={chordsModalOpen} onOpenChange={setChordsModalOpen}>
+        <DialogContent className="max-w-2xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 gap-0 rounded-xl overflow-hidden">
+          <DialogHeader className="relative px-5 py-4 shrink-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+                  {getTypeLabel(selectedSongForModal?.type, typeLabels)}
+                </p>
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+                  {selectedSongForModal?.name} - Cifra
+                </DialogTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setChordsModalOpen(false)}
+                className="shrink-0 h-8 w-8 rounded-full hover:bg-background/80"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          <ScrollArea className="flex-1 overflow-auto">
+            <div className="px-5 py-6 sm:px-8 sm:py-8">
+              {selectedSongForModal?.chords ? (
+                <ChordViewer chords={selectedSongForModal.chords} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Guitar className="h-12 w-12 mb-3 opacity-40" />
+                  <p className="text-base">Cifra não disponível</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+          
+          <div className="shrink-0 px-5 py-3 border-t bg-muted/30 flex justify-center">
+            <Button variant="outline" onClick={() => setChordsModalOpen(false)} className="min-w-[120px]">Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <BottomNavigation />
     </div>
   );
