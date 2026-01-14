@@ -1,13 +1,15 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
+import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
+import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -73,6 +75,7 @@ const sortByTypeOrder = (audios: SongAudio[]): SongAudio[] => {
 
 const SimpleEventAudios = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const [event, setEvent] = useState<Event | null>(null);
   const [audios, setAudios] = useState<SongAudio[]>([]);
   const [songs, setSongs] = useState<any[]>([]);
@@ -83,13 +86,78 @@ const SimpleEventAudios = () => {
   const [selectedAudio, setSelectedAudio] = useState<SongAudio | null>(null);
   const [exportingLyrics, setExportingLyrics] = useState(false);
   const [exportingChords, setExportingChords] = useState(false);
+  const [saveOfflineDialogOpen, setSaveOfflineDialogOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Offline save hook
+  const {
+    isSaving,
+    progress,
+    progressText,
+    isEventSaved,
+    saveEventOffline,
+    removeEventOffline
+  } = useEventOfflineSave(id || '');
+
+  // Check if we're in offline mode
+  const offlineMode = isOfflineMode();
 
   useEffect(() => {
     if (id) {
-      fetchEventData();
+      // If offline mode or no connection, try to load from offline storage first
+      if (offlineMode || !navigator.onLine) {
+        loadFromOfflineStorage();
+      } else {
+        fetchEventData();
+      }
     }
-  }, [id]);
+  }, [id, offlineMode]);
+
+  const loadFromOfflineStorage = () => {
+    if (!id) return;
+    
+    const offlineData = loadOfflineEventData(id);
+    if (offlineData) {
+      // Add tenant_id: null for compatibility
+      setEvent({ ...offlineData.event, tenant_id: null } as Event);
+      
+      // Convert offline data to SongAudio format
+      const offlineAudios: SongAudio[] = offlineData.audios.map(audio => {
+        const song = offlineData.songs.find(s => s.id === audio.song_id);
+        const eventSong = offlineData.eventSongs.find(es => es.song_id === audio.song_id);
+        const typeSlug = eventSong?.type || song?.type || 'outro';
+        const typeInfo = defaultTypeLabels[typeSlug] || defaultTypeLabels['outro'];
+        
+        return {
+          id: audio.id,
+          song_id: audio.song_id,
+          naipe: audio.naipe,
+          audio_url: audio.audio_url,
+          name: audio.name,
+          song_name: song?.name || 'Música',
+          song_type_slug: typeSlug,
+          song_type_name: typeInfo.name,
+          song_type_order: typeInfo.order,
+          song_lyrics: song?.lyrics || null,
+          song_chords: song?.chords || null
+        };
+      });
+      
+      setAudios(sortByTypeOrder(offlineAudios));
+      setSongs(offlineData.songs);
+      setLoading(false);
+      
+      toast.info('Carregado do armazenamento offline');
+    } else {
+      // If no offline data, try to fetch from network
+      if (navigator.onLine) {
+        fetchEventData();
+      } else {
+        setLoading(false);
+        toast.error('Evento não disponível offline');
+      }
+    }
+  };
 
   const fetchEventData = async () => {
     try {
@@ -376,6 +444,24 @@ const SimpleEventAudios = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-popover z-50">
+                  {/* Save Offline Option */}
+                  {isEventSaved ? (
+                    <DropdownMenuItem 
+                      onClick={removeEventOffline}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remover offline
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => setSaveOfflineDialogOpen(true)}>
+                      <CloudDownload className="mr-2 h-4 w-4" />
+                      Salvar offline
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuSeparator />
+                  
                   <DropdownMenuItem onClick={() => {
                     const shareUrl = window.location.href;
                     const text = `${event.name} - Áudios do evento`;
@@ -591,6 +677,18 @@ const SimpleEventAudios = () => {
             onClose={() => setChordsModalOpen(false)}
           />
         )}
+
+        {/* Save Offline Dialog */}
+        <SaveEventOfflineDialog
+          open={saveOfflineDialogOpen}
+          onOpenChange={setSaveOfflineDialogOpen}
+          eventName={event.name}
+          isSaving={isSaving}
+          progress={progress}
+          progressText={progressText}
+          onSave={saveEventOffline}
+          isCompleted={isEventSaved}
+        />
       </div>
     </>
   );

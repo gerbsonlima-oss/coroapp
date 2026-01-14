@@ -48,6 +48,24 @@ registerRoute(
   }
 );
 
+// Estratégia para páginas de evento offline (/e/*)
+registerRoute(
+  ({ url }) => url.pathname.startsWith('/e/'),
+  new NetworkFirst({
+    cacheName: 'event-pages-cache',
+    networkTimeoutSeconds: 3,
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 60 * 60 * 24 * 30, // 30 dias
+      }),
+    ],
+  })
+);
+
 // Estratégia para Storage do Supabase (imagens, PDFs, áudios)
 registerRoute(
   ({ url }) => url.hostname.includes('supabase.co') && url.pathname.startsWith('/storage/'),
