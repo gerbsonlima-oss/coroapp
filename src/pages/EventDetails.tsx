@@ -1098,39 +1098,45 @@ const EventDetails = () => {
                                    </p>
                                  </div>
                               </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={async e => {
-                                    e.stopPropagation();
-                                    try {
-                                      const cachedUrl = await getCachedUrl(audio.audio_url);
-                                      const response = await fetch(cachedUrl);
-                                      const blob = await response.blob();
-                                      const url = window.URL.createObjectURL(blob);
-                                      const a = document.createElement('a');
-                                      a.href = url;
-                                      a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
-                                      document.body.appendChild(a);
-                                      a.click();
-                                      window.URL.revokeObjectURL(url);
-                                      document.body.removeChild(a);
-                                      toast.success('Download do áudio iniciado!');
-                                    } catch (error) { toast.error('Erro ao baixar áudio'); }
-                                  }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
-                                  {song.lyrics && (
-                                    <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}><FileText className="mr-2 h-4 w-4" /> Ver Letra</DropdownMenuItem>
-                                  )}
-                                  {song.chords && (
-                                    <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}><Guitar className="mr-2 h-4 w-4" /> Ver Cifra</DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
-                                  {user && canEdit && (
-                                    <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {song.lyrics && (
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }} title="Ver letra">
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {song.chords && (
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }} title="Ver cifra">
+                                    <Guitar className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={async e => {
+                                      e.stopPropagation();
+                                      try {
+                                        const cachedUrl = await getCachedUrl(audio.audio_url);
+                                        const response = await fetch(cachedUrl);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        window.URL.revokeObjectURL(url);
+                                        document.body.removeChild(a);
+                                        toast.success('Download do áudio iniciado!');
+                                      } catch (error) { toast.error('Erro ao baixar áudio'); }
+                                    }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
+                                    {user && canEdit && (
+                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
                           );
                         })}
@@ -1163,23 +1169,29 @@ const EventDetails = () => {
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary shrink-0">{index + 1}</div>
                         <Badge className="bg-primary/10 text-primary border-primary/30 text-xs">{getTypeLabel(song.type, typeLabels)}</Badge>
                       </div>
-                      <button onClick={() => toggleGroup(groupKey)} className="p-1 hover:bg-primary/20 rounded transition-colors shrink-0"><ChevronDown className={`h-5 w-5 text-primary/70 transform transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} /></button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors"><MoreVertical className="h-5 w-5" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="z-50">
-                          {song.lyrics && (
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}><FileText className="mr-2 h-4 w-4" /> Ver letra</DropdownMenuItem>
-                          )}
-                          {song.chords && (
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}><Guitar className="mr-2 h-4 w-4" /> Ver cifra</DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4 text-primary" /> Baixar partitura (PDF)</DropdownMenuItem>
-                          {user && canEdit && <>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Remover do evento</DropdownMenuItem>
-                          </>}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center gap-1">
+                        {song.lyrics && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }} title="Ver letra">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {song.chords && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }} title="Ver cifra">
+                            <Guitar className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <button onClick={() => toggleGroup(groupKey)} className="p-1 hover:bg-primary/20 rounded transition-colors shrink-0"><ChevronDown className={`h-5 w-5 text-primary/70 transform transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} /></button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="z-50">
+                            <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4 text-primary" /> Baixar partitura (PDF)</DropdownMenuItem>
+                            {user && canEdit && <>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Remover do evento</DropdownMenuItem>
+                            </>}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -1229,38 +1241,44 @@ const EventDetails = () => {
                                </p>
                              </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={async e => {
-                                e.stopPropagation();
-                                try {
-                                  const response = await fetch(audio.audio_url);
-                                  const blob = await response.blob();
-                                  const url = window.URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.href = url;
-                                  a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  window.URL.revokeObjectURL(url);
-                                  document.body.removeChild(a);
-                                  toast.success('Download do áudio iniciado!');
-                                } catch (error) { toast.error('Erro ao baixar áudio'); }
-                              }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
-                              {song.lyrics && (
-                                <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}><FileText className="mr-2 h-4 w-4" /> Ver Letra</DropdownMenuItem>
-                              )}
-                              {song.chords && (
-                                <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}><Guitar className="mr-2 h-4 w-4" /> Ver Cifra</DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
-                              <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
-                              {user && canEdit && (
-                                <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {song.lyrics && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }} title="Ver letra">
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {song.chords && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }} title="Ver cifra">
+                                <Guitar className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15 shrink-0 transition-colors"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={async e => {
+                                  e.stopPropagation();
+                                  try {
+                                    const response = await fetch(audio.audio_url);
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                    toast.success('Download do áudio iniciado!');
+                                  } catch (error) { toast.error('Erro ao baixar áudio'); }
+                                }}><Download className="mr-2 h-4 w-4" /> Baixar Áudio</DropdownMenuItem>
+                                <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
+                                <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
+                                {user && canEdit && (
+                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                       );
                     }) : <div className="px-4 py-3 text-sm text-muted-foreground text-center">Nenhum áudio cadastrado</div>}
@@ -1321,55 +1339,57 @@ const EventDetails = () => {
                          </div>
                        </div>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0" onClick={e => e.stopPropagation()}>
-                          <MoreVertical className="h-4 w-4" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      {song.lyrics && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }} title="Ver letra">
+                          <FileText className="h-4 w-4" />
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={async e => {
-                          e.stopPropagation();
-                          try {
-                            const cachedUrl = await getCachedUrl(audio.audio_url);
-                            const response = await fetch(cachedUrl);
-                            const blob = await response.blob();
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-                            toast.success('Download do áudio iniciado!');
-                          } catch (error) { toast.error('Erro ao baixar áudio'); }
-                        }}>
-                          <Download className="mr-2 h-4 w-4" /> Baixar Áudio
-                        </DropdownMenuItem>
-                        {song.lyrics && (
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }}>
-                            <FileText className="mr-2 h-4 w-4" /> Ver Letra
+                      )}
+                      {song.chords && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }} title="Ver cifra">
+                          <Guitar className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" onClick={e => e.stopPropagation()}>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={async e => {
+                            e.stopPropagation();
+                            try {
+                              const cachedUrl = await getCachedUrl(audio.audio_url);
+                              const response = await fetch(cachedUrl);
+                              const blob = await response.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `${getTypeLabel(song.type, typeLabels)} - ${song.name} - ${audio.naipe}.mp3`;
+                              document.body.appendChild(a);
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                              document.body.removeChild(a);
+                              toast.success('Download do áudio iniciado!');
+                            } catch (error) { toast.error('Erro ao baixar áudio'); }
+                          }}>
+                            <Download className="mr-2 h-4 w-4" /> Baixar Áudio
                           </DropdownMenuItem>
-                        )}
-                        {song.chords && (
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }}>
-                            <Guitar className="mr-2 h-4 w-4" /> Ver Cifra
+                          <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}>
+                            <FileText className="mr-2 h-4 w-4" /> Baixar Partitura
                           </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}>
-                          <FileText className="mr-2 h-4 w-4" /> Baixar Partitura
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}>
-                          <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
-                        </DropdownMenuItem>
-                        {user && canEdit && (
-                          <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}>
-                            <Edit className="mr-2 h-4 w-4" /> Editar Música
+                          <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}>
+                            <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
                           </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {user && canEdit && (
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}>
+                              <Edit className="mr-2 h-4 w-4" /> Editar Música
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 );
               });
