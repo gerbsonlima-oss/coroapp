@@ -347,10 +347,9 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
   const textLight: [number, number, number] = [90, 90, 100];
   const chordColor: [number, number, number] = theme.primary;
   
-  // Layout - measurements in mm
-  const margin = 10;
-  const gutter = 6;
-  const colWidth = (pageWidth - 2 * margin - gutter) / 2;
+  // Layout - measurements in mm (SINGLE COLUMN for chord booklet)
+  const margin = 15;
+  const contentWidth = pageWidth - 2 * margin;
   const headerHeight = 52;
   const footerHeight = 8;
   const contentEnd = pageHeight - footerHeight - 3;
@@ -358,16 +357,11 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
   // Pagination state
   let currentPage = 1;
   let currentY = headerHeight + 5;
-  let currentCol = 1;
 
-  // Pre-load images
+  // Pre-load images (logo only, no event image for chord booklet)
   let logoDataUrl: string | null = null;
   let logoWidth = 0;
   let logoHeight = 0;
-  
-  let eventImageDataUrl: string | null = null;
-  let eventImageWidth = 0;
-  let eventImageHeight = 0;
 
   // Load tenant logo and create circular version
   if (tenant?.logo_url) {
@@ -382,22 +376,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     }
   }
 
-  // Load event image
-  if (event.cover_image_url) {
-    eventImageDataUrl = await loadImageRobust(event.cover_image_url);
-    if (eventImageDataUrl) {
-      const dims = await getImageDimensions(eventImageDataUrl);
-      eventImageWidth = colWidth - 6;
-      eventImageHeight = (dims.height / dims.width) * eventImageWidth;
-      if (eventImageHeight > 70) {
-        eventImageHeight = 70;
-        eventImageWidth = (dims.width / dims.height) * eventImageHeight;
-      }
-    }
-  }
-
-  const col1X = margin;
-  const col2X = margin + colWidth + gutter;
+  const colX = margin;
 
   const contentStartFirstPage = headerHeight + 5;
   const contentStartOtherPages = margin + 5;
@@ -508,54 +487,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
   currentY = getContentStart();
 
   // ============================================
-  // EVENT IMAGE
-  // ============================================
-  if (eventImageDataUrl && eventImageWidth > 0) {
-    try {
-      const imgX = col1X + (colWidth - eventImageWidth) / 2;
-      const imgW = eventImageWidth;
-      const imgH = eventImageHeight;
-      const fadeSize = 4;
-
-      const eventImgFormat = getJsPdfImageFormatFromDataUrl(eventImageDataUrl);
-      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, currentY, imgW, imgH);
-
-      const steps = 8;
-
-      for (let i = 0; i < steps; i++) {
-        const alpha = 1 - (i / steps);
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX, currentY + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
-      }
-
-      for (let i = 0; i < steps; i++) {
-        const alpha = i / steps;
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX, currentY + imgH - fadeSize + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
-      }
-
-      for (let i = 0; i < steps; i++) {
-        const alpha = 1 - (i / steps);
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
-      }
-
-      for (let i = 0; i < steps; i++) {
-        const alpha = i / steps;
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX + imgW - fadeSize + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
-      }
-
-      pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
-
-      currentY += imgH + 8;
-    } catch (e) {
-      console.warn('Erro ao inserir imagem do evento:', e);
-    }
-  }
-
-  // ============================================
-  // QR CODE
+  // QR CODE (no event image for chord booklet)
   // ============================================
   try {
     const audioPageUrl = `${window.location.origin}/e/${event.id}`;
@@ -569,7 +501,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     });
     
     const qrSize = 28;
-    const qrX = col1X + (colWidth - qrSize) / 2;
+    const qrX = colX + (contentWidth - qrSize) / 2;
     
     pdf.addImage(qrDataUrl, 'PNG', qrX, currentY, qrSize, qrSize);
     
@@ -578,7 +510,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     pdf.setTextColor(...textLight);
     const qrLabel = 'Escaneie para ouvir os áudios';
     const labelWidth = pdf.getTextWidth(qrLabel);
-    pdf.text(qrLabel, col1X + (colWidth - labelWidth) / 2, currentY + qrSize + 4);
+    pdf.text(qrLabel, colX + (contentWidth - labelWidth) / 2, currentY + qrSize + 4);
     
     currentY += qrSize + 10;
   } catch (e) {
@@ -586,30 +518,24 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
   }
 
   // ============================================
-  // HELPER: Move to next column or page
+  // HELPER: Move to next page (single column)
   // ============================================
-  const advanceToNextColumn = (): void => {
-    if (currentCol === 1) {
-      currentCol = 2;
-      currentY = getContentStart();
-    } else {
-      pdf.addPage();
-      currentPage++;
-      currentCol = 1;
-      currentY = getContentStart();
-    }
+  const advanceToNextPage = (): void => {
+    pdf.addPage();
+    currentPage++;
+    currentY = getContentStart();
   };
 
   // ============================================
-  // SONG SECTION - Same design
+  // SONG SECTION - Same design (single column)
   // ============================================
   const drawSongSection = (num: number, label: string): void => {
     if (currentY + 25 > contentEnd) {
-      advanceToNextColumn();
+      advanceToNextPage();
     }
 
-    const barHeight = 6;
-    const badgeWidth = 7;
+    const barHeight = 7;
+    const badgeWidth = 8;
 
     const lightBg: [number, number, number] = [
       Math.round(255 - (255 - theme.primary[0]) * 0.12),
@@ -617,54 +543,54 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
       Math.round(255 - (255 - theme.primary[2]) * 0.12),
     ];
     pdf.setFillColor(...lightBg);
-    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, colWidth, barHeight, 'F');
+    pdf.rect(colX, currentY, contentWidth, barHeight, 'F');
 
     pdf.setFillColor(...theme.primary);
-    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, badgeWidth, barHeight, 'F');
+    pdf.rect(colX, currentY, badgeWidth, barHeight, 'F');
     
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(10);
+    pdf.setFontSize(12);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
-    pdf.text(numText, (currentCol === 1 ? col1X : col2X) + (badgeWidth - numW) / 2, currentY + 4.3);
+    pdf.text(numText, colX + (badgeWidth - numW) / 2, currentY + 5);
 
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(12);
-    pdf.text(labelText, (currentCol === 1 ? col1X : col2X) + badgeWidth + 3, currentY + 4.3);
+    pdf.setFontSize(14);
+    pdf.text(labelText, colX + badgeWidth + 3, currentY + 5);
 
-    currentY += barHeight + 4;
+    currentY += barHeight + 5;
   };
 
   // ============================================
-  // ADD TEXT WITH CHORD HIGHLIGHTING
+  // ADD TEXT WITH CHORD HIGHLIGHTING (font size 14)
   // ============================================
   const addChordLine = (
     line: string, 
     isChord: boolean,
     indent: number = 0
   ): void => {
-    const lineHeight = 3.8;
-    const maxWidth = colWidth - 4 - indent;
+    const lineHeight = 5.5;
+    const maxWidth = contentWidth - 4 - indent;
     
     if (currentY + lineHeight > contentEnd) {
-      advanceToNextColumn();
+      advanceToNextPage();
     }
 
-    const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+    const x = colX + 2 + indent;
 
     if (isChord) {
       // Chord line - highlight chords in primary color
       pdf.setFont('courier', 'bold');
-      pdf.setFontSize(10);
+      pdf.setFontSize(12);
       pdf.setTextColor(...chordColor);
       
       const lines = pdf.splitTextToSize(line, maxWidth) as string[];
       for (const l of lines) {
         if (currentY + lineHeight > contentEnd) {
-          advanceToNextColumn();
+          advanceToNextPage();
         }
         pdf.text(l, x, currentY);
         currentY += lineHeight;
@@ -672,13 +598,13 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     } else {
       // Lyric line - normal text
       pdf.setFont('times', 'normal');
-      pdf.setFontSize(10);
+      pdf.setFontSize(14);
       pdf.setTextColor(...textDark);
       
       const lines = pdf.splitTextToSize(line, maxWidth) as string[];
       for (const l of lines) {
         if (currentY + lineHeight > contentEnd) {
-          advanceToNextColumn();
+          advanceToNextPage();
         }
         pdf.text(l, x, currentY);
         currentY += lineHeight;
@@ -688,9 +614,9 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
 
   // Process ChordPro format: [C]Lyric text[G] -> show chords above lyrics
   const processChordProLine = (line: string, indent: number = 0): void => {
-    const lineHeight = 3.8;
-    const maxWidth = colWidth - 4 - indent;
-    const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+    const lineHeight = 5.5;
+    const maxWidth = contentWidth - 4 - indent;
+    const x = colX + 2 + indent;
     
     // Extract chords and their positions
     const chordRegex = /\[([A-G][#b]?[m7dim+sus2469\/]*)\]/g;
@@ -715,14 +641,14 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
       return;
     }
     
-    // Check if we need to go to next column
+    // Check if we need to go to next page
     if (currentY + lineHeight * 2 > contentEnd) {
-      advanceToNextColumn();
+      advanceToNextPage();
     }
     
     // Build chord line with proper spacing
     pdf.setFont('courier', 'bold');
-    pdf.setFontSize(10);
+    pdf.setFontSize(12);
     
     let chordLine = '';
     let lastPos = 0;
@@ -738,7 +664,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     const chordLines = pdf.splitTextToSize(chordLine, maxWidth) as string[];
     for (const l of chordLines) {
       if (currentY + lineHeight > contentEnd) {
-        advanceToNextColumn();
+        advanceToNextPage();
       }
       pdf.text(l, x, currentY);
       currentY += lineHeight;
@@ -747,13 +673,13 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     // Print lyric line
     if (cleanLine.trim()) {
       pdf.setFont('times', 'normal');
-      pdf.setFontSize(10);
+      pdf.setFontSize(14);
       pdf.setTextColor(...textDark);
       
       const lyricLines = pdf.splitTextToSize(cleanLine, maxWidth) as string[];
       for (const l of lyricLines) {
         if (currentY + lineHeight > contentEnd) {
-          advanceToNextColumn();
+          advanceToNextPage();
         }
         pdf.text(l, x, currentY);
         currentY += lineHeight;
@@ -772,29 +698,29 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     songIndex++;
 
     if (songIndex > 1) {
-      currentY += 4;
+      currentY += 6;
     }
 
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
     // Song name
-    if (currentY + 5 > contentEnd) {
-      advanceToNextColumn();
+    if (currentY + 7 > contentEnd) {
+      advanceToNextPage();
     }
     
     pdf.setFont('times', 'bold');
-    pdf.setFontSize(11);
+    pdf.setFontSize(16);
     pdf.setTextColor(...theme.primary);
-    const x = (currentCol === 1 ? col1X : col2X) + 1.5;
-    const maxWidth = colWidth - 4;
+    const x = colX + 2;
+    const maxWidth = contentWidth - 4;
     const nameLines = pdf.splitTextToSize(song.name, maxWidth) as string[];
     for (const l of nameLines) {
       pdf.text(l, x, currentY);
-      currentY += 4;
+      currentY += 6;
     }
 
-    currentY += 2.5;
+    currentY += 3;
 
     // Process chords
     if (song.chords) {
@@ -814,16 +740,16 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
           isFirstLineOfRefrao = true;
           
           // Draw refrain badge
-          if (currentY + 6 > contentEnd) {
-            advanceToNextColumn();
+          if (currentY + 7 > contentEnd) {
+            advanceToNextPage();
           }
           
-          const badgeX = (currentCol === 1 ? col1X : col2X) + 1.5;
+          const badgeX = colX + 2;
           pdf.setFont('times', 'bold');
-          pdf.setFontSize(9);
+          pdf.setFontSize(12);
           pdf.setTextColor(...redColor);
           pdf.text('R:', badgeX, currentY);
-          currentY += 4;
+          currentY += 5;
           
           continue;
         }
@@ -843,16 +769,16 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
           verseNumber = verseOpenMatch[1];
           
           // Draw verse number badge
-          if (currentY + 6 > contentEnd) {
-            advanceToNextColumn();
+          if (currentY + 7 > contentEnd) {
+            advanceToNextPage();
           }
           
-          const badgeX = (currentCol === 1 ? col1X : col2X) + 1.5;
+          const badgeX = colX + 2;
           pdf.setFont('times', 'bold');
-          pdf.setFontSize(9);
+          pdf.setFontSize(12);
           pdf.setTextColor(...redColor);
           pdf.text(`${verseNumber}.`, badgeX, currentY);
-          currentY += 4;
+          currentY += 5;
           
           continue;
         }
@@ -861,13 +787,13 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
         if (/^\[\/\d+\]$/i.test(trimmed)) {
           insideVerseBlock = false;
           verseNumber = '';
-          currentY += 2;
+          currentY += 3;
           continue;
         }
         
         if (!trimmed) {
           if (!prevEmpty) {
-            currentY += 2;
+            currentY += 3;
           }
           prevEmpty = true;
           continue;
