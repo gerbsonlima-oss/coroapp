@@ -3,11 +3,12 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
+import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
 import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -54,6 +55,7 @@ interface SongAudio {
   song_type_order: number;
   song_lyrics: string | null;
   song_chords: string | null;
+  song_sheet_music_pdf_url: string | null;
 }
 
 interface SongType {
@@ -88,6 +90,9 @@ const SimpleEventAudios = () => {
   const [exportingLyrics, setExportingLyrics] = useState(false);
   const [exportingChords, setExportingChords] = useState(false);
   const [saveOfflineDialogOpen, setSaveOfflineDialogOpen] = useState(false);
+  const [sheetViewerOpen, setSheetViewerOpen] = useState(false);
+  const [sheetMusicUrl, setSheetMusicUrl] = useState<string | null>(null);
+  const [sheetSongName, setSheetSongName] = useState<string>('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Offline save hook
@@ -143,7 +148,8 @@ const SimpleEventAudios = () => {
           song_type_name: typeInfo.name,
           song_type_order: typeInfo.order,
           song_lyrics: song?.lyrics || null,
-          song_chords: song?.chords || null
+          song_chords: song?.chords || null,
+          song_sheet_music_pdf_url: song?.sheet_music_pdf_url || null
         };
       });
       
@@ -197,7 +203,7 @@ const SimpleEventAudios = () => {
           id,
           order_index,
           type,
-          songs (id, name, type, lyrics, chords)
+          songs (id, name, type, lyrics, chords, sheet_music_pdf_url)
         `)
         .eq('event_id', id)
         .order('order_index');
@@ -230,7 +236,8 @@ const SimpleEventAudios = () => {
           song_type_name: songType?.name || defaultType?.name || typeSlug,
           song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
           song_lyrics: eventSong?.songs?.lyrics || null,
-          song_chords: eventSong?.songs?.chords || null
+          song_chords: eventSong?.songs?.chords || null,
+          song_sheet_music_pdf_url: eventSong?.songs?.sheet_music_pdf_url || null
         };
       });
 
@@ -314,6 +321,14 @@ const SimpleEventAudios = () => {
   const handleOpenChords = (audio: SongAudio) => {
     setSelectedAudio(audio);
     setChordsModalOpen(true);
+  };
+
+  const handleOpenSheetMusic = (audio: SongAudio) => {
+    if (audio.song_sheet_music_pdf_url) {
+      setSheetMusicUrl(audio.song_sheet_music_pdf_url);
+      setSheetSongName(audio.song_name);
+      setSheetViewerOpen(true);
+    }
   };
 
   const handleExportSongBooklet = async () => {
@@ -592,6 +607,19 @@ const SimpleEventAudios = () => {
                     </Button>
                   )}
 
+                  {/* Sheet Music Button */}
+                  {audio.song_sheet_music_pdf_url && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => handleOpenSheetMusic(audio)}
+                      title="Ver partitura"
+                    >
+                      <Music2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+
                   {/* Actions Menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -715,6 +743,18 @@ const SimpleEventAudios = () => {
             songName={selectedAudio.song_name}
             songId={selectedAudio.song_id}
             onClose={() => setChordsModalOpen(false)}
+          />
+        )}
+
+        {/* Sheet Music Viewer */}
+        {sheetViewerOpen && sheetMusicUrl && (
+          <SimpleSheetViewer
+            sheetMusicUrl={sheetMusicUrl}
+            songName={sheetSongName}
+            onClose={() => {
+              setSheetViewerOpen(false);
+              setSheetMusicUrl(null);
+            }}
           />
         )}
 
