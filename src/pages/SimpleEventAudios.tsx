@@ -21,6 +21,22 @@ interface Event {
   cover_image_url: string | null;
 }
 
+// Fallback type labels with liturgical order
+const defaultTypeLabels: Record<string, { name: string; order: number }> = {
+  canto_entrada: { name: 'Canto de Entrada', order: 1 },
+  ato_penitencial: { name: 'Ato Penitencial', order: 2 },
+  gloria: { name: 'Glória', order: 3 },
+  salmo: { name: 'Salmo Responsorial', order: 4 },
+  aclamacao: { name: 'Aclamação ao Evangelho', order: 5 },
+  oferendas: { name: 'Canto das Oferendas', order: 6 },
+  santo: { name: 'Santo', order: 7 },
+  cordeiro: { name: 'Cordeiro de Deus', order: 8 },
+  comunhao: { name: 'Canto da Comunhão', order: 9 },
+  acao_gracas: { name: 'Ação de Graças', order: 10 },
+  final: { name: 'Canto Final', order: 11 },
+  outro: { name: 'Outro', order: 99 },
+};
+
 interface SongAudio {
   id: string;
   song_id: string;
@@ -80,25 +96,28 @@ const SimpleEventAudios = () => {
       if (eventError) throw eventError;
       setEvent(eventData);
 
-      // Fetch song types for this tenant
-      const { data: songTypesData, error: songTypesError } = await supabase
+      // Fetch song types (all types, prioritize tenant-specific ones)
+      const { data: songTypesData } = await supabase
         .from('song_types')
-        .select('id, slug, name, order_index')
-        .or(`tenant_id.eq.${eventData.tenant_id},tenant_id.is.null`)
+        .select('id, slug, name, order_index, tenant_id')
         .order('order_index');
       
-      if (songTypesError) throw songTypesError;
-      
+      // Build map with tenant-specific types taking priority
       const songTypesMap: Record<string, SongType> = {};
-      (songTypesData || []).forEach((st: SongType) => {
-        songTypesMap[st.slug] = st;
+      (songTypesData || []).forEach((st: any) => {
+        // Only override if this is tenant-specific or no entry exists
+        if (st.tenant_id === eventData.tenant_id || !songTypesMap[st.slug]) {
+          songTypesMap[st.slug] = st;
+        }
       });
 
-      // Fetch event songs
+      // Fetch event songs with order_index for event-specific ordering
       const { data: eventSongsData, error: eventSongsError } = await supabase
         .from('event_songs')
         .select(`
           id,
+          order_index,
+          type,
           songs (id, name, type, lyrics)
         `)
         .eq('event_id', id)
@@ -117,17 +136,20 @@ const SimpleEventAudios = () => {
       
       if (audiosError) throw audiosError;
 
-      // Map audios with song info
+      // Map audios with song info - use event_songs.type if available, otherwise songs.type
       const mappedAudios: SongAudio[] = (audiosData || []).map((audio: any) => {
         const eventSong = eventSongsData.find((es: any) => es.songs.id === audio.song_id);
-        const typeSlug = eventSong?.songs?.type || '';
+        // Use event-specific type if set, otherwise use song's default type
+        const typeSlug = eventSong?.type || eventSong?.songs?.type || '';
         const songType = songTypesMap[typeSlug];
+        const defaultType = defaultTypeLabels[typeSlug];
+        
         return {
           ...audio,
           song_name: eventSong?.songs?.name || 'Música',
           song_type_slug: typeSlug,
-          song_type_name: songType?.name || typeSlug,
-          song_type_order: songType?.order_index ?? 999,
+          song_type_name: songType?.name || defaultType?.name || typeSlug,
+          song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
           song_lyrics: eventSong?.songs?.lyrics || null
         };
       });
