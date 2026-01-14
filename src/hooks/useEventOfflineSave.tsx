@@ -244,27 +244,29 @@ export const useEventOfflineSave = (eventId: string) => {
   };
 };
 
-// Helper function to inject dynamic manifest
-// IMPORTANT: Always use "Liturgia+" as the app name and the official logo
-// This ensures consistent branding when installing the PWA
-async function injectEventManifest(event: { id: string; name: string; cover_image_url: string | null }) {
+// Helper function to inject dynamic manifest with event name and cover image
+// This is exported so it can be called before triggering PWA install prompt
+export async function injectEventManifest(event: { id: string; name: string; cover_image_url: string | null }) {
+  // Truncate name for short_name (max 12 chars)
+  const shortName = event.name.length > 12 ? event.name.substring(0, 12) + '…' : event.name;
+  
   const manifest = {
-    name: 'Liturgia+ - Gestão de Coral',
-    short_name: 'Liturgia+',
-    description: `Acesso rápido: ${event.name}`,
+    name: event.name,
+    short_name: shortName,
+    description: `Liturgia+ - ${event.name}`,
     start_url: `/e/${event.id}?offline=true`,
     display: 'standalone',
     background_color: '#0f0f1e',
     theme_color: '#1a1a2e',
     icons: [
       {
-        src: '/liturgia-plus-icon.png',
+        src: event.cover_image_url || '/liturgia-plus-icon.png',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any'
       },
       {
-        src: '/liturgia-plus-icon.png',
+        src: event.cover_image_url || '/liturgia-plus-icon.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any'

@@ -776,6 +776,8 @@ const SimpleEventAudios = () => {
           open={saveOfflineDialogOpen}
           onOpenChange={setSaveOfflineDialogOpen}
           eventName={event.name}
+          eventId={event.id}
+          coverImageUrl={event.cover_image_url}
           isSaving={isSaving}
           progress={progress}
           progressText={progressText}
