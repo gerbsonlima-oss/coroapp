@@ -3,9 +3,10 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,6 +29,7 @@ interface SongAudio {
   name: string;
   song_name: string;
   song_type: string;
+  song_lyrics: string | null;
 }
 
 const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono', 'original'];
@@ -45,21 +47,14 @@ const sortByNaipeOrder = (audios: SongAudio[]): SongAudio[] => {
   });
 };
 
-const naipeColors: Record<string, string> = {
-  soprano: 'bg-pink-500/20 text-pink-600 border-pink-500/30',
-  contralto: 'bg-purple-500/20 text-purple-600 border-purple-500/30',
-  tenor: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
-  baixo: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30',
-  unissono: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
-  original: 'bg-gray-500/20 text-gray-600 border-gray-500/30'
-};
-
 const SimpleEventAudios = () => {
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [audios, setAudios] = useState<SongAudio[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
+  const [selectedAudio, setSelectedAudio] = useState<SongAudio | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -85,7 +80,7 @@ const SimpleEventAudios = () => {
         .from('event_songs')
         .select(`
           id,
-          songs (id, name, type)
+          songs (id, name, type, lyrics)
         `)
         .eq('event_id', id)
         .order('order_index');
@@ -109,7 +104,8 @@ const SimpleEventAudios = () => {
         return {
           ...audio,
           song_name: eventSong?.songs?.name || 'Música',
-          song_type: eventSong?.songs?.type || ''
+          song_type: eventSong?.songs?.type || '',
+          song_lyrics: eventSong?.songs?.lyrics || null
         };
       });
 
@@ -168,6 +164,11 @@ const SimpleEventAudios = () => {
     } catch (error) {
       toast.error('Erro ao compartilhar');
     }
+  };
+
+  const handleOpenLyrics = (audio: SongAudio) => {
+    setSelectedAudio(audio);
+    setLyricsModalOpen(true);
   };
 
   // Cleanup audio on unmount
@@ -275,15 +276,24 @@ const SimpleEventAudios = () => {
                   {/* Song Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-foreground truncate">
+                      {audio.song_type}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
                       {audio.song_name}
                     </p>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-[10px] px-1.5 py-0 mt-1 capitalize ${naipeColors[audio.naipe.toLowerCase()] || ''}`}
-                    >
-                      {audio.naipe}
-                    </Badge>
                   </div>
+
+                  {/* Lyrics Button */}
+                  {audio.song_lyrics && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => handleOpenLyrics(audio)}
+                    >
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
 
                   {/* Actions Menu */}
                   <DropdownMenu>
@@ -308,6 +318,29 @@ const SimpleEventAudios = () => {
             </div>
           )}
         </div>
+
+        {/* Lyrics Modal */}
+        <Dialog open={lyricsModalOpen} onOpenChange={setLyricsModalOpen}>
+          <DialogContent className="max-w-lg h-[80vh] flex flex-col p-0">
+            <DialogHeader className="p-4 pb-2 border-b shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="pr-8">
+                  <DialogTitle className="text-lg font-bold">
+                    {selectedAudio?.song_type}
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {selectedAudio?.song_name}
+                  </p>
+                </div>
+              </div>
+            </DialogHeader>
+            <ScrollArea className="flex-1 px-4 py-4">
+              <div className="whitespace-pre-wrap text-lg leading-relaxed text-foreground">
+                {selectedAudio?.song_lyrics || 'Letra não disponível'}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
