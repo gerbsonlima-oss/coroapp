@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
+import { OfflineEventsManager } from '@/components/OfflineEventsManager';
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
@@ -162,6 +163,7 @@ const Home = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <OfflineEventsManager />
           <TenantSwitcher />
           {(isAdmin || isSuperAdmin) && (
             <Button
