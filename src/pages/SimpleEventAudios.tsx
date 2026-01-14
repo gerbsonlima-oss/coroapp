@@ -364,26 +364,95 @@ const SimpleEventAudios = () => {
           )}
         </div>
 
-        {/* Lyrics Modal */}
+        {/* Lyrics Modal - Full screen on mobile, large on desktop */}
         <Dialog open={lyricsModalOpen} onOpenChange={setLyricsModalOpen}>
-          <DialogContent className="max-w-lg h-[80vh] flex flex-col p-0">
-            <DialogHeader className="p-4 pb-2 border-b shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="pr-8">
-                  <DialogTitle className="text-lg font-bold">
+          <DialogContent className="max-w-2xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 gap-0 rounded-xl overflow-hidden">
+            {/* Header with gradient background */}
+            <DialogHeader className="relative px-5 py-4 shrink-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
                     {selectedAudio?.song_type_name}
-                  </DialogTitle>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {selectedAudio?.song_name}
                   </p>
+                  <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+                    {selectedAudio?.song_name}
+                  </DialogTitle>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setLyricsModalOpen(false)}
+                  className="shrink-0 h-8 w-8 rounded-full hover:bg-background/80"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </DialogHeader>
-            <ScrollArea className="flex-1 px-4 py-4">
-              <div className="whitespace-pre-wrap text-lg leading-relaxed text-foreground">
-                {selectedAudio?.song_lyrics || 'Letra não disponível'}
+            
+            {/* Lyrics content with better typography */}
+            <ScrollArea className="flex-1 overflow-auto">
+              <div className="px-5 py-6 sm:px-8 sm:py-8">
+                {selectedAudio?.song_lyrics ? (
+                  <div className="whitespace-pre-wrap text-base sm:text-lg leading-[1.9] text-foreground/90 font-normal tracking-wide">
+                    {selectedAudio.song_lyrics.split('\n').map((line, index) => {
+                      const trimmed = line.trim();
+                      
+                      // Empty lines
+                      if (!trimmed) {
+                        return <div key={index} className="h-4" />;
+                      }
+                      
+                      // Refrain markers [REFRÃO] or R:
+                      if (/^\[REFR[ÃA]O\]$/i.test(trimmed) || /^\[\/REFR[ÃA]O\]$/i.test(trimmed)) {
+                        return null;
+                      }
+                      
+                      if (/^(R:|REFRÃO:|REFRAO:|REF:)/i.test(trimmed)) {
+                        return (
+                          <p key={index} className="font-bold text-primary mt-4 mb-2 text-base sm:text-lg">
+                            {trimmed}
+                          </p>
+                        );
+                      }
+                      
+                      // Numbered verses
+                      const numberedVerse = /^(\d+)\.\s*(.*)/.exec(trimmed);
+                      if (numberedVerse) {
+                        return (
+                          <p key={index} className="mt-4 first:mt-0">
+                            <span className="font-bold text-primary">{numberedVerse[1]}.</span>
+                            <span className="ml-1">{numberedVerse[2]}</span>
+                          </p>
+                        );
+                      }
+                      
+                      // Regular lines
+                      return (
+                        <p key={index} className="leading-[1.9]">
+                          {trimmed}
+                        </p>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <FileText className="h-12 w-12 mb-3 opacity-40" />
+                    <p className="text-base">Letra não disponível</p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
+            
+            {/* Footer with close button */}
+            <div className="shrink-0 px-5 py-3 border-t bg-muted/30 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setLyricsModalOpen(false)}
+                className="min-w-[120px]"
+              >
+                Fechar
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
