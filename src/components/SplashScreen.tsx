@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
-import logoImageFallback from '@/assets/coro-logo.png';
+import logoImageFallback from '@/assets/liturgia-plus-logo.png';
 
 export const SplashScreen = () => {
   const [show, setShow] = useState(true);
@@ -179,7 +179,7 @@ export const SplashScreen = () => {
               fontWeight: 400
             }}
           >
-            Repertório Litúrgico
+            Liturgia+
           </p>
         </div>
       </div>

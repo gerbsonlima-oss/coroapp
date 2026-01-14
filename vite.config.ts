@@ -15,25 +15,33 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icon-192.png", "icon-512.png"],
+      includeAssets: ["liturgia-plus-logo.png", "favicon.png"],
       manifest: {
-        name: "Repertório - Gestão de Coral",
-        short_name: "Repertório",
-        description: "App para gestão de repertório de coral",
+        name: "Liturgia+ - Gestão de Coral",
+        short_name: "Liturgia+",
+        description: "App para gestão de repertório e liturgia de coral",
         theme_color: "#1a1a2e",
         background_color: "#0f0f1e",
         display: "standalone",
         start_url: "/",
         icons: [
           {
-            src: "icon-512.png",
+            src: "liturgia-plus-logo.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any"
           },
           {
-            src: "icon-512.png",
+            src: "liturgia-plus-logo.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any"
+          },
+          {
+            src: "liturgia-plus-logo.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
           },
         ],
       },
