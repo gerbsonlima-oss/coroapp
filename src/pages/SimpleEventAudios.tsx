@@ -361,29 +361,34 @@ const SimpleEventAudios = () => {
                 {audios.length} áudio{audios.length !== 1 ? 's' : ''}
               </p>
               
-              {/* Booklet export buttons */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportSongBooklet}
-                  disabled={exportingLyrics || songs.length === 0}
-                  className="text-xs"
-                >
-                  <BookOpen className="h-3.5 w-3.5 mr-1.5" />
-                  {exportingLyrics ? 'Gerando...' : 'Livreto de Cantos'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportChordBooklet}
-                  disabled={exportingChords || songs.length === 0}
-                  className="text-xs"
-                >
-                  <Guitar className="h-3.5 w-3.5 mr-1.5" />
-                  {exportingChords ? 'Gerando...' : 'Livreto de Cifras'}
-                </Button>
-              </div>
+              {/* Booklet export dropdown */}
+              {songs.length > 0 && (
+                <div className="mt-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        disabled={exportingLyrics || exportingChords}
+                      >
+                        <MoreVertical className="h-3.5 w-3.5 mr-1.5" />
+                        {exportingLyrics || exportingChords ? 'Gerando...' : 'Opções'}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-popover">
+                      <DropdownMenuItem onClick={handleExportSongBooklet} disabled={exportingLyrics}>
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Livreto de Cantos
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportChordBooklet} disabled={exportingChords}>
+                        <Guitar className="mr-2 h-4 w-4" />
+                        Livreto de Cifras
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
             </div>
           </div>
         </div>
