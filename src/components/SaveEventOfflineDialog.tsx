@@ -74,6 +74,9 @@ export function SaveEventOfflineDialog({
       if (installed) {
         setShortcutInstalled(true);
         toast.success('Atalho criado com sucesso!');
+      } else {
+        // User dismissed or cancelled - show message but don't treat as error
+        toast.info('Instalação cancelada. Você pode tentar novamente.');
       }
     } catch (error) {
       console.error('Error installing shortcut:', error);
