@@ -454,9 +454,11 @@ const EventDetails = () => {
   };
 
   const handleShare = () => {
-    const publicUrl = `${window.location.origin}/e/${id}`;
-    navigator.clipboard.writeText(publicUrl);
-    toast.success('Link copiado para a área de transferência!');
+    // Use edge function URL for social media preview (OG tags)
+    const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'wxagqywobyzntrlkhfao';
+    const ogUrl = `https://${supabaseProjectId}.supabase.co/functions/v1/og-event?id=${id}`;
+    navigator.clipboard.writeText(ogUrl);
+    toast.success('Link copiado! Preview otimizado para WhatsApp.');
   };
 
   const handleDownloadSongPdf = async (song: EventSong) => {
