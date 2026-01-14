@@ -7,7 +7,7 @@ import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X,
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import ChordViewer from '@/components/ChordViewer';
+import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -479,54 +479,14 @@ const SimpleEventAudios = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Chords Modal */}
-        <Dialog open={chordsModalOpen} onOpenChange={setChordsModalOpen}>
-          <DialogContent className="max-w-2xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col p-0 gap-0 rounded-xl overflow-hidden">
-            <DialogHeader className="relative px-5 py-4 shrink-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
-                    {selectedAudio?.song_type_name}
-                  </p>
-                  <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
-                    {selectedAudio?.song_name} - Cifra
-                  </DialogTitle>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setChordsModalOpen(false)}
-                  className="shrink-0 h-8 w-8 rounded-full hover:bg-background/80"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </DialogHeader>
-            
-            <ScrollArea className="flex-1 overflow-auto">
-              <div className="px-5 py-6 sm:px-8 sm:py-8">
-                {selectedAudio?.song_chords ? (
-                  <ChordViewer chords={selectedAudio.song_chords} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <Guitar className="h-12 w-12 mb-3 opacity-40" />
-                    <p className="text-base">Cifra não disponível</p>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-            
-            <div className="shrink-0 px-5 py-3 border-t bg-muted/30 flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setChordsModalOpen(false)}
-                className="min-w-[120px]"
-              >
-                Fechar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Fullscreen Chords Viewer */}
+        {chordsModalOpen && selectedAudio?.song_chords && (
+          <FullscreenChordViewer
+            chords={selectedAudio.song_chords}
+            songName={selectedAudio.song_name}
+            onClose={() => setChordsModalOpen(false)}
+          />
+        )}
       </div>
     </>
   );
