@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import QRCode from 'qrcode';
 import coroLogo from '@/assets/coro-logo.png';
 
 interface Event {
@@ -587,6 +588,39 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     } catch (e) {
       console.warn('Erro ao inserir imagem do evento:', e);
     }
+  }
+
+  // ============================================
+  // QR CODE para página de áudios
+  // ============================================
+  try {
+    const audioPageUrl = `${window.location.origin}/e/${event.id}`;
+    const qrDataUrl = await QRCode.toDataURL(audioPageUrl, { 
+      margin: 1, 
+      scale: 6,
+      color: {
+        dark: `rgb(${theme.primary[0]}, ${theme.primary[1]}, ${theme.primary[2]})`,
+        light: '#ffffff'
+      }
+    });
+    
+    const qrSize = 28;
+    const qrX = col1X + (colWidth - qrSize) / 2;
+    
+    // Desenhar QR code
+    pdf.addImage(qrDataUrl, 'PNG', qrX, currentY, qrSize, qrSize);
+    
+    // Texto abaixo do QR
+    pdf.setFont('times', 'italic');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...textLight);
+    const qrLabel = 'Escaneie para ouvir os áudios';
+    const labelWidth = pdf.getTextWidth(qrLabel);
+    pdf.text(qrLabel, col1X + (colWidth - labelWidth) / 2, currentY + qrSize + 4);
+    
+    currentY += qrSize + 10;
+  } catch (e) {
+    console.warn('Erro ao gerar QR code:', e);
   }
 
   // ============================================
