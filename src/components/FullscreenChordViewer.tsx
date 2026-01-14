@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { X, Plus, Minus, Type, Music, Moon, Sun, Play, Pause, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
+import { X, Plus, Minus, Type, Music, Moon, Sun, Play, Pause, ChevronUp, ChevronDown, RefreshCw, Save, Check } from 'lucide-react';
 import { useChordPreferences } from '@/hooks/useChordPreferences';
+import { toast } from 'sonner';
 
 interface FullscreenChordViewerProps {
   chords: string;
@@ -313,17 +314,18 @@ const SCROLL_SPEEDS = [
 const FullscreenChordViewer = ({ chords, songName, songId, onClose }: FullscreenChordViewerProps) => {
   // Load saved preferences from database
   const { 
-    transpose: savedTranspose, 
-    fontSize: savedFontSize, 
-    setTranspose: saveTranspose, 
-    setFontSize: saveFontSize,
+    savedTranspose, 
+    savedFontSize, 
+    savePreferences,
     isLoading: preferencesLoading,
+    isSaving,
     isAuthenticated
   } = useChordPreferences(songId);
 
   // Local state initialized from saved preferences
-  const [transpose, setTransposeState] = useState(0);
-  const [fontSizeIndex, setFontSizeIndexState] = useState(2);
+  const [transpose, setTranspose] = useState(0);
+  const [fontSizeIndex, setFontSizeIndex] = useState(2);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isNightMode, setIsNightMode] = useState(() => {
     return localStorage.getItem('chordViewer_nightMode') === 'true';
   });
@@ -336,13 +338,21 @@ const FullscreenChordViewer = ({ chords, songName, songId, onClose }: Fullscreen
   // Sync with saved preferences when loaded
   useEffect(() => {
     if (!preferencesLoading && isAuthenticated && songId) {
-      setTransposeState(savedTranspose);
+      setTranspose(savedTranspose);
       const savedIndex = FONT_SIZES.indexOf(savedFontSize);
       if (savedIndex !== -1) {
-        setFontSizeIndexState(savedIndex);
+        setFontSizeIndex(savedIndex);
       }
     }
   }, [preferencesLoading, savedTranspose, savedFontSize, isAuthenticated, songId]);
+
+  // Track unsaved changes
+  useEffect(() => {
+    if (!preferencesLoading && isAuthenticated && songId) {
+      const currentFontSize = FONT_SIZES[fontSizeIndex];
+      setHasUnsavedChanges(transpose !== savedTranspose || currentFontSize !== savedFontSize);
+    }
+  }, [transpose, fontSizeIndex, savedTranspose, savedFontSize, preferencesLoading, isAuthenticated, songId]);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -361,32 +371,22 @@ const FullscreenChordViewer = ({ chords, songName, songId, onClose }: Fullscreen
   
   const fontSize = FONT_SIZES[fontSizeIndex];
   const scrollSpeed = SCROLL_SPEEDS[scrollSpeedIndex].value;
-
-  // Handlers that save to database
-  const setTranspose = useCallback((value: number | ((prev: number) => number)) => {
-    setTransposeState(prev => {
-      const newValue = typeof value === 'function' ? value(prev) : value;
-      if (isAuthenticated && songId) {
-        saveTranspose(newValue);
-      }
-      return newValue;
-    });
-  }, [isAuthenticated, songId, saveTranspose]);
-
-  const setFontSizeIndex = useCallback((value: number | ((prev: number) => number)) => {
-    setFontSizeIndexState(prev => {
-      const newValue = typeof value === 'function' ? value(prev) : value;
-      if (isAuthenticated && songId) {
-        saveFontSize(FONT_SIZES[newValue]);
-      }
-      return newValue;
-    });
-  }, [isAuthenticated, songId, saveFontSize]);
   
-  const handleFontUp = () => setFontSizeIndex((i: number) => Math.min(i + 1, FONT_SIZES.length - 1));
-  const handleFontDown = () => setFontSizeIndex((i: number) => Math.max(i - 1, 0));
-  const handleTransposeUp = () => setTranspose((t: number) => t + 1);
-  const handleTransposeDown = () => setTranspose((t: number) => t - 1);
+  const handleFontUp = () => setFontSizeIndex(i => Math.min(i + 1, FONT_SIZES.length - 1));
+  const handleFontDown = () => setFontSizeIndex(i => Math.max(i - 1, 0));
+  const handleTransposeUp = () => setTranspose(t => t + 1);
+  const handleTransposeDown = () => setTranspose(t => t - 1);
+
+  const handleSave = async () => {
+    const currentFontSize = FONT_SIZES[fontSizeIndex];
+    const success = await savePreferences(transpose, currentFontSize);
+    if (success) {
+      toast.success('Preferências salvas');
+      setHasUnsavedChanges(false);
+    } else {
+      toast.error('Erro ao salvar preferências');
+    }
+  };
   
   const toggleNightMode = () => {
     setIsNightMode(prev => {
@@ -536,7 +536,7 @@ const FullscreenChordViewer = ({ chords, songName, songId, onClose }: Fullscreen
           </button>
         </div>
         
-        {/* Fonte + Modo Noturno + Fechar */}
+        {/* Fonte + Salvar + Modo Noturno + Fechar */}
         <div className="flex items-center gap-0">
           <button
             onClick={handleFontDown}
@@ -552,6 +552,30 @@ const FullscreenChordViewer = ({ chords, songName, songId, onClose }: Fullscreen
           >
             <Type className="h-4 w-4" />
           </button>
+          {isAuthenticated && songId && (
+            <button
+              onClick={handleSave}
+              disabled={isSaving || !hasUnsavedChanges}
+              className={`h-8 w-8 flex items-center justify-center rounded transition-colors ${
+                hasUnsavedChanges
+                  ? isNightMode 
+                    ? 'text-green-400 hover:text-green-300 hover:bg-green-400/20 active:bg-green-400/30' 
+                    : 'text-green-600 hover:text-green-500 hover:bg-green-500/20 active:bg-green-500/30'
+                  : isNightMode
+                    ? 'text-neutral-600'
+                    : 'text-muted-foreground/40'
+              } disabled:opacity-50`}
+              title={hasUnsavedChanges ? 'Salvar preferências' : 'Preferências salvas'}
+            >
+              {isSaving ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : hasUnsavedChanges ? (
+                <Save className="h-4 w-4" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+            </button>
+          )}
           <button
             onClick={toggleNightMode}
             className={`h-8 w-8 flex items-center justify-center rounded transition-colors ${
