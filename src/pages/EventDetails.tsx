@@ -37,6 +37,7 @@ import { z } from 'zod';
 import { exportEventPDF } from '@/utils/exportEventPDF';
 import { exportEventZIP } from '@/utils/exportEventZIP';
 import { exportSongBookletPDF } from '@/utils/exportSongBookletPDF';
+import { exportChordBookletPDF } from '@/utils/exportChordBookletPDF';
 import { EventMembersManager } from '@/components/EventMembersManager';
 
 interface Event {
@@ -601,6 +602,40 @@ const EventDetails = () => {
     }
   };
 
+  const handleExportChordBooklet = async () => {
+    if (!event) return;
+    
+    // Fetch songs with chords
+    const songIds = songs.map(s => s.id);
+    const { data: songsWithChords, error } = await supabase
+      .from('songs')
+      .select('id, name, type, chords')
+      .in('id', songIds);
+    
+    if (error) {
+      console.error('Erro ao buscar cifras:', error);
+      toast.error('Erro ao buscar cifras das músicas');
+      return;
+    }
+    
+    const songsForBooklet = songsWithChords?.filter(s => s.chords?.trim()) || [];
+    
+    if (songsForBooklet.length === 0) {
+      toast.error('Nenhuma música do evento possui cifra cadastrada');
+      return;
+    }
+    
+    try {
+      toast.info('Gerando livreto de cifras...');
+      const tenantInfo = tenant ? { name: tenant.name, logo_url: tenant.logo_url } : undefined;
+      await exportChordBookletPDF(event, songsForBooklet, tenantInfo);
+      toast.success('Livreto de cifras gerado com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao gerar livreto:', error);
+      toast.error(error.message || 'Erro ao gerar livreto de cifras');
+    }
+  };
+
   const removeSongFromEvent = async (eventSongId: string) => {
     try {
       const { error } = await supabase.from('event_songs').delete().eq('id', eventSongId);
@@ -903,6 +938,10 @@ const EventDetails = () => {
               <DropdownMenuItem onClick={handleExportSongBooklet}>
                 <BookOpen className="mr-2 h-4 w-4" />
                 Gerar Folheto de Cantos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportChordBooklet}>
+                <Guitar className="mr-2 h-4 w-4" />
+                Gerar Livreto de Cifras
               </DropdownMenuItem>
 
               {/* Edição (Admin) */}
