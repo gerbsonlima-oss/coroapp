@@ -541,6 +541,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_chord_preferences: {
+        Row: {
+          created_at: string
+          font_size: number
+          id: string
+          song_id: string | null
+          transpose: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          font_size?: number
+          id?: string
+          song_id?: string | null
+          transpose?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          font_size?: number
+          id?: string
+          song_id?: string | null
+          transpose?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_chord_preferences_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null

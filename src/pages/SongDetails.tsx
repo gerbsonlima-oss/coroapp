@@ -487,7 +487,7 @@ const SongDetails = () => {
               <Guitar className="h-4 w-4" />
               Cifra
             </h2>
-            <ChordViewer chords={song.chords} />
+            <ChordViewer chords={song.chords} songId={song.id} />
           </Card>
         )}
 
