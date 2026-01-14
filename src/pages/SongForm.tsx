@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown, FileType, Search } from 'lucide-react';
+import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown, FileType, Search, Guitar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LyricsSearchModal } from '@/components/LyricsSearchModal';
 import { toast } from 'sonner';
@@ -45,6 +45,7 @@ interface Song {
   sheet_music_url: string | null;
   sheet_music_pdf_url?: string | null;
   lyrics?: string | null;
+  chords?: string | null;
 }
 
 interface ExistingAudio {
@@ -78,6 +79,7 @@ const SongForm = () => {
   const [originalPdf, setOriginalPdf] = useState<File | null>(null);
   const [lyricsFile, setLyricsFile] = useState<File | null>(null);
   const [lyricsText, setLyricsText] = useState('');
+  const [chordsText, setChordsText] = useState('');
   const [lyricsSearchOpen, setLyricsSearchOpen] = useState(false);
   const [convertingPdf, setConvertingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
@@ -137,6 +139,9 @@ const SongForm = () => {
       setType(data.type);
       if (data.lyrics) {
         setLyricsText(data.lyrics);
+      }
+      if (data.chords) {
+        setChordsText(data.chords);
       }
 
       await fetchAudios();
@@ -280,6 +285,10 @@ const SongForm = () => {
           updateData.lyrics = lyricsContent;
         }
         
+        if (chordsText) {
+          updateData.chords = chordsText;
+        }
+        
         
         const { error } = await supabase
           .from('songs')
@@ -303,6 +312,10 @@ const SongForm = () => {
         
         if (lyricsContent) {
           insertData.lyrics = lyricsContent;
+        }
+        
+        if (chordsText) {
+          insertData.chords = chordsText;
         }
         
         const { data: songData, error: songError } = await supabase
@@ -631,6 +644,37 @@ const SongForm = () => {
               setLyricsFile(file);
             }}
           />
+
+          {/* Cifra Card */}
+          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+            <div className="flex items-center gap-2">
+              <Guitar className="h-4 w-4 text-primary" />
+              <Label className="text-xs font-semibold">Cifra</Label>
+            </div>
+            
+            {/* Dica de formatação */}
+            <div className="text-xs text-muted-foreground bg-secondary/30 p-2 rounded border border-primary/10">
+              <p className="font-medium text-foreground/80 mb-1">Formatos suportados:</p>
+              <p>• <strong>ChordPro:</strong> <code className="bg-primary/10 px-1 rounded">[C]Letra[G]aqui</code></p>
+              <p>• <strong>Acordes acima:</strong></p>
+              <pre className="text-[10px] mt-1 bg-background/50 p-1 rounded">{"    C        G       Am\nQuão grande és Tu, Senhor"}</pre>
+            </div>
+            
+            {/* Textarea para editar cifra */}
+            <textarea
+              value={chordsText}
+              onChange={(e) => setChordsText(e.target.value)}
+              placeholder={`[C]Quão grande [G]és Tu, [Am]Senhor\n[F]Quão grande [C]és Tu\n\nOu no formato acordes acima:\n\n    C        G       Am\nQuão grande és Tu, Senhor\n    F        C\nQuão grande és Tu`}
+              disabled={loading}
+              rows={8}
+              className="w-full rounded-lg bg-secondary/30 p-3 text-sm font-mono leading-relaxed border border-primary/10 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/20 resize-y min-h-[120px] placeholder:text-muted-foreground/50"
+            />
+            {chordsText && (
+              <p className="text-xs text-muted-foreground text-right">
+                {chordsText.length} caracteres
+              </p>
+            )}
+          </div>
 
           {/* Áudios por Naipe Card */}
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">

@@ -419,3 +419,32 @@ All colors MUST be HSL.
     }
   }
 }
+
+/* Chord Sheet Styles */
+.chord-sheet {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.chord-content {
+  white-space: pre-wrap;
+}
+
+.chord-line {
+  min-height: 1.6em;
+}
+
+.chord-only {
+  margin-bottom: -0.3em;
+}
+
+.chord-highlight {
+  color: hsl(var(--primary));
+  font-weight: 700;
+  padding: 0 2px;
+}
+
+.lyrics-line {
+  color: hsl(var(--foreground));
+}
