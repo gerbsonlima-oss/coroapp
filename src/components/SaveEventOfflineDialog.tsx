@@ -17,12 +17,17 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Download, CheckCircle, Smartphone, Plus, MoreVertical } from 'lucide-react';
+import { Download, CheckCircle, Smartphone, Plus, MoreVertical, Home, Loader2 } from 'lucide-react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { injectEventManifest } from '@/hooks/useEventOfflineSave';
+import { toast } from 'sonner';
 
 interface SaveEventOfflineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventName: string;
+  eventId: string;
+  coverImageUrl: string | null;
   isSaving: boolean;
   progress: number;
   progressText: string;
@@ -38,6 +43,8 @@ export function SaveEventOfflineDialog({
   open,
   onOpenChange,
   eventName,
+  eventId,
+  coverImageUrl,
   isSaving,
   progress,
   progressText,
@@ -46,22 +53,65 @@ export function SaveEventOfflineDialog({
 }: SaveEventOfflineDialogProps) {
   const [showInstructions, setShowInstructions] = useState(false);
   const [saveComplete, setSaveComplete] = useState(false);
+  const [isInstallingShortcut, setIsInstallingShortcut] = useState(false);
+  const [shortcutInstalled, setShortcutInstalled] = useState(false);
+  
+  const { isInstallable, promptInstall } = usePWAInstall();
 
   const handleSave = async () => {
     const success = await onSave();
     
     if (success) {
       setSaveComplete(true);
-      // Show instructions after a short delay
-      setTimeout(() => {
-        setShowInstructions(true);
-      }, 1500);
+      // If PWA install is available, don't auto-show instructions
+      // Instead, show the shortcut button
+      if (!isInstallable) {
+        // Show instructions after a short delay only if no auto-install available
+        setTimeout(() => {
+          setShowInstructions(true);
+        }, 1500);
+      }
     }
+  };
+
+  const handleInstallShortcut = async () => {
+    setIsInstallingShortcut(true);
+    try {
+      // Inject manifest with event-specific name and cover image
+      await injectEventManifest({
+        id: eventId,
+        name: eventName,
+        cover_image_url: coverImageUrl
+      });
+      
+      // Small delay to ensure manifest is applied
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Trigger the native install prompt
+      const installed = await promptInstall();
+      
+      if (installed) {
+        setShortcutInstalled(true);
+        toast.success('Atalho criado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Error installing shortcut:', error);
+      toast.error('Erro ao criar atalho');
+      // Fall back to showing manual instructions
+      setShowInstructions(true);
+    } finally {
+      setIsInstallingShortcut(false);
+    }
+  };
+
+  const handleShowManualInstructions = () => {
+    setShowInstructions(true);
   };
 
   const handleClose = () => {
     setShowInstructions(false);
     setSaveComplete(false);
+    setShortcutInstalled(false);
     onOpenChange(false);
   };
 
@@ -123,16 +173,71 @@ export function SaveEventOfflineDialog({
             )}
 
             {(isCompleted || saveComplete) && !isSaving && (
-              <div className="text-center space-y-3">
+              <div className="text-center space-y-4">
                 <div className="mx-auto w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
                   <CheckCircle className="h-6 w-6 text-green-500" />
                 </div>
                 <div>
                   <p className="font-medium">Evento salvo!</p>
                   <p className="text-sm text-muted-foreground">
-                    Preparando instruções para o atalho...
+                    {shortcutInstalled 
+                      ? 'Atalho criado na tela inicial!' 
+                      : 'Agora crie um atalho para acesso rápido.'}
                   </p>
                 </div>
+                
+                {/* Shortcut installation button - only show if PWA install is available and not yet installed */}
+                {!shortcutInstalled && (
+                  <div className="space-y-2 pt-2">
+                    {isInstallable ? (
+                      <Button 
+                        onClick={handleInstallShortcut} 
+                        className="w-full" 
+                        size="lg"
+                        disabled={isInstallingShortcut}
+                      >
+                        {isInstallingShortcut ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Criando atalho...
+                          </>
+                        ) : (
+                          <>
+                            <Home className="mr-2 h-4 w-4" />
+                            Adicionar à Tela Inicial
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleShowManualInstructions} 
+                        variant="outline"
+                        className="w-full" 
+                        size="lg"
+                      >
+                        <Home className="mr-2 h-4 w-4" />
+                        Ver instruções para criar atalho
+                      </Button>
+                    )}
+                    
+                    <Button 
+                      onClick={handleClose} 
+                      variant="ghost" 
+                      className="w-full"
+                    >
+                      Fechar
+                    </Button>
+                  </div>
+                )}
+
+                {shortcutInstalled && (
+                  <Button 
+                    onClick={handleClose} 
+                    className="w-full mt-4"
+                  >
+                    Concluído
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -216,7 +321,7 @@ export function SaveEventOfflineDialog({
                       Evento salvo com sucesso!
                     </p>
                     <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
-                      O atalho abrirá este evento diretamente no app Liturgia+, com todos os dados disponíveis offline.
+                      O atalho abrirá o evento "{eventName}" diretamente, com todos os dados disponíveis offline.
                     </p>
                   </div>
                 </div>
