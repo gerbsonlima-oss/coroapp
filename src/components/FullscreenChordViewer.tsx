@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { X, Plus, Minus, Type, Music, Moon, Sun, Play, Pause, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Plus, Minus, Type, Music, Moon, Sun, Play, Pause, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 
 interface FullscreenChordViewerProps {
   chords: string;
@@ -73,15 +73,16 @@ const processChords = (text: string, semitones: number): string => {
 };
 
 const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => {
-  const lines = text.split('\n');
   const chordClass = isNightMode ? 'text-amber-400 font-bold' : 'text-primary font-bold';
   const lyricClass = isNightMode ? 'text-neutral-200' : 'text-foreground/90';
   
-  return lines.map((line, lineIndex) => {
+  // Helper to render a single line with chord highlighting
+  const renderLine = (line: string, lineIndex: number, keyPrefix: string = ''): JSX.Element => {
+    // Check if line has ChordPro format [C], [G], etc.
     if (line.includes('[') && line.includes(']')) {
       const parts: (string | JSX.Element)[] = [];
       let lastIndex = 0;
-      const regex = /\[([^\]]+)\]/g;
+      const regex = /\[([A-G][#b]?[m7dim+sus2469\/]*)\]/g;
       let match;
       let partKey = 0;
       
@@ -90,7 +91,7 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
           parts.push(line.substring(lastIndex, match.index));
         }
         parts.push(
-          <span key={`chord-${lineIndex}-${partKey++}`} className={chordClass}>
+          <span key={`chord-${keyPrefix}${lineIndex}-${partKey++}`} className={chordClass}>
             {match[1]}
           </span>
         );
@@ -102,12 +103,13 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
       }
       
       return (
-        <div key={lineIndex} className="leading-tight">
-          {parts}
+        <div key={`${keyPrefix}${lineIndex}`} className="leading-tight">
+          {parts.length > 0 ? parts : '\u00A0'}
         </div>
       );
     }
     
+    // Check if it's a chord line (traditional format)
     const isChordLine = /^[\s]*([A-G][#b]?[m7dim+sus2469\/]*)[\s]*/.test(line) && 
                         !/[a-z]{3,}/i.test(line.replace(/[A-G][#b]?[m7dim+sus2469\/]*/g, ''));
     
@@ -123,7 +125,7 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
           parts.push(line.substring(lastIndex, match.index));
         }
         parts.push(
-          <span key={`chord-${lineIndex}-${partKey++}`} className={chordClass}>
+          <span key={`chord-${keyPrefix}${lineIndex}-${partKey++}`} className={chordClass}>
             {match[1]}
           </span>
         );
@@ -135,18 +137,123 @@ const renderChordsHtml = (text: string, isNightMode: boolean): JSX.Element[] => 
       }
       
       return (
-        <div key={lineIndex} className={`leading-tight ${chordClass}`}>
+        <div key={`${keyPrefix}${lineIndex}`} className={`leading-tight ${chordClass}`}>
           {parts}
         </div>
       );
     }
     
     return (
-      <div key={lineIndex} className={`leading-tight ${lyricClass}`}>
+      <div key={`${keyPrefix}${lineIndex}`} className={`leading-tight ${lyricClass}`}>
         {line || '\u00A0'}
       </div>
     );
+  };
+
+  // Parse section markers: [REFRÃO]...[/REFRÃO] and [1]...[/1], [2]...[/2], etc.
+  const sectionRegex = /\[(REFRÃO|REFRAO|\d+)\]([\s\S]*?)\[\/\1\]/gi;
+  const sections: { type: string; content: string; start: number; end: number }[] = [];
+  let match;
+  
+  while ((match = sectionRegex.exec(text)) !== null) {
+    sections.push({
+      type: match[1].toUpperCase(),
+      content: match[2],
+      start: match.index,
+      end: sectionRegex.lastIndex
+    });
+  }
+
+  // If no sections, render lines normally
+  if (sections.length === 0) {
+    return text.split('\n').map((line, idx) => renderLine(line, idx));
+  }
+
+  // Render with sections
+  const result: JSX.Element[] = [];
+  let lastEnd = 0;
+
+  sections.forEach((section, sectionIdx) => {
+    // Render content before this section
+    if (section.start > lastEnd) {
+      const beforeContent = text.substring(lastEnd, section.start).trim();
+      if (beforeContent) {
+        const beforeLines = beforeContent.split('\n');
+        beforeLines.forEach((line, idx) => {
+          result.push(renderLine(line, idx, `before-${sectionIdx}-`));
+        });
+        result.push(<div key={`spacer-before-${sectionIdx}`} className="h-2" />);
+      }
+    }
+
+    const isRefrain = section.type === 'REFRÃO' || section.type === 'REFRAO';
+    const verseNumber = !isRefrain ? parseInt(section.type) : null;
+    const sectionLines = section.content.trim().split('\n');
+
+    if (isRefrain) {
+      // Render refrain section with visual badge
+      result.push(
+        <div 
+          key={`refrain-${sectionIdx}`}
+          className={`mb-4 rounded-lg p-3 ${
+            isNightMode 
+              ? 'bg-amber-900/30 border border-amber-700/50' 
+              : 'bg-primary/10 border border-primary/30'
+          }`}
+        >
+          <div className={`flex items-center gap-2 mb-2 ${
+            isNightMode ? 'text-amber-400' : 'text-primary'
+          }`}>
+            <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm ${
+              isNightMode 
+                ? 'bg-amber-500 text-black' 
+                : 'bg-primary text-primary-foreground'
+            }`}>
+              <RefreshCw className="w-4 h-4" />
+            </div>
+            <span className="font-bold text-base tracking-wide">REFRÃO</span>
+          </div>
+          <div className="pl-1">
+            {sectionLines.map((line, idx) => renderLine(line, idx, `refrain-${sectionIdx}-`))}
+          </div>
+        </div>
+      );
+    } else if (verseNumber) {
+      // Render numbered verse with visual badge
+      result.push(
+        <div key={`verse-${sectionIdx}`} className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold text-lg ${
+              isNightMode 
+                ? 'bg-amber-500 text-black' 
+                : 'bg-primary text-primary-foreground'
+            }`}>
+              {verseNumber}
+            </div>
+          </div>
+          <div className="pl-1">
+            {sectionLines.map((line, idx) => renderLine(line, idx, `verse-${sectionIdx}-`))}
+          </div>
+        </div>
+      );
+    }
+
+    lastEnd = section.end;
   });
+
+  // Render any remaining content after last section
+  if (lastEnd < text.length) {
+    const afterContent = text.substring(lastEnd).trim();
+    if (afterContent) {
+      result.push(<div key="spacer-after" className="h-2" />);
+      const afterLines = afterContent.split('\n');
+      afterLines.forEach((line, idx) => {
+        result.push(renderLine(line, idx, `after-`));
+      });
+    }
+  }
+
+  return result;
 };
 
 const FONT_SIZES = [12, 14, 16, 18, 20, 24, 28];
