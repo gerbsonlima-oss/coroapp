@@ -333,7 +333,7 @@ const SimpleEventAudios = () => {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="bg-gradient-to-b from-primary/10 to-background px-4 py-6">
-          <div className="flex items-start gap-4 max-w-2xl mx-auto">
+          <div className="flex items-start gap-4 max-w-2xl mx-auto relative">
             <div className="h-20 w-20 shrink-0 rounded-lg shadow-lg overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center">
               {event.cover_image_url ? (
                 <img 
@@ -345,7 +345,7 @@ const SimpleEventAudios = () => {
                 <Music className="h-8 w-8 text-primary/70" />
               )}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pr-8">
               <h1 className="font-bold text-xl text-foreground leading-tight mb-1">
                 {event.name}
               </h1>
@@ -360,45 +360,44 @@ const SimpleEventAudios = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 {audios.length} áudio{audios.length !== 1 ? 's' : ''}
               </p>
-              
-              {/* Options dropdown */}
-              <div className="mt-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                      disabled={exportingLyrics || exportingChords}
-                    >
-                      <MoreVertical className="h-3.5 w-3.5 mr-1.5" />
-                      {exportingLyrics || exportingChords ? 'Gerando...' : 'Opções'}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="bg-popover">
-                    <DropdownMenuItem onClick={() => {
-                      const shareUrl = window.location.href;
-                      const text = `${event.name} - Áudios do evento`;
-                      window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n' + shareUrl)}`, '_blank');
-                    }}>
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Compartilhar via WhatsApp
-                    </DropdownMenuItem>
-                    {songs.length > 0 && (
-                      <>
-                        <DropdownMenuItem onClick={handleExportSongBooklet} disabled={exportingLyrics}>
-                          <BookOpen className="mr-2 h-4 w-4" />
-                          Livreto de Cantos
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportChordBooklet} disabled={exportingChords}>
-                          <Guitar className="mr-2 h-4 w-4" />
-                          Livreto de Cifras
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+            </div>
+            
+            {/* Options dropdown - positioned top right */}
+            <div className="absolute top-0 right-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={exportingLyrics || exportingChords}
+                  >
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-popover z-50">
+                  <DropdownMenuItem onClick={() => {
+                    const shareUrl = window.location.href;
+                    const text = `${event.name} - Áudios do evento`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n' + shareUrl)}`, '_blank');
+                  }}>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Compartilhar via WhatsApp
+                  </DropdownMenuItem>
+                  {songs.length > 0 && (
+                    <>
+                      <DropdownMenuItem onClick={handleExportSongBooklet} disabled={exportingLyrics}>
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Livreto de Cantos
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportChordBooklet} disabled={exportingChords}>
+                        <Guitar className="mr-2 h-4 w-4" />
+                        Livreto de Cifras
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
