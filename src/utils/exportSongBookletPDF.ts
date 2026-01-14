@@ -353,9 +353,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
   // Estado de paginação
   let currentPage = 1;
-  let col1Y = contentStart;
-  let col2Y = contentStart;
-  let currentCol = 1;
+  let currentY = contentStart; // Posição Y atual na coluna ativa
+  let currentCol = 1; // 1 = esquerda, 2 = direita
 
   // Pré-carregar imagens
   let logoDataUrl: string | null = null;
@@ -409,10 +408,18 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   const col1X = margin;
   const col2X = margin + colWidth + gutter;
 
+  // Altura do conteúdo para páginas seguintes (sem header)
+  const contentStartFirstPage = headerHeight + 5;
+  const contentStartOtherPages = margin + 5; // Páginas seguintes começam mais acima
+
+  // Função para obter onde o conteúdo começa na página atual
+  const getContentStart = () => currentPage === 1 ? contentStartFirstPage : contentStartOtherPages;
+
   // ============================================
-  // HEADER - Design limpo com fundo claro
+  // HEADER - Design limpo com fundo claro (APENAS PRIMEIRA PÁGINA)
   // ============================================
-  const drawHeader = (pageNum: number) => {
+  const drawHeader = () => {
+    // Header só aparece na primeira página
     // Criar cor esmaecida (muito clara) baseada no tema primário
     const lightBg: [number, number, number] = [
       Math.min(255, theme.primary[0] + Math.round((255 - theme.primary[0]) * 0.85)),
@@ -439,8 +446,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const line2Y = line1Y + 10 + lineSpacing; // Subsídio Litúrgico
     const line3Y = line2Y + 10 + lineSpacing; // Nome do evento
 
-    // Logo do tenant (apenas página 1) - centralizada verticalmente com o texto
-    if (pageNum === 1 && logoDataUrl && logoWidth > 0) {
+    // Logo do tenant - centralizada verticalmente com o texto
+    if (logoDataUrl && logoWidth > 0) {
       try {
         // Calcular centro vertical baseado nas 3 linhas de texto
         const textBlockTop = topPadding;
@@ -520,7 +527,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
   };
 
   // Desenhar header da primeira página
-  drawHeader(1);
+  drawHeader();
+  currentY = getContentStart();
 
   // ============================================
   // IMAGEM DO EVENTO na primeira coluna
@@ -534,7 +542,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
       // Desenhar a imagem primeiro
       const eventImgFormat = getJsPdfImageFormatFromDataUrl(eventImageDataUrl);
-      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, col1Y, imgW, imgH);
+      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, currentY, imgW, imgH);
 
       // Criar efeito de bordas esmaecidas com gradiente para branco
       const bgColor: [number, number, number] = [255, 255, 255];
@@ -548,60 +556,66 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         const b = Math.round(bgColor[2] * alpha + 255 * (1 - alpha));
         pdf.setFillColor(255, 255, 255);
         pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX, col1Y + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+        pdf.rect(imgX, currentY + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
       }
 
       // Gradiente inferior
       for (let i = 0; i < steps; i++) {
         const alpha = i / steps;
         pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX, col1Y + imgH - fadeSize + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+        pdf.rect(imgX, currentY + imgH - fadeSize + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
       }
 
       // Gradiente esquerdo
       for (let i = 0; i < steps; i++) {
         const alpha = 1 - (i / steps);
         pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX + (i * fadeSize / steps), col1Y, fadeSize / steps, imgH, 'F');
+        pdf.rect(imgX + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
       }
 
       // Gradiente direito
       for (let i = 0; i < steps; i++) {
         const alpha = i / steps;
         pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX + imgW - fadeSize + (i * fadeSize / steps), col1Y, fadeSize / steps, imgH, 'F');
+        pdf.rect(imgX + imgW - fadeSize + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
       }
 
       // Resetar opacidade
       pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
 
-      col1Y += imgH + 8;
+      currentY += imgH + 8;
     } catch (e) {
       console.warn('Erro ao inserir imagem do evento:', e);
     }
   }
 
   // ============================================
+  // HELPER: Mudar para próxima coluna ou página
+  // ============================================
+  const advanceToNextColumn = (): void => {
+    if (currentCol === 1) {
+      // Ir para coluna direita
+      currentCol = 2;
+      currentY = getContentStart();
+    } else {
+      // Ir para nova página, coluna esquerda
+      pdf.addPage();
+      currentPage++;
+      // Sem header nas páginas seguintes
+      currentCol = 1;
+      currentY = getContentStart();
+    }
+  };
+
+  // ============================================
   // SEÇÃO DE MÚSICA - Design com background esmaecido
   // ============================================
   const drawSongSection = (num: number, label: string): void => {
     const x = currentCol === 1 ? col1X : col2X;
-    let y = currentCol === 1 ? col1Y : col2Y;
 
     // Verificar se precisa mudar de coluna/página
-    if (y + 25 > contentEnd) {
-      if (currentCol === 1) {
-        currentCol = 2;
-        y = col2Y;
-      } else {
-        pdf.addPage();
-        currentPage++;
-        drawHeader(currentPage);
-        currentCol = 1;
-        col1Y = contentStart;
-        col2Y = contentStart;
-        y = col1Y;
-      }
+    if (currentY + 25 > contentEnd) {
+      advanceToNextColumn();
     }
 
     const barHeight = 6;
@@ -614,11 +628,11 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       Math.round(255 - (255 - theme.primary[2]) * 0.12),
     ];
     pdf.setFillColor(...lightBg);
-    pdf.rect(x, y, colWidth, barHeight, 'F');
+    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, colWidth, barHeight, 'F');
 
     // Badge numérico (retângulo colorido sólido)
     pdf.setFillColor(...theme.primary);
-    pdf.rect(x, y, badgeWidth, barHeight, 'F');
+    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, badgeWidth, barHeight, 'F');
     
     // Número centralizado no badge (branco, negrito)
     pdf.setTextColor(255, 255, 255);
@@ -626,19 +640,17 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     pdf.setFontSize(10);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
-    pdf.text(numText, x + (badgeWidth - numW) / 2, y + 4.3);
+    pdf.text(numText, (currentCol === 1 ? col1X : col2X) + (badgeWidth - numW) / 2, currentY + 4.3);
 
     // Texto do tipo (negrito, cor primária)
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
     pdf.setFont('times', 'bold');
     pdf.setFontSize(9);
-    pdf.text(labelText, x + badgeWidth + 3, y + 4.3);
+    pdf.text(labelText, (currentCol === 1 ? col1X : col2X) + badgeWidth + 3, currentY + 4.3);
 
     // Mais espaço após a seção do tipo para separar do nome
-    const newY = y + barHeight + 4;
-    if (currentCol === 1) col1Y = newY;
-    else col2Y = newY;
+    currentY += barHeight + 4;
   };
 
   // ============================================
@@ -652,8 +664,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    let x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
-    let y = (currentCol === 1 ? col1Y : col2Y) + spaceBefore;
+    currentY += spaceBefore;
     const lineHeight = size * 0.40;
     const maxWidth = colWidth - 4 - indent;
     
@@ -664,29 +675,14 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
 
     for (const line of lines) {
-      if (y + lineHeight > contentEnd) {
-        if (currentCol === 1) {
-          currentCol = 2;
-          x = col2X + 1.5 + indent;
-          y = col2Y;
-        } else {
-          pdf.addPage();
-          currentPage++;
-          drawHeader(currentPage);
-          currentCol = 1;
-          col1Y = contentStart;
-          col2Y = contentStart;
-          x = col1X + 1.5 + indent;
-          y = col1Y;
-        }
+      if (currentY + lineHeight > contentEnd) {
+        advanceToNextColumn();
       }
 
-      pdf.text(line, x, y);
-      y += lineHeight;
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      pdf.text(line, x, currentY);
+      currentY += lineHeight;
     }
-
-    if (currentCol === 1) col1Y = y;
-    else col2Y = y;
   };
 
   // ============================================
@@ -698,20 +694,17 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
     // Espaço entre seções (maior para separação visual)
     if (songIndex > 1) {
-      if (currentCol === 1) col1Y += 4;
-      else col2Y += 4;
+      currentY += 4;
     }
 
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
-    // Nome da música (destaque)
     // Nome da música (destaque) - fonte 11pt
     addText(song.name, 11, 'bold', theme.primary, 0, 1);
 
     // Espaço após nome (mais separação)
-    if (currentCol === 1) col1Y += 2.5;
-    else col2Y += 2.5;
+    currentY += 2.5;
 
     // Processar letra com suporte a tags [REFRÃO]...[/REFRÃO] e numeração de estrofes
     if (song.lyrics) {
@@ -731,15 +724,13 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         // Detectar fechamento de bloco de refrão [/REFRÃO]
         if (/^\[\/REFR[ÃA]O\]$/i.test(trimmed)) {
           insideRefraoBlock = false;
-          if (currentCol === 1) col1Y += 2;
-          else col2Y += 2;
+          currentY += 2;
           continue;
         }
         
         if (!trimmed) {
           if (!prevEmpty) {
-            if (currentCol === 1) col1Y += 2;
-            else col2Y += 2;
+            currentY += 2;
           }
           prevEmpty = true;
           continue;
@@ -761,30 +752,17 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           const verseNumber = isNumberedVerse[1];
           const verseText = isNumberedVerse[2];
           
-          // Desenhar número na cor primária
-          const x = (currentCol === 1 ? col1X : col2X) + 1.5;
-          let y = (currentCol === 1 ? col1Y : col2Y);
-          
           // Verificar overflow
-          if (y + 4 > contentEnd) {
-            if (currentCol === 1) {
-              currentCol = 2;
-              y = col2Y;
-            } else {
-              pdf.addPage();
-              currentPage++;
-              drawHeader(currentPage);
-              currentCol = 1;
-              col1Y = contentStart;
-              col2Y = contentStart;
-              y = col1Y;
-            }
+          if (currentY + 4 > contentEnd) {
+            advanceToNextColumn();
           }
+          
+          const x = (currentCol === 1 ? col1X : col2X) + 1.5;
           
           pdf.setFont('times', 'bold');
           pdf.setFontSize(11);
           pdf.setTextColor(...theme.primary);
-          pdf.text(`${verseNumber}.`, x, y);
+          pdf.text(`${verseNumber}.`, x, currentY);
           
           // Calcular largura do número para posicionar o texto
           const numWidth = pdf.getTextWidth(`${verseNumber}. `);
@@ -793,11 +771,10 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           if (verseText) {
             pdf.setFont('times', 'normal');
             pdf.setTextColor(...textDark);
-            pdf.text(verseText, x + numWidth, y);
+            pdf.text(verseText, x + numWidth, currentY);
           }
           
-          if (currentCol === 1) col1Y = y + 4;
-          else col2Y = y + 4;
+          currentY += 4;
           continue;
         }
 
@@ -820,8 +797,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     }
 
     // Espaço após a música
-    if (currentCol === 1) col1Y += 1.5;
-    else col2Y += 1.5;
+    currentY += 1.5;
   }
 
   // ============================================
