@@ -3,13 +3,14 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2 } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
 import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -98,6 +99,9 @@ const SimpleEventAudios = () => {
     saveEventOffline,
     removeEventOffline
   } = useEventOfflineSave(id || '');
+
+  // Offline sync hook
+  const { isSyncing, syncSingleEvent, isOnline } = useOfflineSync();
 
   // Check if we're in offline mode
   const offlineMode = isOfflineMode();
@@ -425,9 +429,23 @@ const SimpleEventAudios = () => {
                   {event.location}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-2">
-                {audios.length} áudio{audios.length !== 1 ? 's' : ''}
-              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-xs text-muted-foreground">
+                  {audios.length} áudio{audios.length !== 1 ? 's' : ''}
+                </p>
+                {isEventSaved && (
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
+                    <CheckCircle className="h-3 w-3" />
+                    Offline
+                  </span>
+                )}
+                {isSyncing && (
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                    Sincronizando
+                  </span>
+                )}
+              </div>
             </div>
             
             {/* Options dropdown - positioned top right */}
@@ -446,13 +464,35 @@ const SimpleEventAudios = () => {
                 <DropdownMenuContent align="end" className="bg-popover z-50">
                   {/* Save Offline Option */}
                   {isEventSaved ? (
-                    <DropdownMenuItem 
-                      onClick={removeEventOffline}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Remover offline
-                    </DropdownMenuItem>
+                    <>
+                      {/* Sync option when saved offline */}
+                      <DropdownMenuItem 
+                        onClick={async () => {
+                          if (id && isOnline) {
+                            toast.info('Sincronizando evento...');
+                            const success = await syncSingleEvent(id);
+                            if (success) {
+                              toast.success('Evento sincronizado!');
+                              // Reload data after sync
+                              fetchEventData();
+                            } else {
+                              toast.error('Falha ao sincronizar');
+                            }
+                          }
+                        }}
+                        disabled={isSyncing || !isOnline}
+                      >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                        {isSyncing ? 'Sincronizando...' : 'Sincronizar agora'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={removeEventOffline}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remover offline
+                      </DropdownMenuItem>
+                    </>
                   ) : (
                     <DropdownMenuItem onClick={() => setSaveOfflineDialogOpen(true)}>
                       <CloudDownload className="mr-2 h-4 w-4" />
