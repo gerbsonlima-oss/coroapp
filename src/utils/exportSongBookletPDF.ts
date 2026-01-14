@@ -795,6 +795,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     if (song.lyrics) {
       const lyricsLines = song.lyrics.split('\n');
       let insideRefraoBlock = false;
+      let isFirstLineOfRefrao = false;
       let prevEmpty = false;
 
       for (const line of lyricsLines) {
@@ -803,12 +804,14 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         // Detectar abertura de bloco de refrão [REFRÃO]
         if (/^\[REFR[ÃA]O\]$/i.test(trimmed)) {
           insideRefraoBlock = true;
+          isFirstLineOfRefrao = true;
           continue;
         }
         
         // Detectar fechamento de bloco de refrão [/REFRÃO]
         if (/^\[\/REFR[ÃA]O\]$/i.test(trimmed)) {
           insideRefraoBlock = false;
+          isFirstLineOfRefrao = false;
           currentY += 2;
           continue;
         }
@@ -828,30 +831,35 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
         // Linha com marcador de refrão legado (R:, REFRÃO:, etc)
         if (isRefrainLineMarker) {
-          // Verificar overflow
-          if (currentY + 4 > contentEnd) {
-            advanceToNextColumn();
-          }
-          
-          const x = (currentCol === 1 ? col1X : col2X) + 1.5;
-          
-          // Desenhar "R:" em vermelho
-          pdf.setFont('times', 'bold');
-          pdf.setFontSize(11);
-          pdf.setTextColor(...redColor);
-          pdf.text('R:', x, currentY);
-          
-          // Calcular largura do "R:" para posicionar o texto
-          const markerWidth = pdf.getTextWidth('R: ');
-          
-          // Desenhar resto do texto em preto negrito
           const textAfterMarker = trimmed.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/i, '');
-          if (textAfterMarker) {
-            pdf.setTextColor(...textDark);
-            pdf.text(textAfterMarker, x + markerWidth, currentY);
-          }
+          const indent = 2;
+          const markerWidth = 7; // Largura fixa para "R: "
+          const maxTextWidth = colWidth - 4 - indent - markerWidth;
+          const lines = pdf.splitTextToSize(textAfterMarker, maxTextWidth) as string[];
           
-          currentY += 4.4;
+          for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+            if (currentY + 4 > contentEnd) {
+              advanceToNextColumn();
+            }
+            
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            
+            // "R:" apenas na primeira linha
+            if (lineIdx === 0) {
+              pdf.setFont('times', 'bold');
+              pdf.setFontSize(11);
+              pdf.setTextColor(...redColor);
+              pdf.text('R:', x, currentY);
+            }
+            
+            // Texto em preto negrito
+            pdf.setFont('times', 'bold');
+            pdf.setFontSize(11);
+            pdf.setTextColor(...textDark);
+            pdf.text(lines[lineIdx], x + markerWidth, currentY);
+            
+            currentY += 4.4;
+          }
           continue;
         }
 
@@ -859,8 +867,11 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         if (isNumberedVerse) {
           const verseNumber = isNumberedVerse[1];
           const verseText = isNumberedVerse[2];
+          const numMarkerWidth = 8; // Largura fixa para "N. "
+          const maxTextWidth = colWidth - 4 - numMarkerWidth;
+          const lines = verseText ? pdf.splitTextToSize(verseText, maxTextWidth) as string[] : [];
           
-          // Verificar overflow
+          // Primeira linha com número
           if (currentY + 4 > contentEnd) {
             advanceToNextColumn();
           }
@@ -873,17 +884,25 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           pdf.setTextColor(...redColor);
           pdf.text(`${verseNumber}.`, x, currentY);
           
-          // Calcular largura do número para posicionar o texto
-          const numWidth = pdf.getTextWidth(`${verseNumber}. `);
-          
-          // Desenhar resto do texto (se houver na mesma linha)
-          if (verseText) {
+          // Texto da primeira linha
+          if (lines.length > 0) {
             pdf.setFont('times', 'normal');
             pdf.setTextColor(...textDark);
-            pdf.text(verseText, x + numWidth, currentY);
+            pdf.text(lines[0], x + numMarkerWidth, currentY);
           }
-          
           currentY += 4;
+          
+          // Linhas adicionais (continuação)
+          for (let lineIdx = 1; lineIdx < lines.length; lineIdx++) {
+            if (currentY + 4 > contentEnd) {
+              advanceToNextColumn();
+            }
+            const contX = (currentCol === 1 ? col1X : col2X) + 1.5 + numMarkerWidth;
+            pdf.setFont('times', 'normal');
+            pdf.setTextColor(...textDark);
+            pdf.text(lines[lineIdx], contX, currentY);
+            currentY += 4;
+          }
           continue;
         }
 
@@ -894,34 +913,44 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         if (hasMarker) {
           style = 'bold';
           color = textMedium;
+          addTextWithRedSlashes(trimmed, 11, style, color, indent, 0);
         } else if (insideRefraoBlock) {
-          // Dentro do bloco [REFRÃO]...[/REFRÃO]: "R:" vermelho + texto preto negrito
-          // Verificar overflow
-          if (currentY + 4 > contentEnd) {
-            advanceToNextColumn();
+          // Dentro do bloco [REFRÃO]...[/REFRÃO]: "R:" apenas na primeira linha, texto preto negrito
+          indent = 2;
+          const markerWidth = isFirstLineOfRefrao ? 7 : 0;
+          const textIndent = 7; // Sempre indentar o texto para alinhar
+          const maxTextWidth = colWidth - 4 - indent - textIndent;
+          const lines = pdf.splitTextToSize(trimmed, maxTextWidth) as string[];
+          
+          for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+            if (currentY + 4 > contentEnd) {
+              advanceToNextColumn();
+            }
+            
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            
+            // "R:" apenas na primeira linha do bloco
+            if (isFirstLineOfRefrao && lineIdx === 0) {
+              pdf.setFont('times', 'bold');
+              pdf.setFontSize(11);
+              pdf.setTextColor(...redColor);
+              pdf.text('R:', x, currentY);
+            }
+            
+            // Texto em preto negrito
+            pdf.setFont('times', 'bold');
+            pdf.setFontSize(11);
+            pdf.setTextColor(...textDark);
+            pdf.text(lines[lineIdx], x + textIndent, currentY);
+            
+            currentY += 4.4;
           }
           
-          const x = (currentCol === 1 ? col1X : col2X) + 1.5 + 2; // indent
-          
-          // Desenhar "R:" em vermelho
-          pdf.setFont('times', 'bold');
-          pdf.setFontSize(11);
-          pdf.setTextColor(...redColor);
-          pdf.text('R:', x, currentY);
-          
-          // Calcular largura do "R:" para posicionar o texto
-          const markerWidth = pdf.getTextWidth('R: ');
-          
-          // Desenhar texto em preto negrito
-          pdf.setTextColor(...textDark);
-          pdf.text(trimmed, x + markerWidth, currentY);
-          
-          currentY += 4.4;
+          isFirstLineOfRefrao = false; // Após a primeira linha, não mais
           continue;
+        } else {
+          addTextWithRedSlashes(trimmed, 11, style, color, indent, 0);
         }
-
-        // Usar função que destaca "/" em vermelho
-        addTextWithRedSlashes(trimmed, 11, style, color, indent, 0);
       }
     }
 
