@@ -3,9 +3,12 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
-import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
-// dioceseBrasao removed - using liturgiaLogo instead
 import { supabase } from '@/integrations/supabase/client';
+
+interface TenantInfo {
+  name: string;
+  logo_url: string | null;
+}
 
 interface Event {
   id: string;
@@ -94,11 +97,11 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
   }
 };
 
-export const exportEventPDF = async (event: Event, songs: Song[]) => {
-  await exportWithPdfConcatenation(event, songs);
+export const exportEventPDF = async (event: Event, songs: Song[], tenant?: TenantInfo) => {
+  await exportWithPdfConcatenation(event, songs, tenant);
 };
 
-const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
+const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: TenantInfo) => {
   const finalPdf = await PDFDocument.create();
   const typeLabels = await loadTypeLabels();
   
@@ -242,26 +245,30 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
   const logoAreaBottom = 165;
   const logoAreaHeight = logoAreaBottom - logoAreaTop;
   
-  try {
-    const logoImg = await loadImage(liturgiaLogo);
-    const maxLogoWidth = pageWidth - 20; // Praticamente a largura total da página (190mm)
-    const maxLogoHeight = logoAreaHeight;
-    
-    // Calcular dimensões mantendo proporção
-    let logoWidth = maxLogoWidth;
-    let logoHeight = (logoImg.height / logoImg.width) * logoWidth;
-    
-    // Se altura exceder área, redimensionar pela altura
-    if (logoHeight > maxLogoHeight) {
-      logoHeight = maxLogoHeight;
-      logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+  // Use tenant logo if available
+  const logoUrl = tenant?.logo_url;
+  if (logoUrl) {
+    try {
+      const logoImg = await loadImage(logoUrl);
+      const maxLogoWidth = pageWidth - 20; // Praticamente a largura total da página (190mm)
+      const maxLogoHeight = logoAreaHeight;
+      
+      // Calcular dimensões mantendo proporção
+      let logoWidth = maxLogoWidth;
+      let logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+      
+      // Se altura exceder área, redimensionar pela altura
+      if (logoHeight > maxLogoHeight) {
+        logoHeight = maxLogoHeight;
+        logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+      }
+      
+      const logoX = (pageWidth - logoWidth) / 2;
+      const logoY = logoAreaTop + (logoAreaHeight - logoHeight) / 2;
+      coverPdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    } catch (error) {
+      console.error('Erro ao carregar logo:', error);
     }
-    
-    const logoX = (pageWidth - logoWidth) / 2;
-    const logoY = logoAreaTop + (logoAreaHeight - logoHeight) / 2;
-    coverPdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
-  } catch (error) {
-    console.error('Erro ao carregar logo:', error);
   }
 
   // ÁREA RESERVADA PARA TÍTULO: 168-208mm do topo
@@ -563,15 +570,7 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
   }
 
-  try {
-    const logoImg = await loadImage(liturgiaLogo);
-    const logoWidth = 60;
-    const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
-    const logoX = (pageWidth - logoWidth) / 2;
-    pdf.addImage(logoImg, 'PNG', logoX, 30, logoWidth, logoHeight);
-  } catch (error) {
-    console.error('Erro ao carregar logo:', error);
-  }
+  // Logo removed - not used in this fallback function
 
   pdf.setFontSize(48);
   pdf.setTextColor(...whiteColor);
@@ -605,15 +604,7 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
     pdf.text(event.location, (pageWidth - locationWidth) / 2, titleY + 48);
   }
 
-  try {
-    const brasaoImg = await loadImage(liturgiaLogo);
-    const brasaoWidth = 50;
-    const brasaoHeight = (brasaoImg.height / brasaoImg.width) * brasaoWidth;
-    const brasaoX = (pageWidth - brasaoWidth) / 2;
-    pdf.addImage(brasaoImg, 'PNG', brasaoX, pageHeight - 60, brasaoWidth, brasaoHeight);
-  } catch (error) {
-    console.error('Erro ao carregar brasão:', error);
-  }
+  // Brasão removed - not used in this fallback function
 
   // ============================================
   // PARTITURAS ORGANIZADAS POR TIPO LITÚRGICO

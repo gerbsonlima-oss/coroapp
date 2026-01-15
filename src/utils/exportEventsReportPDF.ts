@@ -1,8 +1,12 @@
 import jsPDF from 'jspdf';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 import { supabase } from '@/integrations/supabase/client';
+
+interface TenantInfo {
+  name: string;
+  logo_url: string | null;
+}
 
 interface EventWithSongs {
   id: string;
@@ -84,7 +88,7 @@ const fetchEventsForMonth = async (tenantId: string, yearMonth: string): Promise
 export const exportEventsReportPDF = async (
   tenantId: string,
   tenantSlug: string | null,
-  tenantName: string | null,
+  tenant: TenantInfo | null,
   selectedMonth: string
 ) => {
   const events = await fetchEventsForMonth(tenantId, selectedMonth);
@@ -123,24 +127,27 @@ export const exportEventsReportPDF = async (
   const logoAreaBottom = 165;
   const logoAreaHeight = logoAreaBottom - logoAreaTop;
   
-  try {
-    const logoImg = await loadImage(liturgiaLogo);
-    const maxLogoWidth = pageWidth - 20;
-    const maxLogoHeight = logoAreaHeight;
-    
-    let logoWidth = maxLogoWidth;
-    let logoHeight = (logoImg.height / logoImg.width) * logoWidth;
-    
-    if (logoHeight > maxLogoHeight) {
-      logoHeight = maxLogoHeight;
-      logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+  // Use tenant logo if available
+  if (tenant?.logo_url) {
+    try {
+      const logoImg = await loadImage(tenant.logo_url);
+      const maxLogoWidth = pageWidth - 20;
+      const maxLogoHeight = logoAreaHeight;
+      
+      let logoWidth = maxLogoWidth;
+      let logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+      
+      if (logoHeight > maxLogoHeight) {
+        logoHeight = maxLogoHeight;
+        logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+      }
+      
+      const logoX = (pageWidth - logoWidth) / 2;
+      const logoY = logoAreaTop + (logoAreaHeight - logoHeight) / 2;
+      pdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    } catch (error) {
+      console.error('Erro ao carregar logo:', error);
     }
-    
-    const logoX = (pageWidth - logoWidth) / 2;
-    const logoY = logoAreaTop + (logoAreaHeight - logoHeight) / 2;
-    pdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
-  } catch (error) {
-    console.error('Erro ao carregar logo:', error);
   }
 
   // ÁREA RESERVADA PARA TÍTULO
@@ -176,9 +183,9 @@ export const exportEventsReportPDF = async (
   pdf.setFontSize(14);
   pdf.setFont('times', 'normal');
   
-  if (tenantName) {
-    const tenantWidth = pdf.getTextWidth(tenantName);
-    pdf.text(tenantName, (pageWidth - tenantWidth) / 2, footerY);
+  if (tenant?.name) {
+    const tenantWidth = pdf.getTextWidth(tenant.name);
+    pdf.text(tenant.name, (pageWidth - tenantWidth) / 2, footerY);
   }
 
   // Estatísticas

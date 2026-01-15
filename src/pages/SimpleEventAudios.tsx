@@ -92,7 +92,7 @@ const SimpleEventAudios = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { tenantSlug } = useTenant();
+  const { tenantSlug, tenant } = useTenant();
   
   // Check if this is accessed from internal navigation (not shared link /e/:id)
   const isInternalAccess = !location.pathname.startsWith('/e/');
@@ -780,7 +780,7 @@ const SimpleEventAudios = () => {
                           toast.error('Nenhuma partitura disponível');
                           return;
                         }
-                        await exportEventPDF(event, songsWithSheets);
+                        await exportEventPDF(event, songsWithSheets, tenant ? { name: tenant.name, logo_url: tenant.logo_url } : undefined);
                       }}>
                         <FileText className="mr-2 h-4 w-4" />
                         Partituras (PDF)
