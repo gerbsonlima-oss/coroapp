@@ -57,15 +57,42 @@ const liturgicalOrder: Record<string, number> = {
   outro: 12,
 };
 
-const loadImage = (url: string): Promise<HTMLImageElement> => {
+const loadImageViaProxy = async (url: string): Promise<HTMLImageElement> => {
+  // For Supabase storage URLs, use the image-proxy edge function to bypass CORS
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const isSupabaseUrl = url.includes(supabaseUrl?.replace('https://', '') || '');
+  
+  let imageUrl = url;
+  
+  if (isSupabaseUrl && supabaseUrl) {
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/image-proxy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.dataUrl) {
+          imageUrl = data.dataUrl;
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao usar proxy de imagem:', error);
+    }
+  }
+  
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = reject;
-    img.src = url;
+    img.src = imageUrl;
   });
 };
+
+const loadImage = loadImageViaProxy;
 
 const fetchPdfAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
   const response = await fetch(url);
