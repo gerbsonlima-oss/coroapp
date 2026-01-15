@@ -308,8 +308,8 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     try {
       const logoImg = await loadImage(logoUrl);
       
-      // Logo should be circular and fit within the area
-      const maxLogoSize = Math.min(logoAreaHeight, pageWidth - 40); // Use the smaller dimension
+      // Logo should be circular and smaller (max 80mm)
+      const maxLogoSize = Math.min(80, logoAreaHeight, pageWidth - 40);
       const logoSize = maxLogoSize;
       
       // Create circular version of the logo
