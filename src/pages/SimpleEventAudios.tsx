@@ -1,10 +1,13 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -98,7 +101,12 @@ const SimpleEventAudios = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedNaipes, setSelectedNaipes] = useState<string[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   // Offline save hook
   const {
@@ -325,6 +333,47 @@ const SimpleEventAudios = () => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Get unique naipes from audios
+  const availableNaipes = useMemo(() => {
+    const naipes = new Set(audios.map(a => a.naipe));
+    return Array.from(naipes).sort();
+  }, [audios]);
+
+  // Filter audios based on search and naipe selection
+  const filteredAudios = useMemo(() => {
+    let result = audios;
+    
+    // Filter by naipes (if any selected)
+    if (selectedNaipes.length > 0) {
+      result = result.filter(a => selectedNaipes.includes(a.naipe));
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(a => 
+        a.song_name.toLowerCase().includes(query) ||
+        a.song_type_name.toLowerCase().includes(query) ||
+        a.naipe.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [audios, selectedNaipes, searchQuery]);
+
+  const toggleNaipe = (naipe: string) => {
+    setSelectedNaipes(prev => 
+      prev.includes(naipe) 
+        ? prev.filter(n => n !== naipe)
+        : [...prev, naipe]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedNaipes([]);
+    setSearchQuery('');
   };
 
   const handleDownload = async (audio: SongAudio) => {
@@ -600,15 +649,137 @@ const SimpleEventAudios = () => {
         </div>
 
         {/* Audio List */}
-        <div className="px-4 py-4 max-w-2xl mx-auto">
+        <div className="px-4 py-2 max-w-2xl mx-auto">
+          {/* Filter Bar - Discrete icons */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1">
+              {/* Search Popover */}
+              <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-8 w-8 ${searchQuery ? 'text-primary' : 'text-muted-foreground'}`}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  align="start" 
+                  className="w-64 p-2"
+                  onOpenAutoFocus={(e) => {
+                    e.preventDefault();
+                    searchInputRef.current?.focus();
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <Input
+                      ref={searchInputRef}
+                      placeholder="Buscar música..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                    {searchQuery && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => setSearchQuery('')}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Naipe Filter Popover */}
+              <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-8 w-8 relative ${selectedNaipes.length > 0 ? 'text-primary' : 'text-muted-foreground'}`}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {selectedNaipes.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+                        {selectedNaipes.length}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-48 p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Filtrar por naipe</p>
+                  <div className="space-y-2">
+                    {availableNaipes.map((naipe) => (
+                      <label 
+                        key={naipe} 
+                        className="flex items-center gap-2 cursor-pointer hover:bg-accent/50 -mx-1 px-1 py-1 rounded"
+                      >
+                        <Checkbox
+                          checked={selectedNaipes.includes(naipe)}
+                          onCheckedChange={() => toggleNaipe(naipe)}
+                        />
+                        <span className="text-sm">{naipe}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {selectedNaipes.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full mt-2 h-7 text-xs"
+                      onClick={() => setSelectedNaipes([])}
+                    >
+                      Limpar filtros
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Active filters indicator */}
+            {(searchQuery || selectedNaipes.length > 0) && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {filteredAudios.length} de {audios.length}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 text-xs px-2"
+                  onClick={clearFilters}
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Limpar
+                </Button>
+              </div>
+            )}
+          </div>
+
           {audios.length === 0 ? (
             <Card className="p-8 text-center">
               <Music className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground">Nenhum áudio disponível</p>
             </Card>
+          ) : filteredAudios.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Search className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground">Nenhum resultado encontrado</p>
+              <Button 
+                variant="link" 
+                className="mt-2"
+                onClick={clearFilters}
+              >
+                Limpar filtros
+              </Button>
+            </Card>
           ) : (
             <div className="space-y-2">
-              {audios.map((audio) => {
+              {filteredAudios.map((audio) => {
                 const isPlaying = playingId === audio.id;
                 
                 return (
