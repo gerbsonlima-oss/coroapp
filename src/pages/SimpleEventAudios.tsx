@@ -7,11 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -144,6 +144,8 @@ const SimpleEventAudios = () => {
   const [isCreatingNewSong, setIsCreatingNewSong] = useState(false);
   const [newSongName, setNewSongName] = useState('');
   const [selectedSongType, setSelectedSongType] = useState('');
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
+  const [addingSong, setAddingSong] = useState(false);
   const [songTypesForModal, setSongTypesForModal] = useState<SongType[]>([]);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -639,7 +641,13 @@ const SimpleEventAudios = () => {
     setSongTypesForModal(data || []);
   };
 
-  const handleAddExistingSong = async (song: { id: string; name: string; type: string }) => {
+  const handleAddExistingSong = async () => {
+    if (!id || !selectedSongId) return;
+    
+    const song = availableSongs.find(s => s.id === selectedSongId);
+    if (!song) return;
+    
+    setAddingSong(true);
     try {
       const maxOrder = songs.reduce((max, s) => Math.max(max, s.order_index || 0), 0);
       
@@ -648,7 +656,7 @@ const SimpleEventAudios = () => {
         .insert({
           event_id: id,
           song_id: song.id,
-          type: song.type,
+          type: song.type || 'outro',
           order_index: maxOrder + 1
         });
       
@@ -657,10 +665,13 @@ const SimpleEventAudios = () => {
       toast.success(`"${song.name}" adicionada ao evento`);
       setAddSongModalOpen(false);
       setAddSongSearchQuery('');
+      setSelectedSongId(null);
       fetchEventData();
     } catch (error) {
       console.error('Error adding song:', error);
       toast.error('Erro ao adicionar música');
+    } finally {
+      setAddingSong(false);
     }
   };
 
@@ -1478,109 +1489,150 @@ const SimpleEventAudios = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Add Song Modal */}
-        <Dialog open={addSongModalOpen} onOpenChange={setAddSongModalOpen}>
-          <DialogContent className="max-h-[85vh] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Music className="h-5 w-5" />
-                Adicionar Música
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="flex-1 overflow-y-auto space-y-4">
-              {/* Search existing songs */}
-              <div className="space-y-2">
-                <Label>Buscar música existente</Label>
+        {/* Add Song Modal - using AlertDialog with Tabs like EventQuickEdit */}
+        <AlertDialog
+          open={addSongModalOpen}
+          onOpenChange={(open) => {
+            setAddSongModalOpen(open);
+            if (!open) {
+              setSelectedSongId(null);
+              setAddSongSearchQuery('');
+              setNewSongName('');
+              setSelectedSongType('');
+            }
+          }}
+        >
+          <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Adicionar Música</AlertDialogTitle>
+              <AlertDialogDescription>
+                Escolha uma música existente ou crie uma nova
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <Tabs defaultValue="existing" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="existing">Música Existente</TabsTrigger>
+                <TabsTrigger value="new">Nova Música</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="existing" className="space-y-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Digite para buscar..."
+                    placeholder="Buscar música..."
                     value={addSongSearchQuery}
                     onChange={(e) => setAddSongSearchQuery(e.target.value)}
                     className="pl-9"
                   />
                 </div>
-                
-                <ScrollArea className="h-48 border rounded-md">
+
+                <div className="max-h-[300px] space-y-2 overflow-y-auto">
                   {loadingAvailableSongs ? (
-                    <div className="flex justify-center py-4">
+                    <div className="flex justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
+                  ) : availableSongs.filter(s => 
+                    s.name.toLowerCase().includes(addSongSearchQuery.toLowerCase())
+                  ).length === 0 ? (
+                    <p className="py-8 text-center text-muted-foreground">
+                      {addSongSearchQuery
+                        ? 'Nenhuma música encontrada'
+                        : 'Todas as músicas já foram adicionadas'}
+                    </p>
                   ) : (
-                    <div className="p-2 space-y-1">
-                      {availableSongs
-                        .filter(s => s.name.toLowerCase().includes(addSongSearchQuery.toLowerCase()))
-                        .map(song => (
-                          <Card
-                            key={song.id}
-                            className="p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => handleAddExistingSong(song)}
-                          >
-                            <p className="font-medium text-sm">{song.name}</p>
+                    availableSongs
+                      .filter(s => s.name.toLowerCase().includes(addSongSearchQuery.toLowerCase()))
+                      .map((song) => (
+                        <Card
+                          key={song.id}
+                          onClick={() => setSelectedSongId(song.id)}
+                          className={`cursor-pointer p-3 transition-all ${
+                            selectedSongId === song.id
+                              ? 'border-primary bg-primary/10'
+                              : 'hover:bg-accent'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{song.name}</span>
                             {song.type && (
-                              <p className="text-xs text-muted-foreground">
+                              <Badge className="bg-primary/10 text-primary border-primary/30">
                                 {defaultTypeLabels[song.type]?.name || song.type}
-                              </p>
+                              </Badge>
                             )}
-                          </Card>
-                        ))
-                      }
-                      {availableSongs.filter(s => 
-                        s.name.toLowerCase().includes(addSongSearchQuery.toLowerCase())
-                      ).length === 0 && (
-                        <p className="text-center text-sm text-muted-foreground py-4">
-                          Nenhuma música encontrada
-                        </p>
-                      )}
-                    </div>
+                          </div>
+                        </Card>
+                      ))
                   )}
-                </ScrollArea>
-              </div>
-              
-              {/* Separator */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 border-t" />
-                <span className="text-xs text-muted-foreground">ou</span>
-                <div className="flex-1 border-t" />
-              </div>
-              
-              {/* Create new song */}
-              <div className="space-y-3">
-                <Label>Criar nova música</Label>
-                <Input
-                  placeholder="Nome da música"
-                  value={newSongName}
-                  onChange={(e) => setNewSongName(e.target.value)}
-                />
-                <Select value={selectedSongType} onValueChange={setSelectedSongType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tipo (opcional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {songTypesForModal.map(type => (
-                      <SelectItem key={type.slug} value={type.slug}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  className="w-full"
-                  onClick={handleCreateNewSong}
-                  disabled={!newSongName.trim() || isCreatingNewSong}
-                >
-                  {isCreatingNewSong ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  Criar e Adicionar
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+                </div>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel
+                    onClick={() => {
+                      setSelectedSongId(null);
+                      setAddSongSearchQuery('');
+                    }}
+                  >
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleAddExistingSong}
+                    disabled={!selectedSongId || addingSong}
+                  >
+                    {addingSong ? 'Adicionando...' : 'Adicionar'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </TabsContent>
+
+              <TabsContent value="new" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Nome da Música</label>
+                    <Input
+                      placeholder="Digite o nome da música"
+                      value={newSongName}
+                      onChange={(e) => setNewSongName(e.target.value)}
+                      maxLength={255}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Tipo</label>
+                    <Select value={selectedSongType} onValueChange={setSelectedSongType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {songTypesForModal.map((type) => (
+                          <SelectItem key={type.slug} value={type.slug}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel
+                    onClick={() => {
+                      setNewSongName('');
+                      setSelectedSongType('');
+                    }}
+                  >
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCreateNewSong}
+                    disabled={!newSongName.trim() || !selectedSongType || isCreatingNewSong}
+                  >
+                    {isCreatingNewSong ? 'Criando...' : 'Criar e Adicionar'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </TabsContent>
+            </Tabs>
+          </AlertDialogContent>
+        </AlertDialog>
         
         {/* FAB for adding music - Admin only */}
         {isAdmin && (
