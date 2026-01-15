@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
-import coroLogo from '@/assets/coro-logo.png';
+import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 
 interface Event {
   id: string;

@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
-import coroLogo from '@/assets/coro-logo.png';
+import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 
 interface Song {
   id: string;
@@ -54,7 +54,7 @@ export const exportSongsPDF = async (songs: Song[], tenantSlug: string | null, t
   pdf.rect(0, 0, pageWidth, 55, 'F');
 
   try {
-    const logoImg = await loadImage(coroLogo);
+    const logoImg = await loadImage(liturgiaLogo);
     const logoHeight = 35;
     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
     pdf.addImage(logoImg, 'PNG', margin, 10, logoWidth, logoHeight);
