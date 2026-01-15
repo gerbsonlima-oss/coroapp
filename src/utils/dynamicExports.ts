@@ -1,9 +1,14 @@
 import { toast } from 'sonner';
 
-export async function dynamicExportPDF(event: any, songs: any) {
+interface TenantInfo {
+  name: string;
+  logo_url: string | null;
+}
+
+export async function dynamicExportPDF(event: any, songs: any, tenant?: TenantInfo | null) {
   try {
     const { exportEventPDF } = await import('./exportEventPDF');
-    return await exportEventPDF(event, songs);
+    return await exportEventPDF(event, songs, tenant || undefined);
   } catch (error) {
     toast.error('Erro ao carregar exportador PDF');
     throw error;
