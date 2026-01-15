@@ -1,8 +1,15 @@
-import { precacheAndRoute } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
+
+// Versão do SW - altere para forçar atualização
+const SW_VERSION = '2.0.0';
+console.log('[SW] Liturgia+ Service Worker v' + SW_VERSION);
+
+// Limpa caches antigos
+cleanupOutdatedCaches();
 
 // Precache todos os assets gerados pelo build
 precacheAndRoute(self.__WB_MANIFEST || []);
@@ -144,11 +151,42 @@ registerRoute(
   })
 );
 
-// Ativar service worker imediatamente
+// Ativar service worker imediatamente e limpar caches antigos
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing new version:', SW_VERSION);
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  console.log('[SW] Activating new version:', SW_VERSION);
+  event.waitUntil(
+    Promise.all([
+      // Limpa caches antigos com nomes diferentes
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => {
+              // Mantém apenas os caches atuais
+              const validCaches = [
+                'supabase-api-cache',
+                'event-pages-cache',
+                'supabase-storage-cache',
+                'audio-files-cache',
+                'images-cache',
+                'static-resources',
+                'offline-audio-cache',
+                'offline-files-cache'
+              ];
+              return !validCaches.includes(cacheName) && !cacheName.startsWith('workbox-');
+            })
+            .map((cacheName) => {
+              console.log('[SW] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            })
+        );
+      }),
+      // Toma controle de todas as páginas
+      self.clients.claim()
+    ])
+  );
 });
