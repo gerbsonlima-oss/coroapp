@@ -36,12 +36,23 @@ export function shareToWhatsApp(options: ShareOptions): void {
   window.open(whatsappUrl, '_blank');
 }
 
+export interface SendAudioToWhatsAppOptions {
+  /**
+   * When false, we will NOT fall back to wa.me link.
+   * Useful when you explicitly want WhatsApp to receive an attached file.
+   */
+  fallbackToLink?: boolean;
+}
+
 export async function sendAudioToWhatsApp(
   audioUrl: string,
   songName: string,
   naipe?: string,
-  sheetUrl?: string
+  sheetUrl?: string,
+  options: SendAudioToWhatsAppOptions = {}
 ): Promise<void> {
+  const { fallbackToLink = true } = options;
+
   let message = `🎵 ${songName}`;
   if (naipe) {
     message += ` (${naipe})`;
@@ -51,10 +62,9 @@ export async function sendAudioToWhatsApp(
   let canShareWithFiles = false;
 
   try {
-    // Try to get from cache first if available (via global cache or just fetch)
+    // Try to download the audio as a Blob so we can attach it
     const audioBlob = await fetchWithTimeout(audioUrl, 15000);
     if (audioBlob) {
-      // Ensure we have a valid audio mime type
       const mimeType = audioBlob.type || 'audio/mpeg';
       const audioFile = new File(
         [audioBlob],
@@ -86,19 +96,34 @@ export async function sendAudioToWhatsApp(
     }
   }
 
-  if (canShareWithFiles && navigator.share && navigator.canShare?.({ files })) {
+  // Prefer file sharing (Share Sheet) whenever possible.
+  // IMPORTANT: do not require navigator.canShare, because some browsers/devices
+  // support navigator.share({ files }) but don't implement canShare.
+  const hasShareApi = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  if (canShareWithFiles && hasShareApi) {
     try {
+      if (typeof navigator.canShare === 'function' && !navigator.canShare({ files })) {
+        throw new Error('Este navegador não suporta compartilhamento com arquivos');
+      }
+
       await navigator.share({
         title: songName,
         text: message,
-        files: files
+        files,
       });
       return;
     } catch (error) {
       console.warn('Compartilhamento com arquivo falhou:', error);
+      if (!fallbackToLink) {
+        throw error;
+      }
     }
+  } else if (!fallbackToLink) {
+    throw new Error('Compartilhamento com arquivo indisponível neste dispositivo/navegador');
   }
 
+  // Fallback (link)
   let fallbackMessage = message;
   if (audioUrl) {
     fallbackMessage += `\n\n🔊 Áudio: ${audioUrl}`;
