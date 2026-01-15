@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { sendAudioToWhatsApp } from '@/utils/whatsappShare';
 import { Helmet } from 'react-helmet-async';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface Event {
   id: string;
@@ -84,6 +85,13 @@ const sortByTypeOrder = (audios: SongAudio[]): SongAudio[] => {
 const SimpleEventAudios = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { tenantSlug } = useTenant();
+  
+  // Check if this is accessed from internal navigation (not shared link /e/:id)
+  const isInternalAccess = !location.pathname.startsWith('/e/');
+  
   const [event, setEvent] = useState<Event | null>(null);
   const [audios, setAudios] = useState<SongAudio[]>([]);
   const [songs, setSongs] = useState<any[]>([]);
@@ -107,6 +115,11 @@ const SimpleEventAudios = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleGoBack = () => {
+    const basePath = tenantSlug ? `/${tenantSlug}` : '';
+    navigate(`${basePath}/events`);
+  };
 
   // Offline save hook
   const {
@@ -526,6 +539,17 @@ const SimpleEventAudios = () => {
         {/* Header */}
         <div className="bg-gradient-to-b from-primary/10 to-background px-4 py-6">
           <div className="flex items-start gap-4 max-w-2xl mx-auto relative">
+            {/* Back button - only show when accessed internally */}
+            {isInternalAccess && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 -ml-2"
+                onClick={handleGoBack}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
             <div className="h-20 w-20 shrink-0 rounded-lg shadow-lg overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center">
               {event.cover_image_url ? (
                 <img 

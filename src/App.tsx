@@ -174,7 +174,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/:tenantSlug/events/:id" element={<EventDetails />} />
+            <Route path="/:tenantSlug/events/:id" element={<SimpleEventAudios />} />
             <Route
               path="/:tenantSlug/events/:id/quick-edit"
               element={
@@ -278,7 +278,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/events/:id" element={<EventDetails />} />
+            <Route path="/events/:id" element={<SimpleEventAudios />} />
             <Route
               path="/events/:id/quick-edit"
               element={
