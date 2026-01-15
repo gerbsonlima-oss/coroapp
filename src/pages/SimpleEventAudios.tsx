@@ -16,6 +16,7 @@ import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
 import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
+import { useAudioCache } from '@/hooks/useAudioCache';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -147,6 +148,9 @@ const SimpleEventAudios = () => {
     saveEventOffline,
     removeEventOffline
   } = useEventOfflineSave(id || '');
+
+  // Audio cache hook for offline playback
+  const { getCachedUrl } = useAudioCache();
 
   // Offline sync hook
   const { isSyncing, syncSingleEvent, isOnline } = useOfflineSync();
@@ -308,7 +312,7 @@ const SimpleEventAudios = () => {
     }
   };
 
-  const handlePlay = (audio: SongAudio) => {
+  const handlePlay = async (audio: SongAudio) => {
     if (playingId === audio.id) {
       // Pause current
       audioRef.current?.pause();
@@ -318,7 +322,10 @@ const SimpleEventAudios = () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      const newAudio = new Audio(audio.audio_url);
+      
+      // Get cached URL for offline playback, or use original URL
+      const audioUrl = await getCachedUrl(audio.audio_url);
+      const newAudio = new Audio(audioUrl);
       
       newAudio.onloadedmetadata = () => {
         setDuration(newAudio.duration);
@@ -337,7 +344,7 @@ const SimpleEventAudios = () => {
       };
       
       newAudio.onerror = () => {
-        toast.error('Erro ao reproduzir áudio');
+        toast.error('Erro ao reproduzir áudio. Verifique se está disponível offline.');
         setPlayingId(null);
         setCurrentTime(0);
         setDuration(0);
