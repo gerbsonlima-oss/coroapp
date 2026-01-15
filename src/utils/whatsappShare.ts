@@ -161,6 +161,51 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Blob | 
   }
 }
 
+export interface SongForWhatsApp {
+  songName: string;
+  typeName: string;
+  lyrics: string | null;
+  sheetMusicUrl: string | null;
+  audiosByNaipe: { naipe: string; audioUrl: string }[];
+}
+
+export function shareEventSongsToWhatsApp(
+  eventName: string,
+  songs: SongForWhatsApp[]
+): void {
+  let text = `🎵 ${eventName}\n\n`;
+  
+  songs.forEach((song, index) => {
+    text += `📌 ${song.typeName} - ${song.songName}\n`;
+    
+    // Áudios por naipe
+    song.audiosByNaipe.forEach(audio => {
+      text += `🎤 ${audio.naipe} - ${audio.audioUrl}\n`;
+    });
+    
+    // Partitura
+    if (song.sheetMusicUrl) {
+      text += `📄 Partitura - ${song.sheetMusicUrl}\n`;
+    }
+    
+    // Letra
+    if (song.lyrics) {
+      // Limitar letra a 500 caracteres para não estourar o limite do WhatsApp
+      const lyricsPreview = song.lyrics.length > 500 
+        ? song.lyrics.substring(0, 500) + '...' 
+        : song.lyrics;
+      text += `\n📝 Letra:\n${lyricsPreview}\n`;
+    }
+    
+    if (index < songs.length - 1) {
+      text += '\n---\n\n';
+    }
+  });
+  
+  const encodedText = encodeURIComponent(text);
+  window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+}
+
 export function shareSheetToWhatsApp(
   sheetUrl: string,
   songName: string

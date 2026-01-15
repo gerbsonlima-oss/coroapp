@@ -825,10 +825,53 @@ const SimpleEventAudios = () => {
                   <DropdownMenuSeparator />
                   
                   <DropdownMenuItem onClick={() => {
-                    const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'wxagqywobyzntrlkhfao';
-                    const ogUrl = `https://${supabaseProjectId}.supabase.co/functions/v1/og-event?id=${id}`;
-                    const text = `🎵 ${event.name} - Áudios e Cifras`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n\n' + ogUrl)}`, '_blank');
+                    if (!event) return;
+                    
+                    // Importar função de compartilhamento
+                    import('@/utils/whatsappShare').then(({ shareEventSongsToWhatsApp }) => {
+                      // Agrupar áudios por song_id mantendo ordem
+                      const songMap = new Map<string, {
+                        songName: string;
+                        typeName: string;
+                        lyrics: string | null;
+                        sheetMusicUrl: string | null;
+                        audios: { naipe: string; audioUrl: string }[];
+                      }>();
+                      
+                      const orderedSongIds: string[] = [];
+                      
+                      audios.forEach(audio => {
+                        if (!songMap.has(audio.song_id)) {
+                          // Buscar dados da música
+                          const song = songs.find(s => s.id === audio.song_id);
+                          songMap.set(audio.song_id, {
+                            songName: audio.song_name,
+                            typeName: audio.song_type_name || 'Música',
+                            lyrics: song?.lyrics || null,
+                            sheetMusicUrl: song?.sheet_music_pdf_url || song?.sheet_music_url || null,
+                            audios: []
+                          });
+                          orderedSongIds.push(audio.song_id);
+                        }
+                        songMap.get(audio.song_id)!.audios.push({
+                          naipe: audio.naipe,
+                          audioUrl: audio.audio_url
+                        });
+                      });
+                      
+                      const songsForShare = orderedSongIds.map(id => {
+                        const song = songMap.get(id)!;
+                        return {
+                          songName: song.songName,
+                          typeName: song.typeName,
+                          lyrics: song.lyrics,
+                          sheetMusicUrl: song.sheetMusicUrl,
+                          audiosByNaipe: song.audios
+                        };
+                      });
+                      
+                      shareEventSongsToWhatsApp(event.name, songsForShare);
+                    });
                   }}>
                     <Share2 className="mr-2 h-4 w-4" />
                     Compartilhar
