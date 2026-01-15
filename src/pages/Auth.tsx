@@ -299,7 +299,7 @@ const Auth = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-white/40 mt-6">
-          Repertório Litúrgico Digital
+          Liturgia+ - Gestão de Coral
         </p>
       </div>
     </div>
