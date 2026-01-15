@@ -37,6 +37,8 @@ const ChoirMemberDetails = lazy(() => import("./pages/ChoirMemberDetails"));
 const Liturgy = lazy(() => import("./pages/Liturgy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+import { AuthOrTenantSelection } from "@/components/AuthOrTenantSelection";
+
 
 
 // Component that renders all app routes (used both at root and under tenant prefix)
@@ -362,7 +364,7 @@ function App() {
               }
             />
             
-            <Route path="/" element={<TenantSelection />} />
+            <Route path="/" element={<AuthOrTenantSelection />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
