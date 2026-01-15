@@ -38,6 +38,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (data: SignUpData) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -124,12 +125,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao fazer login com Google');
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       toast.success('Logout realizado com sucesso!');
-      window.location.href = '/auth';
+      window.location.href = '/';
     } catch (error: any) {
       toast.error(error.message || 'Erro ao fazer logout');
       throw error;
@@ -137,7 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -189,6 +205,15 @@ export const useAuth = () => {
         });
         if (error) throw error;
         toast.success('Login realizado com sucesso!');
+      },
+      signInWithGoogle: async () => {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/`,
+          },
+        });
+        if (error) throw error;
       },
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
