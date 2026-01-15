@@ -115,20 +115,61 @@ export const useAudioCache = () => {
         return true;
       }
 
-      // Faz o download do arquivo
-      const response = await fetch(url, { 
-        mode: 'cors', 
-        credentials: 'omit',
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Try fetching with CORS first
+      let response: Response;
+      try {
+        response = await fetch(url, { 
+          mode: 'cors', 
+          credentials: 'omit',
+          cache: 'no-store'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } catch (corsError) {
+        console.warn(`[Cache] CORS fetch failed, trying with no-cors:`, corsError);
+        
+        // If CORS fails, try fetching through a proxy approach using XMLHttpRequest
+        // which sometimes handles CORS differently
+        try {
+          const blob = await fetchAsBlob(url);
+          if (blob) {
+            const contentType = blob.type || 
+              (url.toLowerCase().includes('.pdf') ? 'application/pdf' : 
+               url.toLowerCase().includes('.webp') ? 'image/webp' :
+               url.toLowerCase().includes('.png') ? 'image/png' :
+               url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'image/jpeg' :
+               'audio/mpeg');
+            
+            const responseToCache = new Response(blob, {
+              status: 200,
+              statusText: 'OK',
+              headers: { 
+                'Content-Type': contentType,
+                'Content-Length': blob.size.toString()
+              }
+            });
+            
+            await cache.put(normalizedUrl, responseToCache);
+            setCachedAudios(prev => new Set([...prev, normalizedUrl]));
+            console.log(`[Cache] Successfully cached (via blob):`, normalizedUrl);
+            return true;
+          }
+        } catch (blobError) {
+          console.error(`[Cache] Blob fetch also failed:`, blobError);
+        }
+        
+        return false;
       }
 
       // Detecta o tipo de conteúdo
       const contentType = response.headers.get('Content-Type') || 
-                         (url.toLowerCase().includes('.pdf') ? 'application/pdf' : 'audio/mpeg');
+                         (url.toLowerCase().includes('.pdf') ? 'application/pdf' : 
+                          url.toLowerCase().includes('.webp') ? 'image/webp' :
+                          url.toLowerCase().includes('.png') ? 'image/png' :
+                          url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'image/jpeg' :
+                          'audio/mpeg');
 
       // Cria uma resposta válida para o cache
       const blob = await response.blob();
@@ -153,6 +194,24 @@ export const useAudioCache = () => {
       console.error(`[Cache] Error caching file:`, normalizedUrl, error);
       return false;
     }
+  };
+
+  // Helper function to fetch as blob using XMLHttpRequest (better CORS handling in some cases)
+  const fetchAsBlob = (url: string): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.responseType = 'blob';
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          resolve(xhr.response);
+        } else {
+          resolve(null);
+        }
+      };
+      xhr.onerror = () => resolve(null);
+      xhr.send();
+    });
   };
 
   const cacheMultipleAudios = async (urls: string[]): Promise<void> => {
