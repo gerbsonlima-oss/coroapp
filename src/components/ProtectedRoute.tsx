@@ -13,6 +13,28 @@ export const ProtectedRoute = ({ children, skipApprovalCheck = false }: Protecte
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
+  // Check if user has admin or super_admin role (they don't need approval)
+  const { data: hasAdminRole, isLoading: roleLoading } = useQuery({
+    queryKey: ['user-admin-role', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['admin', 'super_admin']);
+
+      if (error) {
+        console.error('Error checking admin role:', error);
+        return false;
+      }
+      return data && data.length > 0;
+    },
+    enabled: !!user?.id && !skipApprovalCheck,
+    staleTime: 30000,
+  });
+
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['user-profile-approval', user?.id],
     queryFn: async () => {
@@ -30,7 +52,7 @@ export const ProtectedRoute = ({ children, skipApprovalCheck = false }: Protecte
       }
       return data;
     },
-    enabled: !!user?.id && !skipApprovalCheck,
+    enabled: !!user?.id && !skipApprovalCheck && !hasAdminRole,
     staleTime: 30000,
   });
 
@@ -41,14 +63,17 @@ export const ProtectedRoute = ({ children, skipApprovalCheck = false }: Protecte
   }, [user, loading, navigate]);
 
   useEffect(() => {
+    // Skip approval check if user is admin/super_admin
+    if (hasAdminRole) return;
+    
     if (!skipApprovalCheck && !profileLoading && profile) {
       if (profile.approval_status === 'pending' || profile.approval_status === 'rejected') {
         navigate('/pending-approval');
       }
     }
-  }, [profile, profileLoading, navigate, skipApprovalCheck]);
+  }, [profile, profileLoading, navigate, skipApprovalCheck, hasAdminRole]);
 
-  if (loading || (!skipApprovalCheck && profileLoading)) {
+  if (loading || (!skipApprovalCheck && roleLoading) || (!skipApprovalCheck && !hasAdminRole && profileLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -58,6 +83,11 @@ export const ProtectedRoute = ({ children, skipApprovalCheck = false }: Protecte
 
   if (!user) {
     return null;
+  }
+
+  // If user is admin/super_admin, skip approval check
+  if (hasAdminRole) {
+    return <>{children}</>;
   }
 
   // If approval check is needed and user is not approved, don't render children
