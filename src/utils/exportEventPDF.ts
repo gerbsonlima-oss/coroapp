@@ -3,7 +3,7 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
-import coroLogo from '@/assets/coro-logo.png';
+import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 import dioceseBrasao from '@/assets/diocese-brasao.png';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -243,7 +243,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[]) => {
   const logoAreaHeight = logoAreaBottom - logoAreaTop;
   
   try {
-    const logoImg = await loadImage(coroLogo);
+    const logoImg = await loadImage(liturgiaLogo);
     const maxLogoWidth = pageWidth - 20; // Praticamente a largura total da página (190mm)
     const maxLogoHeight = logoAreaHeight;
     
@@ -564,7 +564,7 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
   }
 
   try {
-    const logoImg = await loadImage(coroLogo);
+    const logoImg = await loadImage(liturgiaLogo);
     const logoWidth = 60;
     const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
     const logoX = (pageWidth - logoWidth) / 2;

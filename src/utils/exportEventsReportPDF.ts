@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import coroLogo from '@/assets/coro-logo.png';
+import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EventWithSongs {
@@ -124,7 +124,7 @@ export const exportEventsReportPDF = async (
   const logoAreaHeight = logoAreaBottom - logoAreaTop;
   
   try {
-    const logoImg = await loadImage(coroLogo);
+    const logoImg = await loadImage(liturgiaLogo);
     const maxLogoWidth = pageWidth - 20;
     const maxLogoHeight = logoAreaHeight;
     
