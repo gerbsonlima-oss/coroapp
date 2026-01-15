@@ -254,6 +254,18 @@ export const useAudioCache = () => {
     return cachedAudios.has(normalizedUrl);
   };
 
+  // Async version that checks the actual cache
+  const isCachedAsync = async (url: string): Promise<boolean> => {
+    const normalizedUrl = normalizeUrl(url);
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const response = await cache.match(normalizedUrl);
+      return response !== undefined;
+    } catch {
+      return false;
+    }
+  };
+
   const getCacheSize = async (): Promise<number> => {
     try {
       if ('storage' in navigator && 'estimate' in navigator.storage) {
@@ -275,6 +287,7 @@ export const useAudioCache = () => {
     removeFromCache,
     clearAllCache,
     isCached,
+    isCachedAsync,
     getCacheSize,
     progress,
   };

@@ -45,7 +45,7 @@ export const useEventOfflineSave = (eventId: string) => {
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
   const [isEventSaved, setIsEventSaved] = useState(false);
-  const { cacheAudio, isCached } = useAudioCache();
+  const { cacheAudio, isCachedAsync } = useAudioCache();
 
   // Check if event is already saved offline
   useEffect(() => {
@@ -156,17 +156,34 @@ export const useEventOfflineSave = (eventId: string) => {
       const audioUrls = audios?.map(a => a.audio_url).filter(Boolean) || [];
       const totalAudios = audioUrls.length;
       
+      console.log(`[Offline Save] Found ${totalAudios} audio files to cache`);
+      
       if (totalAudios > 0) {
+        let cachedCount = 0;
+        let skippedCount = 0;
+        
         for (let i = 0; i < audioUrls.length; i++) {
           const url = audioUrls[i];
           setProgressText(`Salvando áudio ${i + 1} de ${totalAudios}...`);
           
-          if (!isCached(url)) {
-            await cacheAudio(url);
+          const alreadyCached = await isCachedAsync(url);
+          if (alreadyCached) {
+            console.log(`[Offline Save] Audio already cached, skipping:`, url.substring(0, 50));
+            skippedCount++;
+          } else {
+            console.log(`[Offline Save] Caching audio:`, url.substring(0, 50));
+            const success = await cacheAudio(url);
+            if (success) {
+              cachedCount++;
+            } else {
+              console.warn(`[Offline Save] Failed to cache audio:`, url.substring(0, 50));
+            }
           }
           
           setProgress(40 + Math.round((i + 1) / totalAudios * 40));
         }
+        
+        console.log(`[Offline Save] Audio caching complete: ${cachedCount} cached, ${skippedCount} skipped`);
       }
 
       setProgress(85);
@@ -213,7 +230,7 @@ export const useEventOfflineSave = (eventId: string) => {
     } finally {
       setIsSaving(false);
     }
-  }, [eventId, isSaving, cacheAudio, isCached]);
+  }, [eventId, isSaving, cacheAudio, isCachedAsync]);
 
   const removeEventOffline = useCallback(async () => {
     try {
