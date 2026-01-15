@@ -3,13 +3,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, MessageCircle } from 'lucide-react';
+import { AlertCircle, MessageCircle, Mail, Lock, User, Church, Calendar, Music } from 'lucide-react';
 import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 
 const authSchema = z.object({
@@ -33,11 +32,9 @@ const Auth = () => {
   const [phone, setPhone] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const { signUp, signIn, signInWithGoogle, user } = useAuth();
+  const { signUp, signIn, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redireciona se o usuário já estiver autenticado
   useEffect(() => {
     if (user) {
       navigate('/');
@@ -77,274 +74,234 @@ const Auth = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-    } catch (error: any) {
-      setErrors({ general: error.message || 'Erro ao fazer login com Google' });
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md p-6 md:p-8 shadow-card bg-card border-border">
-        <div className="mb-6 text-center">
-          <div className="mb-4 inline-flex">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#1a2642] to-[#0f1e3a] flex items-center justify-center p-4">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 mb-4 shadow-xl">
             <img 
               src={liturgiaLogo} 
               alt="Liturgia+" 
-              className="w-24 h-24 md:w-32 md:h-32 object-contain"
+              className="w-14 h-14 md:w-16 md:h-16 object-contain"
             />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Liturgia+</h1>
-          <p className="mt-2 text-sm md:text-base text-muted-foreground">
-            {isSignUp ? 'Crie sua conta' : 'Entre na sua conta'}
+          <h1 className="text-3xl md:text-4xl font-light tracking-wide text-white">
+            Liturgia<span className="font-semibold text-primary">+</span>
+          </h1>
+          <p className="mt-2 text-sm text-white/60 tracking-wide">
+            Harmonia e organização para o seu ministério
           </p>
-          
-          {/* Botão de instalação PWA */}
+        </div>
+
+        {/* Card */}
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
+          {/* Tab Toggle */}
+          <div className="flex mb-6 bg-white/5 rounded-xl p-1">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(false)}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                !isSignUp 
+                  ? 'bg-primary text-white shadow-lg' 
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Entrar
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSignUp(true)}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                isSignUp 
+                  ? 'bg-primary text-white shadow-lg' 
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Criar conta
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {errors.general && (
+              <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  {errors.general}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {isSignUp && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullName" className="text-sm text-white/80 flex items-center gap-2">
+                    <User className="h-3.5 w-3.5" />
+                    Nome Completo
+                  </Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="João Silva"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    disabled={loading}
+                    className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary focus:ring-primary/20 ${errors.fullName ? 'border-destructive' : ''}`}
+                  />
+                  {errors.fullName && (
+                    <p className="text-xs text-destructive mt-1">{errors.fullName}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="naipe" className="text-sm text-white/80 flex items-center gap-2">
+                      <Music className="h-3.5 w-3.5" />
+                      Naipe
+                    </Label>
+                    <Select value={naipe} onValueChange={setNaipe} disabled={loading}>
+                      <SelectTrigger className="h-11 bg-white/5 border-white/10 text-white focus:border-primary">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="soprano">Soprano</SelectItem>
+                        <SelectItem value="contralto">Contralto</SelectItem>
+                        <SelectItem value="tenor">Tenor</SelectItem>
+                        <SelectItem value="baixo">Baixo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="birthDate" className="text-sm text-white/80 flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Nascimento
+                    </Label>
+                    <Input
+                      id="birthDate"
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      disabled={loading}
+                      className="h-11 bg-white/5 border-white/10 text-white focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="parish" className="text-sm text-white/80 flex items-center gap-2">
+                    <Church className="h-3.5 w-3.5" />
+                    Paróquia
+                  </Label>
+                  <Input
+                    id="parish"
+                    type="text"
+                    placeholder="Nome da sua paróquia"
+                    value={parish}
+                    onChange={(e) => setParish(e.target.value)}
+                    disabled={loading}
+                    className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.parish ? 'border-destructive' : ''}`}
+                  />
+                  {errors.parish && (
+                    <p className="text-xs text-destructive mt-1">{errors.parish}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-sm text-white/80 flex items-center gap-2">
+                    <MessageCircle className="h-3.5 w-3.5 text-green-400" />
+                    WhatsApp
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(88) 99999-9999"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={loading}
+                    className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.phone ? 'border-destructive' : ''}`}
+                  />
+                  {errors.phone && (
+                    <p className="text-xs text-destructive mt-1">{errors.phone}</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm text-white/80 flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5" />
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.email ? 'border-destructive' : ''}`}
+              />
+              {errors.email && (
+                <p className="text-xs text-destructive mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm text-white/80 flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5" />
+                Senha
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.password ? 'border-destructive' : ''}`}
+              />
+              {errors.password && (
+                <p className="text-xs text-destructive mt-1">{errors.password}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full h-12 mt-4 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg shadow-primary/25 transition-all"
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                isSignUp ? 'Criar Conta' : 'Entrar'
+              )}
+            </Button>
+          </form>
+
+          {/* PWA Install */}
           <div className="mt-4">
             <InstallPWAButton 
-              variant="outline" 
-              size="lg"
-              className="w-full text-base"
+              variant="ghost" 
+              size="sm"
+              className="w-full text-white/60 hover:text-white hover:bg-white/5"
               showText={true}
             />
           </div>
         </div>
 
-        {/* Google OAuth Button */}
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={handleGoogleLogin}
-          className="w-full h-12 text-base mb-4 flex items-center justify-center gap-3"
-          disabled={loading || googleLoading}
-        >
-          {googleLoading ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-          ) : (
-            <>
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Continuar com Google
-            </>
-          )}
-        </Button>
-
-        {/* Separator */}
-        <div className="relative mb-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou</span>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {errors.general && (
-            <Alert variant="destructive" className="py-3">
-              <AlertCircle className="h-5 w-5" />
-              <AlertDescription className="text-sm">
-                {errors.general}
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {isSignUp && (
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-sm">Nome Completo</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="João Silva"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                disabled={loading}
-                className={`h-12 text-sm ${errors.fullName ? 'border-destructive' : ''}`}
-              />
-              {errors.fullName && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    {errors.fullName}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
-
-          {isSignUp && (
-            <div className="space-y-2">
-              <Label htmlFor="naipe" className="text-sm">Naipe</Label>
-              <Select value={naipe} onValueChange={setNaipe} disabled={loading}>
-                <SelectTrigger className={`h-12 text-sm ${errors.naipe ? 'border-destructive' : ''}`}>
-                  <SelectValue placeholder="Selecione seu naipe" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="soprano">Soprano</SelectItem>
-                  <SelectItem value="contralto">Contralto</SelectItem>
-                  <SelectItem value="tenor">Tenor</SelectItem>
-                  <SelectItem value="baixo">Baixo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {isSignUp && (
-            <div className="space-y-2">
-              <Label htmlFor="birthDate" className="text-sm">Data de Nascimento</Label>
-              <Input
-                id="birthDate"
-                type="date"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                disabled={loading}
-                className={`h-12 text-sm ${errors.birthDate ? 'border-destructive' : ''}`}
-              />
-            </div>
-          )}
-
-          {isSignUp && (
-            <div className="space-y-2">
-              <Label htmlFor="parish" className="text-sm">Paróquia</Label>
-              <Input
-                id="parish"
-                type="text"
-                placeholder="Nome da sua paróquia"
-                value={parish}
-                onChange={(e) => setParish(e.target.value)}
-                disabled={loading}
-                className={`h-12 text-sm ${errors.parish ? 'border-destructive' : ''}`}
-              />
-              {errors.parish && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    {errors.parish}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
-
-          {isSignUp && (
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-green-500" />
-                WhatsApp
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="(88) 99999-9999"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                disabled={loading}
-                className={`h-12 text-sm ${errors.phone ? 'border-destructive' : ''}`}
-              />
-              {errors.phone && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    {errors.phone}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              className={`h-12 text-sm ${errors.email ? 'border-destructive' : ''}`}
-            />
-            {errors.email && (
-              <Alert variant="destructive" className="py-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  {errors.email}
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              className={`h-12 text-sm ${errors.password ? 'border-destructive' : ''}`}
-            />
-            {errors.password && (
-              <Alert variant="destructive" className="py-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  {errors.password}
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full gradient-primary shadow-glow text-base h-12 mt-6"
-            disabled={loading}
-          >
-            {loading ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-background border-t-transparent" />
-            ) : (
-              isSignUp ? 'Criar Conta' : 'Entrar'
-            )}
-          </Button>
-        </form>
-
-        <div className="mt-6">
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="w-full text-base h-12"
-            disabled={loading}
-          >
-            {isSignUp
-              ? 'Já tem uma conta? Entre'
-              : 'Criar uma conta'}
-          </Button>
-        </div>
-      </Card>
+        {/* Footer */}
+        <p className="text-center text-xs text-white/40 mt-6">
+          Repertório Litúrgico Digital
+        </p>
+      </div>
     </div>
   );
 };
