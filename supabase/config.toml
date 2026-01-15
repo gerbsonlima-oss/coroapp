@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.og-event]
 verify_jwt = false
+
+[functions.redirect]
+verify_jwt = false

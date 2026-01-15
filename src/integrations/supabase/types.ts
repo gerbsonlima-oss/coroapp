@@ -387,6 +387,30 @@ export type Database = {
           },
         ]
       }
+      short_urls: {
+        Row: {
+          created_at: string
+          full_url: string
+          id: string
+          short_code: string
+          url_type: string
+        }
+        Insert: {
+          created_at?: string
+          full_url: string
+          id?: string
+          short_code: string
+          url_type: string
+        }
+        Update: {
+          created_at?: string
+          full_url?: string
+          id?: string
+          short_code?: string
+          url_type?: string
+        }
+        Relationships: []
+      }
       song_audios: {
         Row: {
           audio_url: string
