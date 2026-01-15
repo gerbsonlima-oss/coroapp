@@ -505,7 +505,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     
     pdf.addImage(qrDataUrl, 'PNG', qrX, currentY, qrSize, qrSize);
     
-    pdf.setFont('times', 'italic');
+    pdf.setFont('courier', 'italic');
     pdf.setFontSize(8);
     pdf.setTextColor(...textLight);
     const qrLabel = 'Escaneie para ouvir os áudios';
@@ -596,8 +596,8 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
         currentY += lineHeight;
       }
     } else {
-      // Lyric line - normal text
-      pdf.setFont('times', 'normal');
+      // Lyric line - monospaced font
+      pdf.setFont('courier', 'normal');
       pdf.setFontSize(14);
       pdf.setTextColor(...textDark);
       
@@ -670,9 +670,9 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
       currentY += lineHeight;
     }
     
-    // Print lyric line
+    // Print lyric line - monospaced font
     if (cleanLine.trim()) {
-      pdf.setFont('times', 'normal');
+      pdf.setFont('courier', 'normal');
       pdf.setFontSize(14);
       pdf.setTextColor(...textDark);
       
@@ -704,12 +704,12 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
-    // Song name
+    // Song name - monospaced font
     if (currentY + 7 > contentEnd) {
       advanceToNextPage();
     }
     
-    pdf.setFont('times', 'bold');
+    pdf.setFont('courier', 'bold');
     pdf.setFontSize(16);
     pdf.setTextColor(...theme.primary);
     const x = colX + 2;
@@ -745,7 +745,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
           }
           
           const badgeX = colX + 2;
-          pdf.setFont('times', 'bold');
+          pdf.setFont('courier', 'bold');
           pdf.setFontSize(12);
           pdf.setTextColor(...redColor);
           pdf.text('R:', badgeX, currentY);
@@ -774,7 +774,7 @@ export const exportChordBookletPDF = async (event: Event, songs: Song[], tenant?
           }
           
           const badgeX = colX + 2;
-          pdf.setFont('times', 'bold');
+          pdf.setFont('courier', 'bold');
           pdf.setFontSize(12);
           pdf.setTextColor(...redColor);
           pdf.text(`${verseNumber}.`, badgeX, currentY);
