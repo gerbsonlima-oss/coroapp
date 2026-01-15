@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
 import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
-import dioceseBrasao from '@/assets/diocese-brasao.png';
+// dioceseBrasao removed - using liturgiaLogo instead
 import { supabase } from '@/integrations/supabase/client';
 
 interface Event {
@@ -606,7 +606,7 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
   }
 
   try {
-    const brasaoImg = await loadImage(dioceseBrasao);
+    const brasaoImg = await loadImage(liturgiaLogo);
     const brasaoWidth = 50;
     const brasaoHeight = (brasaoImg.height / brasaoImg.width) * brasaoWidth;
     const brasaoX = (pageWidth - brasaoWidth) / 2;
