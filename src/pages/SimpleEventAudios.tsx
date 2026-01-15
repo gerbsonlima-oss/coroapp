@@ -7,17 +7,19 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2 } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
 import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
 import { useAudioCache } from '@/hooks/useAudioCache';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -93,6 +95,7 @@ const SimpleEventAudios = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { tenantSlug, tenant } = useTenant();
+  const { isAdmin } = useIsAdmin();
   
   // Check if this is accessed from internal navigation (not shared link /e/:id)
   const isInternalAccess = !location.pathname.startsWith('/e/');
@@ -128,6 +131,8 @@ const SimpleEventAudios = () => {
   const [preloadedUrls, setPreloadedUrls] = useState<Record<string, string>>({});
   const [isPreloading, setIsPreloading] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [deletingSongId, setDeletingSongId] = useState<string | null>(null);
+  const [songToDelete, setSongToDelete] = useState<SongAudio | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -575,6 +580,48 @@ const SimpleEventAudios = () => {
     }
   };
 
+  // Navigation handlers for admin actions
+  const handleEditEvent = () => {
+    const basePath = tenantSlug ? `/${tenantSlug}` : '';
+    navigate(`${basePath}/events/${id}/edit`);
+  };
+
+  const handleAddSong = () => {
+    const basePath = tenantSlug ? `/${tenantSlug}` : '';
+    navigate(`${basePath}/events/${id}/quick-edit`);
+  };
+
+  const handleEditSong = (songId: string) => {
+    const basePath = tenantSlug ? `/${tenantSlug}` : '';
+    navigate(`${basePath}/songs/${songId}/edit`);
+  };
+
+  const handleDeleteSong = async () => {
+    if (!songToDelete) return;
+    
+    setDeletingSongId(songToDelete.song_id);
+    try {
+      // Remove song from event_songs
+      const { error } = await supabase
+        .from('event_songs')
+        .delete()
+        .eq('event_id', id)
+        .eq('song_id', songToDelete.song_id);
+      
+      if (error) throw error;
+      
+      toast.success('Música removida do evento');
+      // Refresh data
+      fetchEventData();
+    } catch (error) {
+      console.error('Error removing song:', error);
+      toast.error('Erro ao remover música');
+    } finally {
+      setDeletingSongId(null);
+      setSongToDelete(null);
+    }
+  };
+
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
@@ -710,6 +757,21 @@ const SimpleEventAudios = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-popover z-50">
+                  {/* Admin Actions */}
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem onClick={handleEditEvent}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar Evento
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleAddSong}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Música
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  
                   {/* Save Offline Option */}
                   {isEventSaved ? (
                     <>
@@ -1011,7 +1073,7 @@ const SimpleEventAudios = () => {
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-popover">
                           <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
                             <MessageCircle className="mr-2 h-4 w-4" />
                             Enviar por WhatsApp
@@ -1020,6 +1082,23 @@ const SimpleEventAudios = () => {
                             <Download className="mr-2 h-4 w-4" />
                             Baixar
                           </DropdownMenuItem>
+                          {isAdmin && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleEditSong(audio.song_id)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Editar Música
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => setSongToDelete(audio)}
+                                className="text-destructive focus:text-destructive"
+                                disabled={deletingSongId === audio.song_id}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Remover do Evento
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -1161,6 +1240,28 @@ const SimpleEventAudios = () => {
           onSave={saveEventOffline}
           isCompleted={isEventSaved}
         />
+
+        {/* Delete Song Confirmation Dialog */}
+        <AlertDialog open={!!songToDelete} onOpenChange={(open) => !open && setSongToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remover música do evento?</AlertDialogTitle>
+              <AlertDialogDescription>
+                A música "{songToDelete?.song_name}" será removida deste evento. 
+                A música continuará disponível no catálogo.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteSong}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Remover
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );
