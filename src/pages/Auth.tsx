@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { z } from 'zod';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, MessageCircle, Mail, Lock, User, Church, Calendar, Music } from 'lucide-react';
+import { AlertCircle, MessageCircle, Mail, Lock, User, Calendar, Music, Users } from 'lucide-react';
 import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const authSchema = z.object({
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
@@ -17,9 +19,25 @@ const authSchema = z.object({
   fullName: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100, 'Nome muito longo').optional(),
   naipe: z.string().optional(),
   birthDate: z.string().optional(),
-  parish: z.string().max(100, 'Paróquia muito longa').optional(),
+  tenantId: z.string().uuid('Selecione um coro').optional(),
   phone: z.string().max(20, 'WhatsApp muito longo').optional(),
 });
+
+// Função para aplicar máscara de telefone
+const formatPhone = (value: string): string => {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '');
+  
+  // Aplica a máscara
+  if (numbers.length <= 2) {
+    return numbers;
+  } else if (numbers.length <= 7) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+  } else if (numbers.length <= 11) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  }
+  return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+};
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -28,19 +46,37 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [naipe, setNaipe] = useState('');
   const [birthDate, setBirthDate] = useState('');
-  const [parish, setParish] = useState('');
+  const [tenantId, setTenantId] = useState('');
   const [phone, setPhone] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
   const navigate = useNavigate();
 
+  // Buscar lista de tenants (coros)
+  const { data: tenants } = useQuery({
+    queryKey: ['tenants-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('id, name, slug')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   useEffect(() => {
     if (user) {
-      // Check if user needs approval - will be handled by the app routing
       navigate('/');
     }
   }, [user, navigate]);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,12 +85,27 @@ const Auth = () => {
 
     try {
       const data = isSignUp 
-        ? { email, password, fullName, naipe, birthDate, parish, phone } 
+        ? { email, password, fullName, naipe, birthDate, tenantId, phone } 
         : { email, password };
+      
+      // Validação customizada para signup
+      if (isSignUp) {
+        if (!fullName || fullName.length < 3) {
+          setErrors({ fullName: 'Nome deve ter no mínimo 3 caracteres' });
+          setLoading(false);
+          return;
+        }
+        if (!tenantId) {
+          setErrors({ tenantId: 'Selecione um coro' });
+          setLoading(false);
+          return;
+        }
+      }
+      
       authSchema.parse(data);
 
       if (isSignUp) {
-        await signUp({ email, password, fullName, naipe, birthDate, parish, phone });
+        await signUp({ email, password, fullName, naipe, birthDate, tenantId, phone });
       } else {
         await signIn(email, password);
       }
@@ -144,7 +195,7 @@ const Auth = () => {
                 <div className="space-y-1.5">
                   <Label htmlFor="fullName" className="text-sm text-white/80 flex items-center gap-2">
                     <User className="h-3.5 w-3.5" />
-                    Nome Completo
+                    Nome Completo *
                   </Label>
                   <Input
                     id="fullName"
@@ -170,7 +221,7 @@ const Auth = () => {
                       <SelectTrigger className="h-11 bg-white/5 border-white/10 text-white focus:border-primary">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-[#1a2642] border-white/10">
                         <SelectItem value="soprano">Soprano</SelectItem>
                         <SelectItem value="contralto">Contralto</SelectItem>
                         <SelectItem value="tenor">Tenor</SelectItem>
@@ -196,25 +247,6 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="parish" className="text-sm text-white/80 flex items-center gap-2">
-                    <Church className="h-3.5 w-3.5" />
-                    Paróquia
-                  </Label>
-                  <Input
-                    id="parish"
-                    type="text"
-                    placeholder="Nome da sua paróquia"
-                    value={parish}
-                    onChange={(e) => setParish(e.target.value)}
-                    disabled={loading}
-                    className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.parish ? 'border-destructive' : ''}`}
-                  />
-                  {errors.parish && (
-                    <p className="text-xs text-destructive mt-1">{errors.parish}</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
                   <Label htmlFor="phone" className="text-sm text-white/80 flex items-center gap-2">
                     <MessageCircle className="h-3.5 w-3.5 text-green-400" />
                     WhatsApp
@@ -224,12 +256,35 @@ const Auth = () => {
                     type="tel"
                     placeholder="(88) 99999-9999"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={handlePhoneChange}
                     disabled={loading}
+                    maxLength={15}
                     className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.phone ? 'border-destructive' : ''}`}
                   />
                   {errors.phone && (
                     <p className="text-xs text-destructive mt-1">{errors.phone}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="tenantId" className="text-sm text-white/80 flex items-center gap-2">
+                    <Users className="h-3.5 w-3.5" />
+                    Coro *
+                  </Label>
+                  <Select value={tenantId} onValueChange={setTenantId} disabled={loading}>
+                    <SelectTrigger className={`h-11 bg-white/5 border-white/10 text-white focus:border-primary ${errors.tenantId ? 'border-destructive' : ''}`}>
+                      <SelectValue placeholder="Selecione seu coro" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a2642] border-white/10">
+                      {tenants?.map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.tenantId && (
+                    <p className="text-xs text-destructive mt-1">{errors.tenantId}</p>
                   )}
                 </div>
               </>

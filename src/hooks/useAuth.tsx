@@ -28,7 +28,7 @@ interface SignUpData {
   fullName: string;
   naipe?: string;
   birthDate?: string;
-  parish?: string;
+  tenantId?: string;
   phone?: string;
 }
 
@@ -70,7 +70,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (data: SignUpData) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
-      const tenantSlug = getTenantSlugFromHostname();
       
       const { error, data: authData } = await supabase.auth.signUp({
         email: data.email,
@@ -79,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: data.fullName,
-            tenant_slug: tenantSlug,
+            tenant_id: data.tenantId,
           },
         },
       });
@@ -93,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .update({
             naipe: data.naipe || null,
             birth_date: data.birthDate || null,
-            parish: data.parish || null,
+            tenant_id: data.tenantId || null,
             phone: data.phone || null,
           })
           .eq('id', authData.user.id);
@@ -169,7 +168,6 @@ export const useAuth = () => {
       loading: false,
       signUp: async (data: SignUpData) => {
         const redirectUrl = `${window.location.origin}/`;
-        const tenantSlug = getTenantSlugFromHostname();
         
         const { error, data: authData } = await supabase.auth.signUp({
           email: data.email,
@@ -178,7 +176,7 @@ export const useAuth = () => {
             emailRedirectTo: redirectUrl,
             data: { 
               full_name: data.fullName,
-              tenant_slug: tenantSlug,
+              tenant_id: data.tenantId,
             },
           },
         });
@@ -190,7 +188,7 @@ export const useAuth = () => {
             .update({
               naipe: data.naipe || null,
               birth_date: data.birthDate || null,
-              parish: data.parish || null,
+              tenant_id: data.tenantId || null,
               phone: data.phone || null,
             })
             .eq('id', authData.user.id);
