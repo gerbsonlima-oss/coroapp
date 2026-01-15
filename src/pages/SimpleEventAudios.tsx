@@ -427,10 +427,16 @@ const SimpleEventAudios = () => {
   const handleShareWhatsApp = async (audio: SongAudio) => {
     toast.info('Preparando arquivo para envio...');
     try {
-      await sendAudioToWhatsApp(audio.audio_url, audio.song_name, audio.naipe, audio.song_sheet_music_pdf_url || undefined);
+      await sendAudioToWhatsApp(
+        audio.audio_url,
+        audio.song_name,
+        audio.naipe,
+        audio.song_sheet_music_pdf_url || undefined,
+        { fallbackToLink: false }
+      );
     } catch (error) {
       console.error('Share error:', error);
-      toast.error('Erro ao compartilhar arquivo');
+      toast.error('Não foi possível anexar o arquivo no WhatsApp neste dispositivo. Tente no Chrome/Android ou baixe o áudio e anexe manualmente.');
     }
   };
 
