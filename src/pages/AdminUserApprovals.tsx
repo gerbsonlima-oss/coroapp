@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Check, X, Clock, User, Mail, Church, Music, Calendar, Phone, ArrowLeft, UserCheck, UserX } from 'lucide-react';
+import { Check, X, Clock, User, Mail, Music, Calendar, Phone, ArrowLeft, UserCheck, UserX } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -30,7 +30,6 @@ interface Profile {
   full_name: string | null;
   naipe: string | null;
   birth_date: string | null;
-  parish: string | null;
   phone: string | null;
   approval_status: string;
   created_at: string | null;
@@ -56,7 +55,7 @@ const AdminUserApprovals = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, full_name, naipe, birth_date, parish, phone, approval_status, created_at, approved_at')
+        .select('id, email, full_name, naipe, birth_date, phone, approval_status, created_at, approved_at')
         .eq('tenant_id', tenant.id)
         .eq('approval_status', selectedTab)
         .order('created_at', { ascending: false });
@@ -232,12 +231,6 @@ const AdminUserApprovals = () => {
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Music className="h-4 w-4" />
                           <span className="capitalize">{profile.naipe}</span>
-                        </div>
-                      )}
-                      {profile.parish && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Church className="h-4 w-4" />
-                          <span className="truncate">{profile.parish}</span>
                         </div>
                       )}
                       {profile.birth_date && (
