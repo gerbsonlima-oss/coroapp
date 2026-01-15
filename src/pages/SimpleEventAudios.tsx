@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2 } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -125,6 +125,7 @@ const SimpleEventAudios = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [preloadedUrls, setPreloadedUrls] = useState<Record<string, string>>({});
   const [isPreloading, setIsPreloading] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -344,16 +345,25 @@ const SimpleEventAudios = () => {
   };
 
   const handlePlay = async (audio: SongAudio) => {
+    // If clicking the same audio that's playing, pause it
     if (playingId === audio.id) {
-      // Pause current
       audioRef.current?.pause();
       setPlayingId(null);
-    } else {
-      // Play new
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      
+      return;
+    }
+    
+    // If loading, ignore additional clicks
+    if (isLoadingAudio) return;
+    
+    // Stop current audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    
+    setIsLoadingAudio(true);
+    
+    try {
       // Use preloaded URL if available, otherwise fetch from cache
       const audioUrl = preloadedUrls[audio.audio_url] || await getCachedUrl(audio.audio_url);
       const newAudio = new Audio(audioUrl);
@@ -381,10 +391,15 @@ const SimpleEventAudios = () => {
         setDuration(0);
       };
       
-      newAudio.play();
+      await newAudio.play();
       audioRef.current = newAudio;
       setPlayingId(audio.id);
       setCurrentTime(0);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      toast.error('Erro ao reproduzir áudio');
+    } finally {
+      setIsLoadingAudio(false);
     }
   };
 
@@ -901,8 +916,11 @@ const SimpleEventAudios = () => {
                         size="icon"
                         className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
                         onClick={() => handlePlay(audio)}
+                        disabled={isLoadingAudio && playingId !== audio.id}
                       >
-                        {isPlaying ? (
+                        {isLoadingAudio && playingId !== audio.id && !isPlaying ? (
+                          <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                        ) : isPlaying ? (
                           <Pause className="h-5 w-5 text-primary" />
                         ) : (
                           <Play className="h-5 w-5 text-primary ml-0.5" />
