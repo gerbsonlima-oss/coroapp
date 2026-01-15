@@ -864,7 +864,38 @@ const SimpleEventAudios = () => {
         </div>
 
         {/* Audio List */}
-        <div className="px-4 py-2 max-w-2xl mx-auto">
+        <div className="px-4 py-2 max-w-2xl mx-auto pb-24">
+          {/* Naipe Filter Chips */}
+          {availableNaipes.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {availableNaipes.map((naipe) => (
+                <Button
+                  key={naipe}
+                  variant={selectedNaipes.includes(naipe) ? "default" : "outline"}
+                  size="sm"
+                  className={`h-7 px-3 text-xs font-medium rounded-full ${
+                    selectedNaipes.includes(naipe) 
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                      : 'border-primary/30 text-primary hover:bg-primary/10'
+                  }`}
+                  onClick={() => toggleNaipe(naipe)}
+                >
+                  {naipe}
+                </Button>
+              ))}
+              {selectedNaipes.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelectedNaipes([])}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          )}
+          
           {/* Active filters indicator */}
           {(searchQuery || selectedNaipes.length > 0) && (
             <div className="flex items-center justify-between mb-3 px-1">
@@ -873,15 +904,17 @@ const SimpleEventAudios = () => {
                   {filteredAudios.length} {filteredAudios.length === 1 ? 'resultado' : 'resultados'}
                 </span>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
-                onClick={clearFilters}
-              >
-                <X className="h-3.5 w-3.5 mr-1" />
-                Limpar filtros
-              </Button>
+              {searchQuery && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                  onClick={clearFilters}
+                >
+                  <X className="h-3.5 w-3.5 mr-1" />
+                  Limpar busca
+                </Button>
+              )}
             </div>
           )}
 
@@ -1017,7 +1050,7 @@ const SimpleEventAudios = () => {
                           </p>
                           <Badge 
                             variant="secondary" 
-                            className="h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider bg-secondary/50 text-muted-foreground/70 border-none pointer-events-none"
+                            className="h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider bg-primary/15 text-primary border-none pointer-events-none"
                           >
                             {audio.naipe}
                           </Badge>
@@ -1262,6 +1295,17 @@ const SimpleEventAudios = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        
+        {/* FAB for adding music - Admin only */}
+        {isAdmin && (
+          <Button
+            onClick={handleAddSong}
+            size="lg"
+            className="fixed bottom-6 right-4 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg z-40 flex items-center justify-center"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        )}
       </div>
     </>
   );
