@@ -25,7 +25,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { sendAudioToWhatsApp } from '@/utils/whatsappShare';
+import { shareCompleteToWhatsApp } from '@/utils/whatsappShare';
 import { Helmet } from 'react-helmet-async';
 import { useTenant } from '@/contexts/TenantContext';
 
@@ -515,20 +515,13 @@ const SimpleEventAudios = () => {
     }
   };
 
-  const handleShareWhatsApp = async (audio: SongAudio) => {
-    toast.info('Preparando arquivo para envio...');
-    try {
-      await sendAudioToWhatsApp(
-        audio.audio_url,
-        audio.song_name,
-        audio.naipe,
-        audio.song_sheet_music_pdf_url || undefined,
-        { fallbackToLink: false }
-      );
-    } catch (error) {
-      console.error('Share error:', error);
-      toast.error('Não foi possível anexar o arquivo no WhatsApp neste dispositivo. Tente no Chrome/Android ou baixe o áudio e anexe manualmente.');
-    }
+  const handleShareWhatsApp = (audio: SongAudio) => {
+    shareCompleteToWhatsApp(
+      audio.song_name,
+      audio.audio_url,
+      audio.song_sheet_music_pdf_url || undefined,
+      audio.naipe
+    );
   };
 
   const handleOpenLyrics = (audio: SongAudio) => {
