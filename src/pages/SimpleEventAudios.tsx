@@ -123,6 +123,8 @@ const SimpleEventAudios = () => {
   });
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [preloadedUrls, setPreloadedUrls] = useState<Record<string, string>>({});
+  const [isPreloading, setIsPreloading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -157,6 +159,31 @@ const SimpleEventAudios = () => {
 
   // Check if we're in offline mode
   const offlineMode = isOfflineMode();
+
+  // Preload cached audio URLs for faster offline playback
+  const preloadCachedUrls = useCallback(async (audioList: SongAudio[]) => {
+    if (audioList.length === 0) return;
+    
+    setIsPreloading(true);
+    const urlMap: Record<string, string> = {};
+    
+    try {
+      // Preload all audio URLs in parallel
+      await Promise.all(
+        audioList.map(async (audio) => {
+          const cachedUrl = await getCachedUrl(audio.audio_url);
+          urlMap[audio.audio_url] = cachedUrl;
+        })
+      );
+      
+      setPreloadedUrls(urlMap);
+      console.log(`Preloaded ${Object.keys(urlMap).length} audio URLs`);
+    } catch (error) {
+      console.error('Error preloading audio URLs:', error);
+    } finally {
+      setIsPreloading(false);
+    }
+  }, [getCachedUrl]);
 
   useEffect(() => {
     if (id) {
@@ -200,9 +227,13 @@ const SimpleEventAudios = () => {
         };
       });
       
-      setAudios(sortByTypeOrder(offlineAudios));
+      const sortedAudios = sortByTypeOrder(offlineAudios);
+      setAudios(sortedAudios);
       setSongs(offlineData.songs);
       setLoading(false);
+      
+      // Preload cached URLs for faster playback
+      preloadCachedUrls(sortedAudios);
       
       toast.info('Carregado do armazenamento offline');
     } else {
@@ -323,8 +354,8 @@ const SimpleEventAudios = () => {
         audioRef.current.pause();
       }
       
-      // Get cached URL for offline playback, or use original URL
-      const audioUrl = await getCachedUrl(audio.audio_url);
+      // Use preloaded URL if available, otherwise fetch from cache
+      const audioUrl = preloadedUrls[audio.audio_url] || await getCachedUrl(audio.audio_url);
       const newAudio = new Audio(audioUrl);
       
       newAudio.onloadedmetadata = () => {
