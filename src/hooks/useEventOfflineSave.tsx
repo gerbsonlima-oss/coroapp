@@ -224,6 +224,12 @@ export const useEventOfflineSave = (eventId: string) => {
       const savedIds = getSavedEventIds().filter(id => id !== eventId);
       localStorage.setItem(OFFLINE_EVENT_IDS_KEY, JSON.stringify(savedIds));
 
+      // Dispatch storage event so other components can react
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: OFFLINE_EVENT_IDS_KEY,
+        newValue: JSON.stringify(savedIds)
+      }));
+
       setIsEventSaved(false);
       toast.success('Evento removido do armazenamento offline');
     } catch (error) {

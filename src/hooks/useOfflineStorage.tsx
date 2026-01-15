@@ -32,11 +32,32 @@ const STORAGE_KEYS = {
 export const useOfflineStorage = () => {
   const [offlineEvents, setOfflineEvents] = useState<OfflineEvent[]>([]);
   const [metadata, setMetadata] = useState<OfflineMetadata | null>(null);
+  const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
 
   // Load events from localStorage on mount
   useEffect(() => {
     loadOfflineEvents();
     loadMetadata();
+    loadSavedEventIds();
+    
+    // Listen for storage changes (when other tabs/components modify offline data)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'offline_event_ids') {
+        loadSavedEventIds();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const loadSavedEventIds = useCallback(() => {
+    try {
+      const stored = localStorage.getItem('offline_event_ids');
+      setSavedEventIds(stored ? JSON.parse(stored) : []);
+    } catch {
+      setSavedEventIds([]);
+    }
   }, []);
 
   const loadOfflineEvents = useCallback(() => {
@@ -89,8 +110,16 @@ export const useOfflineStorage = () => {
   }, [offlineEvents]);
 
   const isEventAvailableOffline = useCallback((eventId: string): boolean => {
+    // Check the complete offline save list (with audios) first
+    if (savedEventIds.includes(eventId)) return true;
+    // Fall back to basic offline list
     return offlineEvents.some(e => e.id === eventId);
-  }, [offlineEvents]);
+  }, [offlineEvents, savedEventIds]);
+
+  // Force refresh of saved event IDs (useful after save/remove operations)
+  const refreshSavedEventIds = useCallback(() => {
+    loadSavedEventIds();
+  }, [loadSavedEventIds]);
 
   const saveTenantConfig = useCallback((tenant: TenantConfig) => {
     try {
@@ -151,6 +180,7 @@ export const useOfflineStorage = () => {
   return {
     offlineEvents,
     metadata,
+    savedEventIds,
     saveEvents,
     getEventById,
     isEventAvailableOffline,
@@ -159,5 +189,6 @@ export const useOfflineStorage = () => {
     removeEventOffline,
     clearOfflineData,
     loadOfflineEvents,
+    refreshSavedEventIds,
   };
 };
