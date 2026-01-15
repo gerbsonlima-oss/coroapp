@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
-import coroLogo from '@/assets/coro-logo.png';
+import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 
 const authSchema = z.object({
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
@@ -82,12 +82,12 @@ const Auth = () => {
         <div className="mb-6 text-center">
           <div className="mb-4 inline-flex">
             <img 
-              src={coroLogo} 
-              alt="Coro da Diocese de Quixadá" 
+              src={liturgiaLogo} 
+              alt="Liturgia+" 
               className="w-24 h-24 md:w-32 md:h-32 object-contain"
             />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Repertório</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Liturgia+</h1>
           <p className="mt-2 text-sm md:text-base text-muted-foreground">
             {isSignUp ? 'Crie sua conta' : 'Entre na sua conta'}
           </p>
