@@ -836,13 +836,33 @@ const SimpleEventAudios = () => {
                   {songs.length > 0 && (
                     <>
                       <DropdownMenuItem onClick={async () => {
-                        const { exportEventPDF } = await import('@/utils/exportEventPDF');
-                        const songsWithSheets = songs.filter(s => s.sheet_music_pdf_url || s.sheet_music_url);
-                        if (songsWithSheets.length === 0) {
-                          toast.error('Nenhuma partitura disponível');
-                          return;
+                        if (!event) return;
+                        try {
+                          const { exportEventPDF } = await import('@/utils/exportEventPDF');
+                          const songsWithSheets = songs.filter(s => s.sheet_music_pdf_url || s.sheet_music_url);
+                          if (songsWithSheets.length === 0) {
+                            toast.error('Nenhuma partitura disponível');
+                            return;
+                          }
+
+                          // Sempre priorizar o tenant do evento (evita usar a logo errada quando o usuário está em outro tenant)
+                          let tenantInfo: { name: string; logo_url: string | null } | undefined;
+                          if ((event as any).tenant_id) {
+                            const { data } = await supabase
+                              .from('tenants')
+                              .select('name, logo_url')
+                              .eq('id', (event as any).tenant_id)
+                              .single();
+                            tenantInfo = data || undefined;
+                          } else if (tenant) {
+                            tenantInfo = { name: tenant.name, logo_url: tenant.logo_url };
+                          }
+
+                          await exportEventPDF(event, songsWithSheets, tenantInfo);
+                        } catch (error) {
+                          console.error('Erro ao exportar PDF de partituras:', error);
+                          toast.error('Erro ao exportar PDF de partituras');
                         }
-                        await exportEventPDF(event, songsWithSheets, tenant ? { name: tenant.name, logo_url: tenant.logo_url } : undefined);
                       }}>
                         <FileText className="mr-2 h-4 w-4" />
                         Partituras (PDF)
