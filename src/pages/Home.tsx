@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getLiturgicalDay } from '@/data/liturgicalCalendar';
+import { injectTenantManifest } from '@/utils/injectTenantManifest';
 
 interface Event {
   id: string;
@@ -117,6 +118,13 @@ const Home = () => {
     },
     enabled: !!tenantId,
   });
+
+  // Inject tenant-specific PWA manifest
+  useEffect(() => {
+    if (tenantSlug && tenant?.name) {
+      injectTenantManifest(tenantSlug, tenant.name);
+    }
+  }, [tenantSlug, tenant?.name]);
 
   useEffect(() => {
     if (upcomingEventsData) {
