@@ -139,14 +139,12 @@ export const useEventOfflineSave = (eventId: string) => {
       // 4. Cache cover image if exists
       if (event.cover_image_url) {
         setProgressText('Salvando imagem de capa...');
-        try {
-          const cache = await caches.open('event-images-cache');
-          const response = await fetch(event.cover_image_url);
-          if (response.ok) {
-            await cache.put(event.cover_image_url, response.clone());
-          }
-        } catch (e) {
-          console.warn('Failed to cache cover image:', e);
+        console.log(`[Offline Save] Caching cover image:`, event.cover_image_url.substring(0, 60));
+        const coverCached = await cacheAudio(event.cover_image_url);
+        if (coverCached) {
+          console.log(`[Offline Save] Cover image cached successfully`);
+        } else {
+          console.warn(`[Offline Save] Failed to cache cover image`);
         }
       }
 
