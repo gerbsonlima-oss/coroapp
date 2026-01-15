@@ -148,9 +148,40 @@ export const useEventOfflineSave = (eventId: string) => {
         }
       }
 
-      setProgress(40);
+      setProgress(35);
 
-      // 5. Cache all audio files
+      // 5. Cache all sheet music files (PDFs and images)
+      const sheetMusicUrls: string[] = [];
+      songs.forEach(song => {
+        if (song?.sheet_music_url) sheetMusicUrls.push(song.sheet_music_url);
+        if (song?.sheet_music_pdf_url) sheetMusicUrls.push(song.sheet_music_pdf_url);
+      });
+      
+      const totalSheets = sheetMusicUrls.length;
+      console.log(`[Offline Save] Found ${totalSheets} sheet music files to cache`);
+      
+      if (totalSheets > 0) {
+        let sheetsCached = 0;
+        for (let i = 0; i < sheetMusicUrls.length; i++) {
+          const url = sheetMusicUrls[i];
+          setProgressText(`Salvando partitura ${i + 1} de ${totalSheets}...`);
+          
+          const alreadyCached = await isCachedAsync(url);
+          if (!alreadyCached) {
+            const success = await cacheAudio(url);
+            if (success) sheetsCached++;
+          } else {
+            sheetsCached++;
+          }
+          
+          setProgress(35 + Math.round((i + 1) / totalSheets * 15));
+        }
+        console.log(`[Offline Save] Sheet music caching complete: ${sheetsCached}/${totalSheets}`);
+      }
+
+      setProgress(50);
+
+      // 6. Cache all audio files
       const audioUrls = audios?.map(a => a.audio_url).filter(Boolean) || [];
       const totalAudios = audioUrls.length;
       
@@ -178,13 +209,13 @@ export const useEventOfflineSave = (eventId: string) => {
             }
           }
           
-          setProgress(40 + Math.round((i + 1) / totalAudios * 40));
+          setProgress(50 + Math.round((i + 1) / totalAudios * 35));
         }
         
         console.log(`[Offline Save] Audio caching complete: ${cachedCount} cached, ${skippedCount} skipped`);
       }
 
-      setProgress(85);
+      setProgress(90);
       setProgressText('Salvando dados localmente...');
 
       // 6. Save complete event data to localStorage
