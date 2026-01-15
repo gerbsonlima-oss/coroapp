@@ -102,6 +102,8 @@ const SimpleEventAudios = () => {
   const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [activeAudioId, setActiveAudioId] = useState<string | null>(null);
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
   const [chordsModalOpen, setChordsModalOpen] = useState(false);
   const [selectedAudio, setSelectedAudio] = useState<SongAudio | null>(null);
@@ -345,10 +347,19 @@ const SimpleEventAudios = () => {
   };
 
   const handlePlay = async (audio: SongAudio) => {
-    // If clicking the same audio that's playing, pause it
-    if (playingId === audio.id) {
-      audioRef.current?.pause();
-      setPlayingId(null);
+    // If clicking the same audio that's active
+    if (activeAudioId === audio.id) {
+      if (playingId === audio.id) {
+        // Currently playing - pause it
+        audioRef.current?.pause();
+        setPlayingId(null);
+        setIsPaused(true);
+      } else {
+        // Currently paused - resume it
+        audioRef.current?.play();
+        setPlayingId(audio.id);
+        setIsPaused(false);
+      }
       return;
     }
     
@@ -362,6 +373,8 @@ const SimpleEventAudios = () => {
     }
     
     setIsLoadingAudio(true);
+    setActiveAudioId(audio.id);
+    setIsPaused(false);
     
     try {
       // Use preloaded URL if available, otherwise fetch from cache
@@ -380,6 +393,8 @@ const SimpleEventAudios = () => {
       
       newAudio.onended = () => {
         setPlayingId(null);
+        setActiveAudioId(null);
+        setIsPaused(false);
         setCurrentTime(0);
         setDuration(0);
       };
@@ -387,6 +402,8 @@ const SimpleEventAudios = () => {
       newAudio.onerror = () => {
         toast.error('Erro ao reproduzir áudio. Verifique se está disponível offline.');
         setPlayingId(null);
+        setActiveAudioId(null);
+        setIsPaused(false);
         setCurrentTime(0);
         setDuration(0);
       };
@@ -398,6 +415,7 @@ const SimpleEventAudios = () => {
     } catch (error) {
       console.error('Error playing audio:', error);
       toast.error('Erro ao reproduzir áudio');
+      setActiveAudioId(null);
     } finally {
       setIsLoadingAudio(false);
     }
@@ -903,11 +921,13 @@ const SimpleEventAudios = () => {
             <div className="space-y-2">
               {filteredAudios.map((audio) => {
                 const isPlaying = playingId === audio.id;
+                const isActive = activeAudioId === audio.id;
+                const isThisPaused = isActive && isPaused;
                 
                 return (
                   <Card 
                     key={audio.id} 
-                    className={`p-3 transition-colors hover:bg-accent/50`}
+                    className={`p-3 transition-colors hover:bg-accent/50 ${isActive ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       {/* Play Button */}
@@ -916,9 +936,9 @@ const SimpleEventAudios = () => {
                         size="icon"
                         className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
                         onClick={() => handlePlay(audio)}
-                        disabled={isLoadingAudio && playingId !== audio.id}
+                        disabled={isLoadingAudio && activeAudioId !== audio.id}
                       >
-                        {isLoadingAudio && playingId !== audio.id && !isPlaying ? (
+                        {isLoadingAudio && activeAudioId === audio.id ? (
                           <Loader2 className="h-5 w-5 text-primary animate-spin" />
                         ) : isPlaying ? (
                           <Pause className="h-5 w-5 text-primary" />
@@ -1004,8 +1024,8 @@ const SimpleEventAudios = () => {
                       </DropdownMenu>
                     </div>
                     
-                    {/* Progress Bar - Only shows when playing */}
-                    {isPlaying && duration > 0 && (
+                    {/* Progress Bar - Shows when active (playing or paused) */}
+                    {isActive && duration > 0 && (
                       <div className="mt-3 flex items-center gap-2">
                         <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">
                           {formatTime(currentTime)}
