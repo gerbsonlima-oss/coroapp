@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History, Users } from 'lucide-react';
+import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History, Users, UserCheck } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -174,15 +174,26 @@ const Home = () => {
           <OfflineEventsManager />
           <TenantSwitcher />
           {(isAdmin || isSuperAdmin) && (
-            <Button
-              onClick={() => navigate(tenantSlug ? `/${tenantSlug}/choir-members` : '/choir-members')}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Coralistas</span>
-            </Button>
+            <>
+              <Button
+                onClick={() => navigate(tenantSlug ? `/${tenantSlug}/choir-members` : '/choir-members')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Coralistas</span>
+              </Button>
+              <Button
+                onClick={() => navigate(tenantSlug ? `/${tenantSlug}/admin/user-approvals` : '/admin/user-approvals')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <UserCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">Aprovações</span>
+              </Button>
+            </>
           )}
           {isSuperAdmin && (
             <Button

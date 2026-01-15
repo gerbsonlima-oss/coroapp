@@ -239,6 +239,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           birth_date: string | null
           created_at: string | null
           email: string
@@ -250,6 +253,9 @@ export type Database = {
           tenant_id: string | null
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           birth_date?: string | null
           created_at?: string | null
           email: string
@@ -261,6 +267,9 @@ export type Database = {
           tenant_id?: string | null
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           birth_date?: string | null
           created_at?: string | null
           email?: string

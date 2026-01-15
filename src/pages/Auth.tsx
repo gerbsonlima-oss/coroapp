@@ -37,6 +37,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
+      // Check if user needs approval - will be handled by the app routing
       navigate('/');
     }
   }, [user, navigate]);

@@ -33,6 +33,8 @@ const TenantSelection = lazy(() => import("./pages/TenantSelection"));
 const ChoirMembers = lazy(() => import("./pages/ChoirMembers"));
 const ChoirMemberForm = lazy(() => import("./pages/ChoirMemberForm"));
 const ChoirMemberDetails = lazy(() => import("./pages/ChoirMemberDetails"));
+const AdminUserApprovals = lazy(() => import("./pages/AdminUserApprovals"));
+const PendingApproval = lazy(() => import("./pages/PendingApproval"));
 
 const Liturgy = lazy(() => import("./pages/Liturgy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -146,6 +148,9 @@ function App() {
             {/* Simplified event audios - public route */}
             <Route path="/e/:id" element={<SimpleEventAudios />} />
             
+            {/* Pending approval page */}
+            <Route path="/pending-approval" element={<PendingApproval />} />
+            
             {/* Routes without tenant prefix */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/public/*" element={<EventDetails />} />
@@ -154,6 +159,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminTenants />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/user-approvals"
+              element={
+                <ProtectedRoute>
+                  <AdminUserApprovals />
                 </ProtectedRoute>
               }
             />
@@ -297,6 +310,16 @@ function App() {
                 <Home />
               </ProtectedRoute>
             } />
+            
+            {/* Admin user approvals with tenant prefix */}
+            <Route
+              path="/:tenantSlug/admin/user-approvals"
+              element={
+                <ProtectedRoute>
+                  <AdminUserApprovals />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Default routes without tenant prefix */}
             <Route path="/events" element={

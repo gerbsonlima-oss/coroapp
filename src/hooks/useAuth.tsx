@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       
-      toast.success('Conta criada com sucesso!');
+      toast.success('Conta criada! Aguarde a aprovação do administrador.');
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
       throw error;
@@ -196,7 +196,7 @@ export const useAuth = () => {
             .eq('id', authData.user.id);
         }
         
-        toast.success('Conta criada com sucesso!');
+        toast.success('Conta criada! Aguarde a aprovação do administrador.');
       },
       signIn: async (email: string, password: string) => {
         const { error } = await supabase.auth.signInWithPassword({
