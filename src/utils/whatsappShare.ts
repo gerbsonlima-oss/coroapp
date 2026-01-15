@@ -216,24 +216,30 @@ export function shareSheetToWhatsApp(
   window.open(whatsappUrl, '_blank');
 }
 
-export function shareCompleteToWhatsApp(
+export async function shareCompleteToWhatsApp(
   songName: string,
   audioUrl?: string,
   sheetUrl?: string,
   naipe?: string
-): void {
+): Promise<void> {
+  // Import dynamically to avoid circular dependencies
+  const { getShortUrls } = await import('./shortUrl');
+  
   let message = `🎵 ${songName}`;
   
   if (naipe) {
     message += ` (${naipe})`;
   }
 
-  if (audioUrl) {
-    message += `\n\n🔊 Áudio: ${audioUrl}`;
+  // Get short URLs
+  const { audioShortUrl, sheetShortUrl } = await getShortUrls(audioUrl, sheetUrl);
+
+  if (audioShortUrl) {
+    message += `\n\n🔊 Áudio: ${audioShortUrl}`;
   }
 
-  if (sheetUrl) {
-    message += `\n\n📄 Partitura: ${sheetUrl}`;
+  if (sheetShortUrl) {
+    message += `\n\n📄 Partitura: ${sheetShortUrl}`;
   }
 
   const encodedText = encodeURIComponent(message);

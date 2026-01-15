@@ -515,8 +515,9 @@ const SimpleEventAudios = () => {
     }
   };
 
-  const handleShareWhatsApp = (audio: SongAudio) => {
-    shareCompleteToWhatsApp(
+  const handleShareWhatsApp = async (audio: SongAudio) => {
+    toast.info('Preparando link curto...');
+    await shareCompleteToWhatsApp(
       audio.song_name,
       audio.audio_url,
       audio.song_sheet_music_pdf_url || undefined,
