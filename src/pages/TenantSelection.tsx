@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Building2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingFallback } from '@/components/LoadingFallback';
-import coroLogo from '@/assets/coro-logo.png';
+import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 
 const TenantSelection = () => {
   const { availableTenants, switchTenant, loading } = useTenant();
@@ -23,7 +23,7 @@ const TenantSelection = () => {
       <div className="relative z-10 w-full max-w-2xl space-y-8">
         <div className="text-center space-y-3">
           <h1 className="text-3xl md:text-5xl font-light tracking-wider text-white">
-            Bem-vindo ao <span className="font-semibold text-primary">Coro App</span>
+            Bem-vindo ao <span className="font-semibold text-primary">Liturgia+</span>
           </h1>
           <p className="text-muted-foreground tracking-widest uppercase text-xs font-medium">
             Harmonia e organização para o seu ministério de música
@@ -43,9 +43,9 @@ const TenantSelection = () => {
             >
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden border border-white/10">
-                  {tenant.logo_url || (['quixada', 'coroquixada'].includes(tenant.slug) && coroLogo) ? (
+                  {tenant.logo_url || (['quixada', 'coroquixada'].includes(tenant.slug) && liturgiaLogo) ? (
                     <img
-                      src={tenant.logo_url || coroLogo}
+                      src={tenant.logo_url || liturgiaLogo}
                       alt={tenant.name}
                       className="h-full w-full object-cover"
                     />
