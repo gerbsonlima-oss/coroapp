@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -587,9 +587,25 @@ const SimpleEventAudios = () => {
               )}
             </div>
             <div className="flex-1 min-w-0 pr-8">
-              <h1 className="font-bold text-xl text-foreground leading-tight mb-1">
-                {event.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-xl text-foreground leading-tight">
+                  {event.name}
+                </h1>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
+                  onClick={() => {
+                    const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'wxagqywobyzntrlkhfao';
+                    const ogUrl = `https://${supabaseProjectId}.supabase.co/functions/v1/og-event?id=${id}`;
+                    navigator.clipboard.writeText(ogUrl);
+                    toast.success('Link copiado!');
+                  }}
+                  title="Copiar link do evento"
+                >
+                  <Link2 className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="flex items-center gap-2 mt-2">
                 <p className="text-xs text-muted-foreground">
                   {audios.length} áudio{audios.length !== 1 ? 's' : ''}
