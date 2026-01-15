@@ -51,12 +51,15 @@ export async function sendAudioToWhatsApp(
   let canShareWithFiles = false;
 
   try {
-    const audioBlob = await fetchWithTimeout(audioUrl, 10000);
+    // Try to get from cache first if available (via global cache or just fetch)
+    const audioBlob = await fetchWithTimeout(audioUrl, 15000);
     if (audioBlob) {
+      // Ensure we have a valid audio mime type
+      const mimeType = audioBlob.type || 'audio/mpeg';
       const audioFile = new File(
         [audioBlob],
         `${songName} - ${naipe || 'original'}.mp3`,
-        { type: 'audio/mp3' }
+        { type: mimeType }
       );
       files.push(audioFile);
       canShareWithFiles = true;

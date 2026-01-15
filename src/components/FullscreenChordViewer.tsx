@@ -8,6 +8,7 @@ interface FullscreenChordViewerProps {
   songName?: string;
   songId?: string;
   onClose: () => void;
+  defaultNightMode?: boolean;
 }
 
 const CHORD_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -311,7 +312,7 @@ const SCROLL_SPEEDS = [
   { label: '3x', value: 2.5 },
 ];
 
-const FullscreenChordViewer = ({ chords, songName, songId, onClose }: FullscreenChordViewerProps) => {
+const FullscreenChordViewer = ({ chords, songName, songId, onClose, defaultNightMode = false }: FullscreenChordViewerProps) => {
   // Load saved preferences from database
   const { 
     savedTranspose, 
@@ -327,7 +328,9 @@ const FullscreenChordViewer = ({ chords, songName, songId, onClose }: Fullscreen
   const [fontSizeIndex, setFontSizeIndex] = useState(2);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isNightMode, setIsNightMode] = useState(() => {
-    return localStorage.getItem('chordViewer_nightMode') === 'true';
+    const saved = localStorage.getItem('chordViewer_nightMode');
+    if (saved !== null) return saved === 'true';
+    return defaultNightMode;
   });
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollSpeedIndex, setScrollSpeedIndex] = useState(() => {
@@ -552,7 +555,7 @@ const FullscreenChordViewer = ({ chords, songName, songId, onClose }: Fullscreen
           >
             <Type className="h-4 w-4" />
           </button>
-          {isAuthenticated && songId && (
+          {songId && (
             <button
               onClick={handleSave}
               disabled={isSaving || !hasUnsavedChanges}

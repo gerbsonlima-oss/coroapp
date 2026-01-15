@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate, useLocation } from 'react-rout
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -35,17 +36,20 @@ interface Event {
 
 // Fallback type labels with liturgical order
 const defaultTypeLabels: Record<string, { name: string; order: number }> = {
-  canto_entrada: { name: 'Canto de Entrada', order: 1 },
+  canto_entrada: { name: 'Entrada', order: 1 },
+  entrada: { name: 'Entrada', order: 1 },
   ato_penitencial: { name: 'Ato Penitencial', order: 2 },
+  perdao: { name: 'Ato Penitencial', order: 2 },
   gloria: { name: 'Glória', order: 3 },
-  salmo: { name: 'Salmo Responsorial', order: 4 },
-  aclamacao: { name: 'Aclamação ao Evangelho', order: 5 },
-  oferendas: { name: 'Canto das Oferendas', order: 6 },
+  salmo: { name: 'Salmo', order: 4 },
+  aclamacao: { name: 'Aclamação', order: 5 },
+  oferendas: { name: 'Ofertório', order: 6 },
+  ofertorio: { name: 'Ofertório', order: 6 },
   santo: { name: 'Santo', order: 7 },
-  cordeiro: { name: 'Cordeiro de Deus', order: 8 },
+  cordeiro: { name: 'Cordeiro', order: 8 },
   comunhao: { name: 'Canto da Comunhão', order: 9 },
   acao_gracas: { name: 'Ação de Graças', order: 10 },
-  final: { name: 'Canto Final', order: 11 },
+  final: { name: 'Final', order: 11 },
   outro: { name: 'Outro', order: 99 },
 };
 
@@ -109,12 +113,25 @@ const SimpleEventAudios = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedNaipes, setSelectedNaipes] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState(() => {
+    return localStorage.getItem('simpleEvent_searchQuery') || '';
+  });
+  const [selectedNaipes, setSelectedNaipes] = useState<string[]>(() => {
+    const saved = localStorage.getItem('simpleEvent_selectedNaipes');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('simpleEvent_searchQuery', searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    localStorage.setItem('simpleEvent_selectedNaipes', JSON.stringify(selectedNaipes));
+  }, [selectedNaipes]);
 
   const handleGoBack = () => {
     const basePath = tenantSlug ? `/${tenantSlug}` : '';
@@ -259,7 +276,7 @@ const SimpleEventAudios = () => {
           ...audio,
           song_name: eventSong?.songs?.name || 'Música',
           song_type_slug: typeSlug,
-          song_type_name: songType?.name || defaultType?.name || typeSlug,
+          song_type_name: defaultType?.name || songType?.name || typeSlug,
           song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
           song_lyrics: eventSong?.songs?.lyrics || null,
           song_chords: eventSong?.songs?.chords || null,
@@ -408,10 +425,12 @@ const SimpleEventAudios = () => {
   };
 
   const handleShareWhatsApp = async (audio: SongAudio) => {
+    toast.info('Preparando arquivo para envio...');
     try {
-      await sendAudioToWhatsApp(audio.audio_url, audio.song_name, audio.naipe);
+      await sendAudioToWhatsApp(audio.audio_url, audio.song_name, audio.naipe, audio.song_sheet_music_pdf_url || undefined);
     } catch (error) {
-      toast.error('Erro ao compartilhar');
+      console.error('Share error:', error);
+      toast.error('Erro ao compartilhar arquivo');
     }
   };
 
@@ -565,14 +584,6 @@ const SimpleEventAudios = () => {
               <h1 className="font-bold text-xl text-foreground leading-tight mb-1">
                 {event.name}
               </h1>
-              <p className="text-sm text-muted-foreground capitalize">
-                {formattedDate}
-              </p>
-              {event.location && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {event.location}
-                </p>
-              )}
               <div className="flex items-center gap-2 mt-2">
                 <p className="text-xs text-muted-foreground">
                   {audios.length} áudio{audios.length !== 1 ? 's' : ''}
@@ -645,24 +656,49 @@ const SimpleEventAudios = () => {
                   )}
                   
                   <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => setSearchOpen(true)}>
+                    <Search className="mr-2 h-4 w-4" />
+                    Buscar Música
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem onClick={() => setFilterOpen(true)}>
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filtrar por Voz
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
                   
                   <DropdownMenuItem onClick={() => {
-                    const shareUrl = window.location.href;
-                    const text = `${event.name} - Áudios do evento`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n' + shareUrl)}`, '_blank');
+                    const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'wxagqywobyzntrlkhfao';
+                    const ogUrl = `https://${supabaseProjectId}.supabase.co/functions/v1/og-event?id=${id}`;
+                    const text = `🎵 ${event.name} - Áudios e Cifras`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text + '\n\n' + ogUrl)}`, '_blank');
                   }}>
                     <Share2 className="mr-2 h-4 w-4" />
-                    Compartilhar via WhatsApp
+                    Compartilhar
                   </DropdownMenuItem>
                   {songs.length > 0 && (
                     <>
+                      <DropdownMenuItem onClick={async () => {
+                        const { exportEventPDF } = await import('@/utils/exportEventPDF');
+                        const songsWithSheets = songs.filter(s => s.sheet_music_pdf_url || s.sheet_music_url);
+                        if (songsWithSheets.length === 0) {
+                          toast.error('Nenhuma partitura disponível');
+                          return;
+                        }
+                        await exportEventPDF(event, songsWithSheets);
+                      }}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Partituras (PDF)
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleExportSongBooklet} disabled={exportingLyrics}>
                         <BookOpen className="mr-2 h-4 w-4" />
-                        Livreto de Cantos
+                        Letras
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleExportChordBooklet} disabled={exportingChords}>
                         <Guitar className="mr-2 h-4 w-4" />
-                        Livreto de Cifras
+                        Cifras
                       </DropdownMenuItem>
                     </>
                   )}
@@ -674,115 +710,102 @@ const SimpleEventAudios = () => {
 
         {/* Audio List */}
         <div className="px-4 py-2 max-w-2xl mx-auto">
-          {/* Filter Bar - Discrete icons */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1">
-              {/* Search Popover */}
-              <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`h-8 w-8 ${searchQuery ? 'text-primary' : 'text-muted-foreground'}`}
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent 
-                  align="start" 
-                  className="w-64 p-2"
-                  onOpenAutoFocus={(e) => {
-                    e.preventDefault();
-                    searchInputRef.current?.focus();
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <Input
-                      ref={searchInputRef}
-                      placeholder="Buscar música..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-8 text-sm"
-                    />
-                    {searchQuery && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 shrink-0"
-                        onClick={() => setSearchQuery('')}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {/* Naipe Filter Popover */}
-              <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`h-8 w-8 relative ${selectedNaipes.length > 0 ? 'text-primary' : 'text-muted-foreground'}`}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {selectedNaipes.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
-                        {selectedNaipes.length}
-                      </span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-48 p-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Filtrar por naipe</p>
-                  <div className="space-y-2">
-                    {availableNaipes.map((naipe) => (
-                      <label 
-                        key={naipe} 
-                        className="flex items-center gap-2 cursor-pointer hover:bg-accent/50 -mx-1 px-1 py-1 rounded"
-                      >
-                        <Checkbox
-                          checked={selectedNaipes.includes(naipe)}
-                          onCheckedChange={() => toggleNaipe(naipe)}
-                        />
-                        <span className="text-sm">{naipe}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {selectedNaipes.length > 0 && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="w-full mt-2 h-7 text-xs"
-                      onClick={() => setSelectedNaipes([])}
-                    >
-                      Limpar filtros
-                    </Button>
-                  )}
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Active filters indicator */}
-            {(searchQuery || selectedNaipes.length > 0) && (
+          {/* Active filters indicator */}
+          {(searchQuery || selectedNaipes.length > 0) && (
+            <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  {filteredAudios.length} de {audios.length}
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  {filteredAudios.length} {filteredAudios.length === 1 ? 'resultado' : 'resultados'}
                 </span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                onClick={clearFilters}
+              >
+                <X className="h-3.5 w-3.5 mr-1" />
+                Limpar filtros
+              </Button>
+            </div>
+          )}
+
+          {/* Search Dialog */}
+          <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+            <DialogContent className="w-[90vw] max-w-sm p-4 pt-8">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  placeholder="Buscar música..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-11"
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
                 <Button 
                   variant="ghost" 
-                  size="sm" 
-                  className="h-6 text-xs px-2"
-                  onClick={clearFilters}
+                  className="flex-1" 
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchOpen(false);
+                  }}
                 >
-                  <X className="h-3 w-3 mr-1" />
                   Limpar
                 </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={() => setSearchOpen(false)}
+                >
+                  Pronto
+                </Button>
               </div>
-            )}
-          </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Filter Dialog */}
+          <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+            <DialogContent className="w-[90vw] max-w-sm p-4 pt-8">
+              <DialogHeader>
+                <DialogTitle className="text-base">Filtrar por voz</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-2 py-4">
+                {availableNaipes.map((naipe) => (
+                  <Button
+                    key={naipe}
+                    variant={selectedNaipes.includes(naipe) ? "default" : "outline"}
+                    className="justify-start gap-2 h-10 px-3"
+                    onClick={() => toggleNaipe(naipe)}
+                  >
+                    <Checkbox
+                      checked={selectedNaipes.includes(naipe)}
+                      className="border-current data-[state=checked]:bg-foreground data-[state=checked]:text-background"
+                    />
+                    <span className="truncate">{naipe}</span>
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="ghost" 
+                  className="flex-1" 
+                  onClick={() => {
+                    setSelectedNaipes([]);
+                    setFilterOpen(false);
+                  }}
+                >
+                  Limpar
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={() => setFilterOpen(false)}
+                >
+                  Aplicar
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {audios.length === 0 ? (
             <Card className="p-8 text-center">
@@ -809,7 +832,7 @@ const SimpleEventAudios = () => {
                 return (
                   <Card 
                     key={audio.id} 
-                    className={`p-3 transition-colors ${isPlaying ? 'bg-primary/5 border-primary/20' : 'hover:bg-accent/50'}`}
+                    className={`p-3 transition-colors hover:bg-accent/50`}
                   >
                     <div className="flex items-center gap-3">
                       {/* Play Button */}
@@ -828,9 +851,17 @@ const SimpleEventAudios = () => {
 
                       {/* Song Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-foreground truncate">
-                          {audio.song_type_name}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm text-foreground truncate">
+                            {audio.song_type_name}
+                          </p>
+                          <Badge 
+                            variant="secondary" 
+                            className="h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider bg-secondary/50 text-muted-foreground/70 border-none pointer-events-none"
+                          >
+                            {audio.naipe}
+                          </Badge>
+                        </div>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {audio.song_name}
                         </p>
@@ -936,14 +967,6 @@ const SimpleEventAudios = () => {
                     {selectedAudio?.song_name}
                   </DialogTitle>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setLyricsModalOpen(false)}
-                  className="shrink-0 h-8 w-8 rounded-full hover:bg-background/80"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             </DialogHeader>
             
@@ -1001,16 +1024,6 @@ const SimpleEventAudios = () => {
               </div>
             </ScrollArea>
             
-            {/* Footer with close button */}
-            <div className="shrink-0 px-5 py-3 border-t bg-muted/30 flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setLyricsModalOpen(false)}
-                className="min-w-[120px]"
-              >
-                Fechar
-              </Button>
-            </div>
           </DialogContent>
         </Dialog>
 
@@ -1021,6 +1034,7 @@ const SimpleEventAudios = () => {
             songName={selectedAudio.song_name}
             songId={selectedAudio.song_id}
             onClose={() => setChordsModalOpen(false)}
+            defaultNightMode={true}
           />
         )}
 

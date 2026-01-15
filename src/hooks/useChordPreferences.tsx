@@ -18,10 +18,26 @@ export const useChordPreferences = (songId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load preferences from database
+  // Load preferences from database or local storage
   useEffect(() => {
     const loadPreferences = async () => {
-      if (!user?.id || !songId) {
+      if (!songId) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Try local storage first as a quick fallback or if not logged in
+      const localPrefs = localStorage.getItem(`chord_prefs_${songId}`);
+      if (localPrefs) {
+        try {
+          const parsed = JSON.parse(localPrefs);
+          setSavedPreferences(parsed);
+        } catch (e) {
+          console.error('Error parsing local chord preferences');
+        }
+      }
+
+      if (!user?.id) {
         setIsLoading(false);
         return;
       }
@@ -37,10 +53,13 @@ export const useChordPreferences = (songId: string | undefined) => {
         if (error) {
           console.error('Error loading chord preferences:', error);
         } else if (data) {
-          setSavedPreferences({
+          const cloudPrefs = {
             transpose: data.transpose,
             fontSize: data.font_size,
-          });
+          };
+          setSavedPreferences(cloudPrefs);
+          // Sync local storage with cloud
+          localStorage.setItem(`chord_prefs_${songId}`, JSON.stringify(cloudPrefs));
         }
       } catch (err) {
         console.error('Error loading chord preferences:', err);
@@ -52,9 +71,17 @@ export const useChordPreferences = (songId: string | undefined) => {
     loadPreferences();
   }, [user?.id, songId]);
 
-  // Save preferences to database (explicit save)
+  // Save preferences to database or local storage
   const savePreferences = useCallback(async (transpose: number, fontSize: number) => {
-    if (!user?.id || !songId) return false;
+    if (!songId) return false;
+
+    const newPrefs = { transpose, fontSize };
+    
+    // Always save to local storage for instant persistence
+    localStorage.setItem(`chord_prefs_${songId}`, JSON.stringify(newPrefs));
+    setSavedPreferences(newPrefs);
+
+    if (!user?.id) return true;
 
     setIsSaving(true);
     try {
@@ -77,7 +104,6 @@ export const useChordPreferences = (songId: string | undefined) => {
         return false;
       }
 
-      setSavedPreferences({ transpose, fontSize });
       return true;
     } catch (err) {
       console.error('Error saving chord preferences:', err);

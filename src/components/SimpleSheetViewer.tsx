@@ -12,14 +12,15 @@ import {
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 
+// Use standard worker for better compatibility and offline support
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+(pdfjsLib as any).GlobalWorkerOptions.workerSrc = pdfWorker;
+
 interface SimpleSheetViewerProps {
   sheetMusicUrl: string;
   songName: string;
   onClose: () => void;
 }
-
-// Configurar worker do PDF.js usando CDN
-(pdfjsLib as any).GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 export const SimpleSheetViewer = ({
   sheetMusicUrl,

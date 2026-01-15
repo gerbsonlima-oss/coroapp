@@ -85,6 +85,24 @@ const sortByNaipeOrder = <T extends {
 };
 const getTypeLabel = (type: string | undefined, labels: Record<string, string>) => {
   if (!type) return 'Sem tipo';
+  
+  // Strict overrides for specific slugs
+  const overrides: Record<string, string> = {
+    canto_entrada: 'Entrada',
+    entrada: 'Entrada',
+    ato_penitencial: 'Ato Penitencial',
+    perdao: 'Ato Penitencial',
+    gloria: 'Glória',
+    salmo: 'Salmo',
+    aclamacao: 'Aclamação',
+    oferendas: 'Ofertório',
+    ofertorio: 'Ofertório',
+    cordeiro: 'Cordeiro',
+    santo: 'Santo',
+    final: 'Final'
+  };
+
+  if (overrides[type]) return overrides[type];
   if (labels[type]) return labels[type];
   return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 };
@@ -181,6 +199,7 @@ const EventDetails = () => {
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
   const [chordsModalOpen, setChordsModalOpen] = useState(false);
   const [selectedSongForModal, setSelectedSongForModal] = useState<EventSong | null>(null);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const songSheetInputRef = useRef<HTMLInputElement>(null);
 
   const checkOfflineStatus = () => {
@@ -939,11 +958,11 @@ const EventDetails = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportSongBooklet}>
                 <BookOpen className="mr-2 h-4 w-4" />
-                Gerar Folheto de Cantos
+                Letras
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportChordBooklet}>
                 <Guitar className="mr-2 h-4 w-4" />
-                Gerar Livreto de Cifras
+                Cifras
               </DropdownMenuItem>
 
               {/* Edição (Admin) */}
@@ -989,6 +1008,10 @@ const EventDetails = () => {
 
               {/* Configurações de Visualização */}
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setShowSearchModal(true)}>
+                <Search className="mr-2 h-4 w-4" />
+                Buscar Música
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowGroupModal(true)}>
                 <Sliders className="mr-2 h-4 w-4" />
                 Agrupamento
@@ -1004,58 +1027,43 @@ const EventDetails = () => {
         </div>
       </div>
 
-      <div className="sticky top-12 z-10 bg-background/95 backdrop-blur-md border-b border-primary/20 shadow-subtle px-4 py-3 animate-slide-up">
-        <div className="flex items-start gap-4">
-          <div className="h-20 w-20 shrink-0 rounded-lg shadow-card overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-75 transition-opacity" onClick={handleImageClick}>
+      <div className="sticky top-12 z-10 bg-background/95 backdrop-blur-md border-b border-primary/20 shadow-subtle px-3 py-2 animate-slide-up">
+        <div className="flex items-center gap-3">
+          <div className="h-16 w-16 shrink-0 rounded-lg shadow-card overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-75 transition-opacity" onClick={handleImageClick}>
             {event.cover_image_url ? (
               <img src={coverImageSrc || event.cover_image_url} alt={event.name} className="h-full w-full object-cover" />
             ) : (
-              <Music className="h-7 w-7 text-primary/70 animate-float" />
+              <Music className="h-6 w-6 text-primary/70 animate-float" />
             )}
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <h2 className="line-clamp-2 font-bold text-base text-foreground leading-tight mb-1.5 flex items-center gap-2 flex-wrap">
+            <h2 className="line-clamp-1 font-bold text-sm text-foreground leading-tight flex items-center gap-2 flex-wrap">
               {event.name}
               {isOfflineSaved && <OfflineBadge variant="small" />}
             </h2>
             <p className="text-xs text-muted-foreground font-medium">
               {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
             </p>
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {canEdit && id && (
-                <EventMembersManager eventId={id} isAdmin={canEdit} />
-              )}
-              {event.song_sheet_url && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleDownloadSongSheet}
-                  className="h-7 px-2 gap-1 text-[10px] font-bold border-primary/40 bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-subtle"
-                >
-                  <FileDown className="h-3 w-3" />
-                  FOLHA DE CANTOS
-                </Button>
-              )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {event.song_sheet_url && (
               <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExportPDF}
-                className="h-7 px-2 gap-1 text-[10px] font-bold border-primary/40 bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all shadow-subtle"
+                variant="ghost" 
+                size="icon" 
+                onClick={handleDownloadSongSheet}
+                className="h-7 w-7 text-primary hover:bg-primary/15 transition-all"
+                title="Folha de cantos"
               >
-                <FileText className="h-3 w-3" />
-                PARTITURAS
+                <FileDown className="h-4 w-4" />
               </Button>
-            </div>
+            )}
+            {canEdit && id && (
+              <EventMembersManager eventId={id} isAdmin={canEdit} />
+            )}
           </div>
         </div>
       </div>
 
-      <div className="px-3 py-3 space-y-2 border-b border-primary/15 bg-gradient-to-b from-primary/5 to-transparent">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar música..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-full h-11 bg-secondary/50 border-primary/30 text-sm rounded-md shadow-subtle focus:shadow-glow focus:border-primary/60 transition-all" />
-        </div>
-      </div>
 
       <div className="px-3 py-3 space-y-2.5">
         {filteredSongs.length === 0 ? (
@@ -1103,10 +1111,10 @@ const EventDetails = () => {
                          {items.map(({ song, audio }) => {
                            const track = filteredPlaylist.find(t => t.id === audio.id);
                            const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
-                           const isAudioCached = isCached(audio.audio_url);
-                           return (
-                             <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
-                               <div className="flex items-center gap-3 flex-1 min-w-0">
+                            const isAudioCached = isCached(audio.audio_url);
+                            return (
+                              <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 hover:bg-primary/8 cursor-pointer`}>
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <button onClick={async e => {
                                   e.stopPropagation();
                                   if (song.sheet_music_url || song.sheet_music_pdf_url) {
@@ -1250,10 +1258,10 @@ const EventDetails = () => {
                      {songAudios.length > 0 ? songAudios.map(audio => {
                        const track = filteredPlaylist.find(t => t.id === audio.id);
                        const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
-                       const isAudioCached = isCached(audio.audio_url);
-                       return (
-                         <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
-                           <div className="flex items-center gap-2 flex-1 min-w-0">
+                        const isAudioCached = isCached(audio.audio_url);
+                        return (
+                          <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 hover:bg-primary/8 cursor-pointer`}>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                             <button onClick={async e => {
                               e.stopPropagation();
                               if (hasSheetMusic) {
@@ -1343,10 +1351,10 @@ const EventDetails = () => {
                  const track = filteredPlaylist.find(t => t.id === audio.id);
                  const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
                  const hasSheetMusic = Boolean(song.sheet_music_url || song.sheet_music_pdf_url);
-                 const isAudioCached = isCached(audio.audio_url);
-                 return (
-                   <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'bg-primary/20 shadow-glow' : 'hover:bg-primary/8 cursor-pointer'}`}>
-                     <div className="flex items-center gap-3 flex-1 min-w-0">
+                            const isAudioCached = isCached(audio.audio_url);
+                            return (
+                              <div key={audio.id} ref={el => { if (globalIndex >= 0) trackRefs.current[globalIndex] = el; }} onClick={() => globalIndex >= 0 && playTrack(globalIndex)} className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 hover:bg-primary/8 cursor-pointer`}>
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
                       <button onClick={async e => {
                         e.stopPropagation();
                         if (hasSheetMusic) {
@@ -1487,6 +1495,17 @@ const EventDetails = () => {
         />;
       })()}
 
+      <Dialog open={showSearchModal} onOpenChange={setShowSearchModal}>
+        <DialogContent className="w-[90vw] max-w-sm">
+          <DialogHeader><DialogTitle>Buscar Música</DialogTitle></DialogHeader>
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input autoFocus placeholder="Digite o nome da música..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-full h-11 bg-secondary/50 border-primary/30 text-sm rounded-md shadow-subtle focus:shadow-glow focus:border-primary/60 transition-all" />
+          </div>
+          <div className="flex gap-2 border-t pt-4"><Button variant="ghost" className="flex-1" onClick={() => { setSearchQuery(''); setShowSearchModal(false); }}>Limpar</Button><Button className="flex-1 gradient-primary" onClick={() => setShowSearchModal(false)}>Pronto</Button></div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showGroupModal} onOpenChange={setShowGroupModal}>
         <DialogContent className="w-[90vw] max-w-sm">
           <DialogHeader><DialogTitle>Agrupar por</DialogTitle><DialogDescription>Escolha como deseja agrupar as músicas</DialogDescription></DialogHeader>
@@ -1552,14 +1571,6 @@ const EventDetails = () => {
                   {selectedSongForModal?.name}
                 </DialogTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setLyricsModalOpen(false)}
-                className="shrink-0 h-8 w-8 rounded-full hover:bg-background/80"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </DialogHeader>
           
@@ -1590,9 +1601,6 @@ const EventDetails = () => {
             </div>
           </ScrollArea>
           
-          <div className="shrink-0 px-5 py-3 border-t bg-muted/30 flex justify-center">
-            <Button variant="outline" onClick={() => setLyricsModalOpen(false)} className="min-w-[120px]">Fechar</Button>
-          </div>
         </DialogContent>
       </Dialog>
 
