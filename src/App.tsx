@@ -159,7 +159,11 @@ function App() {
             />
             
             {/* Routes with optional tenant prefix */}
-            <Route path="/:tenantSlug/events" element={<Events />} />
+            <Route path="/:tenantSlug/events" element={
+              <ProtectedRoute>
+                <Events />
+              </ProtectedRoute>
+            } />
             <Route
               path="/:tenantSlug/events/new"
               element={
@@ -176,7 +180,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/:tenantSlug/events/:id" element={<SimpleEventAudios />} />
+            <Route path="/:tenantSlug/events/:id" element={
+              <ProtectedRoute>
+                <SimpleEventAudios />
+              </ProtectedRoute>
+            } />
             <Route
               path="/:tenantSlug/events/:id/quick-edit"
               element={
@@ -185,10 +193,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/:tenantSlug/events/:eventId/rehearsals" element={<Rehearsals />} />
+            <Route path="/:tenantSlug/events/:eventId/rehearsals" element={
+              <ProtectedRoute>
+                <Rehearsals />
+              </ProtectedRoute>
+            } />
             
-            <Route path="/:tenantSlug/songs" element={<Songs />} />
-            <Route path="/:tenantSlug/songs/type/:type" element={<SongTypeDetails />} />
+            <Route path="/:tenantSlug/songs" element={
+              <ProtectedRoute>
+                <Songs />
+              </ProtectedRoute>
+            } />
+            <Route path="/:tenantSlug/songs/type/:type" element={
+              <ProtectedRoute>
+                <SongTypeDetails />
+              </ProtectedRoute>
+            } />
             <Route
               path="/:tenantSlug/songs/admin/types"
               element={
@@ -205,7 +225,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/:tenantSlug/songs/:id" element={<SongDetails />} />
+            <Route path="/:tenantSlug/songs/:id" element={
+              <ProtectedRoute>
+                <SongDetails />
+              </ProtectedRoute>
+            } />
             <Route
               path="/:tenantSlug/songs/:id/edit"
               element={
@@ -223,8 +247,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/:tenantSlug/rehearsals" element={<Rehearsals />} />
-            <Route path="/:tenantSlug/liturgy" element={<Liturgy />} />
+            <Route path="/:tenantSlug/rehearsals" element={
+              <ProtectedRoute>
+                <Rehearsals />
+              </ProtectedRoute>
+            } />
+            <Route path="/:tenantSlug/liturgy" element={
+              <ProtectedRoute>
+                <Liturgy />
+              </ProtectedRoute>
+            } />
             
             {/* Choir Members Routes with tenant prefix */}
             <Route
@@ -260,10 +292,18 @@ function App() {
               }
             />
             
-            <Route path="/:tenantSlug" element={<Home />} />
+            <Route path="/:tenantSlug" element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            } />
             
             {/* Default routes without tenant prefix */}
-            <Route path="/events" element={<Events />} />
+            <Route path="/events" element={
+              <ProtectedRoute>
+                <Events />
+              </ProtectedRoute>
+            } />
             <Route
               path="/events/new"
               element={
@@ -280,7 +320,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/events/:id" element={<SimpleEventAudios />} />
+            <Route path="/events/:id" element={
+              <ProtectedRoute>
+                <SimpleEventAudios />
+              </ProtectedRoute>
+            } />
             <Route
               path="/events/:id/quick-edit"
               element={
@@ -289,10 +333,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/events/:eventId/rehearsals" element={<Rehearsals />} />
+            <Route path="/events/:eventId/rehearsals" element={
+              <ProtectedRoute>
+                <Rehearsals />
+              </ProtectedRoute>
+            } />
             
-            <Route path="/songs" element={<Songs />} />
-            <Route path="/songs/type/:type" element={<SongTypeDetails />} />
+            <Route path="/songs" element={
+              <ProtectedRoute>
+                <Songs />
+              </ProtectedRoute>
+            } />
+            <Route path="/songs/type/:type" element={
+              <ProtectedRoute>
+                <SongTypeDetails />
+              </ProtectedRoute>
+            } />
             <Route
               path="/songs/admin/types"
               element={
@@ -309,7 +365,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/songs/:id" element={<SongDetails />} />
+            <Route path="/songs/:id" element={
+              <ProtectedRoute>
+                <SongDetails />
+              </ProtectedRoute>
+            } />
             <Route
               path="/songs/:id/edit"
               element={
@@ -327,8 +387,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/rehearsals" element={<Rehearsals />} />
-            <Route path="/liturgy" element={<Liturgy />} />
+            <Route path="/rehearsals" element={
+              <ProtectedRoute>
+                <Rehearsals />
+              </ProtectedRoute>
+            } />
+            <Route path="/liturgy" element={
+              <ProtectedRoute>
+                <Liturgy />
+              </ProtectedRoute>
+            } />
             
             {/* Choir Members Routes without tenant prefix */}
             <Route
