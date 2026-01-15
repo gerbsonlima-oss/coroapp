@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
 import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -94,6 +95,9 @@ const SimpleEventAudios = () => {
   const [sheetViewerOpen, setSheetViewerOpen] = useState(false);
   const [sheetMusicUrl, setSheetMusicUrl] = useState<string | null>(null);
   const [sheetSongName, setSheetSongName] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Offline save hook
@@ -277,15 +281,50 @@ const SimpleEventAudios = () => {
         audioRef.current.pause();
       }
       const newAudio = new Audio(audio.audio_url);
-      newAudio.onended = () => setPlayingId(null);
+      
+      newAudio.onloadedmetadata = () => {
+        setDuration(newAudio.duration);
+      };
+      
+      newAudio.ontimeupdate = () => {
+        if (!isSeeking) {
+          setCurrentTime(newAudio.currentTime);
+        }
+      };
+      
+      newAudio.onended = () => {
+        setPlayingId(null);
+        setCurrentTime(0);
+        setDuration(0);
+      };
+      
       newAudio.onerror = () => {
         toast.error('Erro ao reproduzir áudio');
         setPlayingId(null);
+        setCurrentTime(0);
+        setDuration(0);
       };
+      
       newAudio.play();
       audioRef.current = newAudio;
       setPlayingId(audio.id);
+      setCurrentTime(0);
     }
+  };
+
+  const handleSeek = useCallback((value: number[]) => {
+    const seekTime = value[0];
+    setCurrentTime(seekTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = seekTime;
+    }
+  }, []);
+
+  const formatTime = (time: number): string => {
+    if (!time || isNaN(time)) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const handleDownload = async (audio: SongAudio) => {
@@ -381,7 +420,11 @@ const SimpleEventAudios = () => {
   // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      audioRef.current?.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setCurrentTime(0);
+        setDuration(0);
+      }
     };
   }, []);
 
@@ -565,94 +608,121 @@ const SimpleEventAudios = () => {
             </Card>
           ) : (
             <div className="space-y-2">
-              {audios.map((audio) => (
-                <Card 
-                  key={audio.id} 
-                  className="p-3 flex items-center gap-3 hover:bg-accent/50 transition-colors"
-                >
-                  {/* Play Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
-                    onClick={() => handlePlay(audio)}
+              {audios.map((audio) => {
+                const isPlaying = playingId === audio.id;
+                
+                return (
+                  <Card 
+                    key={audio.id} 
+                    className={`p-3 transition-colors ${isPlaying ? 'bg-primary/5 border-primary/20' : 'hover:bg-accent/50'}`}
                   >
-                    {playingId === audio.id ? (
-                      <Pause className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Play className="h-5 w-5 text-primary ml-0.5" />
-                    )}
-                  </Button>
-
-                  {/* Song Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-foreground truncate">
-                      {audio.song_type_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {audio.song_name}
-                    </p>
-                  </div>
-
-                  {/* Lyrics Button */}
-                  {audio.song_lyrics && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={() => handleOpenLyrics(audio)}
-                      title="Ver letra"
-                    >
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  )}
-
-                  {/* Chords Button */}
-                  {audio.song_chords && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={() => handleOpenChords(audio)}
-                      title="Ver cifra"
-                    >
-                      <Guitar className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  )}
-
-                  {/* Sheet Music Button */}
-                  {audio.song_sheet_music_pdf_url && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={() => handleOpenSheetMusic(audio)}
-                      title="Ver partitura"
-                    >
-                      <Music2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  )}
-
-                  {/* Actions Menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                        <MoreVertical className="h-4 w-4" />
+                    <div className="flex items-center gap-3">
+                      {/* Play Button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
+                        onClick={() => handlePlay(audio)}
+                      >
+                        {isPlaying ? (
+                          <Pause className="h-5 w-5 text-primary" />
+                        ) : (
+                          <Play className="h-5 w-5 text-primary ml-0.5" />
+                        )}
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        Enviar por WhatsApp
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDownload(audio)}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Baixar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </Card>
-              ))}
+
+                      {/* Song Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-foreground truncate">
+                          {audio.song_type_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {audio.song_name}
+                        </p>
+                      </div>
+
+                      {/* Lyrics Button */}
+                      {audio.song_lyrics && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => handleOpenLyrics(audio)}
+                          title="Ver letra"
+                        >
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      )}
+
+                      {/* Chords Button */}
+                      {audio.song_chords && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => handleOpenChords(audio)}
+                          title="Ver cifra"
+                        >
+                          <Guitar className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      )}
+
+                      {/* Sheet Music Button */}
+                      {audio.song_sheet_music_pdf_url && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => handleOpenSheetMusic(audio)}
+                          title="Ver partitura"
+                        >
+                          <Music2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      )}
+
+                      {/* Actions Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
+                            <MessageCircle className="mr-2 h-4 w-4" />
+                            Enviar por WhatsApp
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(audio)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Baixar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    
+                    {/* Progress Bar - Only shows when playing */}
+                    {isPlaying && duration > 0 && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">
+                          {formatTime(currentTime)}
+                        </span>
+                        <Slider
+                          value={[currentTime]}
+                          max={duration}
+                          step={0.1}
+                          onValueChange={handleSeek}
+                          onPointerDown={() => setIsSeeking(true)}
+                          onPointerUp={() => setIsSeeking(false)}
+                          className="flex-1"
+                        />
+                        <span className="text-xs text-muted-foreground tabular-nums w-10">
+                          {formatTime(duration)}
+                        </span>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
