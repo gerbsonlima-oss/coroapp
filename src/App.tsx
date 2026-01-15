@@ -178,7 +178,7 @@ function App() {
               }
             />
             <Route
-              path="/:tenantSlug/events/edit/:id"
+              path="/:tenantSlug/events/:id/edit"
               element={
                 <ProtectedRoute>
                   <EditEvent />
