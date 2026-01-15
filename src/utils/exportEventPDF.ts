@@ -94,6 +94,36 @@ const loadImageViaProxy = async (url: string): Promise<HTMLImageElement> => {
 
 const loadImage = loadImageViaProxy;
 
+const createCircularImageForPDF = async (img: HTMLImageElement, size: number): Promise<string | null> => {
+  return new Promise((resolve) => {
+    try {
+      const canvas = document.createElement('canvas');
+      const outputSize = size * 4; // Higher resolution for quality
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(null);
+
+      // Create circular clip
+      ctx.beginPath();
+      ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
+      // Draw image centered and cropped to square
+      const imgSize = Math.min(img.width, img.height);
+      const sx = (img.width - imgSize) / 2;
+      const sy = (img.height - imgSize) / 2;
+      ctx.drawImage(img, sx, sy, imgSize, imgSize, 0, 0, outputSize, outputSize);
+
+      resolve(canvas.toDataURL('image/png'));
+    } catch (e) {
+      console.warn('Erro ao criar imagem circular:', e);
+      resolve(null);
+    }
+  });
+};
+
 const fetchPdfAsArrayBuffer = async (url: string): Promise<ArrayBuffer> => {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.statusText}`);
@@ -277,22 +307,35 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   if (logoUrl) {
     try {
       const logoImg = await loadImage(logoUrl);
-      const maxLogoWidth = pageWidth - 20; // Praticamente a largura total da página (190mm)
-      const maxLogoHeight = logoAreaHeight;
       
-      // Calcular dimensões mantendo proporção
-      let logoWidth = maxLogoWidth;
-      let logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+      // Logo should be circular and fit within the area
+      const maxLogoSize = Math.min(logoAreaHeight, pageWidth - 40); // Use the smaller dimension
+      const logoSize = maxLogoSize;
       
-      // Se altura exceder área, redimensionar pela altura
-      if (logoHeight > maxLogoHeight) {
-        logoHeight = maxLogoHeight;
-        logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+      // Create circular version of the logo
+      const circularLogoDataUrl = await createCircularImageForPDF(logoImg, logoSize);
+      
+      if (circularLogoDataUrl) {
+        const logoX = (pageWidth - logoSize) / 2;
+        const logoY = logoAreaTop + (logoAreaHeight - logoSize) / 2;
+        coverPdf.addImage(circularLogoDataUrl, 'PNG', logoX, logoY, logoSize, logoSize);
+      } else {
+        // Fallback to original image if circular conversion fails
+        const maxLogoWidth = pageWidth - 20;
+        const maxLogoHeight = logoAreaHeight;
+        
+        let logoWidth = maxLogoWidth;
+        let logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+        
+        if (logoHeight > maxLogoHeight) {
+          logoHeight = maxLogoHeight;
+          logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+        }
+        
+        const logoX = (pageWidth - logoWidth) / 2;
+        const logoY = logoAreaTop + (logoAreaHeight - logoHeight) / 2;
+        coverPdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
       }
-      
-      const logoX = (pageWidth - logoWidth) / 2;
-      const logoY = logoAreaTop + (logoAreaHeight - logoHeight) / 2;
-      coverPdf.addImage(logoImg, 'PNG', logoX, logoY, logoWidth, logoHeight);
     } catch (error) {
       console.error('Erro ao carregar logo:', error);
     }
