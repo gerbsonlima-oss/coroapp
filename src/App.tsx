@@ -33,7 +33,7 @@ const TenantSelection = lazy(() => import("./pages/TenantSelection"));
 const ChoirMembers = lazy(() => import("./pages/ChoirMembers"));
 const ChoirMemberForm = lazy(() => import("./pages/ChoirMemberForm"));
 const ChoirMemberDetails = lazy(() => import("./pages/ChoirMemberDetails"));
-const AdminUserApprovals = lazy(() => import("./pages/AdminUserApprovals"));
+
 const PendingApproval = lazy(() => import("./pages/PendingApproval"));
 
 const Liturgy = lazy(() => import("./pages/Liturgy"));
@@ -159,14 +159,6 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminTenants />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/user-approvals"
-              element={
-                <ProtectedRoute>
-                  <AdminUserApprovals />
                 </ProtectedRoute>
               }
             />
@@ -310,16 +302,6 @@ function App() {
                 <Home />
               </ProtectedRoute>
             } />
-            
-            {/* Admin user approvals with tenant prefix */}
-            <Route
-              path="/:tenantSlug/admin/user-approvals"
-              element={
-                <ProtectedRoute>
-                  <AdminUserApprovals />
-                </ProtectedRoute>
-              }
-            />
             
             {/* Default routes without tenant prefix */}
             <Route path="/events" element={
