@@ -110,11 +110,10 @@ export const useOfflineStorage = () => {
   }, [offlineEvents]);
 
   const isEventAvailableOffline = useCallback((eventId: string): boolean => {
-    // Check the complete offline save list (with audios) first
-    if (savedEventIds.includes(eventId)) return true;
-    // Fall back to basic offline list
-    return offlineEvents.some(e => e.id === eventId);
-  }, [offlineEvents, savedEventIds]);
+    // Check only the complete offline save list (with audios)
+    // This is the single source of truth for offline status
+    return savedEventIds.includes(eventId);
+  }, [savedEventIds]);
 
   // Force refresh of saved event IDs (useful after save/remove operations)
   const refreshSavedEventIds = useCallback(() => {

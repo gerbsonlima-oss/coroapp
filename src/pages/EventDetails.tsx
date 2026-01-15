@@ -6,6 +6,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useEventOfflineSave } from '@/hooks/useEventOfflineSave';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { OfflineBadge } from '@/components/OfflineBadge';
 import { Button } from '@/components/ui/button';
@@ -147,11 +148,19 @@ const EventDetails = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
-  const { saveEvents, isEventAvailableOffline, removeEventOffline } = useOfflineStorage();
+  const { isEventAvailableOffline, refreshSavedEventIds } = useOfflineStorage();
   const isOnline = useOnlineStatus();
   
+  // Use the unified offline save hook
+  const {
+    saveEventOffline,
+    removeEventOffline: removeEventFromOffline,
+    isSaving: isSavingOffline,
+    progress: offlineSaveProgress,
+    isEventSaved: isOfflineSaved
+  } = useEventOfflineSave(id || '');
+  
   const canEdit = isAdmin || isSuperAdmin;
-  const isAvailableOffline = id ? isEventAvailableOffline(id) : false;
   const [event, setEvent] = useState<Event | null>(null);
   const [songs, setSongs] = useState<EventSong[]>([]);
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
@@ -192,36 +201,13 @@ const EventDetails = () => {
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [imageClickCount, setImageClickCount] = useState(0);
   const [showMusicRain, setShowMusicRain] = useState(false);
-  const [isOfflineSaved, setIsOfflineSaved] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [isUploadingSongSheet, setIsUploadingSongSheet] = useState(false);
-  const [isSavingOffline, setIsSavingOffline] = useState(false);
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
   const [chordsModalOpen, setChordsModalOpen] = useState(false);
   const [selectedSongForModal, setSelectedSongForModal] = useState<EventSong | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const songSheetInputRef = useRef<HTMLInputElement>(null);
-
-  const checkOfflineStatus = () => {
-    if (!id) return;
-    
-    // Usa a mesma chave que useOfflineStorage usa para salvar
-    const savedEventsJson = localStorage.getItem('offline_events');
-    const savedEvents = savedEventsJson ? JSON.parse(savedEventsJson) : [];
-    const isSaved = savedEvents.some((e: any) => e.id === id);
-    
-    console.log('[Offline] Status check:', {
-      eventId: id,
-      isSaved,
-      totalSavedEvents: savedEvents.length
-    });
-    
-    setIsOfflineSaved(isSaved);
-  };
-
-  useEffect(() => {
-    checkOfflineStatus();
-  }, [id, isAvailableOffline]);
 
   const [coverImageSrc, setCoverImageSrc] = useState<string | null>(null);
 
@@ -733,7 +719,7 @@ const EventDetails = () => {
       
       console.log('[Offline] Event metadata saved to localStorage');
       
-      checkOfflineStatus();
+      refreshSavedEventIds();
       
       // Força o player a recarregar a track atual com a versão cacheada
       if (currentTrack) {
@@ -822,59 +808,15 @@ const EventDetails = () => {
   };
 
   const handleSaveForOffline = async () => {
-    if (!event || !tenantId) return;
+    if (!event) return;
     
-    setIsSavingOffline(true);
     try {
-      // 1. Save event data
-      saveEvents([{
-        id: event.id,
-        name: event.name,
-        date: event.date,
-        location: event.location,
-        cover_image_url: event.cover_image_url,
-        notes: null,
-        tenant_id: tenantId,
-      }]);
-
-      // 2. Collect all audio URLs to cache
-      const audioUrls: string[] = [];
-      songs.forEach(song => {
-        song.audios.forEach(audio => {
-          audioUrls.push(audio.audio_url);
-        });
-      });
-
-      // 3. Cache the cover image if exists
-      if (event.cover_image_url) {
-        audioUrls.push(event.cover_image_url);
-      }
-
-      // 4. Cache song sheet if exists
-      if (event.song_sheet_url) {
-        audioUrls.push(event.song_sheet_url);
-      }
-
-      // 5. Cache all sheet music PDFs
-      songs.forEach(song => {
-        if (song.sheet_music_pdf_url) {
-          audioUrls.push(song.sheet_music_pdf_url);
-        }
-      });
-
-      // 6. Cache all audio files
-      if (audioUrls.length > 0) {
-        await cacheMultipleAudios(audioUrls);
-      }
-
-      setIsOfflineSaved(true);
-      checkOfflineStatus();
+      await saveEventOffline();
+      refreshSavedEventIds();
       toast.success('Evento salvo para acesso offline!');
     } catch (error) {
       console.error('Error saving for offline:', error);
       toast.error('Erro ao salvar evento offline');
-    } finally {
-      setIsSavingOffline(false);
     }
   };
 
@@ -882,7 +824,7 @@ const EventDetails = () => {
     if (!id) return;
     
     try {
-      removeEventOffline(id);
+      await removeEventFromOffline();
       
       // Also remove audios from cache
       const audioUrls: string[] = [];
@@ -896,8 +838,7 @@ const EventDetails = () => {
         await removeFromCache(url);
       }
       
-      setIsOfflineSaved(false);
-      checkOfflineStatus();
+      refreshSavedEventIds();
       toast.success('Evento removido do modo offline');
     } catch (error) {
       console.error('Error removing offline:', error);
