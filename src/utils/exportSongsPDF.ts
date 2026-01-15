@@ -1,12 +1,16 @@
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
-import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 
 interface Song {
   id: string;
   name: string;
   type: string;
   typeName: string;
+}
+
+interface TenantInfo {
+  name: string;
+  logo_url: string | null;
 }
 
 // Ordem litúrgica dos cantos
@@ -35,7 +39,7 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
   });
 };
 
-export const exportSongsPDF = async (songs: Song[], tenantSlug: string | null, tenantName: string | null) => {
+export const exportSongsPDF = async (songs: Song[], tenantSlug: string | null, tenant?: TenantInfo | null) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -53,13 +57,16 @@ export const exportSongsPDF = async (songs: Song[], tenantSlug: string | null, t
   pdf.setFillColor(...primaryColor);
   pdf.rect(0, 0, pageWidth, 55, 'F');
 
-  try {
-    const logoImg = await loadImage(liturgiaLogo);
-    const logoHeight = 35;
-    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-    pdf.addImage(logoImg, 'PNG', margin, 10, logoWidth, logoHeight);
-  } catch (error) {
-    console.error('Erro ao carregar logo no PDF:', error);
+  // Use tenant logo if available
+  if (tenant?.logo_url) {
+    try {
+      const logoImg = await loadImage(tenant.logo_url);
+      const logoHeight = 35;
+      const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+      pdf.addImage(logoImg, 'PNG', margin, 10, logoWidth, logoHeight);
+    } catch (error) {
+      console.error('Erro ao carregar logo no PDF:', error);
+    }
   }
 
   // Título e Organização
@@ -68,11 +75,11 @@ export const exportSongsPDF = async (songs: Song[], tenantSlug: string | null, t
   pdf.setFontSize(26);
   pdf.text('Catálogo de Músicas', pageWidth - margin, 22, { align: 'right' });
   
-  if (tenantName) {
+  if (tenant?.name) {
     pdf.setFontSize(16);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(200, 200, 220);
-    pdf.text(tenantName, pageWidth - margin, 30, { align: 'right' });
+    pdf.text(tenant.name, pageWidth - margin, 30, { align: 'right' });
   }
 
   // Linha decorativa no header

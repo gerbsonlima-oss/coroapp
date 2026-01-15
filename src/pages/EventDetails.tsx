@@ -550,7 +550,7 @@ const EventDetails = () => {
         location: event.location,
         cover_image_url: event.cover_image_url,
         pdf_theme: event.pdf_theme
-      }, songsWithSheets);
+      }, songsWithSheets, tenant ? { name: tenant.name, logo_url: tenant.logo_url } : undefined);
       toast.success('PDF de partituras exportado com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);

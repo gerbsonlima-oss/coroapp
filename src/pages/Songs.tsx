@@ -126,7 +126,7 @@ const Songs = () => {
     
     try {
       toast.info('Gerando catálogo em PDF...');
-      await exportSongsPDF(songs, tenantSlug, tenant?.name || null);
+      await exportSongsPDF(songs, tenantSlug, tenant ? { name: tenant.name, logo_url: tenant.logo_url } : null);
       toast.success('Catálogo exportado com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);

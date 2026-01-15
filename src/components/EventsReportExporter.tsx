@@ -47,7 +47,7 @@ export const EventsReportExporter = ({
     
     setIsExporting(true);
     try {
-      await exportEventsReportPDF(tenantId, tenantSlug, tenant?.name || null, selectedMonth);
+      await exportEventsReportPDF(tenantId, tenantSlug, tenant ? { name: tenant.name, logo_url: tenant.logo_url } : null, selectedMonth);
       toast.success('Planejamento exportado com sucesso!');
       onOpenChange(false);
     } catch (error) {
