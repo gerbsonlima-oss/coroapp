@@ -7,12 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
@@ -133,6 +135,17 @@ const SimpleEventAudios = () => {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [deletingSongId, setDeletingSongId] = useState<string | null>(null);
   const [songToDelete, setSongToDelete] = useState<SongAudio | null>(null);
+  
+  // Add Song Modal states
+  const [addSongModalOpen, setAddSongModalOpen] = useState(false);
+  const [addSongSearchQuery, setAddSongSearchQuery] = useState('');
+  const [availableSongs, setAvailableSongs] = useState<any[]>([]);
+  const [loadingAvailableSongs, setLoadingAvailableSongs] = useState(false);
+  const [isCreatingNewSong, setIsCreatingNewSong] = useState(false);
+  const [newSongName, setNewSongName] = useState('');
+  const [selectedSongType, setSelectedSongType] = useState('');
+  const [songTypesForModal, setSongTypesForModal] = useState<SongType[]>([]);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -587,8 +600,114 @@ const SimpleEventAudios = () => {
   };
 
   const handleAddSong = () => {
-    const basePath = tenantSlug ? `/${tenantSlug}` : '';
-    navigate(`${basePath}/events/${id}/quick-edit`);
+    fetchAvailableSongs();
+    fetchSongTypesForModal();
+    setAddSongModalOpen(true);
+  };
+
+  const fetchAvailableSongs = async () => {
+    if (!event?.tenant_id) return;
+    setLoadingAvailableSongs(true);
+    try {
+      const { data, error } = await supabase
+        .from('songs')
+        .select('id, name, type')
+        .eq('tenant_id', event.tenant_id)
+        .order('name');
+      
+      if (error) throw error;
+      
+      // Filter out songs already in the event
+      const eventSongIds = new Set(songs.map(s => s.id));
+      const filtered = (data || []).filter(s => !eventSongIds.has(s.id));
+      setAvailableSongs(filtered);
+    } catch (error) {
+      console.error('Error fetching songs:', error);
+      toast.error('Erro ao carregar músicas');
+    } finally {
+      setLoadingAvailableSongs(false);
+    }
+  };
+
+  const fetchSongTypesForModal = async () => {
+    if (!event?.tenant_id) return;
+    const { data } = await supabase
+      .from('song_types')
+      .select('id, slug, name, order_index')
+      .or(`tenant_id.eq.${event.tenant_id},tenant_id.is.null`)
+      .order('order_index');
+    setSongTypesForModal(data || []);
+  };
+
+  const handleAddExistingSong = async (song: { id: string; name: string; type: string }) => {
+    try {
+      const maxOrder = songs.reduce((max, s) => Math.max(max, s.order_index || 0), 0);
+      
+      const { error } = await supabase
+        .from('event_songs')
+        .insert({
+          event_id: id,
+          song_id: song.id,
+          type: song.type,
+          order_index: maxOrder + 1
+        });
+      
+      if (error) throw error;
+      
+      toast.success(`"${song.name}" adicionada ao evento`);
+      setAddSongModalOpen(false);
+      setAddSongSearchQuery('');
+      fetchEventData();
+    } catch (error) {
+      console.error('Error adding song:', error);
+      toast.error('Erro ao adicionar música');
+    }
+  };
+
+  const handleCreateNewSong = async () => {
+    if (!newSongName.trim() || !event?.tenant_id) return;
+    
+    setIsCreatingNewSong(true);
+    try {
+      // Create the song
+      const { data: newSong, error: createError } = await supabase
+        .from('songs')
+        .insert({
+          name: newSongName.trim(),
+          type: selectedSongType || null,
+          tenant_id: event.tenant_id
+        })
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      
+      // Add to the event
+      const maxOrder = songs.reduce((max, s) => Math.max(max, s.order_index || 0), 0);
+      
+      const { error: linkError } = await supabase
+        .from('event_songs')
+        .insert({
+          event_id: id,
+          song_id: newSong.id,
+          type: selectedSongType || null,
+          order_index: maxOrder + 1
+        });
+      
+      if (linkError) throw linkError;
+      
+      toast.success(`"${newSongName}" criada e adicionada ao evento`);
+      setAddSongModalOpen(false);
+      setNewSongName('');
+      setSelectedSongType('');
+      setAddSongSearchQuery('');
+      fetchEventData();
+    } catch (error) {
+      console.error('Error creating song:', error);
+      toast.error('Erro ao criar música');
+    } finally {
+      setIsCreatingNewSong(false);
+    }
   };
 
   const handleEditSong = (songId: string) => {
@@ -1358,6 +1477,110 @@ const SimpleEventAudios = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Add Song Modal */}
+        <Dialog open={addSongModalOpen} onOpenChange={setAddSongModalOpen}>
+          <DialogContent className="max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Music className="h-5 w-5" />
+                Adicionar Música
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {/* Search existing songs */}
+              <div className="space-y-2">
+                <Label>Buscar música existente</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Digite para buscar..."
+                    value={addSongSearchQuery}
+                    onChange={(e) => setAddSongSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                
+                <ScrollArea className="h-48 border rounded-md">
+                  {loadingAvailableSongs ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-1">
+                      {availableSongs
+                        .filter(s => s.name.toLowerCase().includes(addSongSearchQuery.toLowerCase()))
+                        .map(song => (
+                          <Card
+                            key={song.id}
+                            className="p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleAddExistingSong(song)}
+                          >
+                            <p className="font-medium text-sm">{song.name}</p>
+                            {song.type && (
+                              <p className="text-xs text-muted-foreground">
+                                {defaultTypeLabels[song.type]?.name || song.type}
+                              </p>
+                            )}
+                          </Card>
+                        ))
+                      }
+                      {availableSongs.filter(s => 
+                        s.name.toLowerCase().includes(addSongSearchQuery.toLowerCase())
+                      ).length === 0 && (
+                        <p className="text-center text-sm text-muted-foreground py-4">
+                          Nenhuma música encontrada
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+              
+              {/* Separator */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t" />
+                <span className="text-xs text-muted-foreground">ou</span>
+                <div className="flex-1 border-t" />
+              </div>
+              
+              {/* Create new song */}
+              <div className="space-y-3">
+                <Label>Criar nova música</Label>
+                <Input
+                  placeholder="Nome da música"
+                  value={newSongName}
+                  onChange={(e) => setNewSongName(e.target.value)}
+                />
+                <Select value={selectedSongType} onValueChange={setSelectedSongType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {songTypesForModal.map(type => (
+                      <SelectItem key={type.slug} value={type.slug}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  className="w-full"
+                  onClick={handleCreateNewSong}
+                  disabled={!newSongName.trim() || isCreatingNewSong}
+                >
+                  {isCreatingNewSong ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Criar e Adicionar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
         
         {/* FAB for adding music - Admin only */}
         {isAdmin && (
