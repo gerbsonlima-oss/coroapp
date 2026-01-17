@@ -1077,7 +1077,7 @@ const EventDetails = () => {
                                      </p>
                                      {isAudioCached && (
                                        <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
+                                         <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                                        </div>
                                      )}
                                    </div>
@@ -1213,16 +1213,16 @@ const EventDetails = () => {
                               }
                              }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
                              <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-2">
-                                 <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
-                                   {getTypeLabel(song.type, typeLabels)}
-                                 </p>
-                           {isAudioCached && (
-                             <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                               <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
-                             </div>
-                           )}
-                               </div>
+                                   <div className="flex items-center gap-2">
+                                     <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                                       {getTypeLabel(song.type, typeLabels)}
+                                     </p>
+                                     {isAudioCached && (
+                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                                         <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                       </div>
+                                     )}
+                                   </div>
                                <p className="truncate text-xs text-muted-foreground font-medium">
                                  {song.name} • {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
                                </p>
@@ -1305,16 +1305,16 @@ const EventDetails = () => {
                         }
                        }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}><Music className="h-5 w-5 shrink-0" /></button>
                        <div className="flex-1 min-w-0">
-                         <div className="flex items-center gap-2">
-                           <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
-                             {getTypeLabel(song.type, typeLabels)}
-                           </p>
-                           {isAudioCached && (
-                             <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                               <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
-                             </div>
-                           )}
-                         </div>
+                                   <div className="flex items-center gap-2">
+                                     <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
+                                       {getTypeLabel(song.type, typeLabels)}
+                                     </p>
+                                     {isAudioCached && (
+                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                                         <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                       </div>
+                                     )}
+                                   </div>
                          <div className="flex items-center gap-1.5 mt-0.5">
                            <p className="text-xs text-muted-foreground truncate font-medium flex-1">
                              {song.name}

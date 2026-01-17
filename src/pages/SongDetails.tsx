@@ -25,7 +25,8 @@ import {
   Check,
   Music,
   Share2,
-  Guitar
+  Guitar,
+  Smartphone
 } from 'lucide-react';
 import ChordViewer from '@/components/ChordViewer';
 import { toast } from 'sonner';
@@ -533,7 +534,7 @@ const SongDetails = () => {
                           </p>
                           {isAudioCached && (
                             <div className="flex items-center gap-1 shrink-0">
-                              <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500 stroke-[3]" />
+                              <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" title="Disponível offline" />
                             </div>
                           )}
                         </div>
