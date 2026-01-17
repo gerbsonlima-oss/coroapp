@@ -456,19 +456,21 @@ const SimpleEventAudios = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Get unique naipes from audios
+  // Get unique naipes from audios (exclude unissono - always shown)
   const availableNaipes = useMemo(() => {
-    const naipes = new Set(audios.map(a => a.naipe));
+    const naipes = new Set(audios.map(a => a.naipe).filter(n => n.toLowerCase() !== 'unissono'));
     return Array.from(naipes).sort();
   }, [audios]);
 
-  // Filter audios based on search and naipe selection
+  // Filter audios based on search and naipe selection (unissono always included)
   const filteredAudios = useMemo(() => {
     let result = audios;
     
-    // Filter by naipes (if any selected)
+    // Filter by naipes (if any selected) - always include unissono
     if (selectedNaipes.length > 0) {
-      result = result.filter(a => selectedNaipes.includes(a.naipe));
+      result = result.filter(a => 
+        a.naipe.toLowerCase() === 'unissono' || selectedNaipes.includes(a.naipe)
+      );
     }
     
     // Filter by search query
