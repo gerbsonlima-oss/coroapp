@@ -5,7 +5,6 @@ import { Building2, ArrowRight, LogOut, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingFallback } from '@/components/LoadingFallback';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -143,9 +142,9 @@ const TenantSelection = () => {
               >
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden border border-white/10">
-                    {tenant.logo_url || (['quixada', 'coroquixada'].includes(tenant.slug) && liturgiaLogo) ? (
+                    {tenant.logo_url || (['quixada', 'coroquixada'].includes(tenant.slug)) ? (
                       <img
-                        src={tenant.logo_url || liturgiaLogo}
+                        src={tenant.logo_url || "/liturgia-plus-logo.png"}
                         alt={tenant.name}
                         className="h-full w-full object-cover"
                       />

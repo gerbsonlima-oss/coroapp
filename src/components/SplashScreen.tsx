@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
-import logoImageFallback from '@/assets/liturgia-plus-logo.png';
 
 export const SplashScreen = () => {
   const [show, setShow] = useState(true);
@@ -26,7 +25,7 @@ export const SplashScreen = () => {
   if (!show || isRoot || isAuth || isPublic || !tenant) return null;
 
   // Use tenant logo or fallback
-  const logoSrc = tenant?.logo_url || logoImageFallback;
+  const logoSrc = tenant?.logo_url || "/liturgia-plus-logo.png";
   
   // Parse tenant name for display (e.g. "Coro Diocese Quixadá" -> "Coro Diocese" + "de Quixadá")
   const tenantName = tenant?.name || 'Coro Diocesano';

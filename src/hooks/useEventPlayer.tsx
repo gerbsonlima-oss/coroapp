@@ -108,24 +108,28 @@ export const useEventPlayer = (tracks: Track[]) => {
   }, [tracks]);
 
   const playNext = useCallback(() => {
-    if (state.repeatMode === 'track') {
-      // Repeat current track - reset and play
+    console.log('[Player] playNext called. Current index:', currentTrackIndex, 'Total tracks:', tracks.length);
+    
+    if (state.repeatMode === 'track' && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.error('[Player] Error in playNext track repeat:', e));
       setIsPlaying(true);
       return;
     }
 
-    const nextIndex = (currentTrackIndex || 0) + 1;
+    const nextIndex = currentTrackIndex + 1;
 
     if (nextIndex < tracks.length) {
+      console.log('[Player] Advancing to next track:', nextIndex);
       playTrack(nextIndex);
-    } else if (state.repeatMode === 'playlist') {
-      // Loop back to beginning
+    } else if (state.repeatMode === 'playlist' && tracks.length > 0) {
+      console.log('[Player] Looping back to first track');
       playTrack(0);
     } else {
-      // Stop at end
+      console.log('[Player] End of playlist reached');
       setIsPlaying(false);
     }
-  }, [currentTrackIndex, state.repeatMode, tracks.length, playTrack]);
+  }, [currentTrackIndex, state.repeatMode, tracks, playTrack]);
 
   const playPrevious = useCallback(() => {
     const prevIndex = (currentTrackIndex || 0) - 1;
@@ -186,11 +190,20 @@ export const useEventPlayer = (tracks: Track[]) => {
     };
 
     const handleEnded = () => {
+      console.log('[Player] Audio ended, handling next playback...');
       if (state.repeatMode === 'track') {
         audio.currentTime = 0;
-        audio.play();
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => {
+            if (err.name !== 'AbortError') console.error('[Player] Error re-playing track:', err);
+          });
+        }
       } else {
-        playNext();
+        // Pequeno delay para garantir que o estado do navegador se estabilize após o fim do áudio
+        setTimeout(() => {
+          playNext();
+        }, 100);
       }
     };
 
@@ -263,7 +276,7 @@ export const useEventPlayer = (tracks: Track[]) => {
       audio.removeEventListener('waiting', handleWaiting);
       audio.removeEventListener('stalled', handleStalled);
     };
-  }, [state.repeatMode, state.isPlaying, playNext]);
+  }, [state.repeatMode, playNext]);
 
   // Handle play/pause state change
   useEffect(() => {
@@ -323,14 +336,18 @@ export const useEventPlayer = (tracks: Track[]) => {
           
           // Se estava tocando, tenta tocar a nova source
           if (state.isPlaying) {
-            audioRef.current.play().catch(err => {
-              if (err.name !== 'AbortError') {
-                console.error('[Player] Error playing after load:', err);
-                setIsPlaying(false);
-                setIsLoading(false);
-                clearTimeout(loadingTimeout);
-              }
-            });
+            console.log('[Player] Resuming playback after source change');
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise.catch(err => {
+                if (err.name !== 'AbortError') {
+                  console.error('[Player] Error playing after load:', err);
+                  setIsPlaying(false);
+                  setIsLoading(false);
+                  clearTimeout(loadingTimeout);
+                }
+              });
+            }
           }
         } else {
           console.log('[Player] Source unchanged, skipping reload');

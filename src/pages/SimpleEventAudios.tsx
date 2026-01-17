@@ -28,6 +28,7 @@ import { ptBR } from 'date-fns/locale';
 import { shareCompleteToWhatsApp } from '@/utils/whatsappShare';
 import { Helmet } from 'react-helmet-async';
 import { useTenant } from '@/contexts/TenantContext';
+import { usePlayer } from '@/contexts/PlayerContext';
 
 interface Event {
   id: string;
@@ -106,9 +107,19 @@ const SimpleEventAudios = () => {
   const [audios, setAudios] = useState<SongAudio[]>([]);
   const [songs, setSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
-  const [activeAudioId, setActiveAudioId] = useState<string | null>(null);
+  
+  const { 
+    playTrack, 
+    togglePlay, 
+    isPlaying, 
+    currentTrack, 
+    currentTime, 
+    duration, 
+    seek, 
+    setPlaylist,
+    isLoading: isPlayerLoading
+  } = usePlayer();
+
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
   const [chordsModalOpen, setChordsModalOpen] = useState(false);
   const [selectedAudio, setSelectedAudio] = useState<SongAudio | null>(null);
@@ -119,8 +130,6 @@ const SimpleEventAudios = () => {
   const [sheetViewerOpen, setSheetViewerOpen] = useState(false);
   const [sheetMusicUrl, setSheetMusicUrl] = useState<string | null>(null);
   const [sheetSongName, setSheetSongName] = useState<string>('');
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
   const [searchQuery, setSearchQuery] = useState(() => {
     return localStorage.getItem('simpleEvent_searchQuery') || '';
@@ -131,6 +140,61 @@ const SimpleEventAudios = () => {
   });
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Helper functions and Memoized values
+  const availableNaipes = useMemo(() => {
+    const naipes = new Set(audios.map(a => a.naipe).filter(n => n.toLowerCase() !== 'unissono'));
+    return Array.from(naipes).sort();
+  }, [audios]);
+
+  const toggleNaipe = (naipe: string) => {
+    setSelectedNaipes(prev => 
+      prev.includes(naipe) 
+        ? prev.filter(n => n !== naipe)
+        : [...prev, naipe]
+    );
+  };
+
+  const filteredAudios = useMemo(() => {
+    let result = audios;
+    if (selectedNaipes.length > 0) {
+      result = result.filter(a => 
+        a.naipe.toLowerCase() === 'unissono' || selectedNaipes.includes(a.naipe)
+      );
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(a => 
+        a.song_name.toLowerCase().includes(query) ||
+        a.song_type_name.toLowerCase().includes(query) ||
+        a.naipe.toLowerCase().includes(query)
+      );
+    }
+    return result;
+  }, [audios, selectedNaipes, searchQuery]);
+
+  const handlePlay = async (audio: SongAudio) => {
+    const index = filteredAudios.findIndex(a => a.id === audio.id);
+    if (index >= 0) {
+      if (currentTrack?.id === audio.id) {
+        togglePlay();
+      } else {
+        playTrack(index);
+      }
+    }
+  };
+
+  const handleSeek = useCallback((value: number[]) => {
+    seek(value[0]);
+  }, [seek]);
+
+  const formatTime = (time: number): string => {
+    if (!time || isNaN(time)) return '0:00';
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const [preloadedUrls, setPreloadedUrls] = useState<Record<string, string>>({});
   const [isPreloading, setIsPreloading] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
@@ -149,7 +213,6 @@ const SimpleEventAudios = () => {
   const [addingSong, setAddingSong] = useState(false);
   const [songTypesForModal, setSongTypesForModal] = useState<SongType[]>([]);
   
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -164,6 +227,22 @@ const SimpleEventAudios = () => {
     const basePath = tenantSlug ? `/${tenantSlug}` : '';
     navigate(`${basePath}/events`);
   };
+
+  // Update global playlist when audios or filters change
+  useEffect(() => {
+    if (filteredAudios.length > 0) {
+      const tracks = filteredAudios.map(a => ({
+        id: a.id,
+        songId: a.song_id,
+        songName: a.song_name,
+        songType: a.song_type_slug,
+        naipe: a.naipe,
+        url: a.audio_url,
+        sheetMusicUrl: a.song_sheet_music_pdf_url
+      }));
+      setPlaylist(tracks);
+    }
+  }, [filteredAudios, setPlaylist]);
 
   // Offline save hook
   const {
@@ -365,134 +444,6 @@ const SimpleEventAudios = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePlay = async (audio: SongAudio) => {
-    // If clicking the same audio that's active
-    if (activeAudioId === audio.id) {
-      if (playingId === audio.id) {
-        // Currently playing - pause it
-        audioRef.current?.pause();
-        setPlayingId(null);
-        setIsPaused(true);
-      } else {
-        // Currently paused - resume it
-        audioRef.current?.play();
-        setPlayingId(audio.id);
-        setIsPaused(false);
-      }
-      return;
-    }
-    
-    // If loading, ignore additional clicks
-    if (isLoadingAudio) return;
-    
-    // Stop current audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    
-    setIsLoadingAudio(true);
-    setActiveAudioId(audio.id);
-    setIsPaused(false);
-    
-    try {
-      // Use preloaded URL if available, otherwise fetch from cache
-      const audioUrl = preloadedUrls[audio.audio_url] || await getCachedUrl(audio.audio_url);
-      const newAudio = new Audio(audioUrl);
-      
-      newAudio.onloadedmetadata = () => {
-        setDuration(newAudio.duration);
-      };
-      
-      newAudio.ontimeupdate = () => {
-        if (!isSeeking) {
-          setCurrentTime(newAudio.currentTime);
-        }
-      };
-      
-      newAudio.onended = () => {
-        setPlayingId(null);
-        setActiveAudioId(null);
-        setIsPaused(false);
-        setCurrentTime(0);
-        setDuration(0);
-      };
-      
-      newAudio.onerror = () => {
-        toast.error('Erro ao reproduzir áudio. Verifique se está disponível offline.');
-        setPlayingId(null);
-        setActiveAudioId(null);
-        setIsPaused(false);
-        setCurrentTime(0);
-        setDuration(0);
-      };
-      
-      await newAudio.play();
-      audioRef.current = newAudio;
-      setPlayingId(audio.id);
-      setCurrentTime(0);
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      toast.error('Erro ao reproduzir áudio');
-      setActiveAudioId(null);
-    } finally {
-      setIsLoadingAudio(false);
-    }
-  };
-
-  const handleSeek = useCallback((value: number[]) => {
-    const seekTime = value[0];
-    setCurrentTime(seekTime);
-    if (audioRef.current) {
-      audioRef.current.currentTime = seekTime;
-    }
-  }, []);
-
-  const formatTime = (time: number): string => {
-    if (!time || isNaN(time)) return '0:00';
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Get unique naipes from audios (exclude unissono - always shown)
-  const availableNaipes = useMemo(() => {
-    const naipes = new Set(audios.map(a => a.naipe).filter(n => n.toLowerCase() !== 'unissono'));
-    return Array.from(naipes).sort();
-  }, [audios]);
-
-  // Filter audios based on search and naipe selection (unissono always included)
-  const filteredAudios = useMemo(() => {
-    let result = audios;
-    
-    // Filter by naipes (if any selected) - always include unissono
-    if (selectedNaipes.length > 0) {
-      result = result.filter(a => 
-        a.naipe.toLowerCase() === 'unissono' || selectedNaipes.includes(a.naipe)
-      );
-    }
-    
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      result = result.filter(a => 
-        a.song_name.toLowerCase().includes(query) ||
-        a.song_type_name.toLowerCase().includes(query) ||
-        a.naipe.toLowerCase().includes(query)
-      );
-    }
-    
-    return result;
-  }, [audios, selectedNaipes, searchQuery]);
-
-  const toggleNaipe = (naipe: string) => {
-    setSelectedNaipes(prev => 
-      prev.includes(naipe) 
-        ? prev.filter(n => n !== naipe)
-        : [...prev, naipe]
-    );
   };
 
   const clearFilters = () => {
@@ -781,14 +732,10 @@ const SimpleEventAudios = () => {
     }
   };
 
-  // Cleanup audio on unmount
+  // Global cleanup moved to context
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setCurrentTime(0);
-        setDuration(0);
-      }
+      // Local cleanup for this page if needed
     };
   }, []);
 
@@ -1270,9 +1217,8 @@ const SimpleEventAudios = () => {
           ) : (
             <div className="space-y-2">
               {filteredAudios.map((audio) => {
-                const isPlaying = playingId === audio.id;
-                const isActive = activeAudioId === audio.id;
-                const isThisPaused = isActive && isPaused;
+                const isActive = currentTrack?.id === audio.id;
+                const isActuallyPlaying = isActive && isPlaying;
                 
                 return (
                   <Card 
@@ -1286,11 +1232,11 @@ const SimpleEventAudios = () => {
                         size="icon"
                         className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
                         onClick={() => handlePlay(audio)}
-                        disabled={isLoadingAudio && activeAudioId !== audio.id}
+                        disabled={isPlayerLoading && !isActive}
                       >
-                        {isLoadingAudio && activeAudioId === audio.id ? (
+                        {isPlayerLoading && isActive ? (
                           <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                        ) : isPlaying ? (
+                        ) : isActuallyPlaying ? (
                           <Pause className="h-5 w-5 text-primary" />
                         ) : (
                           <Play className="h-5 w-5 text-primary ml-0.5" />

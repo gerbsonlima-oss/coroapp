@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, MessageCircle, Mail, Lock, User, Calendar, Music, Users } from 'lucide-react';
-import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -137,11 +136,11 @@ const Auth = () => {
       <div className="relative z-10 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 mb-4 shadow-xl">
+          <div className="inline-flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 mb-4 shadow-xl">
             <img 
-              src={liturgiaLogo} 
+              src="/liturgia-plus-logo.png" 
               alt="CantoSacro" 
-              className="w-14 h-14 md:w-16 md:h-16 object-contain"
+              className="w-24 h-24 md:w-32 md:h-32 object-contain"
             />
           </div>
           <h1 className="text-3xl md:text-4xl font-light tracking-wide text-white">
