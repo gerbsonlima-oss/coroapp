@@ -25,8 +25,7 @@ import {
   Check,
   Music,
   Share2,
-  Guitar,
-  Smartphone
+  Guitar
 } from 'lucide-react';
 import ChordViewer from '@/components/ChordViewer';
 import { toast } from 'sonner';
@@ -102,11 +101,11 @@ const typeColors: Record<string, string> = {
 };
 
 const naipeColors: Record<string, string> = {
-  soprano: 'bg-pink-500/20 text-pink-700 border-pink-500/30',
-  contralto: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
-  tenor: 'bg-green-500/20 text-green-700 border-green-500/30',
-  baixo: 'bg-blue-500/20 text-blue-700 border-blue-500/30',
-  unissono: 'bg-slate-100 text-slate-800 border-slate-200',
+  soprano: 'bg-pink-500/5 text-pink-600 border-pink-500/40',
+  contralto: 'bg-yellow-500/5 text-yellow-600 border-yellow-500/40',
+  tenor: 'bg-green-500/5 text-green-600 border-green-500/40',
+  baixo: 'bg-blue-500/5 text-blue-600 border-blue-500/40',
+  unissono: 'bg-slate-100 text-slate-800 border-none',
 };
 
 const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono'];
@@ -533,13 +532,13 @@ const SongDetails = () => {
                             {typeLabels[song.type]}
                           </p>
                           {isAudioCached && (
-                            <div className="flex items-center gap-1 shrink-0">
-                              <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" title="Disponível offline" />
+                            <div className="flex items-center gap-1 shrink-0" title="Disponível offline">
+                              <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                             </div>
                           )}
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <Badge variant="outline" className="py-0 px-1.5 text-[10px] h-4 bg-primary/10 border-primary/20 text-primary shrink-0 uppercase tracking-wider font-bold">
+                          <Badge variant="outline" className={`py-0 px-1.5 text-[10px] h-4 shrink-0 uppercase tracking-wider font-bold ${naipeColors[(audio.naipe || audio.name).toLowerCase()] || 'bg-primary/10 border-primary/20 text-primary'}`}>
                             {audio.naipe || audio.name}
                           </Badge>
                         </div>

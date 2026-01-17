@@ -179,7 +179,7 @@ export const SplashScreen = () => {
               fontWeight: 400
             }}
           >
-            Liturgia+
+            CantoSacro
           </p>
         </div>
       </div>

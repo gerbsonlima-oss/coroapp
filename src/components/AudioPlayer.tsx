@@ -182,7 +182,7 @@ export const AudioPlayer = ({ src, naipe, showDownloadButton = false }: AudioPla
           <span className="text-sm font-medium text-foreground">{naipe}</span>
           {cached && (
             <span title="Disponível offline">
-              <Check className="h-4 w-4 text-green-500" />
+              <Check className="h-3 w-3 text-green-500" />
             </span>
           )}
         </div>

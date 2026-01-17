@@ -55,7 +55,7 @@ const PendingApproval = () => {
         <Card className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-md border-white/10">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-destructive/20 flex items-center justify-center">
-              <img src={liturgiaLogo} alt="Liturgia+" className="h-10 w-10 object-contain opacity-50" />
+              <img src={liturgiaLogo} alt="CantoSacro" className="h-10 w-10 object-contain opacity-50" />
             </div>
             <CardTitle className="text-2xl text-white">Cadastro Rejeitado</CardTitle>
             <CardDescription className="text-white/60">
@@ -90,7 +90,7 @@ const PendingApproval = () => {
       <Card className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-md border-white/10">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center">
-            <img src={liturgiaLogo} alt="Liturgia+" className="h-12 w-12 object-contain" />
+            <img src={liturgiaLogo} alt="CantoSacro" className="h-12 w-12 object-contain" />
           </div>
           <CardTitle className="text-2xl text-white flex items-center justify-center gap-2">
             <Clock className="h-6 w-6 text-primary animate-pulse" />

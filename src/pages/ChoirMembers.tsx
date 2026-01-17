@@ -59,10 +59,10 @@ const naipeLabels: Record<string, string> = {
 };
 
 const naipeColors: Record<string, string> = {
-  soprano: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-  contralto: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  tenor: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  baixo: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  soprano: 'bg-pink-500/5 text-pink-600 dark:text-pink-400 border-pink-500/40',
+  contralto: 'bg-yellow-500/5 text-yellow-600 dark:text-yellow-400 border-yellow-500/40',
+  tenor: 'bg-green-500/5 text-green-600 dark:text-green-400 border-green-500/40',
+  baixo: 'bg-blue-500/5 text-blue-600 dark:text-blue-400 border-blue-500/40',
 };
 
 const naipeGradients: Record<string, string> = {
@@ -376,7 +376,7 @@ export default function ChoirMembers() {
                               )}
                               
                               {member.naipe && (
-                                <Badge className={`text-xs ${naipeColors[member.naipe]}`}>
+                                <Badge variant="outline" className={`text-xs ${naipeColors[member.naipe]}`}>
                                   {naipeLabels[member.naipe]}
                                 </Badge>
                               )}

@@ -305,7 +305,7 @@ export async function injectEventManifest(event: { id: string; name: string; cov
   const manifest = {
     name: event.name,
     short_name: shortName,
-    description: `Liturgia+ - ${event.name}`,
+    description: `CantoSacro - ${event.name}`,
     start_url: `/e/${event.id}?offline=true`,
     display: 'standalone',
     background_color: '#0f0f1e',

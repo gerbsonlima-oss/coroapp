@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Music2, Maximize2, MoreVertical, Check, Smartphone } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Music2, Maximize2, MoreVertical, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -154,7 +154,7 @@ export function EnhancedMiniPlayer() {
                   <p className="text-sm font-semibold truncate">{currentTrack.songName}</p>
                   {isCached(currentTrack.url) && (
                     <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                      <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                      <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                     </div>
                   )}
                 </div>

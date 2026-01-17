@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Smartphone } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -1304,21 +1304,23 @@ const SimpleEventAudios = () => {
                             {audio.song_type_name}
                           </p>
                           <Badge 
-                            variant="secondary" 
-                            className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider border-none pointer-events-none ${
-                              audio.naipe.toLowerCase() === 'soprano' ? 'bg-pink-500/20 text-pink-700 dark:text-pink-400' :
-                              audio.naipe.toLowerCase() === 'contralto' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
-                              audio.naipe.toLowerCase() === 'tenor' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
-                              audio.naipe.toLowerCase() === 'baixo' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400' :
-                              audio.naipe.toLowerCase() === 'unissono' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200' :
-                              'bg-primary/15 text-primary'
+                            variant={audio.naipe.toLowerCase() === 'unissono' ? "secondary" : "outline"}
+                            className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider pointer-events-none ${
+                              audio.naipe.toLowerCase() === 'soprano' ? 'border-pink-500/40 text-pink-600 dark:text-pink-400 bg-pink-500/5' :
+                              audio.naipe.toLowerCase() === 'contralto' ? 'border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
+                              audio.naipe.toLowerCase() === 'tenor' ? 'border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5' :
+                              audio.naipe.toLowerCase() === 'baixo' ? 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
+                              audio.naipe.toLowerCase() === 'unissono' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none' :
+                              'border-primary/40 text-primary bg-primary/5'
                             }`}
                           >
                             {audio.naipe}
                             {audio.naipe.toLowerCase() === 'unissono' && ' ★'}
                           </Badge>
                           {isCached(audio.audio_url) && (
-                            <Smartphone className="h-3 w-3 text-green-500 shrink-0" title="Disponível offline" />
+                            <span title="Disponível offline" className="flex shrink-0">
+                              <Check className="h-3 w-3 text-green-500" />
+                            </span>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">

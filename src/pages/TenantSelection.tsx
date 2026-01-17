@@ -106,7 +106,7 @@ const TenantSelection = () => {
       <div className="relative z-10 w-full max-w-2xl space-y-8">
         <div className="text-center space-y-3">
           <h1 className="text-3xl md:text-5xl font-light tracking-wider text-white">
-            Bem-vindo ao <span className="font-semibold text-primary">Liturgia+</span>
+            Bem-vindo ao <span className="font-semibold text-primary">CantoSacro</span>
           </h1>
           <p className="text-muted-foreground tracking-widest uppercase text-xs font-medium">
             Harmonia e organização para o seu ministério de música

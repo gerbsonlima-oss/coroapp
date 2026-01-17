@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Download, CheckCircle, Smartphone } from 'lucide-react';
+import { Download, CheckCircle, Check } from 'lucide-react';
 
 interface SaveEventOfflineDialogProps {
   open: boolean;
@@ -66,7 +66,7 @@ export function SaveEventOfflineDialog({
             <>
               <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <Smartphone className="h-5 w-5 text-primary mt-0.5" />
+                  <Check className="h-5 w-5 text-primary mt-0.5" />
                   <div>
                     <p className="text-sm font-medium">Acesso offline</p>
                     <p className="text-xs text-muted-foreground">

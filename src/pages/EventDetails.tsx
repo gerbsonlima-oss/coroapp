@@ -127,11 +127,11 @@ const typeColors: Record<string, string> = {
   outro: 'bg-transparent text-muted-foreground border-border'
 };
 const naipeColors: Record<string, string> = {
-  soprano: 'bg-pink-500/20 text-pink-700 dark:text-pink-400 border-pink-500/30',
-  contralto: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
-  tenor: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
-  baixo: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
-  unissono: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+  soprano: 'bg-pink-500/5 text-pink-600 dark:text-pink-400 border-pink-500/40',
+  contralto: 'bg-yellow-500/5 text-yellow-600 dark:text-yellow-400 border-yellow-500/40',
+  tenor: 'bg-green-500/5 text-green-600 dark:text-green-400 border-green-500/40',
+  baixo: 'bg-blue-500/5 text-blue-600 dark:text-blue-400 border-blue-500/40',
+  unissono: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none'
 };
 
 const EventDetails = () => {
@@ -1077,7 +1077,7 @@ const EventDetails = () => {
                                      </p>
                                      {isAudioCached && (
                                        <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                                         <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                                        </div>
                                      )}
                                    </div>
@@ -1219,7 +1219,7 @@ const EventDetails = () => {
                                      </p>
                                      {isAudioCached && (
                                        <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                                         <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                                        </div>
                                      )}
                                    </div>
@@ -1311,7 +1311,7 @@ const EventDetails = () => {
                                      </p>
                                      {isAudioCached && (
                                        <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                                         <Smartphone className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
                                        </div>
                                      )}
                                    </div>
@@ -1319,9 +1319,9 @@ const EventDetails = () => {
                            <p className="text-xs text-muted-foreground truncate font-medium flex-1">
                              {song.name}
                            </p>
-                           <Badge variant="outline" className="py-0 px-1 text-[9px] h-3.5 bg-secondary/30 border-primary/10 text-muted-foreground shrink-0 uppercase tracking-tighter">
-                             {audio.naipe}
-                           </Badge>
+                            <Badge variant="outline" className={cn("py-0 px-1 text-[9px] h-3.5 shrink-0 uppercase tracking-tighter", naipeColors[audio.naipe.toLowerCase()] || "bg-secondary/30 border-primary/10 text-muted-foreground")}>
+                              {audio.naipe}
+                            </Badge>
                          </div>
                        </div>
                     </div>

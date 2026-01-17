@@ -140,12 +140,12 @@ const Auth = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 mb-4 shadow-xl">
             <img 
               src={liturgiaLogo} 
-              alt="Liturgia+" 
+              alt="CantoSacro" 
               className="w-14 h-14 md:w-16 md:h-16 object-contain"
             />
           </div>
           <h1 className="text-3xl md:text-4xl font-light tracking-wide text-white">
-            Liturgia<span className="font-semibold text-primary">+</span>
+            Canto<span className="font-semibold text-primary">Sacro</span>
           </h1>
           <p className="mt-2 text-sm text-white/60 tracking-wide">
             Harmonia e organização para o seu ministério

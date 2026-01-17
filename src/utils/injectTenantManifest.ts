@@ -10,8 +10,8 @@ export const injectTenantManifest = (tenantSlug: string, tenantName?: string) =>
   }
 
   const manifest = {
-    name: tenantName ? `${tenantName} - Liturgia+` : 'Liturgia+',
-    short_name: tenantName?.split(' ')[0] || 'Liturgia+',
+    name: tenantName ? `${tenantName} - CantoSacro` : 'CantoSacro',
+    short_name: tenantName?.split(' ')[0] || 'CantoSacro',
     description: 'Aplicativo para gestão de músicas e eventos litúrgicos',
     start_url: `/${tenantSlug}`,
     scope: '/',
