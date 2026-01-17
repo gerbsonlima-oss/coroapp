@@ -127,11 +127,11 @@ const typeColors: Record<string, string> = {
   outro: 'bg-transparent text-muted-foreground border-border'
 };
 const naipeColors: Record<string, string> = {
-  soprano: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30',
-  contralto: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30',
-  tenor: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30',
-  baixo: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30',
-  unissono: 'bg-primary/20 text-primary dark:text-primary/80 border-primary/30'
+  soprano: 'bg-pink-500/20 text-pink-700 dark:text-pink-400 border-pink-500/30',
+  contralto: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+  tenor: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
+  baixo: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
+  unissono: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'
 };
 
 const EventDetails = () => {
@@ -1485,9 +1485,9 @@ const EventDetails = () => {
           <div className="grid grid-cols-2 gap-4 mt-4">
             {[
               { id: 'soprano', label: 'Soprano', icon: Mic2, color: 'from-pink-500/20 to-pink-500/10 border-pink-500/30 text-pink-600' },
-              { id: 'contralto', label: 'Contralto', icon: Mic, color: 'from-purple-500/20 to-purple-500/10 border-purple-500/30 text-purple-600' },
-              { id: 'tenor', label: 'Tenor', icon: Music2, color: 'from-blue-500/20 to-blue-500/10 border-blue-500/30 text-blue-600' },
-              { id: 'baixo', label: 'Baixo', icon: Music, color: 'from-emerald-500/20 to-emerald-500/10 border-emerald-500/30 text-emerald-600' },
+              { id: 'contralto', label: 'Contralto', icon: Mic, color: 'from-yellow-500/20 to-yellow-500/10 border-yellow-500/30 text-yellow-600' },
+              { id: 'tenor', label: 'Tenor', icon: Music2, color: 'from-green-500/20 to-green-500/10 border-green-500/30 text-green-600' },
+              { id: 'baixo', label: 'Baixo', icon: Music, color: 'from-blue-500/20 to-blue-500/10 border-blue-500/30 text-blue-600' },
             ].map((naipe) => (
               <button key={naipe.id} onClick={() => { setSelectedNaipe([naipe.id]); setShowNaipeSelector(false); toast.success(`Filtro ${naipe.label} aplicado!`); }} className={cn("flex flex-col items-center justify-center p-6 rounded-2xl border-2 bg-gradient-to-br transition-all active:scale-95 hover:shadow-lg", naipe.color)}><naipe.icon className="h-10 w-10 mb-3" /><span className="font-bold text-sm uppercase tracking-wide">{naipe.label}</span></button>
             ))}

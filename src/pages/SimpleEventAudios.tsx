@@ -1057,21 +1057,28 @@ const SimpleEventAudios = () => {
           {/* Naipe Filter Chips */}
           {availableNaipes.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {availableNaipes.map((naipe) => (
-                <Button
-                  key={naipe}
-                  variant={selectedNaipes.includes(naipe) ? "default" : "outline"}
-                  size="sm"
-                  className={`h-7 px-3 text-xs font-medium rounded-full ${
-                    selectedNaipes.includes(naipe) 
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                      : 'border-primary/30 text-primary hover:bg-primary/10'
-                  }`}
-                  onClick={() => toggleNaipe(naipe)}
-                >
-                  {naipe}
-                </Button>
-              ))}
+              {availableNaipes.map((naipe) => {
+                const lowerNaipe = naipe.toLowerCase();
+                const isActive = selectedNaipes.includes(naipe);
+                const colorClasses = 
+                  lowerNaipe === 'soprano' ? (isActive ? 'bg-pink-500 text-white hover:bg-pink-600' : 'border-pink-500/30 text-pink-600 hover:bg-pink-50') :
+                  lowerNaipe === 'contralto' ? (isActive ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'border-yellow-500/30 text-yellow-600 hover:bg-yellow-50') :
+                  lowerNaipe === 'tenor' ? (isActive ? 'bg-green-500 text-white hover:bg-green-600' : 'border-green-500/30 text-green-600 hover:bg-green-50') :
+                  lowerNaipe === 'baixo' ? (isActive ? 'bg-blue-500 text-white hover:bg-blue-600' : 'border-blue-500/30 text-blue-600 hover:bg-blue-50') :
+                  isActive ? 'bg-primary text-primary-foreground' : 'border-primary/30 text-primary hover:bg-primary/10';
+
+                return (
+                  <Button
+                    key={naipe}
+                    variant={isActive ? "default" : "outline"}
+                    size="sm"
+                    className={`h-7 px-3 text-xs font-medium rounded-full ${colorClasses}`}
+                    onClick={() => toggleNaipe(naipe)}
+                  >
+                    {naipe}
+                  </Button>
+                );
+              })}
               {selectedNaipes.length > 0 && (
                 <Button
                   variant="ghost"
@@ -1240,9 +1247,12 @@ const SimpleEventAudios = () => {
                           <Badge 
                             variant="secondary" 
                             className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider border-none pointer-events-none ${
-                              audio.naipe.toLowerCase() === 'unissono'
-                                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                                : 'bg-primary/15 text-primary'
+                              audio.naipe.toLowerCase() === 'soprano' ? 'bg-pink-500/20 text-pink-700 dark:text-pink-400' :
+                              audio.naipe.toLowerCase() === 'contralto' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
+                              audio.naipe.toLowerCase() === 'tenor' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
+                              audio.naipe.toLowerCase() === 'baixo' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400' :
+                              audio.naipe.toLowerCase() === 'unissono' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200' :
+                              'bg-primary/15 text-primary'
                             }`}
                           >
                             {audio.naipe}

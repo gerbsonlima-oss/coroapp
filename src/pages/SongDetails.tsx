@@ -101,11 +101,11 @@ const typeColors: Record<string, string> = {
 };
 
 const naipeColors: Record<string, string> = {
-  soprano: 'bg-primary/20 text-primary border-primary/30',
-  contralto: 'bg-primary/20 text-primary border-primary/30',
-  tenor: 'bg-primary/20 text-primary border-primary/30',
-  baixo: 'bg-primary/20 text-primary border-primary/30',
-  unissono: 'bg-primary/20 text-primary border-primary/30',
+  soprano: 'bg-pink-500/20 text-pink-700 border-pink-500/30',
+  contralto: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
+  tenor: 'bg-green-500/20 text-green-700 border-green-500/30',
+  baixo: 'bg-blue-500/20 text-blue-700 border-blue-500/30',
+  unissono: 'bg-slate-100 text-slate-800 border-slate-200',
 };
 
 const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono'];

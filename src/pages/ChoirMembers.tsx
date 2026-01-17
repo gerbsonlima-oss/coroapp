@@ -60,16 +60,16 @@ const naipeLabels: Record<string, string> = {
 
 const naipeColors: Record<string, string> = {
   soprano: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-  contralto: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  tenor: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  baixo: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  contralto: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  tenor: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  baixo: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
 };
 
 const naipeGradients: Record<string, string> = {
   soprano: 'from-pink-500/10 to-pink-600/5',
-  contralto: 'from-purple-500/10 to-purple-600/5',
-  tenor: 'from-blue-500/10 to-blue-600/5',
-  baixo: 'from-green-500/10 to-green-600/5',
+  contralto: 'from-yellow-500/10 to-yellow-600/5',
+  tenor: 'from-green-500/10 to-green-600/5',
+  baixo: 'from-blue-500/10 to-blue-600/5',
 };
 
 export default function ChoirMembers() {
