@@ -106,10 +106,9 @@ const naipeColors: Record<string, string> = {
   tenor: 'bg-primary/20 text-primary border-primary/30',
   baixo: 'bg-primary/20 text-primary border-primary/30',
   unissono: 'bg-primary/20 text-primary border-primary/30',
-  original: 'bg-primary/20 text-primary border-primary/30'
 };
 
-const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono', 'original'];
+const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono'];
 
 const SongDetails = () => {
   const { id } = useParams();
@@ -311,8 +310,7 @@ const SongDetails = () => {
         });
 
         sorted.forEach((audio: any) => {
-          const naipeName = (audio.naipe || audio.name).toLowerCase() === 'original' ? 'Música Completa' : (audio.naipe || audio.name);
-          message += `• ${naipeName}: ${audio.audio_url}\n`;
+          message += `• ${audio.naipe || audio.name}: ${audio.audio_url}\n`;
         });
       }
 
@@ -541,7 +539,7 @@ const SongDetails = () => {
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <Badge variant="outline" className="py-0 px-1.5 text-[10px] h-4 bg-primary/10 border-primary/20 text-primary shrink-0 uppercase tracking-wider font-bold">
-                            {(audio.naipe || audio.name).toLowerCase() === 'original' ? 'Música Completa' : (audio.naipe || audio.name)}
+                            {audio.naipe || audio.name}
                           </Badge>
                         </div>
                       </div>

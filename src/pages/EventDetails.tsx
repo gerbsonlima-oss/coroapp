@@ -74,7 +74,7 @@ const songSchema = z.object({
   name: z.string().trim().min(1, 'Nome é obrigatório').max(255, 'Nome muito longo'),
   type: z.string().min(1, 'Tipo é obrigatório')
 });
-const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono', 'original'];
+const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono'];
 const sortByNaipeOrder = <T extends {
   naipe: string;
 },>(audios: T[]): T[] => {
@@ -290,7 +290,6 @@ const EventDetails = () => {
 
       return selectedNaipe.some(sel => {
         const target = sel.toLowerCase();
-        if (target === 'música completa') return audioNaipe === 'original';
         return audioNaipe === target;
       });
     });
@@ -1012,14 +1011,13 @@ const EventDetails = () => {
         ) : groupBy === 'naipe' ? (
           (() => {
             const naipeGroups: Record<string, { song: EventSong; audio: SongAudio; }[]> = {};
-            const naipeOrder = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono', 'original'];
+            const naipeOrder = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono'];
             filteredSongs.forEach(song => {
               song.audios.forEach(audio => {
                 const naipeKey = audio.naipe.toLowerCase();
                 if (!selectedNaipe.includes('todas')) {
                   const isMatch = naipeKey === 'unissono' || selectedNaipe.some(sel => {
                     const target = sel.toLowerCase();
-                    if (target === 'música completa') return naipeKey === 'original';
                     return naipeKey === target;
                   });
                   if (!isMatch) return;
@@ -1041,7 +1039,7 @@ const EventDetails = () => {
                     <div className="px-3 py-3.5 bg-gradient-to-r from-primary/8 to-transparent flex items-center justify-between cursor-pointer hover:from-primary/12 transition-all" onClick={() => toggleGroup(groupKey)}>
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Badge className={naipeColors[naipeKey] || 'bg-primary/25 text-primary border-primary/40'}>
-                          {naipeKey === 'original' ? 'Música Completa' : naipeKey.charAt(0).toUpperCase() + naipeKey.slice(1)}
+                          {naipeKey.charAt(0).toUpperCase() + naipeKey.slice(1)}
                         </Badge>
                         <span className="text-xs text-muted-foreground font-medium">{items.length} {items.length === 1 ? 'áudio' : 'áudios'}</span>
                       </div>
@@ -1084,7 +1082,7 @@ const EventDetails = () => {
                                      )}
                                    </div>
                                    <p className="text-xs text-muted-foreground truncate font-medium">
-                                     {song.name} • {audio.naipe === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                                     {song.name} • {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
                                    </p>
                                  </div>
                               </div>
@@ -1145,7 +1143,6 @@ const EventDetails = () => {
               const audioNaipe = String(audio.naipe || '').toLowerCase();
               return audioNaipe === 'unissono' || selectedNaipe.some(sel => {
                 const target = sel.toLowerCase();
-                if (target === 'música completa') return audioNaipe === 'original';
                 return audioNaipe === target;
               });
             }));
@@ -1227,7 +1224,7 @@ const EventDetails = () => {
                            )}
                                </div>
                                <p className="truncate text-xs text-muted-foreground font-medium">
-                                 {song.name} • {audio.naipe.toLowerCase() === 'original' ? 'Música Completa' : audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
+                                 {song.name} • {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
                                </p>
                              </div>
                           </div>
@@ -1284,7 +1281,6 @@ const EventDetails = () => {
                 const audioNaipe = String(audio.naipe || '').toLowerCase();
                 return audioNaipe === 'unissono' || selectedNaipe.some(sel => {
                   const target = sel.toLowerCase();
-                  if (target === 'música completa') return audioNaipe === 'original';
                   return audioNaipe === target;
                 });
               }));
@@ -1324,7 +1320,7 @@ const EventDetails = () => {
                              {song.name}
                            </p>
                            <Badge variant="outline" className="py-0 px-1 text-[9px] h-3.5 bg-secondary/30 border-primary/10 text-muted-foreground shrink-0 uppercase tracking-tighter">
-                             {audio.naipe.toLowerCase() === 'original' ? 'Completa' : audio.naipe}
+                             {audio.naipe}
                            </Badge>
                          </div>
                        </div>

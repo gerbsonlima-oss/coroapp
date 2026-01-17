@@ -168,8 +168,7 @@ const Songs = () => {
       if (audiosData && audiosData.length > 0) {
         message += `\n🎧 *Áudios:*\n`;
         audiosData.forEach((audio: any) => {
-          const naipeName = audio.naipe === 'original' ? 'Música Completa' : audio.naipe;
-          message += `• ${naipeName}: ${audio.audio_url}\n`;
+          message += `• ${audio.naipe}: ${audio.audio_url}\n`;
         });
       }
 
