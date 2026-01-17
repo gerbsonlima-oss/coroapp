@@ -164,7 +164,7 @@ export const useEventOfflineSave = (eventId: string) => {
         let sheetsCached = 0;
         for (let i = 0; i < sheetMusicUrls.length; i++) {
           const url = sheetMusicUrls[i];
-          setProgressText(`Salvando partitura ${i + 1} de ${totalSheets}...`);
+          setProgressText(`Salvando partituras: ${i + 1}/${totalSheets}`);
           
           const alreadyCached = await isCachedAsync(url);
           if (!alreadyCached) {
@@ -193,7 +193,7 @@ export const useEventOfflineSave = (eventId: string) => {
         
         for (let i = 0; i < audioUrls.length; i++) {
           const url = audioUrls[i];
-          setProgressText(`Salvando áudio ${i + 1} de ${totalAudios}...`);
+          setProgressText(`Salvando áudios: ${i + 1}/${totalAudios}`);
           
           const alreadyCached = await isCachedAsync(url);
           if (alreadyCached) {

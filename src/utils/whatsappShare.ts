@@ -222,6 +222,16 @@ export async function shareCompleteToWhatsApp(
   sheetUrl?: string,
   naipe?: string
 ): Promise<void> {
+  // If we have an audio URL, we prioritize sharing it as a file
+  if (audioUrl) {
+    try {
+      await sendAudioToWhatsApp(audioUrl, songName, naipe, sheetUrl);
+      return;
+    } catch (error) {
+      console.warn('File sharing failed, falling back to link:', error);
+    }
+  }
+
   // Import dynamically to avoid circular dependencies
   const { getShortUrls } = await import('./shortUrl');
   

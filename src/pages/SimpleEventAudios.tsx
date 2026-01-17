@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Smartphone } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -176,7 +176,7 @@ const SimpleEventAudios = () => {
   } = useEventOfflineSave(id || '');
 
   // Audio cache hook for offline playback
-  const { getCachedUrl } = useAudioCache();
+  const { getCachedUrl, isCached } = useAudioCache();
 
   // Offline sync hook
   const { isSyncing, syncSingleEvent, isOnline } = useOfflineSync();
@@ -1317,6 +1317,9 @@ const SimpleEventAudios = () => {
                             {audio.naipe}
                             {audio.naipe.toLowerCase() === 'unissono' && ' ★'}
                           </Badge>
+                          {isCached(audio.audio_url) && (
+                            <Smartphone className="h-3 w-3 text-green-500 shrink-0" title="Disponível offline" />
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {audio.song_name}
