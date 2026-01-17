@@ -29,7 +29,6 @@ const NAIPES = [
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
   { key: 'unissono', label: 'Uníssono' },
-  { key: 'original', label: 'Todas as Vozes' },
 ];
 
 interface SongTypeOption {
@@ -71,7 +70,6 @@ const SongForm = () => {
     tenor: [],
     baixo: [],
     unissono: [],
-    original: [],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lyricsInputRef = useRef<HTMLInputElement>(null);
