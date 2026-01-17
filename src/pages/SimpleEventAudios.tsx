@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -114,6 +114,7 @@ const SimpleEventAudios = () => {
   const [selectedAudio, setSelectedAudio] = useState<SongAudio | null>(null);
   const [exportingLyrics, setExportingLyrics] = useState(false);
   const [exportingChords, setExportingChords] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [saveOfflineDialogOpen, setSaveOfflineDialogOpen] = useState(false);
   const [sheetViewerOpen, setSheetViewerOpen] = useState(false);
   const [sheetMusicUrl, setSheetMusicUrl] = useState<string | null>(null);
@@ -517,6 +518,38 @@ const SimpleEventAudios = () => {
     }
   };
 
+  const handleDownloadAllAudios = async () => {
+    if (audios.length === 0 || !event) return;
+    
+    setIsDownloadingAll(true);
+    const toastId = toast.loading('Preparando download de todos os áudios...');
+    
+    try {
+      const { exportEventZIP } = await import('@/utils/exportEventZIP');
+      
+      // Map to Track interface required by exportEventZIP
+      const tracks = audios.map(a => ({
+        id: a.id,
+        songId: a.song_id,
+        songName: a.song_name,
+        songType: a.song_type_slug,
+        naipe: a.naipe,
+        url: a.audio_url
+      }));
+
+      // If naipes are selected, the ZIP utility will label it accordingly
+      const naipeLabel = selectedNaipes.length === 1 ? selectedNaipes[0] : 'todos';
+      
+      await exportEventZIP(event.name, tracks, naipeLabel);
+      toast.dismiss(toastId);
+    } catch (error) {
+      console.error('Error generating ZIP:', error);
+      toast.error('Erro ao gerar arquivo ZIP', { id: toastId });
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
   const handleShareWhatsApp = async (audio: SongAudio) => {
     toast.info('Preparando link curto...');
     await shareCompleteToWhatsApp(
@@ -870,14 +903,28 @@ const SimpleEventAudios = () => {
             </div>
             
             {/* Options dropdown - positioned top right */}
-            <div className="absolute top-0 right-0">
+            <div className="absolute top-0 right-0 flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleDownloadAllAudios}
+                disabled={isDownloadingAll || audios.length === 0}
+                title="Baixar áudios"
+              >
+                {isDownloadingAll ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <FileArchive className="h-5 w-5" />
+                )}
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    disabled={exportingLyrics || exportingChords}
+                    disabled={exportingLyrics || exportingChords || isDownloadingAll}
                   >
                     <MoreVertical className="h-5 w-5" />
                   </Button>
@@ -948,6 +995,18 @@ const SimpleEventAudios = () => {
                     Filtrar por Voz
                   </DropdownMenuItem>
                   
+                  <DropdownMenuItem 
+                    onClick={handleDownloadAllAudios} 
+                    disabled={isDownloadingAll || audios.length === 0}
+                  >
+                    {isDownloadingAll ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileArchive className="mr-2 h-4 w-4" />
+                    )}
+                    Baixar Áudios
+                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
                   
                   <DropdownMenuItem onClick={() => {
