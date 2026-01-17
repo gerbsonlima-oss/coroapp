@@ -1239,9 +1239,14 @@ const SimpleEventAudios = () => {
                           </p>
                           <Badge 
                             variant="secondary" 
-                            className="h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider bg-primary/15 text-primary border-none pointer-events-none"
+                            className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider border-none pointer-events-none ${
+                              audio.naipe.toLowerCase() === 'unissono'
+                                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                                : 'bg-primary/15 text-primary'
+                            }`}
                           >
                             {audio.naipe}
+                            {audio.naipe.toLowerCase() === 'unissono' && ' ★'}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
