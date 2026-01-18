@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download, Eye, Pencil, Trash2, Guitar, Music2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { exportSongsPDF } from '@/utils/exportSongsPDF';
@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SongAudioInlinePlayer } from '@/components/SongAudioInlinePlayer';
 
 interface SongTypeAlbum {
   type: string;
@@ -32,6 +33,18 @@ interface SongListItem {
   name: string;
   type: string;
   typeName: string;
+  lyrics?: string | null;
+  chords?: string | null;
+  sheet_music_url?: string | null;
+  sheet_music_pdf_url?: string | null;
+}
+
+interface SongAudio {
+  id: string;
+  song_id: string;
+  naipe: string;
+  audio_url: string;
+  name: string;
 }
 
 // Ordem litúrgica dos cantos na Santa Missa
@@ -93,6 +106,9 @@ const Songs = () => {
     return (saved === 'tipo' || saved === 'lista') ? saved : 'tipo';
   });
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [expandedSong, setExpandedSong] = useState<string | null>(null);
+  const [songAudios, setSongAudios] = useState<Record<string, SongAudio[]>>({});
+  const [loadingAudios, setLoadingAudios] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { tenantId, tenant } = useTenant();
@@ -218,7 +234,7 @@ const Songs = () => {
         await Promise.all([
           // ✅ Tipos de música agora são globais
           supabase.from('song_types').select('id, slug, name, order_index').order('order_index'),
-          supabase.from('songs').select('id, name, type').eq('tenant_id', tenantId),
+          supabase.from('songs').select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url').eq('tenant_id', tenantId),
         ]);
 
       if (songTypesError) throw songTypesError;
@@ -245,6 +261,10 @@ const Songs = () => {
         name: song.name,
         type: song.type,
         typeName: typeNameMap.get(song.type) || 'Outros',
+        lyrics: song.lyrics,
+        chords: song.chords,
+        sheet_music_url: song.sheet_music_url,
+        sheet_music_pdf_url: song.sheet_music_pdf_url,
       }));
 
       setSongTypes(albums);
@@ -253,6 +273,41 @@ const Songs = () => {
       toast.error('Erro ao carregar biblioteca');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExpandSong = async (songId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (expandedSong === songId) {
+      setExpandedSong(null);
+      return;
+    }
+    
+    setExpandedSong(songId);
+    
+    // Load audios if not already loaded
+    if (!songAudios[songId]) {
+      setLoadingAudios(songId);
+      try {
+        const { data, error } = await supabase
+          .from('song_audios')
+          .select('*')
+          .eq('song_id', songId)
+          .order('naipe');
+        
+        if (error) throw error;
+        
+        setSongAudios(prev => ({
+          ...prev,
+          [songId]: data || []
+        }));
+      } catch (error) {
+        console.error('Error loading audios:', error);
+        toast.error('Erro ao carregar áudios');
+      } finally {
+        setLoadingAudios(null);
+      }
     }
   };
 
@@ -312,65 +367,151 @@ const Songs = () => {
               </div>
               {!isCollapsed && (
                 <div className="divide-y divide-primary/10">
-                  {typeGroupSongs.map((song) => (
-                    <div 
-                      key={song.id}
-                      className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 hover:bg-primary/8 cursor-pointer group`}
-                      onClick={() => navigate(buildPath(`/songs/${song.id}`)) }
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="h-6 w-6 flex items-center justify-center rounded transition-colors text-primary">
-                          <Music className="h-5 w-5 shrink-0" />
+                  {typeGroupSongs.map((song) => {
+                    const isExpanded = expandedSong === song.id;
+                    const audios = songAudios[song.id] || [];
+                    const isLoadingThisAudio = loadingAudios === song.id;
+                    const hasLyrics = !!song.lyrics;
+                    const hasChords = !!song.chords;
+                    const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
+                    
+                    return (
+                      <div key={song.id} className="transition-all">
+                        <div 
+                          className={`flex items-center justify-between gap-3 px-3 py-3 transition-all hover:bg-primary/8 cursor-pointer group ${isExpanded ? 'bg-primary/5' : ''}`}
+                          onClick={(e) => handleExpandSong(song.id, e)}
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className={`h-6 w-6 flex items-center justify-center rounded transition-all text-primary ${isExpanded ? 'rotate-90' : ''}`}>
+                              <ChevronDown className="h-5 w-5 shrink-0" />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                                  {song.name}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                                  {song.typeName}
+                                </p>
+                                {/* Quick access icons */}
+                                <div className="flex items-center gap-1 ml-2">
+                                  {hasLyrics && (
+                                    <span title="Tem letra"><FileText className="h-3 w-3 text-muted-foreground/50" /></span>
+                                  )}
+                                  {hasChords && (
+                                    <span title="Tem cifra"><Guitar className="h-3 w-3 text-muted-foreground/50" /></span>
+                                  )}
+                                  {hasSheet && (
+                                    <span title="Tem partitura"><Music2 className="h-3 w-3 text-muted-foreground/50" /></span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover border border-border">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
+                                <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
+                              </DropdownMenuItem>
+                              {isAdmin && (
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
+                                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
+                                <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
+                              </DropdownMenuItem>
+                              {isAdmin && (
+                                <DropdownMenuItem 
+                                  onClick={(e) => handleDeleteSong(song.id, song.name, e)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                         
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                              {song.name}
-                            </p>
+                        {/* Expanded Content */}
+                        {isExpanded && (
+                          <div className="px-3 pb-3 pt-1 bg-primary/3 border-t border-primary/10">
+                            {/* Quick Action Buttons */}
+                            <div className="flex items-center gap-2 mb-3">
+                              {hasLyrics && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs gap-1.5"
+                                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=lyrics`)); }}
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                  Letra
+                                </Button>
+                              )}
+                              {hasSheet && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs gap-1.5"
+                                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=sheet`)); }}
+                                >
+                                  <Music2 className="h-3.5 w-3.5" />
+                                  Partitura
+                                </Button>
+                              )}
+                              {hasChords && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs gap-1.5"
+                                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=chords`)); }}
+                                >
+                                  <Guitar className="h-3.5 w-3.5" />
+                                  Cifra
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {/* Audios */}
+                            {isLoadingThisAudio ? (
+                              <div className="flex items-center justify-center py-4">
+                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                              </div>
+                            ) : audios.length > 0 ? (
+                              <div className="space-y-1">
+                                {audios.map((audio) => (
+                                  <SongAudioInlinePlayer
+                                    key={audio.id}
+                                    audioUrl={audio.audio_url}
+                                    naipe={audio.naipe}
+                                    name={audio.name}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground text-center py-3">
+                                Nenhum áudio disponível
+                              </p>
+                            )}
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold flex-1">
-                              {song.typeName}
-                            </p>
-                          </div>
-                        </div>
+                        )}
                       </div>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover border border-border">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
-                            <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
-                          </DropdownMenuItem>
-                          {isAdmin && (
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
-                              <Pencil className="mr-2 h-4 w-4" /> Editar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
-                            <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
-                          </DropdownMenuItem>
-                          {isAdmin && (
-                            <DropdownMenuItem 
-                              onClick={(e) => handleDeleteSong(song.id, song.name, e)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -383,65 +524,154 @@ const Songs = () => {
       <div className="space-y-2">
         {filteredSongs
           .sort((a, b) => a.name.localeCompare(b.name))
-          .map((song) => (
-            <div 
-              key={song.id}
-              className={`flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all active:scale-95 hover:bg-primary/8 border border-primary/10 cursor-pointer group`}
-              onClick={() => navigate(buildPath(`/songs/${song.id}`)) }
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="h-6 w-6 flex items-center justify-center rounded transition-colors text-primary">
-                  <Music className="h-5 w-5 shrink-0" />
+          .map((song) => {
+            const isExpanded = expandedSong === song.id;
+            const audios = songAudios[song.id] || [];
+            const isLoadingThisAudio = loadingAudios === song.id;
+            const hasLyrics = !!song.lyrics;
+            const hasChords = !!song.chords;
+            const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
+            
+            return (
+              <div 
+                key={song.id}
+                className={`rounded-md border border-primary/10 overflow-hidden transition-all ${isExpanded ? 'bg-primary/5' : ''}`}
+              >
+                <div 
+                  className={`flex items-center justify-between gap-3 px-3 py-3 transition-all hover:bg-primary/8 cursor-pointer group`}
+                  onClick={(e) => handleExpandSong(song.id, e)}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`h-6 w-6 flex items-center justify-center rounded transition-all text-primary ${isExpanded ? 'rotate-90' : ''}`}>
+                      <ChevronDown className="h-5 w-5 shrink-0" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                          {song.name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                          {song.typeName}
+                        </p>
+                        {/* Quick access icons */}
+                        <div className="flex items-center gap-1 ml-2">
+                          {hasLyrics && (
+                            <span title="Tem letra"><FileText className="h-3 w-3 text-muted-foreground/50" /></span>
+                          )}
+                          {hasChords && (
+                            <span title="Tem cifra"><Guitar className="h-3 w-3 text-muted-foreground/50" /></span>
+                          )}
+                          {hasSheet && (
+                            <span title="Tem partitura"><Music2 className="h-3 w-3 text-muted-foreground/50" /></span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover border border-border">
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
+                        <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
+                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
+                          <Pencil className="mr-2 h-4 w-4" /> Editar
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
+                        <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
+                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem 
+                          onClick={(e) => handleDeleteSong(song.id, song.name, e)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                      {song.name}
-                    </p>
+                {/* Expanded Content */}
+                {isExpanded && (
+                  <div className="px-3 pb-3 pt-1 bg-primary/3 border-t border-primary/10">
+                    {/* Quick Action Buttons */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {hasLyrics && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1.5"
+                          onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=lyrics`)); }}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Letra
+                        </Button>
+                      )}
+                      {hasSheet && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1.5"
+                          onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=sheet`)); }}
+                        >
+                          <Music2 className="h-3.5 w-3.5" />
+                          Partitura
+                        </Button>
+                      )}
+                      {hasChords && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1.5"
+                          onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=chords`)); }}
+                        >
+                          <Guitar className="h-3.5 w-3.5" />
+                          Cifra
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Audios */}
+                    {isLoadingThisAudio ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      </div>
+                    ) : audios.length > 0 ? (
+                      <div className="space-y-1">
+                        {audios.map((audio) => (
+                          <SongAudioInlinePlayer
+                            key={audio.id}
+                            audioUrl={audio.audio_url}
+                            naipe={audio.naipe}
+                            name={audio.name}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-3">
+                        Nenhum áudio disponível
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold flex-1">
-                      {song.typeName}
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-popover border border-border">
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
-                    <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
-                      <Pencil className="mr-2 h-4 w-4" /> Editar
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
-                    <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem 
-                      onClick={(e) => handleDeleteSong(song.id, song.name, e)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
+            );
+          })}
       </div>
     );
   };
