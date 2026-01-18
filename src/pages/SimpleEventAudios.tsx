@@ -612,12 +612,19 @@ const SimpleEventAudios = () => {
   };
 
   const fetchSongTypesForModal = async () => {
-    if (!event?.tenant_id) return;
-    const { data } = await supabase
+    // Fetch all song types: tenant-specific, global (null), and shared (00000000-0000-0000-0000-000000000001)
+    let query = supabase
       .from('song_types')
       .select('id, slug, name, order_index')
-      .or(`tenant_id.eq.${event.tenant_id},tenant_id.is.null`)
       .order('order_index');
+    
+    if (event?.tenant_id) {
+      query = query.or(`tenant_id.eq.${event.tenant_id},tenant_id.is.null,tenant_id.eq.00000000-0000-0000-0000-000000000001`);
+    } else {
+      query = query.or(`tenant_id.is.null,tenant_id.eq.00000000-0000-0000-0000-000000000001`);
+    }
+    
+    const { data } = await query;
     setSongTypesForModal(data || []);
   };
 
