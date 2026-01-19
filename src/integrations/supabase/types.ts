@@ -239,6 +239,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active: boolean | null
           approval_status: string
           approved_at: string | null
           approved_by: string | null
@@ -250,9 +251,11 @@ export type Database = {
           naipe: string | null
           parish: string | null
           phone: string | null
+          photo_url: string | null
           tenant_id: string | null
         }
         Insert: {
+          active?: boolean | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
@@ -264,9 +267,11 @@ export type Database = {
           naipe?: string | null
           parish?: string | null
           phone?: string | null
+          photo_url?: string | null
           tenant_id?: string | null
         }
         Update: {
+          active?: boolean | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
@@ -278,6 +283,7 @@ export type Database = {
           naipe?: string | null
           parish?: string | null
           phone?: string | null
+          photo_url?: string | null
           tenant_id?: string | null
         }
         Relationships: [

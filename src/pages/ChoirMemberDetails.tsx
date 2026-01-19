@@ -12,17 +12,17 @@ import { toast } from 'sonner';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-interface ChairMember {
+interface ChoirMember {
   id: string;
-  name: string;
+  full_name: string | null;
+  email: string;
   birth_date: string | null;
   photo_url: string | null;
   parish: string | null;
   naipe: string | null;
   phone: string | null;
-  email: string | null;
-  active: boolean;
-  created_at: string;
+  active: boolean | null;
+  created_at: string | null;
 }
 
 interface AttendanceStats {
@@ -49,7 +49,7 @@ export default function ChoirMemberDetails() {
   const { id } = useParams();
   const { tenantSlug } = useTenant();
   const { isAdmin } = useIsAdmin();
-  const [member, setMember] = useState<ChairMember | null>(null);
+  const [member, setMember] = useState<ChoirMember | null>(null);
   const [attendanceStats, setAttendanceStats] = useState<AttendanceStats>({ total: 0, attended: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -63,13 +63,13 @@ export default function ChoirMemberDetails() {
   const fetchMember = async () => {
     try {
       const { data, error } = await supabase
-        .from('choir_members')
-        .select('*')
+        .from('profiles')
+        .select('id, email, full_name, birth_date, photo_url, parish, naipe, phone, active, created_at')
         .eq('id', id)
         .single();
 
       if (error) throw error;
-      setMember(data);
+      setMember(data as ChoirMember);
     } catch (error: any) {
       toast.error('Erro ao carregar coralista: ' + error.message);
       navigate(buildPath('/choir-members'));
@@ -150,12 +150,12 @@ export default function ChoirMemberDetails() {
       {/* Profile Header */}
       <div className="p-6 flex flex-col items-center text-center border-b border-border">
         <Avatar className="h-28 w-28 border-4 border-background shadow-lg mb-4">
-          <AvatarImage src={member.photo_url || undefined} alt={member.name} />
+          <AvatarImage src={member.photo_url || undefined} alt={member.full_name || member.email} />
           <AvatarFallback className="bg-primary/10 text-primary text-3xl font-medium">
-            {getInitials(member.name)}
+            {getInitials(member.full_name || member.email)}
           </AvatarFallback>
         </Avatar>
-        <h2 className="text-2xl font-bold">{member.name}</h2>
+        <h2 className="text-2xl font-bold">{member.full_name || member.email}</h2>
         <div className="flex items-center gap-2 mt-2">
           {member.naipe && (
             <Badge variant="outline" className={naipeColors[member.naipe]}>

@@ -9,7 +9,8 @@ import { ptBR } from 'date-fns/locale';
 
 interface BirthdayMember {
   id: string;
-  name: string;
+  full_name: string | null;
+  email: string;
   birth_date: string;
   photo_url: string | null;
   naipe: string | null;
@@ -86,9 +87,10 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
     queryKey: ['birthday-members', tenantId, currentMonth],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('choir_members')
-        .select('id, name, birth_date, photo_url, naipe')
+        .from('profiles')
+        .select('id, full_name, email, birth_date, photo_url, naipe')
         .eq('tenant_id', tenantId)
+        .eq('approval_status', 'approved')
         .eq('active', true)
         .not('birth_date', 'is', null);
 
@@ -189,11 +191,11 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
                     <Avatar className="h-16 w-16 ring-4 ring-amber-300 dark:ring-amber-600 shadow-lg">
                       <AvatarImage
                         src={member.photo_url || undefined}
-                        alt={member.name}
+                        alt={member.full_name || member.email}
                         className="object-cover"
                       />
                       <AvatarFallback className="bg-amber-100 text-amber-700 text-lg font-bold dark:bg-amber-800 dark:text-amber-200">
-                        {getInitials(member.name)}
+                        {getInitials(member.full_name || member.email)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-1 -right-1 bg-amber-500 rounded-full p-1.5 shadow-md">
@@ -210,7 +212,7 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
                       </span>
                     </div>
                     <h4 className="font-bold text-lg text-foreground truncate">
-                      {member.name}
+                      {member.full_name || member.email}
                     </h4>
                     <div className="flex items-center gap-2 mt-1">
                       {member.naipe && (
@@ -256,18 +258,18 @@ export function BirthdayPanel({ tenantId }: BirthdayPanelProps) {
                     <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
                       <AvatarImage
                         src={member.photo_url || undefined}
-                        alt={member.name}
+                        alt={member.full_name || member.email}
                         className="object-cover"
                       />
                       <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                        {getInitials(member.name)}
+                        {getInitials(member.full_name || member.email)}
                       </AvatarFallback>
                     </Avatar>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">
-                        {member.name}
+                        {member.full_name || member.email}
                       </h4>
                       {member.naipe && (
                         <span className="text-xs text-muted-foreground">
