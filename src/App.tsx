@@ -297,6 +297,12 @@ function App() {
               }
             />
             
+            {/* Redirect from old admin/user-approvals route to choir-members */}
+            <Route
+              path="/:tenantSlug/admin/user-approvals"
+              element={<Navigate to="../choir-members" replace />}
+            />
+            
             <Route path="/:tenantSlug" element={
               <ProtectedRoute>
                 <Home />

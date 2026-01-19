@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Search, Users, Music, MessageCircle, Clock, UserCheck, UserX, Check, X, Mail, Calendar, Phone, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Plus, Search, Users, Music, MessageCircle, Clock, UserCheck, UserX, Check, X, Mail, Calendar, Phone, User, Building2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,6 +39,7 @@ interface ChairMember {
   phone: string | null;
   email: string | null;
   active: boolean;
+  tenant_id?: string;
 }
 
 interface PendingProfile {
@@ -49,6 +52,12 @@ interface PendingProfile {
   approval_status: string;
   created_at: string | null;
   approved_at: string | null;
+}
+
+interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 const naipeLabels: Record<string, string> = {
@@ -76,6 +85,7 @@ export default function ChoirMembers() {
   const navigate = useNavigate();
   const { tenantId, tenantSlug, tenant } = useTenant();
   const { isAdmin } = useIsAdmin();
+  const { isSuperAdmin } = useSuperAdmin();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
@@ -89,6 +99,28 @@ export default function ChoirMembers() {
     action: 'approve' | 'reject';
     profile: PendingProfile | null;
   }>({ open: false, action: 'approve', profile: null });
+  
+  // Dialog for copying member to another tenant
+  const [copyMemberDialog, setCopyMemberDialog] = useState<{
+    open: boolean;
+    member: ChairMember | null;
+  }>({ open: false, member: null });
+  const [selectedTargetTenant, setSelectedTargetTenant] = useState<string>('');
+  const [copyingMember, setCopyingMember] = useState(false);
+
+  // Fetch all tenants for super admin
+  const { data: allTenants } = useQuery({
+    queryKey: ['all-tenants'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('id, name, slug')
+        .order('name');
+      if (error) throw error;
+      return data as Tenant[];
+    },
+    enabled: isSuperAdmin,
+  });
 
   // Fetch pending profiles
   const { data: pendingProfiles, isLoading: loadingPending } = useQuery({
@@ -135,7 +167,7 @@ export default function ChoirMembers() {
   };
 
   const updateApprovalMutation = useMutation({
-    mutationFn: async ({ profileId, status }: { profileId: string; status: 'approved' | 'rejected' }) => {
+    mutationFn: async ({ profileId, status, profile }: { profileId: string; status: 'approved' | 'rejected'; profile: PendingProfile }) => {
       const updateData: any = {
         approval_status: status,
       };
@@ -152,8 +184,9 @@ export default function ChoirMembers() {
 
       if (error) throw error;
 
-      // If approved, create user_role entry
+      // If approved, create user_role entry and choir_member
       if (status === 'approved' && tenant?.id) {
+        // Create user role
         const { data: existingRole } = await supabase
           .from('user_roles')
           .select('id')
@@ -174,16 +207,91 @@ export default function ChoirMembers() {
             console.error('Error creating user role:', roleError);
           }
         }
+
+        // Create choir_member entry automatically
+        const { data: existingMember } = await supabase
+          .from('choir_members')
+          .select('id')
+          .eq('email', profile.email)
+          .eq('tenant_id', tenant.id)
+          .maybeSingle();
+
+        if (!existingMember) {
+          const { error: memberError } = await supabase
+            .from('choir_members')
+            .insert({
+              tenant_id: tenant.id,
+              name: profile.full_name || profile.email,
+              email: profile.email,
+              naipe: profile.naipe,
+              birth_date: profile.birth_date,
+              phone: profile.phone,
+              active: true,
+            });
+
+          if (memberError) {
+            console.error('Error creating choir member:', memberError);
+          }
+        }
       }
     },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
-      toast.success(status === 'approved' ? 'Usuário aprovado com sucesso!' : 'Usuário rejeitado.');
+      fetchMembers(); // Refresh members list
+      toast.success(status === 'approved' ? 'Usuário aprovado e adicionado aos coralistas!' : 'Usuário rejeitado.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao atualizar status');
     },
   });
+
+  // Copy member to another tenant
+  const handleCopyMemberToTenant = async () => {
+    if (!copyMemberDialog.member || !selectedTargetTenant) return;
+    
+    setCopyingMember(true);
+    try {
+      const member = copyMemberDialog.member;
+      
+      // Check if member already exists in target tenant
+      const { data: existing } = await supabase
+        .from('choir_members')
+        .select('id')
+        .eq('email', member.email)
+        .eq('tenant_id', selectedTargetTenant)
+        .maybeSingle();
+
+      if (existing) {
+        toast.error('Este coralista já existe no coro de destino.');
+        return;
+      }
+
+      // Insert member in new tenant
+      const { error } = await supabase
+        .from('choir_members')
+        .insert({
+          tenant_id: selectedTargetTenant,
+          name: member.name,
+          email: member.email,
+          naipe: member.naipe,
+          birth_date: member.birth_date,
+          phone: member.phone,
+          parish: member.parish,
+          photo_url: member.photo_url,
+          active: true,
+        });
+
+      if (error) throw error;
+
+      toast.success('Coralista adicionado ao outro coro com sucesso!');
+      setCopyMemberDialog({ open: false, member: null });
+      setSelectedTargetTenant('');
+    } catch (error: any) {
+      toast.error('Erro ao copiar coralista: ' + error.message);
+    } finally {
+      setCopyingMember(false);
+    }
+  };
 
   const handleApproval = (profile: PendingProfile, action: 'approve' | 'reject') => {
     setConfirmDialog({ open: true, action, profile });
@@ -194,6 +302,7 @@ export default function ChoirMembers() {
       updateApprovalMutation.mutate({
         profileId: confirmDialog.profile.id,
         status: confirmDialog.action === 'approve' ? 'approved' : 'rejected',
+        profile: confirmDialog.profile,
       });
     }
     setConfirmDialog({ open: false, action: 'approve', profile: null });
@@ -392,6 +501,21 @@ export default function ChoirMembers() {
                                   WhatsApp
                                 </Button>
                               )}
+                              
+                              {isSuperAdmin && allTenants && allTenants.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full h-8 text-xs gap-1 text-muted-foreground hover:text-primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCopyMemberDialog({ open: true, member });
+                                  }}
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                  Copiar para outro coro
+                                </Button>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -523,6 +647,53 @@ export default function ChoirMembers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Copy Member Dialog */}
+      <Dialog open={copyMemberDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setCopyMemberDialog({ open: false, member: null });
+          setSelectedTargetTenant('');
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Adicionar coralista a outro coro
+            </DialogTitle>
+            <DialogDescription>
+              Escolha o coro para o qual deseja adicionar <strong>{copyMemberDialog.member?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Select value={selectedTargetTenant} onValueChange={setSelectedTargetTenant}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o coro de destino" />
+              </SelectTrigger>
+              <SelectContent>
+                {allTenants?.filter(t => t.id !== tenantId).map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCopyMemberDialog({ open: false, member: null })}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCopyMemberToTenant} 
+              disabled={!selectedTargetTenant || copyingMember}
+            >
+              {copyingMember ? 'Adicionando...' : 'Adicionar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
