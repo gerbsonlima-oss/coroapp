@@ -29,16 +29,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-interface ChairMember {
+interface ChoirMember {
   id: string;
-  name: string;
+  full_name: string | null;
+  email: string;
   birth_date: string | null;
   photo_url: string | null;
   parish: string | null;
   naipe: string | null;
   phone: string | null;
-  email: string | null;
-  active: boolean;
+  active: boolean | null;
+  approval_status: string;
   tenant_id?: string;
 }
 
@@ -89,7 +90,7 @@ export default function ChoirMembers() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  const [members, setMembers] = useState<ChairMember[]>([]);
+  const [members, setMembers] = useState<ChoirMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterNaipe, setFilterNaipe] = useState<string>('all');
@@ -103,7 +104,7 @@ export default function ChoirMembers() {
   // Dialog for copying member to another tenant
   const [copyMemberDialog, setCopyMemberDialog] = useState<{
     open: boolean;
-    member: ChairMember | null;
+    member: ChoirMember | null;
   }>({ open: false, member: null });
   const [selectedTargetTenant, setSelectedTargetTenant] = useState<string>('');
   const [copyingMember, setCopyingMember] = useState(false);
@@ -152,13 +153,14 @@ export default function ChoirMembers() {
   const fetchMembers = async () => {
     try {
       const { data, error } = await supabase
-        .from('choir_members')
-        .select('*')
+        .from('profiles')
+        .select('id, email, full_name, birth_date, photo_url, parish, naipe, phone, active, approval_status, tenant_id')
         .eq('tenant_id', tenantId)
-        .order('name');
+        .eq('approval_status', 'approved')
+        .order('full_name');
 
       if (error) throw error;
-      setMembers(data || []);
+      setMembers((data || []) as ChoirMember[]);
     } catch (error: any) {
       toast.error('Erro ao carregar coralistas: ' + error.message);
     } finally {
@@ -253,35 +255,37 @@ export default function ChoirMembers() {
     try {
       const member = copyMemberDialog.member;
       
-      // Check if member already exists in target tenant
-      const { data: existing } = await supabase
-        .from('choir_members')
+      // Check if user already has a profile in target tenant
+      const { data: existingProfile } = await supabase
+        .from('profiles')
         .select('id')
         .eq('email', member.email)
         .eq('tenant_id', selectedTargetTenant)
         .maybeSingle();
 
-      if (existing) {
+      if (existingProfile) {
         toast.error('Este coralista já existe no coro de destino.');
         return;
       }
 
-      // Insert member in new tenant
-      const { error } = await supabase
-        .from('choir_members')
+      // For copying a member to another tenant, we need to create a new user or update their tenant access
+      // This would require admin auth functions - for now we'll just add a user_role entry
+      const { error: roleError } = await supabase
+        .from('user_roles')
         .insert({
+          user_id: member.id,
           tenant_id: selectedTargetTenant,
-          name: member.name,
-          email: member.email,
-          naipe: member.naipe,
-          birth_date: member.birth_date,
-          phone: member.phone,
-          parish: member.parish,
-          photo_url: member.photo_url,
-          active: true,
+          role: 'user',
         });
 
-      if (error) throw error;
+      if (roleError) {
+        if (roleError.code === '23505') {
+          toast.error('Este coralista já tem acesso ao coro de destino.');
+        } else {
+          throw roleError;
+        }
+        return;
+      }
 
       toast.success('Coralista adicionado ao outro coro com sucesso!');
       setCopyMemberDialog({ open: false, member: null });
@@ -309,7 +313,8 @@ export default function ChoirMembers() {
   };
 
   const filteredMembers = members.filter((member) => {
-    const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const memberName = member.full_name || member.email;
+    const matchesSearch = memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.parish?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesNaipe = filterNaipe === 'all' || member.naipe === filterNaipe;
     return matchesSearch && matchesNaipe;
@@ -320,7 +325,7 @@ export default function ChoirMembers() {
     if (!acc[naipe]) acc[naipe] = [];
     acc[naipe].push(member);
     return acc;
-  }, {} as Record<string, ChairMember[]>);
+  }, {} as Record<string, ChoirMember[]>);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -465,17 +470,17 @@ export default function ChoirMembers() {
                             <Avatar className="h-20 w-20 mb-3 ring-2 ring-background shadow-md">
                               <AvatarImage 
                                 src={member.photo_url || undefined} 
-                                alt={member.name}
+                                alt={member.full_name || member.email}
                                 className="object-cover"
                               />
                               <AvatarFallback className="bg-primary/10 text-primary text-lg font-medium">
-                                {getInitials(member.name)}
+                                {getInitials(member.full_name || member.email)}
                               </AvatarFallback>
                             </Avatar>
                             
                             <div className="space-y-1 w-full">
                               <h3 className="font-medium text-sm line-clamp-2 leading-tight">
-                                {member.name}
+                                {member.full_name || member.email}
                               </h3>
                               
                               {!member.active && (
@@ -662,7 +667,7 @@ export default function ChoirMembers() {
               Adicionar coralista a outro coro
             </DialogTitle>
             <DialogDescription>
-              Escolha o coro para o qual deseja adicionar <strong>{copyMemberDialog.member?.name}</strong>.
+              Escolha o coro para o qual deseja adicionar <strong>{copyMemberDialog.member?.full_name || copyMemberDialog.member?.email}</strong>.
             </DialogDescription>
           </DialogHeader>
           

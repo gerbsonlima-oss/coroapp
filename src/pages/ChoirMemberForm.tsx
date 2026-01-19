@@ -58,7 +58,7 @@ export default function ChoirMemberForm() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('choir_members')
+        .from('profiles')
         .select('*')
         .eq('id', id)
         .single();
@@ -66,7 +66,7 @@ export default function ChoirMemberForm() {
       if (error) throw error;
       
       setFormData({
-        name: data.name || '',
+        name: data.full_name || '',
         birth_date: data.birth_date || '',
         parish: data.parish || '',
         naipe: data.naipe || '',
@@ -147,37 +147,37 @@ export default function ChoirMemberForm() {
       return;
     }
 
+    if (!formData.email.trim()) {
+      toast.error('O e-mail é obrigatório.');
+      return;
+    }
+
     setSaving(true);
     try {
       const photoUrl = await uploadPhoto();
 
-      const memberData = {
-        tenant_id: tenantId,
-        name: formData.name.trim(),
+      const profileData = {
+        full_name: formData.name.trim(),
         birth_date: formData.birth_date || null,
         parish: formData.parish.trim() || null,
         naipe: formData.naipe || null,
         phone: formData.phone.trim() || null,
-        email: formData.email.trim() || null,
         active: formData.active,
         photo_url: photoUrl,
       };
 
       if (isEditing) {
         const { error } = await supabase
-          .from('choir_members')
-          .update(memberData)
+          .from('profiles')
+          .update(profileData)
           .eq('id', id);
 
         if (error) throw error;
         toast.success('Coralista atualizado com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('choir_members')
-          .insert(memberData);
-
-        if (error) throw error;
-        toast.success('Coralista cadastrado com sucesso!');
+        // For new members, we need an email - they need to register themselves
+        toast.error('Novos coralistas devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
+        return;
       }
 
       navigate(buildPath('/choir-members'));
@@ -190,13 +190,14 @@ export default function ChoirMemberForm() {
 
   const handleDelete = async () => {
     try {
+      // We don't delete profiles, just deactivate them
       const { error } = await supabase
-        .from('choir_members')
-        .delete()
+        .from('profiles')
+        .update({ active: false, approval_status: 'rejected' })
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('Coralista excluído com sucesso!');
+      toast.success('Coralista desativado com sucesso!');
       navigate(buildPath('/choir-members'));
     } catch (error: any) {
       toast.error('Erro ao excluir: ' + error.message);
