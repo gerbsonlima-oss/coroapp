@@ -40,6 +40,7 @@ import { exportEventZIP } from '@/utils/exportEventZIP';
 import { exportSongBookletPDF } from '@/utils/exportSongBookletPDF';
 import { exportChordBookletPDF } from '@/utils/exportChordBookletPDF';
 import { EventMembersManager } from '@/components/EventMembersManager';
+import { ExportLyricsDialog } from '@/components/ExportLyricsDialog';
 
 interface Event {
   id: string;
@@ -207,6 +208,8 @@ const EventDetails = () => {
   const [chordsModalOpen, setChordsModalOpen] = useState(false);
   const [selectedSongForModal, setSelectedSongForModal] = useState<EventSong | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showExportLyricsDialog, setShowExportLyricsDialog] = useState(false);
+  const [isExportingLyrics, setIsExportingLyrics] = useState(false);
   const songSheetInputRef = useRef<HTMLInputElement>(null);
 
   const [coverImageSrc, setCoverImageSrc] = useState<string | null>(null);
@@ -574,37 +577,42 @@ const EventDetails = () => {
 
   const { tenant } = useTenant();
   
-  const handleExportSongBooklet = async () => {
+  const handleExportSongBooklet = async (fontSize: number) => {
     if (!event) return;
     
-    // Fetch songs with lyrics
-    const songIds = songs.map(s => s.id);
-    const { data: songsWithLyrics, error } = await supabase
-      .from('songs')
-      .select('id, name, type, lyrics')
-      .in('id', songIds);
-    
-    if (error) {
-      console.error('Erro ao buscar letras:', error);
-      toast.error('Erro ao buscar letras das músicas');
-      return;
-    }
-    
-    const songsForBooklet = songsWithLyrics?.filter(s => s.lyrics?.trim()) || [];
-    
-    if (songsForBooklet.length === 0) {
-      toast.error('Nenhuma música do evento possui letra cadastrada');
-      return;
-    }
+    setIsExportingLyrics(true);
     
     try {
+      // Fetch songs with lyrics
+      const songIds = songs.map(s => s.id);
+      const { data: songsWithLyrics, error } = await supabase
+        .from('songs')
+        .select('id, name, type, lyrics')
+        .in('id', songIds);
+      
+      if (error) {
+        console.error('Erro ao buscar letras:', error);
+        toast.error('Erro ao buscar letras das músicas');
+        return;
+      }
+      
+      const songsForBooklet = songsWithLyrics?.filter(s => s.lyrics?.trim()) || [];
+      
+      if (songsForBooklet.length === 0) {
+        toast.error('Nenhuma música do evento possui letra cadastrada');
+        return;
+      }
+      
       toast.info('Gerando folheto de cantos...');
       const tenantInfo = tenant ? { name: tenant.name, logo_url: tenant.logo_url } : undefined;
-      await exportSongBookletPDF(event, songsForBooklet, tenantInfo);
+      await exportSongBookletPDF(event, songsForBooklet, tenantInfo, { fontSize });
       toast.success('Folheto de cantos gerado com sucesso!');
+      setShowExportLyricsDialog(false);
     } catch (error: any) {
       console.error('Erro ao gerar folheto:', error);
       toast.error(error.message || 'Erro ao gerar folheto de cantos');
+    } finally {
+      setIsExportingLyrics(false);
     }
   };
 
@@ -896,7 +904,7 @@ const EventDetails = () => {
                 <FileArchive className="mr-2 h-4 w-4" />
                 Exportar Áudios
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportSongBooklet}>
+              <DropdownMenuItem onClick={() => setShowExportLyricsDialog(true)}>
                 <BookOpen className="mr-2 h-4 w-4" />
                 Letras
               </DropdownMenuItem>
@@ -1550,6 +1558,14 @@ const EventDetails = () => {
           onClose={() => setChordsModalOpen(false)}
         />
       )}
+
+      {/* Export Lyrics Dialog */}
+      <ExportLyricsDialog
+        open={showExportLyricsDialog}
+        onOpenChange={setShowExportLyricsDialog}
+        onExport={handleExportSongBooklet}
+        isExporting={isExportingLyrics}
+      />
 
       <BottomNavigation />
     </div>
