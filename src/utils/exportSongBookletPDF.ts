@@ -715,7 +715,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
       }
 
       const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
-      pdf.text(line, x, currentY);
+      pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
       currentY += lineHeight;
     }
   };
@@ -748,26 +748,35 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
       const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
       
-      // Split by "/" and draw each part
-      const parts = line.split('/');
-      let currentX = x;
-      
-      for (let i = 0; i < parts.length; i++) {
-        // Draw text part
-        if (parts[i]) {
-          pdf.setFont('times', style);
-          pdf.setFontSize(size);
-          pdf.setTextColor(...color);
-          pdf.text(parts[i], currentX, currentY);
-          currentX += pdf.getTextWidth(parts[i]);
-        }
+      // Check if line contains "/" - if so, handle specially
+      if (line.includes('/')) {
+        // Split by "/" and draw each part
+        const parts = line.split('/');
+        let currentX = x;
         
-        // Draw "/" in red (except after last part)
-        if (i < parts.length - 1) {
-          pdf.setTextColor(...redColor);
-          pdf.text('/', currentX, currentY);
-          currentX += pdf.getTextWidth('/');
+        for (let i = 0; i < parts.length; i++) {
+          // Draw text part
+          if (parts[i]) {
+            pdf.setFont('times', style);
+            pdf.setFontSize(size);
+            pdf.setTextColor(...color);
+            pdf.text(parts[i], currentX, currentY);
+            currentX += pdf.getTextWidth(parts[i]);
+          }
+          
+          // Draw "/" in red (except after last part)
+          if (i < parts.length - 1) {
+            pdf.setTextColor(...redColor);
+            pdf.text('/', currentX, currentY);
+            currentX += pdf.getTextWidth('/');
+          }
         }
+      } else {
+        // For lines without slashes, use justified alignment
+        pdf.setFont('times', style);
+        pdf.setFontSize(size);
+        pdf.setTextColor(...color);
+        pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
       }
       
       currentY += lineHeight;
@@ -800,23 +809,16 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
 
     // Processar letra com suporte a tags [REFRÃO]...[/REFRÃO] e numeração de estrofes
     if (song.lyrics) {
-      // Normalize line breaks: replace soft line breaks (Ctrl+Enter / \r) with single space
-      // Only \n\n or empty lines should create paragraph breaks
-      const normalizedLyrics = song.lyrics
-        .replace(/\r\n/g, '\n')  // Normalize Windows line endings
-        .replace(/\r/g, ' ')     // Replace standalone \r (Ctrl+Enter) with space
-        .replace(/\n(?!\n)/g, ' '); // Replace single \n with space, keeping double \n
+      // Normalize only Windows line endings, keep structure intact
+      const normalizedLyrics = song.lyrics.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       
-      const lyricsLines = normalizedLyrics.split(/\n\n+/); // Split on paragraph breaks only
+      const allLines = normalizedLyrics.split('\n');
       let insideRefraoBlock = false;
       let isFirstLineOfRefrao = false;
       let prevEmpty = false;
       
-      // Process each paragraph
-      for (const paragraph of lyricsLines) {
-        const lines = paragraph.split('\n').filter(l => l.trim());
-        
-        for (const line of lines) {
+      // Process each line individually to preserve structure
+      for (const line of allLines) {
         const trimmed = line.trim();
         
         // Detectar abertura de bloco de refrão [REFRÃO]
@@ -970,7 +972,6 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           continue;
         } else {
           addTextWithRedSlashes(trimmed, baseFontSize, style, color, indent, 0);
-        }
         }
       }
     }
