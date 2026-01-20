@@ -29,6 +29,7 @@ import { shareCompleteToWhatsApp } from '@/utils/whatsappShare';
 import { Helmet } from 'react-helmet-async';
 import { useTenant } from '@/contexts/TenantContext';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { ExportLyricsDialog } from '@/components/ExportLyricsDialog';
 
 interface Event {
   id: string;
@@ -140,6 +141,7 @@ const SimpleEventAudios = () => {
   });
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [showExportLyricsDialog, setShowExportLyricsDialog] = useState(false);
 
   // Helper functions and Memoized values
   const availableNaipes = useMemo(() => {
@@ -529,7 +531,7 @@ const SimpleEventAudios = () => {
     }
   };
 
-  const handleExportSongBooklet = async () => {
+  const handleExportSongBooklet = async (fontSize: number) => {
     if (!event || songs.length === 0) return;
     setExportingLyrics(true);
     try {
@@ -542,8 +544,9 @@ const SimpleEventAudios = () => {
         .eq('id', (event as any).tenant_id)
         .single();
       
-      await exportSongBookletPDF(event, songs, tenantData || undefined);
+      await exportSongBookletPDF(event, songs, tenantData || undefined, { fontSize });
       toast.success('Livreto de cantos gerado!');
+      setShowExportLyricsDialog(false);
     } catch (error) {
       console.error('Error exporting song booklet:', error);
       toast.error('Erro ao gerar livreto de cantos');
@@ -1049,7 +1052,7 @@ const SimpleEventAudios = () => {
                         <FileText className="mr-2 h-4 w-4" />
                         Partituras (PDF)
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleExportSongBooklet} disabled={exportingLyrics}>
+                      <DropdownMenuItem onClick={() => setShowExportLyricsDialog(true)} disabled={exportingLyrics}>
                         <BookOpen className="mr-2 h-4 w-4" />
                         Letras
                       </DropdownMenuItem>
@@ -1672,6 +1675,14 @@ const SimpleEventAudios = () => {
             <Plus className="h-6 w-6" />
           </Button>
         )}
+
+        {/* Export Lyrics Dialog */}
+        <ExportLyricsDialog
+          open={showExportLyricsDialog}
+          onOpenChange={setShowExportLyricsDialog}
+          onExport={handleExportSongBooklet}
+          isExporting={exportingLyrics}
+        />
       </div>
     </>
   );

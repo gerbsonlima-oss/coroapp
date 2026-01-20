@@ -247,7 +247,8 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
   }
 };
 
-export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?: TenantInfo) => {
+export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?: TenantInfo, options?: { fontSize?: number }) => {
+  const baseFontSize = options?.fontSize || 11;
   const typeLabels = await loadTypeLabels();
   
   const songsWithLyrics = songs
@@ -719,6 +720,9 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     }
   };
 
+  // Calculate line height based on font size
+  const getLineHeight = (size: number) => size * 0.40;
+
   // Cor vermelha para marcadores
   const redColor: [number, number, number] = [180, 30, 30];
 
@@ -785,20 +789,34 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
-    // Nome da música (destaque) - fonte 11pt
-    addText(song.name, 11, 'bold', theme.primary, 0, 1);
+    // Nome da música (destaque) - fonte baseada no tamanho definido + 1 para destaque
+    addText(song.name, baseFontSize + 1, 'bold', theme.primary, 0, 1);
 
     // Espaço após nome (mais separação)
     currentY += 2.5;
+    
+    // Line height for lyrics based on font size
+    const lyricLineHeight = getLineHeight(baseFontSize);
 
     // Processar letra com suporte a tags [REFRÃO]...[/REFRÃO] e numeração de estrofes
     if (song.lyrics) {
-      const lyricsLines = song.lyrics.split('\n');
+      // Normalize line breaks: replace soft line breaks (Ctrl+Enter / \r) with single space
+      // Only \n\n or empty lines should create paragraph breaks
+      const normalizedLyrics = song.lyrics
+        .replace(/\r\n/g, '\n')  // Normalize Windows line endings
+        .replace(/\r/g, ' ')     // Replace standalone \r (Ctrl+Enter) with space
+        .replace(/\n(?!\n)/g, ' '); // Replace single \n with space, keeping double \n
+      
+      const lyricsLines = normalizedLyrics.split(/\n\n+/); // Split on paragraph breaks only
       let insideRefraoBlock = false;
       let isFirstLineOfRefrao = false;
       let prevEmpty = false;
-
-      for (const line of lyricsLines) {
+      
+      // Process each paragraph
+      for (const paragraph of lyricsLines) {
+        const lines = paragraph.split('\n').filter(l => l.trim());
+        
+        for (const line of lines) {
         const trimmed = line.trim();
         
         // Detectar abertura de bloco de refrão [REFRÃO]
@@ -847,18 +865,18 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
             // "R:" apenas na primeira linha
             if (lineIdx === 0) {
               pdf.setFont('times', 'bold');
-              pdf.setFontSize(11);
+              pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
             // Texto em preto negrito
             pdf.setFont('times', 'bold');
-            pdf.setFontSize(11);
+            pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[lineIdx], x + markerWidth, currentY);
             
-            currentY += 4.4;
+            currentY += lyricLineHeight;
           }
           continue;
         }
@@ -880,28 +898,30 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           
           // Número em vermelho
           pdf.setFont('times', 'bold');
-          pdf.setFontSize(11);
+          pdf.setFontSize(baseFontSize);
           pdf.setTextColor(...redColor);
           pdf.text(`${verseNumber}.`, x, currentY);
           
           // Texto da primeira linha
           if (lines.length > 0) {
             pdf.setFont('times', 'normal');
+            pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[0], x + numMarkerWidth, currentY);
           }
-          currentY += 4;
+          currentY += lyricLineHeight;
           
           // Linhas adicionais (continuação)
           for (let lineIdx = 1; lineIdx < lines.length; lineIdx++) {
-            if (currentY + 4 > contentEnd) {
+            if (currentY + lyricLineHeight > contentEnd) {
               advanceToNextColumn();
             }
             const contX = (currentCol === 1 ? col1X : col2X) + 1.5 + numMarkerWidth;
             pdf.setFont('times', 'normal');
+            pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[lineIdx], contX, currentY);
-            currentY += 4;
+            currentY += lyricLineHeight;
           }
           continue;
         }
@@ -913,7 +933,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         if (hasMarker) {
           style = 'bold';
           color = textMedium;
-          addTextWithRedSlashes(trimmed, 11, style, color, indent, 0);
+          addTextWithRedSlashes(trimmed, baseFontSize, style, color, indent, 0);
         } else if (insideRefraoBlock) {
           // Dentro do bloco [REFRÃO]...[/REFRÃO]: "R:" apenas na primeira linha, texto preto negrito
           indent = 2;
@@ -923,7 +943,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           const lines = pdf.splitTextToSize(trimmed, maxTextWidth) as string[];
           
           for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-            if (currentY + 4 > contentEnd) {
+            if (currentY + lyricLineHeight > contentEnd) {
               advanceToNextColumn();
             }
             
@@ -932,29 +952,28 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
             // "R:" apenas na primeira linha do bloco
             if (isFirstLineOfRefrao && lineIdx === 0) {
               pdf.setFont('times', 'bold');
-              pdf.setFontSize(11);
+              pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
             // Texto em preto negrito
             pdf.setFont('times', 'bold');
-            pdf.setFontSize(11);
+            pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[lineIdx], x + textIndent, currentY);
             
-            currentY += 4.4;
+            currentY += lyricLineHeight;
           }
           
           isFirstLineOfRefrao = false; // Após a primeira linha, não mais
           continue;
         } else {
-          addTextWithRedSlashes(trimmed, 11, style, color, indent, 0);
+          addTextWithRedSlashes(trimmed, baseFontSize, style, color, indent, 0);
+        }
         }
       }
     }
-
-    // Espaço após a música
     currentY += 1.5;
   }
 
