@@ -282,10 +282,15 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
       const coverImg = await loadImage(event.cover_image_url);
       coverPdf.addImage(coverImg, 'JPEG', 0, 0, pageWidth, pageHeight);
       
+      // Apply overlay using GState for transparency
+      const gState = new (coverPdf as any).GState({ opacity: 0.6 });
+      coverPdf.setGState(gState);
       coverPdf.setFillColor(...overlayColor);
-      coverPdf.setGState({ opacity: 0.6 } as any);
       coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
-      coverPdf.setGState({ opacity: 1 } as any);
+      
+      // Reset to full opacity
+      const gStateOpaque = new (coverPdf as any).GState({ opacity: 1 });
+      coverPdf.setGState(gStateOpaque);
     } catch (error) {
       console.error('Erro ao carregar imagem de capa:', error);
       coverPdf.setFillColor(...primaryColor);
@@ -626,10 +631,15 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
       const coverImg = await loadImage(event.cover_image_url);
       pdf.addImage(coverImg, 'JPEG', 0, 0, pageWidth, pageHeight);
       
+      // Apply overlay using GState for transparency
+      const gState = new (pdf as any).GState({ opacity: 0.6 });
+      pdf.setGState(gState);
       pdf.setFillColor(...overlayColor);
-      pdf.setGState({ opacity: 0.6 } as any);
       pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-      pdf.setGState({ opacity: 1 } as any);
+      
+      // Reset to full opacity
+      const gStateOpaque = new (pdf as any).GState({ opacity: 1 });
+      pdf.setGState(gStateOpaque);
     } catch (error) {
       console.error('Erro ao carregar imagem de capa:', error);
       pdf.setFillColor(...primaryColor);
