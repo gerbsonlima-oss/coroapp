@@ -577,7 +577,7 @@ const EventDetails = () => {
 
   const { tenant } = useTenant();
   
-  const handleExportSongBooklet = async (fontSize: number) => {
+  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier' }) => {
     if (!event) return;
     
     setIsExportingLyrics(true);
@@ -605,7 +605,7 @@ const EventDetails = () => {
       
       toast.info('Gerando folheto de cantos...');
       const tenantInfo = tenant ? { name: tenant.name, logo_url: tenant.logo_url } : undefined;
-      await exportSongBookletPDF(event, songsForBooklet, tenantInfo, { fontSize });
+      await exportSongBookletPDF(event, songsForBooklet, tenantInfo, options);
       toast.success('Folheto de cantos gerado com sucesso!');
       setShowExportLyricsDialog(false);
     } catch (error: any) {

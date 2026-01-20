@@ -3,14 +3,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookOpen } from 'lucide-react';
+
+export interface LyricsExportOptions {
+  fontSize: number;
+  fontFamily: 'times' | 'helvetica' | 'courier';
+}
 
 interface ExportLyricsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onExport: (fontSize: number) => void;
+  onExport: (options: LyricsExportOptions) => void;
   isExporting: boolean;
 }
+
+const fontFamilyLabels: Record<string, string> = {
+  times: 'Times (Serifada)',
+  helvetica: 'Helvetica (Sem serifa)',
+  courier: 'Courier (Monoespaçada)',
+};
 
 export const ExportLyricsDialog = ({
   open,
@@ -19,6 +31,7 @@ export const ExportLyricsDialog = ({
   isExporting
 }: ExportLyricsDialogProps) => {
   const [fontSize, setFontSize] = useState(11);
+  const [fontFamily, setFontFamily] = useState<'times' | 'helvetica' | 'courier'>('times');
 
   const fontSizeLabels: Record<number, string> = {
     8: 'Muito pequena',
@@ -32,7 +45,7 @@ export const ExportLyricsDialog = ({
   };
 
   const handleExport = () => {
-    onExport(fontSize);
+    onExport({ fontSize, fontFamily });
   };
 
   return (
@@ -43,6 +56,20 @@ export const ExportLyricsDialog = ({
         </DialogHeader>
 
         <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Fonte</Label>
+            <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as 'times' | 'helvetica' | 'courier')}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="times">{fontFamilyLabels.times}</SelectItem>
+                <SelectItem value="helvetica">{fontFamilyLabels.helvetica}</SelectItem>
+                <SelectItem value="courier">{fontFamilyLabels.courier}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-3">
             <Label className="text-sm font-medium">
               Tamanho da fonte: {fontSize}pt ({fontSizeLabels[fontSize] || ''})
@@ -62,7 +89,7 @@ export const ExportLyricsDialog = ({
           </div>
           
           <p className="text-xs text-muted-foreground">
-            O tamanho afeta apenas o texto das letras. Cabeçalhos e títulos mantêm o tamanho original.
+            Espaçamento mínimo entre linhas e sem recuo de parágrafos para otimizar espaço.
           </p>
         </div>
 

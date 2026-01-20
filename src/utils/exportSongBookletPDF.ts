@@ -247,8 +247,14 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
   }
 };
 
-export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?: TenantInfo, options?: { fontSize?: number }) => {
+export const exportSongBookletPDF = async (
+  event: Event, 
+  songs: Song[], 
+  tenant?: TenantInfo, 
+  options?: { fontSize?: number; fontFamily?: 'times' | 'helvetica' | 'courier' }
+) => {
   const baseFontSize = options?.fontSize || 11;
+  const fontFamily = options?.fontFamily || 'times';
   const typeLabels = await loadTypeLabels();
   
   const songsWithLyrics = songs
@@ -700,10 +706,11 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     spaceBefore: number = 0
   ): void => {
     currentY += spaceBefore;
-    const lineHeight = size * 0.40;
-    const maxWidth = colWidth - 4 - indent;
+    // Minimal line height for space optimization
+    const lineHeight = size * 0.35;
+    const maxWidth = colWidth - 4;
     
-    pdf.setFont('times', style);
+    pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
     pdf.setTextColor(...color);
 
@@ -714,14 +721,15 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         advanceToNextColumn();
       }
 
-      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      // No indent - optimized for space
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5;
       pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
       currentY += lineHeight;
     }
   };
 
-  // Calculate line height based on font size
-  const getLineHeight = (size: number) => size * 0.40;
+  // Minimal line height for space optimization
+  const getLineHeight = (size: number) => size * 0.35;
 
   // Cor vermelha para marcadores
   const redColor: [number, number, number] = [180, 30, 30];
@@ -736,8 +744,9 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
     spaceBefore: number = 0
   ): void => {
     currentY += spaceBefore;
-    const lineHeight = size * 0.40;
-    const maxWidth = colWidth - 4 - indent;
+    // Minimal line height for space optimization
+    const lineHeight = size * 0.35;
+    const maxWidth = colWidth - 4;
     
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
 
@@ -746,7 +755,8 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         advanceToNextColumn();
       }
 
-      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      // No indent - optimized for space
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5;
       
       // Check if line contains "/" - if so, handle specially
       if (line.includes('/')) {
@@ -757,7 +767,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         for (let i = 0; i < parts.length; i++) {
           // Draw text part
           if (parts[i]) {
-            pdf.setFont('times', style);
+            pdf.setFont(fontFamily, style);
             pdf.setFontSize(size);
             pdf.setTextColor(...color);
             pdf.text(parts[i], currentX, currentY);
@@ -773,7 +783,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
         }
       } else {
         // For lines without slashes, use justified alignment
-        pdf.setFont('times', style);
+        pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
         pdf.setTextColor(...color);
         pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
@@ -866,14 +876,14 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
             
             // "R:" apenas na primeira linha
             if (lineIdx === 0) {
-              pdf.setFont('times', 'bold');
+              pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
             // Texto em preto negrito
-            pdf.setFont('times', 'bold');
+            pdf.setFont(fontFamily, 'bold');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[lineIdx], x + markerWidth, currentY);
@@ -899,14 +909,14 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
           const x = (currentCol === 1 ? col1X : col2X) + 1.5;
           
           // Número em vermelho
-          pdf.setFont('times', 'bold');
+          pdf.setFont(fontFamily, 'bold');
           pdf.setFontSize(baseFontSize);
           pdf.setTextColor(...redColor);
           pdf.text(`${verseNumber}.`, x, currentY);
           
           // Texto da primeira linha
           if (lines.length > 0) {
-            pdf.setFont('times', 'normal');
+            pdf.setFont(fontFamily, 'normal');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[0], x + numMarkerWidth, currentY);
@@ -919,7 +929,7 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
               advanceToNextColumn();
             }
             const contX = (currentCol === 1 ? col1X : col2X) + 1.5 + numMarkerWidth;
-            pdf.setFont('times', 'normal');
+            pdf.setFont(fontFamily, 'normal');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[lineIdx], contX, currentY);
@@ -953,14 +963,14 @@ export const exportSongBookletPDF = async (event: Event, songs: Song[], tenant?:
             
             // "R:" apenas na primeira linha do bloco
             if (isFirstLineOfRefrao && lineIdx === 0) {
-              pdf.setFont('times', 'bold');
+              pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
             // Texto em preto negrito
-            pdf.setFont('times', 'bold');
+            pdf.setFont(fontFamily, 'bold');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
             pdf.text(lines[lineIdx], x + textIndent, currentY);
