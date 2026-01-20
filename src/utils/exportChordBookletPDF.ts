@@ -122,9 +122,17 @@ const fetchImageViaBackendProxy = async (url: string): Promise<string | null> =>
 const loadImageRobust = async (url: string): Promise<string | null> => {
   if (!url) return null;
 
+  // 1) Para URLs do Supabase Storage, usar proxy primeiro (evita CORS)
+  if (shouldUseBackendImageProxy(url)) {
+    const proxied = await fetchImageViaBackendProxy(url);
+    if (proxied) return proxied;
+  }
+
+  // 2) Tentar fetch direto -> blob -> dataURL
   const fetched = await fetchImageAsDataUrl(url);
   if (fetched) return fetched;
 
+  // 3) Fallback: <img> + canvas (requer CORS liberado no servidor)
   const canvasDataUrl = await new Promise<string | null>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -161,11 +169,6 @@ const loadImageRobust = async (url: string): Promise<string | null> => {
   });
 
   if (canvasDataUrl) return canvasDataUrl;
-
-  if (shouldUseBackendImageProxy(url)) {
-    const proxied = await fetchImageViaBackendProxy(url);
-    if (proxied) return proxied;
-  }
 
   return null;
 };
