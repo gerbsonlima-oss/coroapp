@@ -531,7 +531,7 @@ const SimpleEventAudios = () => {
     }
   };
 
-  const handleExportSongBooklet = async (fontSize: number) => {
+  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier' }) => {
     if (!event || songs.length === 0) return;
     setExportingLyrics(true);
     try {
@@ -544,7 +544,7 @@ const SimpleEventAudios = () => {
         .eq('id', (event as any).tenant_id)
         .single();
       
-      await exportSongBookletPDF(event, songs, tenantData || undefined, { fontSize });
+      await exportSongBookletPDF(event, songs, tenantData || undefined, options);
       toast.success('Livreto de cantos gerado!');
       setShowExportLyricsDialog(false);
     } catch (error) {
