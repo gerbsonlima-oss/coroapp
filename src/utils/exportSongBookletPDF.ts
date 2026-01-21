@@ -667,9 +667,9 @@ export const exportSongBookletPDF = async (
     pdf.setFillColor(...lightBg);
     pdf.rect(currentBounds.left, currentY, sectionWidth, barHeight, 'F');
 
-    // Badge numérico (retângulo colorido sólido)
+    // Badge numérico (retângulo colorido sólido) - alinhado com internalPadding
     pdf.setFillColor(...theme.primary);
-    pdf.rect(currentBounds.left, currentY, badgeWidth, barHeight, 'F');
+    pdf.rect(currentBounds.left + internalPadding, currentY, badgeWidth, barHeight, 'F');
     
     // Número centralizado no badge (branco, negrito)
     pdf.setTextColor(255, 255, 255);
@@ -677,14 +677,14 @@ export const exportSongBookletPDF = async (
     pdf.setFontSize(10);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
-    pdf.text(numText, currentBounds.left + (badgeWidth - numW) / 2, currentY + 4.3);
+    pdf.text(numText, currentBounds.left + internalPadding + (badgeWidth - numW) / 2, currentY + 4.3);
 
-    // Texto do tipo (negrito, cor primária, tamanho 12)
+    // Texto do tipo (negrito, cor primária, tamanho 12) - alinhado com internalPadding
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
     pdf.setFont('times', 'bold');
     pdf.setFontSize(12);
-    pdf.text(labelText, currentBounds.left + badgeWidth + 3, currentY + 4.3);
+    pdf.text(labelText, currentBounds.left + internalPadding + badgeWidth + 3, currentY + 4.3);
 
     // Mais espaço após a seção do tipo para separar do nome
     currentY += barHeight + 4;
