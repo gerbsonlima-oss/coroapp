@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BookOpen, Globe, FileText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+export type FontFamily = 'times' | 'helvetica' | 'courier';
+
 export interface LyricsExportOptions {
   fontSize: number;
-  fontFamily: 'times' | 'helvetica' | 'courier';
+  fontFamily: FontFamily;
 }
 
 interface ExportLyricsDialogProps {
@@ -20,11 +22,11 @@ interface ExportLyricsDialogProps {
   isExporting: boolean;
 }
 
-const fontFamilyLabels: Record<string, string> = {
-  times: 'Times (Serifada)',
-  helvetica: 'Helvetica (Sem serifa)',
-  courier: 'Courier (Monoespaçada)',
-};
+const fontFamilyOptions: { value: FontFamily; label: string; description: string }[] = [
+  { value: 'times', label: 'Times New Roman', description: 'Clássica serifada, excelente legibilidade' },
+  { value: 'helvetica', label: 'Helvetica', description: 'Moderna sem serifa, limpa e objetiva' },
+  { value: 'courier', label: 'Courier', description: 'Monoespaçada, estilo máquina de escrever' },
+];
 
 export const ExportLyricsDialog = ({
   open,
@@ -34,7 +36,7 @@ export const ExportLyricsDialog = ({
   isExporting
 }: ExportLyricsDialogProps) => {
   const [fontSize, setFontSize] = useState(11);
-  const [fontFamily, setFontFamily] = useState<'times' | 'helvetica' | 'courier'>('times');
+  const [fontFamily, setFontFamily] = useState<FontFamily>('times');
   const [activeTab, setActiveTab] = useState('web');
 
   const fontSizeLabels: Record<number, string> = {
@@ -91,15 +93,20 @@ export const ExportLyricsDialog = ({
 
           <TabsContent value="pdf" className="mt-4 space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Fonte</Label>
-              <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as 'times' | 'helvetica' | 'courier')}>
+              <Label className="text-sm font-medium">Família de Fonte</Label>
+              <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as FontFamily)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="times">{fontFamilyLabels.times}</SelectItem>
-                  <SelectItem value="helvetica">{fontFamilyLabels.helvetica}</SelectItem>
-                  <SelectItem value="courier">{fontFamilyLabels.courier}</SelectItem>
+                <SelectContent className="bg-background">
+                  {fontFamilyOptions.map((font) => (
+                    <SelectItem key={font.value} value={font.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{font.label}</span>
+                        <span className="text-xs text-muted-foreground">{font.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
