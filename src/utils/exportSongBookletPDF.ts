@@ -1,151 +1,150 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
+import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
 
-// Interfaces para o PDF
-interface PDFEvent {
+interface Event {
   id: string;
   name: string;
   date: string;
-  location?: string | null;
-  notes?: string | null;
-  pdf_theme: string;
-  cover_image_url?: string | null;
+  location: string | null;
+  cover_image_url: string | null;
+  pdf_theme?: string | null;
 }
 
-interface PDFSong {
+interface Song {
   id: string;
   name: string;
-  lyrics?: string | null;
-  chords?: string | null;
   type: string;
+  lyrics?: string | null;
 }
 
-interface PDFTenantInfo {
-  id?: string;
+interface TenantInfo {
   name: string;
-  logo_url?: string | null;
+  logo_url: string | null;
 }
 
-// Ordem litúrgica padrão
-const liturgicalOrder: Record<string, number> = {
-  'entrada': 1,
-  'ato_penitencial': 2,
-  'gloria': 3,
-  'salmo': 4,
-  'aclamacao': 5,
-  'ofertorio': 6,
-  'santo': 7,
-  'paz': 8,
-  'cordeiro': 9,
-  'comunhao': 10,
-  'acao_gracas': 11,
-  'final': 12,
-  'ladainha': 13,
-  'mariana': 14,
-  'outra': 15,
-};
-
-// Labels padrão para tipos
 const defaultTypeLabels: Record<string, string> = {
-  'entrada': 'Entrada',
-  'ato_penitencial': 'Ato Penitencial',
-  'gloria': 'Glória',
-  'salmo': 'Salmo Responsorial',
-  'aclamacao': 'Aclamação',
-  'ofertorio': 'Ofertório',
-  'santo': 'Santo',
-  'paz': 'Paz',
-  'cordeiro': 'Cordeiro',
-  'comunhao': 'Comunhão',
-  'acao_gracas': 'Ação de Graças',
-  'final': 'Final',
-  'ladainha': 'Ladainha',
-  'mariana': 'Mariana',
-  'outra': 'Outra',
+  canto_entrada: 'Entrada',
+  ato_penitencial: 'Ato Penitencial',
+  gloria: 'Glória',
+  salmo: 'Salmo',
+  aclamacao: 'Aclamação',
+  oferendas: 'Ofertório',
+  santo: 'Santo',
+  cordeiro: 'Cordeiro',
+  comunhao: 'Comunhão',
+  acao_gracas: 'Ação de Graças',
+  final: 'Final',
+  outro: 'Outro',
 };
 
-// Sistema de temas
-const pdfThemes: Record<string, {
-  primary: string;
-  accent: string;
-  dark: string;
-  light: string;
-  primaryRgb: [number, number, number];
-  accentRgb: [number, number, number];
-}> = {
-  deep_blue_gold: {
-    primary: '#19376D',
-    accent: '#B48C28',
-    dark: '#282832',
-    light: '#F5F7FA',
-    primaryRgb: [25, 55, 109],
-    accentRgb: [180, 140, 40],
-  },
-  emerald_night: {
-    primary: '#064E3B',
-    accent: '#86C896',
-    dark: '#141E19',
-    light: '#F8FAF8',
-    primaryRgb: [6, 78, 59],
-    accentRgb: [134, 200, 150],
-  },
-  violet_sunset: {
-    primary: '#581C87',
-    accent: '#C896B4',
-    dark: '#23142D',
-    light: '#FAF8FC',
-    primaryRgb: [88, 28, 135],
-    accentRgb: [200, 150, 180],
-  },
-  wine_burgundy: {
-    primary: '#7F1D1D',
-    accent: '#D4A574',
-    dark: '#2D1414',
-    light: '#FDF8F6',
-    primaryRgb: [127, 29, 29],
-    accentRgb: [212, 165, 116],
-  },
-  ocean_teal: {
-    primary: '#0F766E',
-    accent: '#99D4CF',
-    dark: '#0D1B1A',
-    light: '#F0FDFA',
-    primaryRgb: [15, 118, 110],
-    accentRgb: [153, 212, 207],
-  },
+const liturgicalOrder: Record<string, number> = {
+  canto_entrada: 1,
+  ato_penitencial: 2,
+  gloria: 3,
+  salmo: 4,
+  aclamacao: 5,
+  oferendas: 6,
+  santo: 7,
+  cordeiro: 8,
+  comunhao: 9,
+  acao_gracas: 10,
+  final: 11,
+  outro: 12,
 };
 
-// Carregar imagem robustamente
+// Detecta o formato correto para o jsPDF a partir de um dataURL
+type JsPdfImageFormat = 'PNG' | 'JPEG';
+
+const getJsPdfImageFormatFromDataUrl = (dataUrl: string): JsPdfImageFormat => {
+  const match = /^data:image\/(png|jpe?g)/i.exec(dataUrl);
+  if (!match) return 'JPEG';
+  return match[1].toLowerCase() === 'png' ? 'PNG' : 'JPEG';
+};
+
+// Preferimos fetch->blob->dataURL para evitar canvas "tainted" em imagens externas
+const fetchImageAsDataUrl = async (url: string, timeoutMs = 15000): Promise<string | null> => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      mode: 'cors',
+      cache: 'no-store',
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (!blob.type?.startsWith('image/')) return null;
+
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('FileReader error'));
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('Falha ao buscar imagem via fetch:', e);
+    return null;
+  }
+};
+
+const shouldUseBackendImageProxy = (url: string): boolean => {
+  try {
+    const u = new URL(url);
+    return (
+      u.protocol === 'https:' &&
+      u.hostname.endsWith('supabase.co') &&
+      u.pathname.startsWith('/storage/v1/object/public/')
+    );
+  } catch {
+    return false;
+  }
+};
+
+const fetchImageViaBackendProxy = async (url: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('image-proxy', {
+      body: { url },
+    });
+
+    if (error) throw error;
+    return (data as any)?.dataUrl ?? null;
+  } catch (e) {
+    console.warn('Falha ao buscar imagem via backend:', e);
+    return null;
+  }
+};
+
+// Carrega imagem com múltiplos fallbacks
 const loadImageRobust = async (url: string): Promise<string | null> => {
   if (!url) return null;
 
-  // Tentar via proxy primeiro para URLs do Supabase
-  if (url.includes('supabase')) {
-    try {
-      const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy`;
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.dataUrl) {
-          return data.dataUrl;
-        }
-      }
-    } catch (e) {
-      console.warn('Proxy falhou, tentando diretamente:', e);
-    }
+  // 1) Para URLs do Supabase Storage, usar proxy primeiro (evita CORS)
+  if (shouldUseBackendImageProxy(url)) {
+    const proxied = await fetchImageViaBackendProxy(url);
+    if (proxied) return proxied;
   }
 
-  // Tentar carregar diretamente via Image
-  return new Promise((resolve) => {
+  // 2) Tentar fetch direto -> blob -> dataURL
+  const fetched = await fetchImageAsDataUrl(url);
+  if (fetched) return fetched;
+
+  // 3) Fallback: <img> + canvas (requer CORS liberado no servidor)
+  const canvasDataUrl = await new Promise<string | null>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    const timeout = setTimeout(() => resolve(null), 10000);
+
+    const timeout = setTimeout(() => {
+      console.warn('Timeout ao carregar imagem:', url.substring(0, 60));
+      resolve(null);
+    }, 15000);
 
     img.onload = () => {
       clearTimeout(timeout);
@@ -155,23 +154,76 @@ const loadImageRobust = async (url: string): Promise<string | null> => {
         canvas.height = img.naturalHeight || img.height;
         const ctx = canvas.getContext('2d');
         if (!ctx) return resolve(null);
+
         ctx.drawImage(img, 0, 0);
         resolve(canvas.toDataURL('image/png'));
       } catch (e) {
+        console.warn('Erro ao converter imagem para dataURL:', e);
         resolve(null);
       }
     };
 
-    img.onerror = () => {
+    img.onerror = (e) => {
       clearTimeout(timeout);
+      console.warn('Erro ao carregar imagem:', url.substring(0, 60), e);
       resolve(null);
     };
 
     img.src = url;
   });
+
+  if (canvasDataUrl) return canvasDataUrl;
+
+  return null;
 };
 
-// Carregar labels de tipos do banco
+// Calcula dimensões da imagem a partir do base64
+const getImageDimensions = (dataUrl: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = () => resolve({ width: 100, height: 100 });
+    img.src = dataUrl;
+  });
+};
+
+// Cria versão circular da imagem para uso no PDF
+const createCircularImage = async (dataUrl: string, size: number): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const outputSize = size * 4; // Higher resolution for better quality
+        canvas.width = outputSize;
+        canvas.height = outputSize;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(null);
+
+        // Draw circular clip
+        ctx.beginPath();
+        ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        // Draw image centered and covering the circle
+        const imgSize = Math.min(img.width, img.height);
+        const sx = (img.width - imgSize) / 2;
+        const sy = (img.height - imgSize) / 2;
+        ctx.drawImage(img, sx, sy, imgSize, imgSize, 0, 0, outputSize, outputSize);
+
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) {
+        console.warn('Erro ao criar imagem circular:', e);
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+};
+
+
 const loadTypeLabels = async (): Promise<Record<string, string>> => {
   try {
     const { data, error } = await supabase
@@ -190,270 +242,21 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
 
     return labels;
   } catch (error) {
-    console.error('Erro ao carregar tipos:', error);
+    console.error('Erro ao carregar tipos de música para PDF:', error);
     return defaultTypeLabels;
   }
 };
 
-// Processar texto com tags de formatação para HTML
-const processLyricsToHTML = (lyrics: string, theme: typeof pdfThemes['deep_blue_gold']): string => {
-  // Normalizar quebras de linha
-  let text = lyrics.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  
-  // Processar tags de formatação customizadas
-  text = text
-    .replace(/<b>/g, '<strong>')
-    .replace(/<\/b>/g, '</strong>')
-    .replace(/<i>/g, '<em>')
-    .replace(/<\/i>/g, '</em>')
-    .replace(/<color:(#[0-9a-fA-F]{6})>/g, '<span style="color:$1">')
-    .replace(/<\/color>/g, '</span>');
-  
-  // Colorir barras (/) em vermelho
-  text = text.replace(/\//g, '<span style="color:#B41E1E">/</span>');
-  
-  // Processar blocos de refrão [REFRÃO]...[/REFRÃO]
-  text = text.replace(/\[REFR[ÃA]O\]/gi, '<div class="refrao-block">');
-  text = text.replace(/\[\/REFR[ÃA]O\]/gi, '</div>');
-  
-  // Processar marcadores legados R:, REFRÃO:, etc
-  text = text.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/gim, '<span class="refrao-marker">R:</span> ');
-  
-  // Processar versos numerados (1. 2. 3. etc)
-  text = text.replace(/^(\d+)\.\s+/gm, '<span class="verse-number">$1.</span> ');
-  
-  // Processar marcadores especiais (PR:, TODOS:, etc)
-  text = text.replace(/^(PR:|AS:|TODOS:|T:|C:|A:|L:)\s*/gim, '<span class="special-marker">$1</span> ');
-  
-  // Converter quebras de linha para <br>
-  // Dupla quebra = novo parágrafo
-  text = text.split('\n\n').map(para => 
-    `<p class="lyric-paragraph">${para.split('\n').join('<br>')}</p>`
-  ).join('');
-  
-  return text;
-};
-
-// Criar HTML do folheto completo
-const createBookletHTML = async (
-  event: PDFEvent,
-  songs: PDFSong[],
-  tenant: PDFTenantInfo | undefined,
-  theme: typeof pdfThemes['deep_blue_gold'],
-  typeLabels: Record<string, string>,
-  options: { fontSize: number; fontFamily: string },
-  logoDataUrl: string | null,
-  qrCodeDataUrl: string | null
-): Promise<HTMLDivElement> => {
-  const container = document.createElement('div');
-  container.id = 'pdf-booklet-container';
-  
-  const fontFamilyCSS = options.fontFamily === 'times' 
-    ? '"Times New Roman", Times, serif' 
-    : options.fontFamily === 'courier' 
-      ? '"Courier New", Courier, monospace' 
-      : 'Helvetica, Arial, sans-serif';
-
-  // Calcular cor clara do background baseada no tema
-  const lightBg = `rgb(${Math.min(255, theme.primaryRgb[0] + Math.round((255 - theme.primaryRgb[0]) * 0.88))}, 
-                       ${Math.min(255, theme.primaryRgb[1] + Math.round((255 - theme.primaryRgb[1]) * 0.88))}, 
-                       ${Math.min(255, theme.primaryRgb[2] + Math.round((255 - theme.primaryRgb[2]) * 0.88))})`;
-  
-  container.innerHTML = `
-    <style>
-      #pdf-booklet-container {
-        width: 210mm;
-        min-height: 297mm;
-        background: white;
-        font-family: ${fontFamilyCSS};
-        font-size: ${options.fontSize}pt;
-        line-height: 1.3;
-        color: #282832;
-        box-sizing: border-box;
-      }
-      
-      .header {
-        background: ${lightBg};
-        padding: 8mm 12mm;
-        border-bottom: 1mm solid ${theme.primary};
-        display: flex;
-        align-items: center;
-        gap: 8mm;
-      }
-      
-      .header-logo {
-        width: 38mm;
-        height: 38mm;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
-      }
-      
-      .header-text {
-        flex: 1;
-        text-align: center;
-      }
-      
-      .header-tenant {
-        font-size: 22pt;
-        font-weight: bold;
-        color: ${theme.primary};
-        text-transform: uppercase;
-        margin: 0 0 2mm 0;
-      }
-      
-      .header-subtitle {
-        font-size: 20pt;
-        font-style: italic;
-        color: ${theme.accent};
-        margin: 0 0 2mm 0;
-      }
-      
-      .header-event {
-        font-size: 16pt;
-        font-weight: bold;
-        color: ${theme.primary};
-        margin: 0;
-      }
-      
-      .content {
-        padding: 5mm 12mm;
-        column-count: 2;
-        column-gap: 8mm;
-        column-fill: auto;
-      }
-      
-      .song-section {
-        break-inside: avoid-column;
-        margin-bottom: 4mm;
-        page-break-inside: avoid;
-      }
-      
-      .song-type-header {
-        background: ${theme.primary};
-        color: white;
-        padding: 1.5mm 3mm;
-        font-size: ${options.fontSize + 1}pt;
-        font-weight: bold;
-        margin-bottom: 2mm;
-        border-radius: 1mm;
-        display: inline-block;
-      }
-      
-      .song-type-number {
-        background: ${theme.accent};
-        color: ${theme.dark};
-        padding: 0.5mm 2mm;
-        border-radius: 1mm;
-        margin-right: 2mm;
-        font-size: ${options.fontSize}pt;
-      }
-      
-      .lyric-paragraph {
-        margin: 0 0 2mm 0;
-        text-align: justify;
-        hyphens: auto;
-      }
-      
-      .refrao-block {
-        margin-left: 3mm;
-        font-weight: bold;
-        border-left: 0.5mm solid ${theme.accent};
-        padding-left: 2mm;
-      }
-      
-      .refrao-marker {
-        color: #B41E1E;
-        font-weight: bold;
-      }
-      
-      .verse-number {
-        color: ${theme.primary};
-        font-weight: bold;
-      }
-      
-      .special-marker {
-        color: ${theme.accent};
-        font-weight: bold;
-      }
-      
-      .qr-section {
-        text-align: center;
-        margin-top: 5mm;
-        break-inside: avoid;
-      }
-      
-      .qr-code {
-        width: 25mm;
-        height: 25mm;
-      }
-      
-      .qr-label {
-        font-size: 8pt;
-        color: #666;
-        margin-top: 1mm;
-      }
-      
-      .footer {
-        text-align: center;
-        padding: 2mm;
-        font-size: 8pt;
-        color: #888;
-        border-top: 0.3mm solid #ddd;
-      }
-    </style>
-    
-    <div class="header">
-      ${logoDataUrl ? `<img src="${logoDataUrl}" class="header-logo" alt="Logo">` : ''}
-      <div class="header-text">
-        <p class="header-tenant">${tenant?.name || 'Coro Paroquial'}</p>
-        <p class="header-subtitle">Subsídio Litúrgico</p>
-        <p class="header-event">${event.name}</p>
-      </div>
-    </div>
-    
-    <div class="content">
-      ${songs.map((song, index) => {
-        const typeLabel = typeLabels[song.type] || song.type || 'Música';
-        const lyricsHTML = song.lyrics ? processLyricsToHTML(song.lyrics, theme) : '';
-        
-        return `
-          <div class="song-section">
-            <div class="song-type-header">
-              <span class="song-type-number">${index + 1}</span>
-              ${typeLabel}
-            </div>
-            <div class="song-lyrics">
-              ${lyricsHTML}
-            </div>
-          </div>
-        `;
-      }).join('')}
-      
-      ${qrCodeDataUrl ? `
-        <div class="qr-section">
-          <img src="${qrCodeDataUrl}" class="qr-code" alt="QR Code">
-          <p class="qr-label">Acesse os áudios</p>
-        </div>
-      ` : ''}
-    </div>
-  `;
-  
-  return container;
-};
-
-// Função principal de exportação
 export const exportSongBookletPDF = async (
-  event: PDFEvent, 
-  songs: PDFSong[], 
-  tenant?: PDFTenantInfo, 
+  event: Event, 
+  songs: Song[], 
+  tenant?: TenantInfo, 
   options?: { fontSize?: number; fontFamily?: 'times' | 'helvetica' | 'courier' }
 ) => {
   const baseFontSize = options?.fontSize || 11;
   const fontFamily = options?.fontFamily || 'times';
   const typeLabels = await loadTypeLabels();
   
-  // Filtrar e ordenar músicas
   const songsWithLyrics = songs
     .filter(song => song.lyrics && song.lyrics.trim())
     .sort((a, b) => {
@@ -466,121 +269,1075 @@ export const exportSongBookletPDF = async (
     throw new Error('Nenhuma música com letra cadastrada');
   }
 
-  // Selecionar tema
-  const themeName = event.pdf_theme || 'deep_blue_gold';
-  const theme = pdfThemes[themeName] || pdfThemes['deep_blue_gold'];
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  
+  // Sistema de temas - cores RGB
+  const pdfThemes: Record<string, {
+    primary: [number, number, number];
+    accent: [number, number, number];
+    dark: [number, number, number];
+    light: [number, number, number];
+  }> = {
+    deep_blue_gold: {
+      primary: [25, 55, 109],
+      accent: [180, 140, 40],
+      dark: [40, 40, 50],
+      light: [245, 247, 250],
+    },
+    emerald_night: {
+      primary: [6, 78, 59],
+      accent: [134, 200, 150],
+      dark: [20, 30, 25],
+      light: [248, 250, 248],
+    },
+    violet_sunset: {
+      primary: [88, 28, 135],
+      accent: [200, 150, 180],
+      dark: [35, 20, 45],
+      light: [250, 248, 252],
+    },
+    graphite_copper: {
+      primary: [50, 50, 60],
+      accent: [180, 110, 60],
+      dark: [30, 30, 35],
+      light: [250, 250, 250],
+    },
+    crimson_noir: {
+      primary: [127, 29, 29],
+      accent: [180, 100, 100],
+      dark: [40, 20, 25],
+      light: [250, 248, 248],
+    },
+    sunrise_coral: {
+      primary: [180, 80, 50],
+      accent: [220, 140, 100],
+      dark: [40, 25, 20],
+      light: [252, 250, 248],
+    },
+    ocean_teal: {
+      primary: [13, 120, 110],
+      accent: [100, 180, 170],
+      dark: [20, 35, 35],
+      light: [248, 251, 250],
+    },
+    forest_sage: {
+      primary: [40, 90, 60],
+      accent: [120, 160, 110],
+      dark: [25, 35, 30],
+      light: [248, 250, 248],
+    },
+    midnight_purple: {
+      primary: [70, 40, 120],
+      accent: [150, 120, 180],
+      dark: [35, 25, 45],
+      light: [250, 248, 252],
+    },
+    wine_burgundy: {
+      primary: [110, 30, 50],
+      accent: [170, 100, 120],
+      dark: [40, 20, 30],
+      light: [252, 248, 250],
+    },
+  };
 
-  // Carregar logo do tenant
+  const themeKey = event.pdf_theme || 'deep_blue_gold';
+  const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
+
+  const white: [number, number, number] = [255, 255, 255];
+  const textDark: [number, number, number] = [30, 30, 38];
+  const textMedium: [number, number, number] = [60, 60, 70];
+  const textLight: [number, number, number] = [90, 90, 100];
+  
+  // Layout - medidas em mm (otimizado para impressão A4)
+  const margin = 12; // Margem lateral aumentada para evitar corte
+  const gutter = 8; // Espaço entre colunas aumentado para evitar sobreposição
+  const colWidth = (pageWidth - 2 * margin - gutter) / 2; // ~89mm por coluna
+  const headerHeight = 52; // Otimizado para melhor equilíbrio visual
+  const footerHeight = 8;
+  const contentStart = headerHeight + 5; // Margem extra para não sobrepor
+  const contentEnd = pageHeight - footerHeight - 3;
+
+  // Estado de paginação
+  let currentPage = 1;
+  let currentY = contentStart; // Posição Y atual na coluna ativa
+  let currentCol = 1; // 1 = esquerda, 2 = direita
+
+  // Pré-carregar imagens
   let logoDataUrl: string | null = null;
+  let logoWidth = 0;
+  let logoHeight = 0;
+  
+  let eventImageDataUrl: string | null = null;
+  let eventImageWidth = 0;
+  let eventImageHeight = 0;
+
+  // Carregar logo do tenant e criar versão circular
   if (tenant?.logo_url) {
-    logoDataUrl = await loadImageRobust(tenant.logo_url);
+    console.log('Carregando logo do tenant:', tenant.logo_url.substring(0, 60));
+    const rawLogoDataUrl = await loadImageRobust(tenant.logo_url);
+    if (rawLogoDataUrl) {
+      console.log('Logo carregado, criando versão circular...');
+      logoHeight = 24; // altura/largura do logo circular
+      logoWidth = logoHeight;
+      // Criar versão circular do logo
+      logoDataUrl = await createCircularImage(rawLogoDataUrl, logoHeight * 4);
+      if (logoDataUrl) {
+        console.log('Logo circular criado com sucesso!');
+      } else {
+        // Fallback para logo original se falhar
+        logoDataUrl = rawLogoDataUrl;
+        console.warn('Fallback para logo original (não circular)');
+      }
+    } else {
+      console.warn('Não foi possível carregar o logo do tenant');
+    }
   }
 
-  // Gerar QR Code
-  let qrCodeDataUrl: string | null = null;
+  // Carregar imagem do evento
+  if (event.cover_image_url) {
+    console.log('Carregando imagem do evento:', event.cover_image_url.substring(0, 60));
+    eventImageDataUrl = await loadImageRobust(event.cover_image_url);
+    if (eventImageDataUrl) {
+      console.log('Imagem do evento carregada com sucesso!');
+      const dims = await getImageDimensions(eventImageDataUrl);
+      eventImageWidth = colWidth - 6;
+      eventImageHeight = (dims.height / dims.width) * eventImageWidth;
+      if (eventImageHeight > 70) {
+        eventImageHeight = 70;
+        eventImageWidth = (dims.width / dims.height) * eventImageHeight;
+      }
+    } else {
+      console.warn('Não foi possível carregar a imagem do evento');
+    }
+  }
+
+  const col1X = margin;
+  const col2X = margin + colWidth + gutter;
+
+  // Altura do conteúdo para páginas seguintes (sem header)
+  const contentStartFirstPage = headerHeight + 5;
+  const contentStartOtherPages = margin + 5; // Páginas seguintes começam mais acima
+
+  // Função para obter onde o conteúdo começa na página atual
+  const getContentStart = () => currentPage === 1 ? contentStartFirstPage : contentStartOtherPages;
+
+  // ============================================
+  // HEADER - Design limpo com fundo claro (APENAS PRIMEIRA PÁGINA)
+  // ============================================
+  const drawHeader = () => {
+    // Header só aparece na primeira página
+    // Criar cor esmaecida (muito clara) baseada no tema primário
+    const lightBg: [number, number, number] = [
+      Math.min(255, theme.primary[0] + Math.round((255 - theme.primary[0]) * 0.85)),
+      Math.min(255, theme.primary[1] + Math.round((255 - theme.primary[1]) * 0.85)),
+      Math.min(255, theme.primary[2] + Math.round((255 - theme.primary[2]) * 0.85)),
+    ];
+    
+    // Background claro esmaecido
+    pdf.setFillColor(...lightBg);
+    pdf.rect(0, 0, pageWidth, headerHeight, 'F');
+
+    // Linha inferior na cor primária para destaque sutil
+    pdf.setFillColor(...theme.primary);
+    pdf.rect(0, headerHeight - 1, pageWidth, 1, 'F');
+
+    let textStartX = margin;
+    const logoSize = 38; // Logo maior ocupando altura das 3 linhas
+
+    // Calcular posições verticais com pouco espaçamento
+    const topPadding = 8;
+    const lineSpacing = 3; // Espaçamento pequeno entre linhas
+    
+    const line1Y = topPadding + 9; // Nome do tenant
+    const line2Y = line1Y + 10 + lineSpacing; // Subsídio Litúrgico
+    const line3Y = line2Y + 10 + lineSpacing; // Nome do evento
+
+    // Logo do tenant - centralizada verticalmente com o texto
+    if (logoDataUrl && logoWidth > 0) {
+      try {
+        // Calcular centro vertical baseado nas 3 linhas de texto
+        const textBlockTop = topPadding;
+        const textBlockBottom = line3Y + 2;
+        const textBlockCenter = (textBlockTop + textBlockBottom) / 2;
+        const logoY = textBlockCenter - (logoSize / 2);
+        const logoX = margin;
+
+        const logoFormat = getJsPdfImageFormatFromDataUrl(logoDataUrl);
+        pdf.addImage(logoDataUrl, logoFormat, logoX, logoY, logoSize, logoSize);
+        
+        textStartX = margin + logoSize + 8;
+      } catch (e) {
+        console.warn('Erro ao inserir logo:', e);
+        textStartX = margin;
+      }
+    }
+
+    const maxTextWidth = pageWidth - textStartX - margin - 5;
+    const centerX = textStartX + (maxTextWidth / 2);
+
+    // Linha 1: Nome do Tenant - fonte Times, tamanho 26
+    const tenantName = tenant?.name || 'Coro Paroquial';
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(26);
+    pdf.setTextColor(...theme.primary);
+    pdf.text(tenantName.toUpperCase(), centerX, line1Y, { align: 'center' });
+
+    // Linha 2: "Subsídio Litúrgico" - fonte Times, tamanho 26
+    pdf.setFont('times', 'italic');
+    pdf.setFontSize(26);
+    // Usar uma cor intermediária entre primary e accent para o subtítulo
+    const subtitleColor: [number, number, number] = [
+      Math.round((theme.primary[0] + theme.accent[0]) / 2),
+      Math.round((theme.primary[1] + theme.accent[1]) / 2),
+      Math.round((theme.primary[2] + theme.accent[2]) / 2),
+    ];
+    pdf.setTextColor(...subtitleColor);
+    pdf.text('Subsídio Litúrgico', centerX, line2Y, { align: 'center' });
+
+    // Linha 3: Nome do evento - fonte Times, tamanho 22
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(22);
+    pdf.setTextColor(...theme.primary);
+    const eventLines = pdf.splitTextToSize(event.name, maxTextWidth);
+    pdf.text(eventLines[0], centerX, line3Y, { align: 'center' });
+    if (eventLines[1]) {
+      pdf.setFontSize(18);
+      pdf.text(eventLines[1], centerX, line3Y + 6, { align: 'center' });
+    }
+  };
+
+  // ============================================
+  // FOOTER - Limpo e profissional
+  // ============================================
+  const drawFooter = (pageNum: number, totalPages: number) => {
+    const footY = pageHeight - 6;
+
+    // Linha superior
+    pdf.setDrawColor(...theme.light);
+    pdf.setLineWidth(0.3);
+    pdf.line(margin, footY - 3, pageWidth - margin, footY - 3);
+
+    pdf.setFont('times', 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...textLight);
+
+    if (tenant?.name) {
+      pdf.text(tenant.name, margin, footY);
+    }
+
+    // Número da página com destaque
+    pdf.setFont('times', 'bold');
+    pdf.setTextColor(...theme.primary);
+    const pageStr = `${pageNum} / ${totalPages}`;
+    pdf.text(pageStr, pageWidth - margin, footY, { align: 'right' });
+  };
+
+  // Desenhar header da primeira página
+  drawHeader();
+  currentY = getContentStart();
+
+  // ============================================
+  // IMAGEM DO EVENTO na primeira coluna
+  // ============================================
+  if (eventImageDataUrl && eventImageWidth > 0) {
+    try {
+      const imgX = col1X + (colWidth - eventImageWidth) / 2;
+      const imgW = eventImageWidth;
+      const imgH = eventImageHeight;
+      const fadeSize = 4; // Tamanho do gradiente de esmaecimento
+
+      // Desenhar a imagem primeiro
+      const eventImgFormat = getJsPdfImageFormatFromDataUrl(eventImageDataUrl);
+      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, currentY, imgW, imgH);
+
+      // Criar efeito de bordas esmaecidas com gradiente para branco
+      const bgColor: [number, number, number] = [255, 255, 255];
+      const steps = 8;
+
+      // Gradiente superior
+      for (let i = 0; i < steps; i++) {
+        const alpha = 1 - (i / steps);
+        const r = Math.round(bgColor[0] * alpha + 255 * (1 - alpha));
+        const g = Math.round(bgColor[1] * alpha + 255 * (1 - alpha));
+        const b = Math.round(bgColor[2] * alpha + 255 * (1 - alpha));
+        pdf.setFillColor(255, 255, 255);
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX, currentY + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+      }
+
+      // Gradiente inferior
+      for (let i = 0; i < steps; i++) {
+        const alpha = i / steps;
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX, currentY + imgH - fadeSize + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+      }
+
+      // Gradiente esquerdo
+      for (let i = 0; i < steps; i++) {
+        const alpha = 1 - (i / steps);
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
+      }
+
+      // Gradiente direito
+      for (let i = 0; i < steps; i++) {
+        const alpha = i / steps;
+        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+        pdf.rect(imgX + imgW - fadeSize + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
+      }
+
+      // Resetar opacidade
+      pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+
+      currentY += imgH + 8;
+    } catch (e) {
+      console.warn('Erro ao inserir imagem do evento:', e);
+    }
+  }
+
+  // QR code será adicionado no final do documento
+
+  // ============================================
+  // HELPER: Mudar para próxima coluna ou página
+  // ============================================
+  const advanceToNextColumn = (): void => {
+    if (currentCol === 1) {
+      // Ir para coluna direita
+      currentCol = 2;
+      currentY = getContentStart();
+    } else {
+      // Ir para nova página, coluna esquerda
+      pdf.addPage();
+      currentPage++;
+      // Sem header nas páginas seguintes
+      currentCol = 1;
+      currentY = getContentStart();
+    }
+  };
+
+  // ============================================
+  // SEÇÃO DE MÚSICA - Design com background esmaecido
+  // ============================================
+  const drawSongSection = (num: number, label: string): void => {
+    const x = currentCol === 1 ? col1X : col2X;
+
+    // Verificar se precisa mudar de coluna/página
+    if (currentY + 25 > contentEnd) {
+      advanceToNextColumn();
+    }
+
+    const barHeight = 6;
+    const badgeWidth = 7;
+
+    // Background esmaecido (10% da cor primária)
+    const lightBg: [number, number, number] = [
+      Math.round(255 - (255 - theme.primary[0]) * 0.12),
+      Math.round(255 - (255 - theme.primary[1]) * 0.12),
+      Math.round(255 - (255 - theme.primary[2]) * 0.12),
+    ];
+    pdf.setFillColor(...lightBg);
+    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, colWidth, barHeight, 'F');
+
+    // Badge numérico (retângulo colorido sólido)
+    pdf.setFillColor(...theme.primary);
+    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, badgeWidth, barHeight, 'F');
+    
+    // Número centralizado no badge (branco, negrito)
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(10);
+    const numText = String(num);
+    const numW = pdf.getTextWidth(numText);
+    pdf.text(numText, (currentCol === 1 ? col1X : col2X) + (badgeWidth - numW) / 2, currentY + 4.3);
+
+    // Texto do tipo (negrito, cor primária, tamanho 12)
+    const labelText = label.toUpperCase();
+    pdf.setTextColor(...theme.primary);
+    pdf.setFont('times', 'bold');
+    pdf.setFontSize(12);
+    pdf.text(labelText, (currentCol === 1 ? col1X : col2X) + badgeWidth + 3, currentY + 4.3);
+
+    // Mais espaço após a seção do tipo para separar do nome
+    currentY += barHeight + 4;
+  };
+
+  // ============================================
+  // ADICIONAR TEXTO COM FLUXO DE COLUNAS
+  // ============================================
+  const addText = (
+    text: string, 
+    size: number, 
+    style: 'normal' | 'bold' | 'italic', 
+    color: [number, number, number], 
+    indent: number = 0,
+    spaceBefore: number = 0
+  ): void => {
+    // Minimal line height for space optimization
+    const lineHeight = size * 0.38; // Aumentado para evitar sobreposição
+    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
+    
+    pdf.setFont(fontFamily, style);
+    pdf.setFontSize(size);
+    pdf.setTextColor(...color);
+
+    const lines = pdf.splitTextToSize(text, maxWidth) as string[];
+
+    // Verificar espaço ANTES de começar - se não cabe, muda de coluna
+    if (currentY + spaceBefore + lineHeight > contentEnd) {
+      advanceToNextColumn();
+    }
+    
+    currentY += spaceBefore;
+
+    for (const line of lines) {
+      // Verificar se a linha cabe, senão avança
+      if (currentY + lineHeight > contentEnd) {
+        advanceToNextColumn();
+      }
+
+      // No indent - optimized for space
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
+      currentY += lineHeight;
+    }
+  };
+
+  // Minimal line height for space optimization (aumentado para evitar sobreposição)
+  const getLineHeight = (size: number) => size * 0.38;
+
+  // Cor vermelha para marcadores
+  const redColor: [number, number, number] = [180, 30, 30];
+
+  // Parse formatting markers from text
+  // Supports: <b>bold</b>, <i>italic</i>, <color:#hex>text</color>
+  type FormattedSegment = {
+    text: string;
+    bold: boolean;
+    italic: boolean;
+    color: [number, number, number] | null;
+  };
+
+  // Convert hex color to RGB
+  const hexToRgb = (hex: string): [number, number, number] => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+      return [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+      ];
+    }
+    return [0, 0, 0]; // Default to black
+  };
+
+  const parseFormattedText = (text: string): FormattedSegment[] => {
+    const segments: FormattedSegment[] = [];
+    
+    // Process text character by character, tracking open tags
+    let i = 0;
+    let currentText = '';
+    let isBold = false;
+    let isItalic = false;
+    let currentColor: [number, number, number] | null = null;
+    
+    while (i < text.length) {
+      // Check for opening tags
+      if (text.slice(i, i + 3) === '<b>') {
+        // Save current segment if any
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isBold = true;
+        i += 3;
+        continue;
+      }
+      
+      if (text.slice(i, i + 4) === '</b>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isBold = false;
+        i += 4;
+        continue;
+      }
+      
+      if (text.slice(i, i + 3) === '<i>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isItalic = true;
+        i += 3;
+        continue;
+      }
+      
+      if (text.slice(i, i + 4) === '</i>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isItalic = false;
+        i += 4;
+        continue;
+      }
+      
+      // Check for color tag: <color:#xxxxxx>
+      const colorMatch = text.slice(i).match(/^<color:(#[a-fA-F0-9]{6})>/);
+      if (colorMatch) {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        currentColor = hexToRgb(colorMatch[1]);
+        i += colorMatch[0].length;
+        continue;
+      }
+      
+      if (text.slice(i, i + 8) === '</color>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        currentColor = null;
+        i += 8;
+        continue;
+      }
+      
+      // Regular character
+      currentText += text[i];
+      i++;
+    }
+    
+    // Add remaining text
+    if (currentText) {
+      segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+    }
+    
+    // If no segments, return original text
+    if (segments.length === 0) {
+      segments.push({ text, bold: false, italic: false, color: null });
+    }
+    
+    return segments;
+  };
+
+  // Função para renderizar texto inline com formatação (bold, italic, color) e "/" em vermelho
+  // Retorna a largura total renderizada
+  const renderFormattedTextInline = (
+    text: string,
+    startX: number,
+    y: number,
+    size: number,
+    baseStyle: 'normal' | 'bold' | 'italic',
+    baseColor: [number, number, number]
+  ): number => {
+    const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
+    
+    if (!hasFormatting) {
+      // Sem formatação customizada, renderiza com / em vermelho
+      return renderTextWithRedSlashes(text, startX, y, size, baseStyle, baseColor);
+    }
+    
+    // Parse segments
+    const segments = parseFormattedText(text);
+    let currentX = startX;
+    
+    for (const segment of segments) {
+      const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
+      const segmentColor = segment.color || baseColor;
+      
+      currentX = renderTextWithRedSlashes(segment.text, currentX, y, size, segmentStyle, segmentColor);
+    }
+    
+    return currentX;
+  };
+  
+  // Renderiza texto com "/" em vermelho e retorna a posição X final
+  const renderTextWithRedSlashes = (
+    text: string,
+    startX: number,
+    y: number,
+    size: number,
+    style: 'normal' | 'bold' | 'italic',
+    color: [number, number, number]
+  ): number => {
+    let currentX = startX;
+    
+    if (text.includes('/')) {
+      const parts = text.split('/');
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i]) {
+          pdf.setFont(fontFamily, style);
+          pdf.setFontSize(size);
+          pdf.setTextColor(...color);
+          pdf.text(parts[i], currentX, y);
+          currentX += pdf.getTextWidth(parts[i]);
+        }
+        if (i < parts.length - 1) {
+          pdf.setFont(fontFamily, style);
+          pdf.setFontSize(size);
+          pdf.setTextColor(180, 30, 30); // Vermelho
+          pdf.text('/', currentX, y);
+          currentX += pdf.getTextWidth('/');
+        }
+      }
+    } else {
+      pdf.setFont(fontFamily, style);
+      pdf.setFontSize(size);
+      pdf.setTextColor(...color);
+      pdf.text(text, currentX, y);
+      currentX += pdf.getTextWidth(text);
+    }
+    
+    return currentX;
+  };
+
+  // Função para desenhar texto com formatação rica (bold, italic, color) e "/" em vermelho
+  const addFormattedText = (
+    text: string, 
+    size: number, 
+    baseStyle: 'normal' | 'bold' | 'italic', 
+    baseColor: [number, number, number], 
+    indent: number = 0,
+    spaceBefore: number = 0
+  ): void => {
+    const lineHeight = size * 0.38;
+    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
+    
+    // For lines with formatting markers, we need special handling
+    const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
+    
+    if (!hasFormatting) {
+      // No custom formatting, use existing logic with slash coloring
+      addTextWithRedSlashesSimple(text, size, baseStyle, baseColor, indent, spaceBefore);
+      return;
+    }
+    
+    // Parse formatted segments
+    const segments = parseFormattedText(text);
+    
+    // Verificar espaço ANTES de começar
+    if (currentY + spaceBefore + lineHeight > contentEnd) {
+      advanceToNextColumn();
+    }
+    
+    currentY += spaceBefore;
+    
+    // Render each segment with its formatting
+    const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+    let currentX = x;
+    
+    for (const segment of segments) {
+      const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
+      const segmentColor = segment.color || baseColor;
+      
+      // Split segment text to handle line wrapping
+      const words = segment.text.split(' ');
+      
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const wordWithSpace = i < words.length - 1 ? word + ' ' : word;
+        
+        pdf.setFont(fontFamily, segmentStyle);
+        pdf.setFontSize(size);
+        const wordWidth = pdf.getTextWidth(wordWithSpace);
+        
+        // Check if word fits on current line
+        if (currentX + wordWidth > x + maxWidth) {
+          currentY += lineHeight;
+          currentX = x;
+          
+          if (currentY + lineHeight > contentEnd) {
+            advanceToNextColumn();
+            currentX = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+          }
+        }
+        
+        // Handle slashes in red
+        currentX = renderTextWithRedSlashes(wordWithSpace, currentX, currentY, size, segmentStyle, segmentColor);
+      }
+    }
+    
+    currentY += lineHeight;
+  };
+
+  // Simple version without formatting parsing (for performance)
+  const addTextWithRedSlashesSimple = (
+    text: string, 
+    size: number, 
+    style: 'normal' | 'bold' | 'italic', 
+    color: [number, number, number], 
+    indent: number = 0,
+    spaceBefore: number = 0
+  ): void => {
+    const lineHeight = size * 0.38;
+    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
+    
+    pdf.setFont(fontFamily, style);
+    pdf.setFontSize(size);
+    
+    const lines = pdf.splitTextToSize(text, maxWidth) as string[];
+
+    if (currentY + spaceBefore + lineHeight > contentEnd) {
+      advanceToNextColumn();
+    }
+    
+    currentY += spaceBefore;
+
+    for (const line of lines) {
+      if (currentY + lineHeight > contentEnd) {
+        advanceToNextColumn();
+      }
+
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      
+      if (line.includes('/')) {
+        const parts = line.split('/');
+        let currentX = x;
+        
+        pdf.setFont(fontFamily, style);
+        pdf.setFontSize(size);
+        
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i]) {
+            pdf.setFont(fontFamily, style);
+            pdf.setFontSize(size);
+            pdf.setTextColor(color[0], color[1], color[2]);
+            pdf.text(parts[i], currentX, currentY);
+            currentX += pdf.getTextWidth(parts[i]);
+          }
+          
+          if (i < parts.length - 1) {
+            pdf.setFont(fontFamily, style);
+            pdf.setFontSize(size);
+            pdf.setTextColor(180, 30, 30);
+            pdf.text('/', currentX, currentY);
+            currentX += pdf.getTextWidth('/');
+          }
+        }
+        pdf.setTextColor(color[0], color[1], color[2]);
+      } else {
+        pdf.setFont(fontFamily, style);
+        pdf.setFontSize(size);
+        pdf.setTextColor(color[0], color[1], color[2]);
+        pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
+      }
+      
+      currentY += lineHeight;
+    }
+  };
+
+  // Função para desenhar texto com "/" em vermelho (wrapper para compatibilidade)
+  const addTextWithRedSlashes = (
+    text: string, 
+    size: number, 
+    style: 'normal' | 'bold' | 'italic', 
+    color: [number, number, number], 
+    indent: number = 0,
+    spaceBefore: number = 0
+  ): void => {
+    addFormattedText(text, size, style, color, indent, spaceBefore);
+  };
+
+  // ============================================
+  // PROCESSAR MÚSICAS
+  // ============================================
+  let songIndex = 0;
+  for (const song of songsWithLyrics) {
+    songIndex++;
+
+    // Espaço entre seções (maior para separação visual)
+    if (songIndex > 1) {
+      currentY += 4;
+    }
+
+    const typeLabel = typeLabels[song.type] || song.type || 'Música';
+    drawSongSection(songIndex, typeLabel);
+
+    // Nome da música removido - apenas o tipo é exibido
+    // Espaço pequeno após a seção do tipo
+    currentY += 1;
+    
+    // Line height for lyrics based on font size
+    const lyricLineHeight = getLineHeight(baseFontSize);
+
+    // Processar letra com suporte a tags [REFRÃO]...[/REFRÃO] e numeração de estrofes
+    if (song.lyrics) {
+      // Normalize only Windows line endings, keep structure intact
+      const normalizedLyrics = song.lyrics.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      
+      // ============================================
+      // AGRUPAR LINHAS EM VERSOS (separados por linha em branco)
+      // ============================================
+      const allLines = normalizedLyrics.split('\n');
+      const verses: { lines: string[]; isRefraoBlock: boolean }[] = [];
+      let currentVerse: string[] = [];
+      let inRefraoBlockMode = false;
+      
+      for (const line of allLines) {
+        const trimmed = line.trim();
+        
+        // Detectar abertura de bloco de refrão [REFRÃO] sozinho na linha
+        if (/^\[REFR[ÃA]O\]$/i.test(trimmed)) {
+          // Salvar verso atual antes do refrão
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: false });
+            currentVerse = [];
+          }
+          inRefraoBlockMode = true;
+          continue;
+        }
+        
+        // Detectar [REFRÃO] no início da linha COM texto após (ex: "[REFRÃO] Tenho que gritar...")
+        const refraoInlineMatch = /^\[REFR[ÃA]O\]\s*(.+)$/i.exec(trimmed);
+        if (refraoInlineMatch) {
+          // Salvar verso atual antes do refrão
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: false });
+            currentVerse = [];
+          }
+          // Iniciar novo bloco de refrão com o texto após a tag
+          inRefraoBlockMode = true;
+          currentVerse.push(refraoInlineMatch[1].trim());
+          continue;
+        }
+        
+        // Detectar fechamento de bloco de refrão [/REFRÃO]
+        if (/^\[\/REFR[ÃA]O\]$/i.test(trimmed)) {
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: true });
+            currentVerse = [];
+          }
+          inRefraoBlockMode = false;
+          continue;
+        }
+        
+        // Linha em branco = fim do verso atual (e fecha refrão se estiver aberto)
+        if (!trimmed) {
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: inRefraoBlockMode });
+            currentVerse = [];
+          }
+          // Linha em branco fecha o modo de refrão
+          inRefraoBlockMode = false;
+          continue;
+        }
+        
+        currentVerse.push(trimmed);
+      }
+      
+      // Adicionar último verso se existir
+      if (currentVerse.length > 0) {
+        verses.push({ lines: currentVerse, isRefraoBlock: inRefraoBlockMode });
+      }
+      
+      // ============================================
+      // PROCESSAR CADA VERSO
+      // ============================================
+      let isFirstRefraoVerse = true;
+      
+      for (let verseIdx = 0; verseIdx < verses.length; verseIdx++) {
+        const verse = verses[verseIdx];
+        const firstLine = verse.lines[0];
+        
+        // Espaço entre versos (exceto primeiro)
+        if (verseIdx > 0) {
+          currentY += 2;
+        }
+        
+        // Verificar se é verso numerado (ex: "1. Texto...")
+        const numberedVerseMatch = /^(\d+)\.\s*(.*)/.exec(firstLine);
+        
+        // Verificar se é linha com marcador de refrão legado (R:, REFRÃO:, etc)
+        const isRefrainLineMarker = /^(R:|REFRÃO:|REFRAO:|REF:)/i.test(firstLine);
+        
+        // Verificar se tem marcador especial (PR:, TODOS:, etc)
+        const hasSpecialMarker = /^(PR:|AS:|TODOS:|T:|C:|A:|L:)/i.test(firstLine);
+        
+        if (verse.isRefraoBlock) {
+          // ============================================
+          // BLOCO [REFRÃO]...[/REFRÃO]
+          // ============================================
+          const indent = 2;
+          const markerWidth = 7; // Largura do "R: "
+          
+          for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
+            const lineText = verse.lines[lineIdx];
+            
+            if (currentY + lyricLineHeight > contentEnd) {
+              advanceToNextColumn();
+            }
+            
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            
+            // "R:" apenas na primeira linha do primeiro verso de refrão
+            if (isFirstRefraoVerse && lineIdx === 0) {
+              pdf.setFont(fontFamily, 'bold');
+              pdf.setFontSize(baseFontSize);
+              pdf.setTextColor(...redColor);
+              pdf.text('R:', x, currentY);
+            }
+            
+            // Texto com formatação
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark);
+            
+            currentY += lyricLineHeight;
+          }
+          
+          isFirstRefraoVerse = false;
+          
+        } else if (isRefrainLineMarker) {
+          // ============================================
+          // MARCADOR LEGADO R:, REFRÃO:, etc
+          // ============================================
+          const indent = 2;
+          const markerWidth = 7;
+          
+          for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
+            let lineText = verse.lines[lineIdx];
+            
+            // Remover marcador apenas da primeira linha
+            if (lineIdx === 0) {
+              lineText = lineText.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/i, '');
+            }
+            
+            if (currentY + lyricLineHeight > contentEnd) {
+              advanceToNextColumn();
+            }
+            
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            
+            // "R:" apenas na primeira linha
+            if (lineIdx === 0) {
+              pdf.setFont(fontFamily, 'bold');
+              pdf.setFontSize(baseFontSize);
+              pdf.setTextColor(...redColor);
+              pdf.text('R:', x, currentY);
+            }
+            
+            // Texto com formatação
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark);
+            
+            currentY += lyricLineHeight;
+          }
+          
+        } else if (numberedVerseMatch) {
+          // ============================================
+          // VERSO NUMERADO (1., 2., etc) - TODAS AS LINHAS COM MESMO RECUO
+          // ============================================
+          const verseNumber = numberedVerseMatch[1];
+          const numMarkerWidth = 8; // Largura fixa para "N. "
+          
+          for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
+            let lineText = verse.lines[lineIdx];
+            
+            // Remover número apenas da primeira linha
+            if (lineIdx === 0) {
+              lineText = numberedVerseMatch[2] || '';
+            }
+            
+            if (currentY + lyricLineHeight > contentEnd) {
+              advanceToNextColumn();
+            }
+            
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+            
+            // Número em vermelho apenas na primeira linha
+            if (lineIdx === 0) {
+              pdf.setFont(fontFamily, 'bold');
+              pdf.setFontSize(baseFontSize);
+              pdf.setTextColor(...redColor);
+              pdf.text(`${verseNumber}.`, x, currentY);
+            }
+            
+            // Texto com formatação
+            renderFormattedTextInline(lineText, x + numMarkerWidth, currentY, baseFontSize, 'normal', textDark);
+            
+            currentY += lyricLineHeight;
+          }
+          
+        } else if (hasSpecialMarker) {
+          // ============================================
+          // MARCADORES ESPECIAIS (PR:, TODOS:, etc)
+          // ============================================
+          for (const lineText of verse.lines) {
+            addTextWithRedSlashes(lineText, baseFontSize, 'bold', textMedium, 0, 0);
+          }
+          
+        } else {
+          // ============================================
+          // VERSO NORMAL (sem numeração)
+          // ============================================
+          for (const lineText of verse.lines) {
+            addTextWithRedSlashes(lineText, baseFontSize, 'normal', textDark, 0, 0);
+          }
+        }
+      }
+    }
+    currentY += 1.5;
+  }
+
+  // ============================================
+  // QR CODE - No final da última página
+  // ============================================
   try {
-    const audioPageUrl = `${window.location.origin}/events/${event.id}/audios`;
-    qrCodeDataUrl = await QRCode.toDataURL(audioPageUrl, {
-      width: 200,
-      margin: 1,
+    const qrSize = 28;
+    const qrSpaceNeeded = qrSize + 12; // QR + texto abaixo
+    
+    // Verificar se cabe na página atual, senão criar nova página
+    if (currentY + qrSpaceNeeded > contentEnd - 5) {
+      advanceToNextColumn();
+    }
+    
+    const audioPageUrl = `${window.location.origin}/e/${event.id}`;
+    // Converter RGB para HEX para o QRCode
+    const toHex = (r: number, g: number, b: number) => 
+      '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    const qrDarkColor = toHex(theme.primary[0], theme.primary[1], theme.primary[2]);
+    
+    const qrDataUrl = await QRCode.toDataURL(audioPageUrl, { 
+      margin: 1, 
+      scale: 6,
       color: {
-        dark: theme.primary,
-        light: '#FFFFFF',
-      },
+        dark: qrDarkColor,
+        light: '#ffffff'
+      }
     });
+    
+    // Centralizar o QR code na coluna atual
+    const qrColX = currentCol === 1 ? col1X : col2X;
+    const qrX = qrColX + (colWidth - qrSize) / 2;
+    
+    // Desenhar QR code
+    pdf.addImage(qrDataUrl, 'PNG', qrX, currentY, qrSize, qrSize);
+    
+    // Texto abaixo do QR
+    pdf.setFont('times', 'italic');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...textLight);
+    const qrLabel = 'Escaneie para ouvir os áudios';
+    const labelWidth = pdf.getTextWidth(qrLabel);
+    pdf.text(qrLabel, qrColX + (colWidth - labelWidth) / 2, currentY + qrSize + 4);
   } catch (e) {
-    console.warn('Erro ao gerar QR Code:', e);
+    console.warn('Erro ao gerar QR code:', e);
   }
 
-  // Criar HTML do folheto
-  const htmlContainer = await createBookletHTML(
-    event,
-    songsWithLyrics,
-    tenant,
-    theme,
-    typeLabels,
-    { fontSize: baseFontSize, fontFamily },
-    logoDataUrl,
-    qrCodeDataUrl
-  );
-
-  // Adicionar ao DOM temporariamente (invisível) para renderização
-  htmlContainer.style.position = 'absolute';
-  htmlContainer.style.left = '-9999px';
-  htmlContainer.style.top = '0';
-  document.body.appendChild(htmlContainer);
-
-  try {
-    // Renderizar com html2canvas
-    const canvas = await html2canvas(htmlContainer, {
-      scale: 2, // Alta resolução
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#FFFFFF',
-      width: 794, // A4 width em pixels a 96dpi
-      windowWidth: 794,
-    });
-
-    // Criar PDF
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * pageWidth) / canvas.width;
-    
-    // Se o conteúdo é maior que uma página, dividir em múltiplas páginas
-    let yOffset = 0;
-    let pageNum = 1;
-    
-    while (yOffset < imgHeight) {
-      if (pageNum > 1) {
-        pdf.addPage();
-      }
-      
-      // Calcular a porção do canvas para esta página
-      const remainingHeight = imgHeight - yOffset;
-      const pageContentHeight = Math.min(pageHeight, remainingHeight);
-      
-      // Criar um canvas temporário para a porção atual
-      const pageCanvas = document.createElement('canvas');
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = Math.ceil((pageContentHeight / imgWidth) * canvas.width);
-      
-      const ctx = pageCanvas.getContext('2d');
-      if (ctx) {
-        const sourceY = Math.ceil((yOffset / imgHeight) * canvas.height);
-        const sourceHeight = Math.ceil((pageContentHeight / imgHeight) * canvas.height);
-        
-        ctx.drawImage(
-          canvas,
-          0, sourceY, canvas.width, sourceHeight,
-          0, 0, pageCanvas.width, pageCanvas.height
-        );
-        
-        const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(pageImgData, 'JPEG', 0, 0, pageWidth, pageContentHeight);
-      }
-      
-      yOffset += pageHeight;
-      pageNum++;
-    }
-
-    // Adicionar número de páginas
-    const totalPages = pdf.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      pdf.setPage(i);
-      pdf.setFontSize(8);
-      pdf.setTextColor(150, 150, 150);
-      pdf.text(`Página ${i} de ${totalPages}`, pageWidth / 2, pageHeight - 3, { align: 'center' });
-    }
-
-    // Salvar PDF
-    const fileName = `Letras_${event.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    pdf.save(fileName);
-    
-  } finally {
-    // Remover elemento do DOM
-    document.body.removeChild(htmlContainer);
+  // ============================================
+  // ADICIONAR FOOTERS EM TODAS AS PÁGINAS
+  // ============================================
+  const totalPages = pdf.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    drawFooter(i, totalPages);
   }
+
+  // ============================================
+  // SALVAR PDF
+  // ============================================
+  const fileName = `Folheto_Cantos_${event.name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+  pdf.save(fileName);
 };
