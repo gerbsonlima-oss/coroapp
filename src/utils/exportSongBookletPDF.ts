@@ -351,13 +351,14 @@ export const exportSongBookletPDF = async (
   const textLight: [number, number, number] = [90, 90, 100];
   
   // Layout - medidas em mm (otimizado para impressão A4)
-  const margin = 14; // Margem lateral segura para evitar corte
-  const gutter = 10; // Espaço entre colunas para evitar sobreposição
-  const colWidth = (pageWidth - 2 * margin - gutter) / 2; // ~86mm por coluna
+  // A4 = 210mm x 297mm
+  const margin = 18; // Margem lateral ampla para evitar corte na impressão
+  const gutter = 12; // Espaço grande entre colunas para evitar sobreposição
+  const colWidth = (pageWidth - 2 * margin - gutter) / 2; // ~81mm por coluna
   const headerHeight = 52; // Otimizado para melhor equilíbrio visual
   const footerHeight = 8;
   const contentStart = headerHeight + 5; // Margem extra para não sobrepor
-  const contentEnd = pageHeight - footerHeight - 5; // Limite inferior seguro
+  const contentEnd = pageHeight - footerHeight - 8; // Limite inferior seguro
   
   // Limites rígidos para cada coluna (área delimitada)
   const col1LeftBound = margin;
@@ -614,7 +615,7 @@ export const exportSongBookletPDF = async (
   };
   
   // Margem interna de segurança dentro de cada coluna
-  const internalPadding = 3;
+  const internalPadding = 4;
 
   // ============================================
   // HELPER: Mudar para próxima coluna ou página
@@ -845,34 +846,88 @@ export const exportSongBookletPDF = async (
   };
 
   // Função para renderizar texto inline com formatação (bold, italic, color) e "/" em vermelho
-  // Retorna a largura total renderizada
+  // IMPORTANTE: Esta função agora quebra linhas automaticamente ao atingir o limite da coluna
   const renderFormattedTextInline = (
     text: string,
     startX: number,
     y: number,
     size: number,
     baseStyle: 'normal' | 'bold' | 'italic',
+    baseColor: [number, number, number],
+    indentForWrap: number = 0 // Indentação para linhas que quebram
+  ): void => {
+    const lineHeight = size * 0.40;
+    const bounds = getColumnBounds();
+    const maxX = bounds.right - internalPadding; // Limite rígido da coluna
+    
+    // Primeira, usar splitTextToSize para obter texto que cabe na largura disponível
+    const availableWidth = maxX - startX;
+    
+    pdf.setFont(fontFamily, baseStyle);
+    pdf.setFontSize(size);
+    
+    // Limpar tags de formatação para calcular quebra de linha
+    const cleanText = text
+      .replace(/<b>/g, '').replace(/<\/b>/g, '')
+      .replace(/<i>/g, '').replace(/<\/i>/g, '')
+      .replace(/<color:[^>]+>/g, '').replace(/<\/color>/g, '');
+    
+    const lines = pdf.splitTextToSize(cleanText, availableWidth) as string[];
+    
+    // Se o texto couber em uma linha, renderiza com formatação
+    if (lines.length === 1) {
+      renderFormattedSegment(text, startX, y, size, baseStyle, baseColor);
+    } else {
+      // Para múltiplas linhas, precisamos renderizar linha por linha
+      // Recalcular com a largura total da coluna para linhas subsequentes
+      const fullWidth = (bounds.right - bounds.left) - (2 * internalPadding) - indentForWrap;
+      const allLines = pdf.splitTextToSize(cleanText, fullWidth) as string[];
+      
+      let currentLineY = y;
+      for (let i = 0; i < allLines.length; i++) {
+        if (currentLineY + lineHeight > contentEnd) {
+          advanceToNextColumn();
+          currentLineY = currentY;
+        }
+        
+        const lineX = i === 0 ? startX : getColumnBounds().left + internalPadding + indentForWrap;
+        
+        // Renderizar a linha com formatação simples (sem tags no texto quebrado)
+        renderTextWithRedSlashes(allLines[i], lineX, currentLineY, size, baseStyle, baseColor);
+        
+        if (i < allLines.length - 1) {
+          currentLineY += lineHeight;
+        }
+      }
+      // Atualizar currentY para a última linha renderizada
+      currentY = currentLineY;
+    }
+  };
+  
+  // Renderiza um segmento de texto com formatação (usado para textos que cabem em uma linha)
+  const renderFormattedSegment = (
+    text: string,
+    startX: number,
+    y: number,
+    size: number,
+    baseStyle: 'normal' | 'bold' | 'italic',
     baseColor: [number, number, number]
-  ): number => {
+  ): void => {
     const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
     
     if (!hasFormatting) {
-      // Sem formatação customizada, renderiza com / em vermelho
-      return renderTextWithRedSlashes(text, startX, y, size, baseStyle, baseColor);
+      renderTextWithRedSlashes(text, startX, y, size, baseStyle, baseColor);
+      return;
     }
     
-    // Parse segments
     const segments = parseFormattedText(text);
     let currentX = startX;
     
     for (const segment of segments) {
       const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
       const segmentColor = segment.color || baseColor;
-      
       currentX = renderTextWithRedSlashes(segment.text, currentX, y, size, segmentStyle, segmentColor);
     }
-    
-    return currentX;
   };
   
   // Renderiza texto com "/" em vermelho e retorna a posição X final
@@ -1197,6 +1252,7 @@ export const exportSongBookletPDF = async (
           // ============================================
           const indent = 2;
           const markerWidth = 7; // Largura do "R: "
+          const totalIndent = indent + markerWidth;
           
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             const lineText = verse.lines[lineIdx];
@@ -1216,8 +1272,8 @@ export const exportSongBookletPDF = async (
               pdf.text('R:', x, currentY);
             }
             
-            // Texto com formatação
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark);
+            // Texto com formatação - passa indentação para quebras de linha
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
@@ -1230,6 +1286,7 @@ export const exportSongBookletPDF = async (
           // ============================================
           const indent = 2;
           const markerWidth = 7;
+          const totalIndent = indent + markerWidth;
           
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             let lineText = verse.lines[lineIdx];
@@ -1254,8 +1311,8 @@ export const exportSongBookletPDF = async (
               pdf.text('R:', x, currentY);
             }
             
-            // Texto com formatação
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark);
+            // Texto com formatação - passa indentação para quebras de linha
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
@@ -1290,8 +1347,8 @@ export const exportSongBookletPDF = async (
               pdf.text(`${verseNumber}.`, x, currentY);
             }
             
-            // Texto com formatação
-            renderFormattedTextInline(lineText, x + numMarkerWidth, currentY, baseFontSize, 'normal', textDark);
+            // Texto com formatação - passa indentação para quebras de linha
+            renderFormattedTextInline(lineText, x + numMarkerWidth, currentY, baseFontSize, 'normal', textDark, numMarkerWidth);
             
             currentY += lyricLineHeight;
           }
