@@ -815,167 +815,242 @@ export const exportSongBookletPDF = async (
       // Normalize only Windows line endings, keep structure intact
       const normalizedLyrics = song.lyrics.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
       
+      // ============================================
+      // AGRUPAR LINHAS EM VERSOS (separados por linha em branco)
+      // ============================================
       const allLines = normalizedLyrics.split('\n');
-      let insideRefraoBlock = false;
-      let isFirstLineOfRefrao = false;
-      let prevEmpty = false;
+      const verses: { lines: string[]; isRefraoBlock: boolean }[] = [];
+      let currentVerse: string[] = [];
+      let inRefraoBlockMode = false;
       
-      // Process each line individually to preserve structure
       for (const line of allLines) {
         const trimmed = line.trim();
         
         // Detectar abertura de bloco de refrão [REFRÃO]
         if (/^\[REFR[ÃA]O\]$/i.test(trimmed)) {
-          insideRefraoBlock = true;
-          isFirstLineOfRefrao = true;
+          // Salvar verso atual antes do refrão
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: false });
+            currentVerse = [];
+          }
+          inRefraoBlockMode = true;
           continue;
         }
         
         // Detectar fechamento de bloco de refrão [/REFRÃO]
         if (/^\[\/REFR[ÃA]O\]$/i.test(trimmed)) {
-          insideRefraoBlock = false;
-          isFirstLineOfRefrao = false;
-          currentY += 2;
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: true });
+            currentVerse = [];
+          }
+          inRefraoBlockMode = false;
           continue;
         }
         
+        // Linha em branco = fim do verso atual
         if (!trimmed) {
-          if (!prevEmpty) {
-            currentY += 2;
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: inRefraoBlockMode });
+            currentVerse = [];
           }
-          prevEmpty = true;
           continue;
         }
-        prevEmpty = false;
-
-        const hasMarker = /^(PR:|AS:|TODOS:|T:|C:|A:|L:)/i.test(trimmed);
-        const isRefrainLineMarker = /^(R:|REFRÃO:|REFRAO:|REF:)/i.test(trimmed);
-        const isNumberedVerse = /^(\d+)\.\s*(.*)/.exec(trimmed);
-
-        // Linha com marcador de refrão legado (R:, REFRÃO:, etc)
-        if (isRefrainLineMarker) {
-          const textAfterMarker = trimmed.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/i, '');
+        
+        currentVerse.push(trimmed);
+      }
+      
+      // Adicionar último verso se existir
+      if (currentVerse.length > 0) {
+        verses.push({ lines: currentVerse, isRefraoBlock: inRefraoBlockMode });
+      }
+      
+      // ============================================
+      // PROCESSAR CADA VERSO
+      // ============================================
+      let isFirstRefraoVerse = true;
+      
+      for (let verseIdx = 0; verseIdx < verses.length; verseIdx++) {
+        const verse = verses[verseIdx];
+        const firstLine = verse.lines[0];
+        
+        // Espaço entre versos (exceto primeiro)
+        if (verseIdx > 0) {
+          currentY += 2;
+        }
+        
+        // Verificar se é verso numerado (ex: "1. Texto...")
+        const numberedVerseMatch = /^(\d+)\.\s*(.*)/.exec(firstLine);
+        
+        // Verificar se é linha com marcador de refrão legado (R:, REFRÃO:, etc)
+        const isRefrainLineMarker = /^(R:|REFRÃO:|REFRAO:|REF:)/i.test(firstLine);
+        
+        // Verificar se tem marcador especial (PR:, TODOS:, etc)
+        const hasSpecialMarker = /^(PR:|AS:|TODOS:|T:|C:|A:|L:)/i.test(firstLine);
+        
+        if (verse.isRefraoBlock) {
+          // ============================================
+          // BLOCO [REFRÃO]...[/REFRÃO]
+          // ============================================
           const indent = 2;
-          const markerWidth = 7; // Largura fixa para "R: "
+          const markerWidth = 7; // Largura do "R: "
           const maxTextWidth = colWidth - 4 - indent - markerWidth;
-          const lines = pdf.splitTextToSize(textAfterMarker, maxTextWidth) as string[];
           
-          for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-            if (currentY + 4 > contentEnd) {
-              advanceToNextColumn();
-            }
+          for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
+            const lineText = verse.lines[lineIdx];
+            const lines = pdf.splitTextToSize(lineText, maxTextWidth) as string[];
             
-            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
-            
-            // "R:" apenas na primeira linha
-            if (lineIdx === 0) {
+            for (let subLineIdx = 0; subLineIdx < lines.length; subLineIdx++) {
+              if (currentY + lyricLineHeight > contentEnd) {
+                advanceToNextColumn();
+              }
+              
+              const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+              
+              // "R:" apenas na primeira linha do primeiro verso de refrão
+              if (isFirstRefraoVerse && lineIdx === 0 && subLineIdx === 0) {
+                pdf.setFont(fontFamily, 'bold');
+                pdf.setFontSize(baseFontSize);
+                pdf.setTextColor(...redColor);
+                pdf.text('R:', x, currentY);
+              }
+              
+              // Texto em preto negrito
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
-              pdf.setTextColor(...redColor);
-              pdf.text('R:', x, currentY);
+              pdf.setTextColor(...textDark);
+              pdf.text(lines[subLineIdx], x + markerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
+              
+              currentY += lyricLineHeight;
+            }
+          }
+          
+          isFirstRefraoVerse = false;
+          
+        } else if (isRefrainLineMarker) {
+          // ============================================
+          // MARCADOR LEGADO R:, REFRÃO:, etc
+          // ============================================
+          const indent = 2;
+          const markerWidth = 7;
+          const maxTextWidth = colWidth - 4 - indent - markerWidth;
+          
+          for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
+            let lineText = verse.lines[lineIdx];
+            
+            // Remover marcador apenas da primeira linha
+            if (lineIdx === 0) {
+              lineText = lineText.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/i, '');
             }
             
-            // Texto em preto negrito justificado
-            pdf.setFont(fontFamily, 'bold');
-            pdf.setFontSize(baseFontSize);
-            pdf.setTextColor(...textDark);
-            const textMaxWidth = colWidth - 4 - indent - markerWidth;
-            pdf.text(lines[lineIdx], x + markerWidth, currentY, { align: 'justify', maxWidth: textMaxWidth });
+            const lines = pdf.splitTextToSize(lineText, maxTextWidth) as string[];
             
-            currentY += lyricLineHeight;
+            for (let subLineIdx = 0; subLineIdx < lines.length; subLineIdx++) {
+              if (currentY + lyricLineHeight > contentEnd) {
+                advanceToNextColumn();
+              }
+              
+              const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+              
+              // "R:" apenas na primeira linha
+              if (lineIdx === 0 && subLineIdx === 0) {
+                pdf.setFont(fontFamily, 'bold');
+                pdf.setFontSize(baseFontSize);
+                pdf.setTextColor(...redColor);
+                pdf.text('R:', x, currentY);
+              }
+              
+              // Texto em preto negrito
+              pdf.setFont(fontFamily, 'bold');
+              pdf.setFontSize(baseFontSize);
+              pdf.setTextColor(...textDark);
+              pdf.text(lines[subLineIdx], x + markerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
+              
+              currentY += lyricLineHeight;
+            }
           }
-          continue;
-        }
-
-        // Estrofe numerada: número em vermelho, resto normal
-        if (isNumberedVerse) {
-          const verseNumber = isNumberedVerse[1];
-          const verseText = isNumberedVerse[2];
+          
+        } else if (numberedVerseMatch) {
+          // ============================================
+          // VERSO NUMERADO (1., 2., etc) - TODAS AS LINHAS COM MESMO RECUO
+          // ============================================
+          const verseNumber = numberedVerseMatch[1];
           const numMarkerWidth = 8; // Largura fixa para "N. "
           const maxTextWidth = colWidth - 4 - numMarkerWidth;
-          const lines = verseText ? pdf.splitTextToSize(verseText, maxTextWidth) as string[] : [];
           
-          // Primeira linha com número
-          if (currentY + 4 > contentEnd) {
-            advanceToNextColumn();
-          }
-          
-          const x = (currentCol === 1 ? col1X : col2X) + 1.5;
-          
-          // Número em vermelho
-          pdf.setFont(fontFamily, 'bold');
-          pdf.setFontSize(baseFontSize);
-          pdf.setTextColor(...redColor);
-          pdf.text(`${verseNumber}.`, x, currentY);
-          
-          // Texto da primeira linha justificado
-          if (lines.length > 0) {
-            pdf.setFont(fontFamily, 'normal');
-            pdf.setFontSize(baseFontSize);
-            pdf.setTextColor(...textDark);
-            pdf.text(lines[0], x + numMarkerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
-          }
-          currentY += lyricLineHeight;
-          
-          // Linhas adicionais (continuação)
-          for (let lineIdx = 1; lineIdx < lines.length; lineIdx++) {
-            if (currentY + lyricLineHeight > contentEnd) {
-              advanceToNextColumn();
-            }
-            const contX = (currentCol === 1 ? col1X : col2X) + 1.5 + numMarkerWidth;
-            pdf.setFont(fontFamily, 'normal');
-            pdf.setFontSize(baseFontSize);
-            pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], contX, currentY, { align: 'justify', maxWidth: maxTextWidth });
-            currentY += lyricLineHeight;
-          }
-          continue;
-        }
-
-        let style: 'normal' | 'bold' | 'italic' = 'normal';
-        let color = textDark;
-        let indent = 0;
-
-        if (hasMarker) {
-          style = 'bold';
-          color = textMedium;
-          addTextWithRedSlashes(trimmed, baseFontSize, style, color, indent, 0);
-        } else if (insideRefraoBlock) {
-          // Dentro do bloco [REFRÃO]...[/REFRÃO]: "R:" apenas na primeira linha, texto preto negrito
-          indent = 2;
-          const markerWidth = isFirstLineOfRefrao ? 7 : 0;
-          const textIndent = 7; // Sempre indentar o texto para alinhar
-          const maxTextWidth = colWidth - 4 - indent - textIndent;
-          const lines = pdf.splitTextToSize(trimmed, maxTextWidth) as string[];
-          
-          for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-            if (currentY + lyricLineHeight > contentEnd) {
-              advanceToNextColumn();
+          for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
+            let lineText = verse.lines[lineIdx];
+            
+            // Remover número apenas da primeira linha
+            if (lineIdx === 0) {
+              lineText = numberedVerseMatch[2] || '';
             }
             
-            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            const lines = pdf.splitTextToSize(lineText, maxTextWidth) as string[];
             
-            // "R:" apenas na primeira linha do bloco
-            if (isFirstLineOfRefrao && lineIdx === 0) {
-              pdf.setFont(fontFamily, 'bold');
-              pdf.setFontSize(baseFontSize);
-              pdf.setTextColor(...redColor);
-              pdf.text('R:', x, currentY);
+            for (let subLineIdx = 0; subLineIdx < lines.length; subLineIdx++) {
+              if (currentY + lyricLineHeight > contentEnd) {
+                advanceToNextColumn();
+              }
+              
+              const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+              
+              // Número em vermelho apenas na primeira linha
+              if (lineIdx === 0 && subLineIdx === 0) {
+                pdf.setFont(fontFamily, 'bold');
+                pdf.setFontSize(baseFontSize);
+                pdf.setTextColor(...redColor);
+                pdf.text(`${verseNumber}.`, x, currentY);
+              }
+              
+              // Texto com recuo consistente - usando addTextWithRedSlashes para manter / vermelho
+              const currentLine = lines[subLineIdx];
+              if (currentLine.includes('/')) {
+                // Renderizar manualmente com / em vermelho
+                const parts = currentLine.split('/');
+                let currentX = x + numMarkerWidth;
+                
+                pdf.setFont(fontFamily, 'normal');
+                pdf.setFontSize(baseFontSize);
+                
+                for (let i = 0; i < parts.length; i++) {
+                  if (parts[i]) {
+                    pdf.setTextColor(...textDark);
+                    pdf.text(parts[i], currentX, currentY);
+                    currentX += pdf.getTextWidth(parts[i]);
+                  }
+                  
+                  if (i < parts.length - 1) {
+                    pdf.setTextColor(180, 30, 30); // Vermelho
+                    pdf.text('/', currentX, currentY);
+                    currentX += pdf.getTextWidth('/');
+                  }
+                }
+              } else {
+                pdf.setFont(fontFamily, 'normal');
+                pdf.setFontSize(baseFontSize);
+                pdf.setTextColor(...textDark);
+                pdf.text(currentLine, x + numMarkerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
+              }
+              
+              currentY += lyricLineHeight;
             }
-            
-            // Texto em preto negrito justificado
-            pdf.setFont(fontFamily, 'bold');
-            pdf.setFontSize(baseFontSize);
-            pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], x + textIndent, currentY, { align: 'justify', maxWidth: maxTextWidth });
-            
-            currentY += lyricLineHeight;
           }
           
-          isFirstLineOfRefrao = false; // Após a primeira linha, não mais
-          continue;
+        } else if (hasSpecialMarker) {
+          // ============================================
+          // MARCADORES ESPECIAIS (PR:, TODOS:, etc)
+          // ============================================
+          for (const lineText of verse.lines) {
+            addTextWithRedSlashes(lineText, baseFontSize, 'bold', textMedium, 0, 0);
+          }
+          
         } else {
-          addTextWithRedSlashes(trimmed, baseFontSize, style, color, indent, 0);
+          // ============================================
+          // VERSO NORMAL (sem numeração)
+          // ============================================
+          for (const lineText of verse.lines) {
+            addTextWithRedSlashes(lineText, baseFontSize, 'normal', textDark, 0, 0);
+          }
         }
       }
     }
