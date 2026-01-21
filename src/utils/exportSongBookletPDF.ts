@@ -350,10 +350,10 @@ export const exportSongBookletPDF = async (
   const textMedium: [number, number, number] = [60, 60, 70];
   const textLight: [number, number, number] = [90, 90, 100];
   
-  // Layout - medidas em mm (otimizado para impressão)
-  const margin = 10;
-  const gutter = 6;
-  const colWidth = (pageWidth - 2 * margin - gutter) / 2;
+  // Layout - medidas em mm (otimizado para impressão A4)
+  const margin = 12; // Margem lateral aumentada para evitar corte
+  const gutter = 8; // Espaço entre colunas aumentado para evitar sobreposição
+  const colWidth = (pageWidth - 2 * margin - gutter) / 2; // ~89mm por coluna
   const headerHeight = 52; // Otimizado para melhor equilíbrio visual
   const footerHeight = 8;
   const contentStart = headerHeight + 5; // Margem extra para não sobrepor
@@ -676,7 +676,7 @@ export const exportSongBookletPDF = async (
   ): void => {
     // Minimal line height for space optimization
     const lineHeight = size * 0.38; // Aumentado para evitar sobreposição
-    const maxWidth = colWidth - 4 - indent;
+    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
     
     pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
@@ -906,7 +906,7 @@ export const exportSongBookletPDF = async (
     spaceBefore: number = 0
   ): void => {
     const lineHeight = size * 0.38;
-    const maxWidth = colWidth - 4 - indent;
+    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
     
     // For lines with formatting markers, we need special handling
     const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
@@ -975,7 +975,7 @@ export const exportSongBookletPDF = async (
     spaceBefore: number = 0
   ): void => {
     const lineHeight = size * 0.38;
-    const maxWidth = colWidth - 4 - indent;
+    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
     
     pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
