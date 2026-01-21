@@ -112,13 +112,13 @@ export const ExportLyricsDialog = ({
                 <Slider
                   value={[margin]}
                   onValueChange={(values) => setMargin(values[0])}
-                  min={10}
+                  min={3}
                   max={30}
                   step={1}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>10mm (compacto)</span>
+                  <span>3mm (mínimo)</span>
                   <span>30mm (espaçoso)</span>
                 </div>
               </div>
@@ -130,13 +130,13 @@ export const ExportLyricsDialog = ({
                 <Slider
                   value={[gutter]}
                   onValueChange={(values) => setGutter(values[0])}
-                  min={6}
+                  min={2}
                   max={20}
                   step={1}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>6mm (próximas)</span>
+                  <span>2mm (mínimo)</span>
                   <span>20mm (separadas)</span>
                 </div>
               </div>
