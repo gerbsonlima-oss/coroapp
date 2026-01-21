@@ -597,43 +597,7 @@ export const exportSongBookletPDF = async (
     }
   }
 
-  // ============================================
-  // QR CODE para página de áudios
-  // ============================================
-  try {
-    const audioPageUrl = `${window.location.origin}/e/${event.id}`;
-    // Converter RGB para HEX para o QRCode
-    const toHex = (r: number, g: number, b: number) => 
-      '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-    const qrDarkColor = toHex(theme.primary[0], theme.primary[1], theme.primary[2]);
-    
-    const qrDataUrl = await QRCode.toDataURL(audioPageUrl, { 
-      margin: 1, 
-      scale: 6,
-      color: {
-        dark: qrDarkColor,
-        light: '#ffffff'
-      }
-    });
-    
-    const qrSize = 28;
-    const qrX = col1X + (colWidth - qrSize) / 2;
-    
-    // Desenhar QR code
-    pdf.addImage(qrDataUrl, 'PNG', qrX, currentY, qrSize, qrSize);
-    
-    // Texto abaixo do QR
-    pdf.setFont('times', 'italic');
-    pdf.setFontSize(8);
-    pdf.setTextColor(...textLight);
-    const qrLabel = 'Escaneie para ouvir os áudios';
-    const labelWidth = pdf.getTextWidth(qrLabel);
-    pdf.text(qrLabel, col1X + (colWidth - labelWidth) / 2, currentY + qrSize + 4);
-    
-    currentY += qrSize + 10;
-  } catch (e) {
-    console.warn('Erro ao gerar QR code:', e);
-  }
+  // QR code será adicionado no final do documento
 
   // ============================================
   // HELPER: Mudar para próxima coluna ou página
@@ -753,6 +717,10 @@ export const exportSongBookletPDF = async (
     const lineHeight = size * 0.35;
     const maxWidth = colWidth - 4;
     
+    // Configurar fonte ANTES de splitTextToSize para cálculo correto
+    pdf.setFont(fontFamily, style);
+    pdf.setFontSize(size);
+    
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
 
     for (const line of lines) {
@@ -763,34 +731,42 @@ export const exportSongBookletPDF = async (
       // No indent - optimized for space
       const x = (currentCol === 1 ? col1X : col2X) + 1.5;
       
-      // Check if line contains "/" - render with red slashes
+      // SEMPRE verificar e renderizar "/" em vermelho
       if (line.includes('/')) {
-        // Split by "/" and draw each part
+        // Split by "/" and draw each part manually
         const parts = line.split('/');
         let currentX = x;
         
+        // Configurar fonte para medir corretamente
+        pdf.setFont(fontFamily, style);
+        pdf.setFontSize(size);
+        
         for (let i = 0; i < parts.length; i++) {
-          // Draw text part
+          // Draw text part in normal color
           if (parts[i]) {
             pdf.setFont(fontFamily, style);
             pdf.setFontSize(size);
-            pdf.setTextColor(...color);
+            pdf.setTextColor(color[0], color[1], color[2]);
             pdf.text(parts[i], currentX, currentY);
             currentX += pdf.getTextWidth(parts[i]);
           }
           
-          // Draw "/" in red (except after last part)
+          // Draw "/" in RED (except after last part)
           if (i < parts.length - 1) {
-            pdf.setTextColor(...redColor);
+            pdf.setFont(fontFamily, style);
+            pdf.setFontSize(size);
+            pdf.setTextColor(180, 30, 30); // Vermelho
             pdf.text('/', currentX, currentY);
             currentX += pdf.getTextWidth('/');
           }
         }
+        // Resetar cor após desenhar
+        pdf.setTextColor(color[0], color[1], color[2]);
       } else {
         // All text justified for lines without slashes
         pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
-        pdf.setTextColor(...color);
+        pdf.setTextColor(color[0], color[1], color[2]);
         pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
       }
       
@@ -990,6 +966,51 @@ export const exportSongBookletPDF = async (
       }
     }
     currentY += 1.5;
+  }
+
+  // ============================================
+  // QR CODE - No final da última página
+  // ============================================
+  try {
+    const qrSize = 28;
+    const qrSpaceNeeded = qrSize + 12; // QR + texto abaixo
+    
+    // Verificar se cabe na página atual, senão criar nova página
+    if (currentY + qrSpaceNeeded > contentEnd - 5) {
+      advanceToNextColumn();
+    }
+    
+    const audioPageUrl = `${window.location.origin}/e/${event.id}`;
+    // Converter RGB para HEX para o QRCode
+    const toHex = (r: number, g: number, b: number) => 
+      '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    const qrDarkColor = toHex(theme.primary[0], theme.primary[1], theme.primary[2]);
+    
+    const qrDataUrl = await QRCode.toDataURL(audioPageUrl, { 
+      margin: 1, 
+      scale: 6,
+      color: {
+        dark: qrDarkColor,
+        light: '#ffffff'
+      }
+    });
+    
+    // Centralizar o QR code na coluna atual
+    const qrColX = currentCol === 1 ? col1X : col2X;
+    const qrX = qrColX + (colWidth - qrSize) / 2;
+    
+    // Desenhar QR code
+    pdf.addImage(qrDataUrl, 'PNG', qrX, currentY, qrSize, qrSize);
+    
+    // Texto abaixo do QR
+    pdf.setFont('times', 'italic');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...textLight);
+    const qrLabel = 'Escaneie para ouvir os áudios';
+    const labelWidth = pdf.getTextWidth(qrLabel);
+    pdf.text(qrLabel, qrColX + (colWidth - labelWidth) / 2, currentY + qrSize + 4);
+  } catch (e) {
+    console.warn('Erro ao gerar QR code:', e);
   }
 
   // ============================================
