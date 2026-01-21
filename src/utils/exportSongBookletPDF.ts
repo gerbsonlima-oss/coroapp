@@ -124,16 +124,17 @@ const loadImageRobust = async (url: string): Promise<string | null> => {
   // Tentar via proxy primeiro para URLs do Supabase
   if (url.includes('supabase')) {
     try {
-      const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
+      const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-proxy`;
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
       if (response.ok) {
-        const blob = await response.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(blob);
-        });
+        const data = await response.json();
+        if (data.dataUrl) {
+          return data.dataUrl;
+        }
       }
     } catch (e) {
       console.warn('Proxy falhou, tentando diretamente:', e);
