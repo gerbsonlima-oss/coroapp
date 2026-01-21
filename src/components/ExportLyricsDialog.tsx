@@ -18,10 +18,9 @@ interface ExportLyricsDialogProps {
   isExporting: boolean;
 }
 
-// Fontes com boa legibilidade disponíveis no jsPDF
 const fontFamilyLabels: Record<string, string> = {
-  times: 'Times New Roman (Serifada clássica)',
-  helvetica: 'Helvetica (Sans-serif moderna)',
+  times: 'Times (Serifada)',
+  helvetica: 'Helvetica (Sem serifa)',
   courier: 'Courier (Monoespaçada)',
 };
 
