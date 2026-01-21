@@ -1255,12 +1255,8 @@ export const exportSongBookletPDF = async (
         
         if (verse.isRefraoBlock) {
           // ============================================
-          // BLOCO [REFRÃO]...[/REFRÃO]
+          // BLOCO [REFRÃO]...[/REFRÃO] - SEM RECUO FIXO
           // ============================================
-          const indent = 2;
-          const markerWidth = 7; // Largura do "R: "
-          const totalIndent = indent + markerWidth;
-          
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             const lineText = verse.lines[lineIdx];
             
@@ -1269,18 +1265,22 @@ export const exportSongBookletPDF = async (
             }
             
             const currentBounds = getColumnBounds();
-            const x = currentBounds.left + internalPadding + indent;
+            const x = currentBounds.left + internalPadding;
             
-            // "R:" apenas na primeira linha do primeiro verso de refrão
             if (isFirstRefraoVerse && lineIdx === 0) {
+              // Primeira linha: "R:" em vermelho seguido do texto
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
+              
+              // Calcular posição após o marcador dinamicamente
+              const markerWidth = pdf.getTextWidth('R: ');
+              renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, 0);
+            } else {
+              // Linhas subsequentes: alinhadas à esquerda SEM recuo
+              renderFormattedTextInline(lineText, x, currentY, baseFontSize, 'bold', textDark, 0);
             }
-            
-            // Texto com formatação - passa indentação para quebras de linha
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
@@ -1289,12 +1289,8 @@ export const exportSongBookletPDF = async (
           
         } else if (isRefrainLineMarker) {
           // ============================================
-          // MARCADOR LEGADO R:, REFRÃO:, etc
+          // MARCADOR LEGADO R:, REFRÃO:, etc - SEM RECUO FIXO
           // ============================================
-          const indent = 2;
-          const markerWidth = 7;
-          const totalIndent = indent + markerWidth;
-          
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             let lineText = verse.lines[lineIdx];
             
@@ -1308,18 +1304,22 @@ export const exportSongBookletPDF = async (
             }
             
             const currentBounds = getColumnBounds();
-            const x = currentBounds.left + internalPadding + indent;
+            const x = currentBounds.left + internalPadding;
             
-            // "R:" apenas na primeira linha
             if (lineIdx === 0) {
+              // Primeira linha: "R:" em vermelho seguido do texto
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
+              
+              // Calcular posição após o marcador dinamicamente
+              const markerWidth = pdf.getTextWidth('R: ');
+              renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, 0);
+            } else {
+              // Linhas subsequentes: alinhadas à esquerda SEM recuo
+              renderFormattedTextInline(lineText, x, currentY, baseFontSize, 'bold', textDark, 0);
             }
-            
-            // Texto com formatação - passa indentação para quebras de linha
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
