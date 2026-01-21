@@ -808,9 +808,8 @@ export const exportSongBookletPDF = async (
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
-    // Nome da música - fonte metade do tamanho principal, itálico, preto
-    const songNameFontSize = baseFontSize / 2;
-    addTextWithRedSlashes(song.name, songNameFontSize, 'italic', textDark, 0, 1);
+    // Nome da música (destaque) - fonte baseada no tamanho definido + 1 para destaque
+    addText(song.name, baseFontSize + 1, 'bold', theme.primary, 0, 1);
 
     // Espaço após nome (mais separação)
     currentY += 2.5;
