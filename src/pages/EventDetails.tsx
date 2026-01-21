@@ -577,7 +577,7 @@ const EventDetails = () => {
 
   const { tenant } = useTenant();
   
-  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier' }) => {
+  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier'; margin: number; gutter: number }) => {
     if (!event) return;
     
     setIsExportingLyrics(true);
