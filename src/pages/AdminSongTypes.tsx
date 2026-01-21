@@ -354,7 +354,7 @@ const AdminSongTypes = () => {
               <Label htmlFor="name">Nome *</Label>
               <Input
                 id="name"
-                placeholder="Ex: Canto de Entrada"
+                placeholder="Ex: Entrada"
                 value={formData.name}
                 onChange={(e) => handleNameChange(e.target.value)}
                 disabled={saving}

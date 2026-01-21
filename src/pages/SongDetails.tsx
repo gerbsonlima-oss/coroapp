@@ -66,17 +66,17 @@ interface SongAudio {
 }
 
 const typeLabels: Record<string, string> = {
-  canto_entrada: 'Canto de Entrada',
-  ato_penitencial: 'Ato Penitencial (Kyrie)',
+  canto_entrada: 'Entrada',
+  ato_penitencial: 'Ato Penitencial',
   gloria: 'Glória',
-  salmo: 'Salmo Responsorial',
-  aclamacao: 'Aclamação ao Evangelho (Aleluia)',
-  oferendas: 'Canto das Oferendas (Ofertório)',
+  salmo: 'Salmo',
+  aclamacao: 'Aclamação',
+  oferendas: 'Ofertório',
   santo: 'Santo',
-  cordeiro: 'Cordeiro de Deus',
-  comunhao: 'Canto da Comunhão',
-  acao_gracas: 'Canto de Ação de Graças',
-  final: 'Canto Final (ou de Envio)',
+  cordeiro: 'Cordeiro',
+  comunhao: 'Comunhão',
+  acao_gracas: 'Ação de Graças',
+  final: 'Final',
   outro: 'Outro',
 };
 
