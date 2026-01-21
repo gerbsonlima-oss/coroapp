@@ -758,36 +758,11 @@ export const exportSongBookletPDF = async (
       // No indent - optimized for space
       const x = (currentCol === 1 ? col1X : col2X) + 1.5;
       
-      // Check if line contains "/" - if so, handle specially
-      if (line.includes('/')) {
-        // Split by "/" and draw each part
-        const parts = line.split('/');
-        let currentX = x;
-        
-        for (let i = 0; i < parts.length; i++) {
-          // Draw text part
-          if (parts[i]) {
-            pdf.setFont(fontFamily, style);
-            pdf.setFontSize(size);
-            pdf.setTextColor(...color);
-            pdf.text(parts[i], currentX, currentY);
-            currentX += pdf.getTextWidth(parts[i]);
-          }
-          
-          // Draw "/" in red (except after last part)
-          if (i < parts.length - 1) {
-            pdf.setTextColor(...redColor);
-            pdf.text('/', currentX, currentY);
-            currentX += pdf.getTextWidth('/');
-          }
-        }
-      } else {
-        // For lines without slashes, use justified alignment
-        pdf.setFont(fontFamily, style);
-        pdf.setFontSize(size);
-        pdf.setTextColor(...color);
-        pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
-      }
+      // All text justified
+      pdf.setFont(fontFamily, style);
+      pdf.setFontSize(size);
+      pdf.setTextColor(...color);
+      pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
       
       currentY += lineHeight;
     }
@@ -882,11 +857,12 @@ export const exportSongBookletPDF = async (
               pdf.text('R:', x, currentY);
             }
             
-            // Texto em preto negrito
+            // Texto em preto negrito justificado
             pdf.setFont(fontFamily, 'bold');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], x + markerWidth, currentY);
+            const textMaxWidth = colWidth - 4 - indent - markerWidth;
+            pdf.text(lines[lineIdx], x + markerWidth, currentY, { align: 'justify', maxWidth: textMaxWidth });
             
             currentY += lyricLineHeight;
           }
@@ -914,12 +890,12 @@ export const exportSongBookletPDF = async (
           pdf.setTextColor(...redColor);
           pdf.text(`${verseNumber}.`, x, currentY);
           
-          // Texto da primeira linha
+          // Texto da primeira linha justificado
           if (lines.length > 0) {
             pdf.setFont(fontFamily, 'normal');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
-            pdf.text(lines[0], x + numMarkerWidth, currentY);
+            pdf.text(lines[0], x + numMarkerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
           }
           currentY += lyricLineHeight;
           
@@ -932,7 +908,7 @@ export const exportSongBookletPDF = async (
             pdf.setFont(fontFamily, 'normal');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], contX, currentY);
+            pdf.text(lines[lineIdx], contX, currentY, { align: 'justify', maxWidth: maxTextWidth });
             currentY += lyricLineHeight;
           }
           continue;
@@ -969,11 +945,11 @@ export const exportSongBookletPDF = async (
               pdf.text('R:', x, currentY);
             }
             
-            // Texto em preto negrito
+            // Texto em preto negrito justificado
             pdf.setFont(fontFamily, 'bold');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], x + textIndent, currentY);
+            pdf.text(lines[lineIdx], x + textIndent, currentY, { align: 'justify', maxWidth: maxTextWidth });
             
             currentY += lyricLineHeight;
           }
