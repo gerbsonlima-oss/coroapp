@@ -665,7 +665,7 @@ export const exportSongBookletPDF = async (
     ];
     const currentBounds = getColumnBounds();
     pdf.setFillColor(...lightBg);
-    pdf.rect(currentBounds.left, currentY, sectionWidth, barHeight, 'F');
+    pdf.rect(currentBounds.left + internalPadding, currentY, sectionWidth - internalPadding, barHeight, 'F');
 
     // Badge numérico (retângulo colorido sólido) - alinhado com internalPadding
     pdf.setFillColor(...theme.primary);
