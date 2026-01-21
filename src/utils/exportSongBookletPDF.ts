@@ -674,10 +674,9 @@ export const exportSongBookletPDF = async (
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    currentY += spaceBefore;
     // Minimal line height for space optimization
-    const lineHeight = size * 0.35;
-    const maxWidth = colWidth - 4;
+    const lineHeight = size * 0.38; // Aumentado para evitar sobreposição
+    const maxWidth = colWidth - 4 - indent;
     
     pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
@@ -685,20 +684,28 @@ export const exportSongBookletPDF = async (
 
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
 
+    // Verificar espaço ANTES de começar - se não cabe, muda de coluna
+    if (currentY + spaceBefore + lineHeight > contentEnd) {
+      advanceToNextColumn();
+    }
+    
+    currentY += spaceBefore;
+
     for (const line of lines) {
+      // Verificar se a linha cabe, senão avança
       if (currentY + lineHeight > contentEnd) {
         advanceToNextColumn();
       }
 
       // No indent - optimized for space
-      const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
       pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
       currentY += lineHeight;
     }
   };
 
-  // Minimal line height for space optimization
-  const getLineHeight = (size: number) => size * 0.35;
+  // Minimal line height for space optimization (aumentado para evitar sobreposição)
+  const getLineHeight = (size: number) => size * 0.38;
 
   // Cor vermelha para marcadores
   const redColor: [number, number, number] = [180, 30, 30];
@@ -712,10 +719,9 @@ export const exportSongBookletPDF = async (
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    currentY += spaceBefore;
     // Minimal line height for space optimization
-    const lineHeight = size * 0.35;
-    const maxWidth = colWidth - 4;
+    const lineHeight = size * 0.38; // Aumentado para evitar sobreposição
+    const maxWidth = colWidth - 4 - indent;
     
     // Configurar fonte ANTES de splitTextToSize para cálculo correto
     pdf.setFont(fontFamily, style);
@@ -723,13 +729,21 @@ export const exportSongBookletPDF = async (
     
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
 
+    // Verificar espaço ANTES de começar - se não cabe, muda de coluna
+    if (currentY + spaceBefore + lineHeight > contentEnd) {
+      advanceToNextColumn();
+    }
+    
+    currentY += spaceBefore;
+
     for (const line of lines) {
+      // Verificar se a linha cabe, senão avança
       if (currentY + lineHeight > contentEnd) {
         advanceToNextColumn();
       }
 
       // No indent - optimized for space
-      const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
       
       // SEMPRE verificar e renderizar "/" em vermelho
       if (line.includes('/')) {
