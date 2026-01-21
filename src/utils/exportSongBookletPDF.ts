@@ -1326,10 +1326,9 @@ export const exportSongBookletPDF = async (
           
         } else if (numberedVerseMatch) {
           // ============================================
-          // VERSO NUMERADO (1., 2., etc) - TODAS AS LINHAS COM MESMO RECUO
+          // VERSO NUMERADO (1., 2., etc) - SEM RECUO FIXO
           // ============================================
           const verseNumber = numberedVerseMatch[1];
-          const numMarkerWidth = 8; // Largura fixa para "N. "
           
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             let lineText = verse.lines[lineIdx];
@@ -1346,16 +1345,20 @@ export const exportSongBookletPDF = async (
             const currentBounds = getColumnBounds();
             const x = currentBounds.left + internalPadding;
             
-            // Número em vermelho apenas na primeira linha
             if (lineIdx === 0) {
+              // Primeira linha: número em vermelho seguido do texto
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text(`${verseNumber}.`, x, currentY);
+              
+              // Calcular posição após o número dinamicamente
+              const numberWidth = pdf.getTextWidth(`${verseNumber}. `);
+              renderFormattedTextInline(lineText, x + numberWidth, currentY, baseFontSize, 'normal', textDark, 0);
+            } else {
+              // Linhas subsequentes: alinhadas à esquerda SEM recuo
+              renderFormattedTextInline(lineText, x, currentY, baseFontSize, 'normal', textDark, 0);
             }
-            
-            // Texto com formatação - passa indentação para quebras de linha
-            renderFormattedTextInline(lineText, x + numMarkerWidth, currentY, baseFontSize, 'normal', textDark, numMarkerWidth);
             
             currentY += lyricLineHeight;
           }
