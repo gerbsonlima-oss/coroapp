@@ -710,7 +710,7 @@ export const exportSongBookletPDF = async (
   // Cor vermelha para marcadores
   const redColor: [number, number, number] = [180, 30, 30];
 
-  // Função para desenhar texto com "/" em vermelho
+  // Função para desenhar texto com "/" em vermelho e justificado
   const addTextWithRedSlashes = (
     text: string, 
     size: number, 
@@ -719,17 +719,16 @@ export const exportSongBookletPDF = async (
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    // Minimal line height for space optimization
-    const lineHeight = size * 0.38; // Aumentado para evitar sobreposição
+    const lineHeight = size * 0.38;
     const maxWidth = colWidth - 4 - indent;
     
-    // Configurar fonte ANTES de splitTextToSize para cálculo correto
+    // Configurar fonte ANTES de splitTextToSize
     pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
     
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
 
-    // Verificar espaço ANTES de começar - se não cabe, muda de coluna
+    // Verificar espaço ANTES de começar
     if (currentY + spaceBefore + lineHeight > contentEnd) {
       advanceToNextColumn();
     }
@@ -737,47 +736,67 @@ export const exportSongBookletPDF = async (
     currentY += spaceBefore;
 
     for (const line of lines) {
-      // Verificar se a linha cabe, senão avança
       if (currentY + lineHeight > contentEnd) {
         advanceToNextColumn();
       }
 
-      // No indent - optimized for space
       const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
       
-      // SEMPRE verificar e renderizar "/" em vermelho
+      // Se a linha contém "/" - renderizar manualmente com barras vermelhas
       if (line.includes('/')) {
-        // Split by "/" and draw each part manually
         const parts = line.split('/');
-        let currentX = x;
         
-        // Configurar fonte para medir corretamente
+        // Calcular largura total do texto original
         pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
+        let totalTextWidth = 0;
+        for (let i = 0; i < parts.length; i++) {
+          totalTextWidth += pdf.getTextWidth(parts[i]);
+          if (i < parts.length - 1) {
+            totalTextWidth += pdf.getTextWidth('/');
+          }
+        }
+        
+        // Calcular espaço extra para justificação
+        const availableWidth = maxWidth;
+        const extraSpace = availableWidth - totalTextWidth;
+        const numGaps = parts.reduce((acc, part) => acc + (part.split(' ').length - 1), 0);
+        const extraSpacePerGap = numGaps > 0 ? Math.max(0, extraSpace / numGaps) : 0;
+        
+        let currentX = x;
         
         for (let i = 0; i < parts.length; i++) {
-          // Draw text part in normal color
-          if (parts[i]) {
-            pdf.setFont(fontFamily, style);
-            pdf.setFontSize(size);
-            pdf.setTextColor(color[0], color[1], color[2]);
-            pdf.text(parts[i], currentX, currentY);
-            currentX += pdf.getTextWidth(parts[i]);
+          const partText = parts[i];
+          
+          if (partText) {
+            // Dividir o texto em palavras para aplicar justificação
+            const words = partText.split(' ');
+            
+            for (let w = 0; w < words.length; w++) {
+              pdf.setFont(fontFamily, style);
+              pdf.setFontSize(size);
+              pdf.setTextColor(color[0], color[1], color[2]);
+              pdf.text(words[w], currentX, currentY);
+              currentX += pdf.getTextWidth(words[w]);
+              
+              // Adicionar espaço entre palavras (com extra para justificação)
+              if (w < words.length - 1) {
+                currentX += pdf.getTextWidth(' ') + extraSpacePerGap;
+              }
+            }
           }
           
-          // Draw "/" in RED (except after last part)
+          // Desenhar "/" em VERMELHO
           if (i < parts.length - 1) {
             pdf.setFont(fontFamily, style);
             pdf.setFontSize(size);
-            pdf.setTextColor(180, 30, 30); // Vermelho
+            pdf.setTextColor(180, 30, 30); // VERMELHO
             pdf.text('/', currentX, currentY);
             currentX += pdf.getTextWidth('/');
           }
         }
-        // Resetar cor após desenhar
-        pdf.setTextColor(color[0], color[1], color[2]);
       } else {
-        // All text justified for lines without slashes
+        // Linhas sem "/" - texto justificado normal
         pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
         pdf.setTextColor(color[0], color[1], color[2]);
