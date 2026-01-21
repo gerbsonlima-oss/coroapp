@@ -710,8 +710,172 @@ export const exportSongBookletPDF = async (
   // Cor vermelha para marcadores
   const redColor: [number, number, number] = [180, 30, 30];
 
-  // Função para desenhar texto com "/" em vermelho
-  const addTextWithRedSlashes = (
+  // Parse formatting markers from text
+  // Supports: <b>bold</b>, <i>italic</i>, <color:#hex>colored</color>
+  type FormattedSegment = {
+    text: string;
+    bold: boolean;
+    italic: boolean;
+    color: [number, number, number] | null;
+  };
+
+  const parseFormattedText = (text: string): FormattedSegment[] => {
+    const segments: FormattedSegment[] = [];
+    let remaining = text;
+    
+    // Regex to match formatting tags
+    const tagPattern = /<(b|i|color:[#a-fA-F0-9]+)>([\s\S]*?)<\/\1>/g;
+    
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    
+    // Reset lastIndex for global regex
+    tagPattern.lastIndex = 0;
+    
+    while ((match = tagPattern.exec(text)) !== null) {
+      // Add text before this match as plain text
+      if (match.index > lastIndex) {
+        const plainText = text.slice(lastIndex, match.index);
+        if (plainText) {
+          segments.push({ text: plainText, bold: false, italic: false, color: null });
+        }
+      }
+      
+      const tag = match[1];
+      const content = match[2];
+      
+      if (tag === 'b') {
+        segments.push({ text: content, bold: true, italic: false, color: null });
+      } else if (tag === 'i') {
+        segments.push({ text: content, bold: false, italic: true, color: null });
+      } else if (tag.startsWith('color:')) {
+        const hex = tag.replace('color:', '');
+        const color = hexToRgb(hex);
+        segments.push({ text: content, bold: false, italic: false, color });
+      }
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      segments.push({ text: text.slice(lastIndex), bold: false, italic: false, color: null });
+    }
+    
+    // If no formatting found, return original text
+    if (segments.length === 0) {
+      segments.push({ text, bold: false, italic: false, color: null });
+    }
+    
+    return segments;
+  };
+
+  // Convert hex color to RGB
+  const hexToRgb = (hex: string): [number, number, number] => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+      return [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+      ];
+    }
+    return [0, 0, 0]; // Default to black
+  };
+
+  // Função para desenhar texto com formatação rica (bold, italic, color) e "/" em vermelho
+  const addFormattedText = (
+    text: string, 
+    size: number, 
+    baseStyle: 'normal' | 'bold' | 'italic', 
+    baseColor: [number, number, number], 
+    indent: number = 0,
+    spaceBefore: number = 0
+  ): void => {
+    const lineHeight = size * 0.38;
+    const maxWidth = colWidth - 4 - indent;
+    
+    // For lines with formatting markers, we need special handling
+    const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
+    
+    if (!hasFormatting) {
+      // No custom formatting, use existing logic with slash coloring
+      addTextWithRedSlashesSimple(text, size, baseStyle, baseColor, indent, spaceBefore);
+      return;
+    }
+    
+    // Parse formatted segments
+    const segments = parseFormattedText(text);
+    
+    // Verificar espaço ANTES de começar
+    if (currentY + spaceBefore + lineHeight > contentEnd) {
+      advanceToNextColumn();
+    }
+    
+    currentY += spaceBefore;
+    
+    // Render each segment with its formatting
+    const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+    let currentX = x;
+    
+    for (const segment of segments) {
+      const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
+      const segmentColor = segment.color || baseColor;
+      
+      // Split segment text to handle line wrapping
+      const words = segment.text.split(' ');
+      
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const wordWithSpace = i < words.length - 1 ? word + ' ' : word;
+        
+        pdf.setFont(fontFamily, segmentStyle);
+        pdf.setFontSize(size);
+        const wordWidth = pdf.getTextWidth(wordWithSpace);
+        
+        // Check if word fits on current line
+        if (currentX + wordWidth > x + maxWidth) {
+          currentY += lineHeight;
+          currentX = x;
+          
+          if (currentY + lineHeight > contentEnd) {
+            advanceToNextColumn();
+            currentX = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+          }
+        }
+        
+        // Handle slashes in red
+        if (wordWithSpace.includes('/')) {
+          const parts = wordWithSpace.split('/');
+          for (let j = 0; j < parts.length; j++) {
+            if (parts[j]) {
+              pdf.setFont(fontFamily, segmentStyle);
+              pdf.setFontSize(size);
+              pdf.setTextColor(...segmentColor);
+              pdf.text(parts[j], currentX, currentY);
+              currentX += pdf.getTextWidth(parts[j]);
+            }
+            if (j < parts.length - 1) {
+              pdf.setTextColor(180, 30, 30);
+              pdf.text('/', currentX, currentY);
+              currentX += pdf.getTextWidth('/');
+            }
+          }
+        } else {
+          pdf.setFont(fontFamily, segmentStyle);
+          pdf.setFontSize(size);
+          pdf.setTextColor(...segmentColor);
+          pdf.text(wordWithSpace, currentX, currentY);
+          currentX += wordWidth;
+        }
+      }
+    }
+    
+    currentY += lineHeight;
+  };
+
+  // Simple version without formatting parsing (for performance)
+  const addTextWithRedSlashesSimple = (
     text: string, 
     size: number, 
     style: 'normal' | 'bold' | 'italic', 
@@ -719,17 +883,14 @@ export const exportSongBookletPDF = async (
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    // Minimal line height for space optimization
-    const lineHeight = size * 0.38; // Aumentado para evitar sobreposição
+    const lineHeight = size * 0.38;
     const maxWidth = colWidth - 4 - indent;
     
-    // Configurar fonte ANTES de splitTextToSize para cálculo correto
     pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
     
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
 
-    // Verificar espaço ANTES de começar - se não cabe, muda de coluna
     if (currentY + spaceBefore + lineHeight > contentEnd) {
       advanceToNextColumn();
     }
@@ -737,26 +898,20 @@ export const exportSongBookletPDF = async (
     currentY += spaceBefore;
 
     for (const line of lines) {
-      // Verificar se a linha cabe, senão avança
       if (currentY + lineHeight > contentEnd) {
         advanceToNextColumn();
       }
 
-      // No indent - optimized for space
       const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
       
-      // SEMPRE verificar e renderizar "/" em vermelho
       if (line.includes('/')) {
-        // Split by "/" and draw each part manually
         const parts = line.split('/');
         let currentX = x;
         
-        // Configurar fonte para medir corretamente
         pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
         
         for (let i = 0; i < parts.length; i++) {
-          // Draw text part in normal color
           if (parts[i]) {
             pdf.setFont(fontFamily, style);
             pdf.setFontSize(size);
@@ -765,19 +920,16 @@ export const exportSongBookletPDF = async (
             currentX += pdf.getTextWidth(parts[i]);
           }
           
-          // Draw "/" in RED (except after last part)
           if (i < parts.length - 1) {
             pdf.setFont(fontFamily, style);
             pdf.setFontSize(size);
-            pdf.setTextColor(180, 30, 30); // Vermelho
+            pdf.setTextColor(180, 30, 30);
             pdf.text('/', currentX, currentY);
             currentX += pdf.getTextWidth('/');
           }
         }
-        // Resetar cor após desenhar
         pdf.setTextColor(color[0], color[1], color[2]);
       } else {
-        // All text justified for lines without slashes
         pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
         pdf.setTextColor(color[0], color[1], color[2]);
@@ -786,6 +938,18 @@ export const exportSongBookletPDF = async (
       
       currentY += lineHeight;
     }
+  };
+
+  // Função para desenhar texto com "/" em vermelho (wrapper para compatibilidade)
+  const addTextWithRedSlashes = (
+    text: string, 
+    size: number, 
+    style: 'normal' | 'bold' | 'italic', 
+    color: [number, number, number], 
+    indent: number = 0,
+    spaceBefore: number = 0
+  ): void => {
+    addFormattedText(text, size, style, color, indent, spaceBefore);
   };
 
   // ============================================
