@@ -826,7 +826,7 @@ export const exportSongBookletPDF = async (
       for (const line of allLines) {
         const trimmed = line.trim();
         
-        // Detectar abertura de bloco de refrão [REFRÃO]
+        // Detectar abertura de bloco de refrão [REFRÃO] sozinho na linha
         if (/^\[REFR[ÃA]O\]$/i.test(trimmed)) {
           // Salvar verso atual antes do refrão
           if (currentVerse.length > 0) {
@@ -834,6 +834,20 @@ export const exportSongBookletPDF = async (
             currentVerse = [];
           }
           inRefraoBlockMode = true;
+          continue;
+        }
+        
+        // Detectar [REFRÃO] no início da linha COM texto após (ex: "[REFRÃO] Tenho que gritar...")
+        const refraoInlineMatch = /^\[REFR[ÃA]O\]\s*(.+)$/i.exec(trimmed);
+        if (refraoInlineMatch) {
+          // Salvar verso atual antes do refrão
+          if (currentVerse.length > 0) {
+            verses.push({ lines: currentVerse, isRefraoBlock: false });
+            currentVerse = [];
+          }
+          // Iniciar novo bloco de refrão com o texto após a tag
+          inRefraoBlockMode = true;
+          currentVerse.push(refraoInlineMatch[1].trim());
           continue;
         }
         
@@ -847,12 +861,14 @@ export const exportSongBookletPDF = async (
           continue;
         }
         
-        // Linha em branco = fim do verso atual
+        // Linha em branco = fim do verso atual (e fecha refrão se estiver aberto)
         if (!trimmed) {
           if (currentVerse.length > 0) {
             verses.push({ lines: currentVerse, isRefraoBlock: inRefraoBlockMode });
             currentVerse = [];
           }
+          // Linha em branco fecha o modo de refrão
+          inRefraoBlockMode = false;
           continue;
         }
         
