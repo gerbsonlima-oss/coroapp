@@ -1564,6 +1564,10 @@ const EventDetails = () => {
         open={showExportLyricsDialog}
         onOpenChange={setShowExportLyricsDialog}
         onExport={handleExportSongBooklet}
+        onOpenWeb={() => {
+          setShowExportLyricsDialog(false);
+          navigate(`/events/${id}/lyrics`);
+        }}
         isExporting={isExportingLyrics}
       />
 
