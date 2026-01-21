@@ -758,11 +758,36 @@ export const exportSongBookletPDF = async (
       // No indent - optimized for space
       const x = (currentCol === 1 ? col1X : col2X) + 1.5;
       
-      // All text justified
-      pdf.setFont(fontFamily, style);
-      pdf.setFontSize(size);
-      pdf.setTextColor(...color);
-      pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
+      // Check if line contains "/" - render with red slashes
+      if (line.includes('/')) {
+        // Split by "/" and draw each part
+        const parts = line.split('/');
+        let currentX = x;
+        
+        for (let i = 0; i < parts.length; i++) {
+          // Draw text part
+          if (parts[i]) {
+            pdf.setFont(fontFamily, style);
+            pdf.setFontSize(size);
+            pdf.setTextColor(...color);
+            pdf.text(parts[i], currentX, currentY);
+            currentX += pdf.getTextWidth(parts[i]);
+          }
+          
+          // Draw "/" in red (except after last part)
+          if (i < parts.length - 1) {
+            pdf.setTextColor(...redColor);
+            pdf.text('/', currentX, currentY);
+            currentX += pdf.getTextWidth('/');
+          }
+        }
+      } else {
+        // All text justified for lines without slashes
+        pdf.setFont(fontFamily, style);
+        pdf.setFontSize(size);
+        pdf.setTextColor(...color);
+        pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
+      }
       
       currentY += lineHeight;
     }
