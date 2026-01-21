@@ -351,13 +351,19 @@ export const exportSongBookletPDF = async (
   const textLight: [number, number, number] = [90, 90, 100];
   
   // Layout - medidas em mm (otimizado para impressão A4)
-  const margin = 12; // Margem lateral aumentada para evitar corte
-  const gutter = 8; // Espaço entre colunas aumentado para evitar sobreposição
-  const colWidth = (pageWidth - 2 * margin - gutter) / 2; // ~89mm por coluna
+  const margin = 14; // Margem lateral segura para evitar corte
+  const gutter = 10; // Espaço entre colunas para evitar sobreposição
+  const colWidth = (pageWidth - 2 * margin - gutter) / 2; // ~86mm por coluna
   const headerHeight = 52; // Otimizado para melhor equilíbrio visual
   const footerHeight = 8;
   const contentStart = headerHeight + 5; // Margem extra para não sobrepor
-  const contentEnd = pageHeight - footerHeight - 3;
+  const contentEnd = pageHeight - footerHeight - 5; // Limite inferior seguro
+  
+  // Limites rígidos para cada coluna (área delimitada)
+  const col1LeftBound = margin;
+  const col1RightBound = margin + colWidth;
+  const col2LeftBound = margin + colWidth + gutter;
+  const col2RightBound = pageWidth - margin;
 
   // Estado de paginação
   let currentPage = 1;
@@ -599,6 +605,17 @@ export const exportSongBookletPDF = async (
 
   // QR code será adicionado no final do documento
 
+  // Função helper para obter os limites da coluna atual
+  const getColumnBounds = () => {
+    if (currentCol === 1) {
+      return { left: col1LeftBound, right: col1RightBound };
+    }
+    return { left: col2LeftBound, right: col2RightBound };
+  };
+  
+  // Margem interna de segurança dentro de cada coluna
+  const internalPadding = 3;
+
   // ============================================
   // HELPER: Mudar para próxima coluna ou página
   // ============================================
@@ -621,7 +638,8 @@ export const exportSongBookletPDF = async (
   // SEÇÃO DE MÚSICA - Design com background esmaecido
   // ============================================
   const drawSongSection = (num: number, label: string): void => {
-    const x = currentCol === 1 ? col1X : col2X;
+    const bounds = getColumnBounds();
+    const sectionWidth = bounds.right - bounds.left;
 
     // Verificar se precisa mudar de coluna/página
     if (currentY + 25 > contentEnd) {
@@ -637,12 +655,13 @@ export const exportSongBookletPDF = async (
       Math.round(255 - (255 - theme.primary[1]) * 0.12),
       Math.round(255 - (255 - theme.primary[2]) * 0.12),
     ];
+    const currentBounds = getColumnBounds();
     pdf.setFillColor(...lightBg);
-    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, colWidth, barHeight, 'F');
+    pdf.rect(currentBounds.left, currentY, sectionWidth, barHeight, 'F');
 
     // Badge numérico (retângulo colorido sólido)
     pdf.setFillColor(...theme.primary);
-    pdf.rect(currentCol === 1 ? col1X : col2X, currentY, badgeWidth, barHeight, 'F');
+    pdf.rect(currentBounds.left, currentY, badgeWidth, barHeight, 'F');
     
     // Número centralizado no badge (branco, negrito)
     pdf.setTextColor(255, 255, 255);
@@ -650,14 +669,14 @@ export const exportSongBookletPDF = async (
     pdf.setFontSize(10);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
-    pdf.text(numText, (currentCol === 1 ? col1X : col2X) + (badgeWidth - numW) / 2, currentY + 4.3);
+    pdf.text(numText, currentBounds.left + (badgeWidth - numW) / 2, currentY + 4.3);
 
     // Texto do tipo (negrito, cor primária, tamanho 12)
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
     pdf.setFont('times', 'bold');
     pdf.setFontSize(12);
-    pdf.text(labelText, (currentCol === 1 ? col1X : col2X) + badgeWidth + 3, currentY + 4.3);
+    pdf.text(labelText, currentBounds.left + badgeWidth + 3, currentY + 4.3);
 
     // Mais espaço após a seção do tipo para separar do nome
     currentY += barHeight + 4;
@@ -674,9 +693,9 @@ export const exportSongBookletPDF = async (
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    // Minimal line height for space optimization
-    const lineHeight = size * 0.38; // Aumentado para evitar sobreposição
-    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
+    const lineHeight = size * 0.40; // Line height para evitar sobreposição vertical
+    const bounds = getColumnBounds();
+    const maxWidth = (bounds.right - bounds.left) - (2 * internalPadding) - indent;
     
     pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
@@ -692,20 +711,20 @@ export const exportSongBookletPDF = async (
     currentY += spaceBefore;
 
     for (const line of lines) {
-      // Verificar se a linha cabe, senão avança
+      // Verificar se a linha cabe verticalmente, senão avança
       if (currentY + lineHeight > contentEnd) {
         advanceToNextColumn();
       }
 
-      // No indent - optimized for space
-      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      const bounds = getColumnBounds();
+      const x = bounds.left + internalPadding + indent;
       pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
       currentY += lineHeight;
     }
   };
 
-  // Minimal line height for space optimization (aumentado para evitar sobreposição)
-  const getLineHeight = (size: number) => size * 0.38;
+  // Line height otimizado para evitar sobreposição vertical
+  const getLineHeight = (size: number) => size * 0.40;
 
   // Cor vermelha para marcadores
   const redColor: [number, number, number] = [180, 30, 30];
@@ -905,8 +924,10 @@ export const exportSongBookletPDF = async (
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    const lineHeight = size * 0.38;
-    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
+    const lineHeight = size * 0.40;
+    const bounds = getColumnBounds();
+    const maxWidth = (bounds.right - bounds.left) - (2 * internalPadding) - indent;
+    const maxX = bounds.right - internalPadding; // Limite rígido da coluna
     
     // For lines with formatting markers, we need special handling
     const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
@@ -928,8 +949,9 @@ export const exportSongBookletPDF = async (
     currentY += spaceBefore;
     
     // Render each segment with its formatting
-    const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
-    let currentX = x;
+    let currentBounds = getColumnBounds();
+    let startX = currentBounds.left + internalPadding + indent;
+    let currentX = startX;
     
     for (const segment of segments) {
       const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
@@ -946,15 +968,23 @@ export const exportSongBookletPDF = async (
         pdf.setFontSize(size);
         const wordWidth = pdf.getTextWidth(wordWithSpace);
         
-        // Check if word fits on current line
-        if (currentX + wordWidth > x + maxWidth) {
+        // Recalcular limites da coluna atual
+        currentBounds = getColumnBounds();
+        const currentMaxX = currentBounds.right - internalPadding;
+        
+        // Check if word fits on current line (limite rígido)
+        if (currentX + wordWidth > currentMaxX) {
           currentY += lineHeight;
-          currentX = x;
           
+          // Verificar se precisa mudar de coluna
           if (currentY + lineHeight > contentEnd) {
             advanceToNextColumn();
-            currentX = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
           }
+          
+          // Recalcular posição X para nova linha/coluna
+          currentBounds = getColumnBounds();
+          startX = currentBounds.left + internalPadding + indent;
+          currentX = startX;
         }
         
         // Handle slashes in red
@@ -974,8 +1004,9 @@ export const exportSongBookletPDF = async (
     indent: number = 0,
     spaceBefore: number = 0
   ): void => {
-    const lineHeight = size * 0.38;
-    const maxWidth = colWidth - 6 - indent; // Margem interna maior para não sair da coluna
+    const lineHeight = size * 0.40;
+    const bounds = getColumnBounds();
+    const maxWidth = (bounds.right - bounds.left) - (2 * internalPadding) - indent;
     
     pdf.setFont(fontFamily, style);
     pdf.setFontSize(size);
@@ -993,7 +1024,9 @@ export const exportSongBookletPDF = async (
         advanceToNextColumn();
       }
 
-      const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+      const currentBounds = getColumnBounds();
+      const x = currentBounds.left + internalPadding + indent;
+      const currentMaxWidth = (currentBounds.right - currentBounds.left) - (2 * internalPadding) - indent;
       
       if (line.includes('/')) {
         const parts = line.split('/');
@@ -1024,7 +1057,7 @@ export const exportSongBookletPDF = async (
         pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
         pdf.setTextColor(color[0], color[1], color[2]);
-        pdf.text(line, x, currentY, { align: 'justify', maxWidth: maxWidth });
+        pdf.text(line, x, currentY, { align: 'justify', maxWidth: currentMaxWidth });
       }
       
       currentY += lineHeight;
@@ -1172,7 +1205,8 @@ export const exportSongBookletPDF = async (
               advanceToNextColumn();
             }
             
-            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            const currentBounds = getColumnBounds();
+            const x = currentBounds.left + internalPadding + indent;
             
             // "R:" apenas na primeira linha do primeiro verso de refrão
             if (isFirstRefraoVerse && lineIdx === 0) {
@@ -1209,7 +1243,8 @@ export const exportSongBookletPDF = async (
               advanceToNextColumn();
             }
             
-            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            const currentBounds = getColumnBounds();
+            const x = currentBounds.left + internalPadding + indent;
             
             // "R:" apenas na primeira linha
             if (lineIdx === 0) {
@@ -1244,7 +1279,8 @@ export const exportSongBookletPDF = async (
               advanceToNextColumn();
             }
             
-            const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+            const currentBounds = getColumnBounds();
+            const x = currentBounds.left + internalPadding;
             
             // Número em vermelho apenas na primeira linha
             if (lineIdx === 0) {
