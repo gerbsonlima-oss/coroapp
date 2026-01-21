@@ -602,11 +602,16 @@ export const exportSongBookletPDF = async (
   // ============================================
   try {
     const audioPageUrl = `${window.location.origin}/e/${event.id}`;
+    // Converter RGB para HEX para o QRCode
+    const toHex = (r: number, g: number, b: number) => 
+      '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    const qrDarkColor = toHex(theme.primary[0], theme.primary[1], theme.primary[2]);
+    
     const qrDataUrl = await QRCode.toDataURL(audioPageUrl, { 
       margin: 1, 
       scale: 6,
       color: {
-        dark: `rgb(${theme.primary[0]}, ${theme.primary[1]}, ${theme.primary[2]})`,
+        dark: qrDarkColor,
         light: '#ffffff'
       }
     });
@@ -808,11 +813,9 @@ export const exportSongBookletPDF = async (
     const typeLabel = typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
-    // Nome da música (destaque) - fonte baseada no tamanho definido + 1 para destaque
-    addText(song.name, baseFontSize + 1, 'bold', theme.primary, 0, 1);
-
-    // Espaço após nome (mais separação)
-    currentY += 2.5;
+    // Nome da música removido - apenas o tipo é exibido
+    // Espaço pequeno após a seção do tipo
+    currentY += 1;
     
     // Line height for lyrics based on font size
     const lyricLineHeight = getLineHeight(baseFontSize);
