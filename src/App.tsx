@@ -37,7 +37,6 @@ const ChoirMemberDetails = lazy(() => import("./pages/ChoirMemberDetails"));
 const PendingApproval = lazy(() => import("./pages/PendingApproval"));
 
 const Liturgy = lazy(() => import("./pages/Liturgy"));
-const EventLyrics = lazy(() => import("./pages/EventLyrics"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 import { AuthOrTenantSelection } from "@/components/AuthOrTenantSelection";
@@ -148,10 +147,6 @@ function App() {
           <Routes>
             {/* Simplified event audios - public route */}
             <Route path="/e/:id" element={<SimpleEventAudios />} />
-            
-            {/* Event lyrics web view - public route */}
-            <Route path="/events/:id/lyrics" element={<EventLyrics />} />
-            <Route path="/:tenantSlug/events/:id/lyrics" element={<EventLyrics />} />
             
             {/* Pending approval page */}
             <Route path="/pending-approval" element={<PendingApproval />} />
