@@ -531,7 +531,7 @@ const SimpleEventAudios = () => {
     }
   };
 
-  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier' }) => {
+  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier'; margin: number; gutter: number }) => {
     if (!event || songs.length === 0) return;
     setExportingLyrics(true);
     try {

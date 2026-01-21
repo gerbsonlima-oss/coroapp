@@ -251,10 +251,17 @@ export const exportSongBookletPDF = async (
   event: Event, 
   songs: Song[], 
   tenant?: TenantInfo, 
-  options?: { fontSize?: number; fontFamily?: 'times' | 'helvetica' | 'courier' }
+  options?: { 
+    fontSize?: number; 
+    fontFamily?: 'times' | 'helvetica' | 'courier';
+    margin?: number;
+    gutter?: number;
+  }
 ) => {
   const baseFontSize = options?.fontSize || 11;
   const fontFamily = options?.fontFamily || 'times';
+  const userMargin = options?.margin || 18;
+  const userGutter = options?.gutter || 12;
   const typeLabels = await loadTypeLabels();
   
   const songsWithLyrics = songs
@@ -352,9 +359,9 @@ export const exportSongBookletPDF = async (
   
   // Layout - medidas em mm (otimizado para impressão A4)
   // A4 = 210mm x 297mm
-  const margin = 18; // Margem lateral ampla para evitar corte na impressão
-  const gutter = 12; // Espaço grande entre colunas para evitar sobreposição
-  const colWidth = (pageWidth - 2 * margin - gutter) / 2; // ~81mm por coluna
+  const margin = userMargin; // Margem lateral configurável pelo usuário
+  const gutter = userGutter; // Espaço entre colunas configurável pelo usuário
+  const colWidth = (pageWidth - 2 * margin - gutter) / 2;
   const headerHeight = 52; // Otimizado para melhor equilíbrio visual
   const footerHeight = 8;
   const contentStart = headerHeight + 5; // Margem extra para não sobrepor
