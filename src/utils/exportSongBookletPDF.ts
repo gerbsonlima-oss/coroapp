@@ -661,6 +661,8 @@ export const exportSongBookletPDF = async (
 
     const barHeight = 6;
     const badgeWidth = 7;
+    // Tamanho do label baseado no fontSize escolhido (proporcional)
+    const labelFontSize = Math.max(10, baseFontSize + 1);
 
     // Background esmaecido (10% da cor primária)
     const lightBg: [number, number, number] = [
@@ -675,19 +677,19 @@ export const exportSongBookletPDF = async (
     pdf.setFillColor(...theme.primary);
     pdf.rect(currentCol === 1 ? col1X : col2X, currentY, badgeWidth, barHeight, 'F');
     
-    // Número centralizado no badge (branco, negrito)
+    // Número centralizado no badge (branco, negrito) - usa fontFamily escolhida
     pdf.setTextColor(255, 255, 255);
-    pdf.setFont('times', 'bold');
+    pdf.setFont(fontFamily, 'bold');
     pdf.setFontSize(10);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
     pdf.text(numText, (currentCol === 1 ? col1X : col2X) + (badgeWidth - numW) / 2, currentY + 4.3);
 
-    // Texto do tipo (negrito, cor primária, tamanho 12)
+    // Texto do tipo (negrito, cor primária) - usa fontFamily e fontSize proporcionais
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
-    pdf.setFont('times', 'bold');
-    pdf.setFontSize(12);
+    pdf.setFont(fontFamily, 'bold');
+    pdf.setFontSize(labelFontSize);
     pdf.text(labelText, (currentCol === 1 ? col1X : col2X) + badgeWidth + 3, currentY + 4.3);
 
     // Mais espaço após a seção do tipo para separar do nome
@@ -862,77 +864,91 @@ export const exportSongBookletPDF = async (
         // Linha com marcador de refrão legado (R:, REFRÃO:, etc)
         if (isRefrainLineMarker) {
           const textAfterMarker = trimmed.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/i, '');
-          const indent = 2;
-          const markerWidth = 7; // Largura fixa para "R: "
-          const maxTextWidth = colWidth - 4 - indent - markerWidth;
+          // Estilo de parágrafo: REFRÃO: em vermelho bold, texto em azul bold justificado
+          const markerStr = 'REFRÃO:';
+          pdf.setFont(fontFamily, 'bold');
+          pdf.setFontSize(baseFontSize);
+          const markerWidth = pdf.getTextWidth(markerStr + ' ');
+          const hangingIndent = markerWidth; // Recuo pendurado para continuações
+          const maxTextWidth = colWidth - 4 - hangingIndent;
           const lines = pdf.splitTextToSize(textAfterMarker, maxTextWidth) as string[];
           
           for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-            if (currentY + 4 > contentEnd) {
+            if (currentY + lyricLineHeight > contentEnd) {
               advanceToNextColumn();
             }
             
-            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            const baseX = (currentCol === 1 ? col1X : col2X) + 1.5;
             
-            // "R:" apenas na primeira linha
             if (lineIdx === 0) {
+              // Primeira linha: "REFRÃO:" em vermelho + texto em azul
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
-              pdf.text('R:', x, currentY);
+              pdf.text(markerStr, baseX, currentY);
+              
+              // Texto em azul escuro (cor primária do tema) bold justificado
+              pdf.setTextColor(...theme.primary);
+              pdf.text(lines[lineIdx], baseX + markerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
+            } else {
+              // Linhas de continuação: recuo pendurado, texto em azul justificado
+              pdf.setFont(fontFamily, 'bold');
+              pdf.setFontSize(baseFontSize);
+              pdf.setTextColor(...theme.primary);
+              pdf.text(lines[lineIdx], baseX + hangingIndent, currentY, { align: 'justify', maxWidth: maxTextWidth });
             }
-            
-            // Texto em preto negrito
-            pdf.setFont(fontFamily, 'bold');
-            pdf.setFontSize(baseFontSize);
-            pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], x + markerWidth, currentY);
             
             currentY += lyricLineHeight;
           }
           continue;
         }
 
-        // Estrofe numerada: número em vermelho, resto normal
+        // Estrofe numerada: número em vermelho bold, texto normal justificado com recuo pendurado
         if (isNumberedVerse) {
           const verseNumber = isNumberedVerse[1];
           const verseText = isNumberedVerse[2];
-          const numMarkerWidth = 8; // Largura fixa para "N. "
-          const maxTextWidth = colWidth - 4 - numMarkerWidth;
+          
+          // Calcular largura do marcador numérico para recuo pendurado
+          pdf.setFont(fontFamily, 'bold');
+          pdf.setFontSize(baseFontSize);
+          const numMarkerStr = `${verseNumber}. `;
+          const numMarkerWidth = pdf.getTextWidth(numMarkerStr);
+          const hangingIndent = numMarkerWidth; // Recuo pendurado
+          const maxTextWidth = colWidth - 4 - hangingIndent;
           const lines = verseText ? pdf.splitTextToSize(verseText, maxTextWidth) as string[] : [];
           
           // Primeira linha com número
-          if (currentY + 4 > contentEnd) {
+          if (currentY + lyricLineHeight > contentEnd) {
             advanceToNextColumn();
           }
           
-          const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+          const baseX = (currentCol === 1 ? col1X : col2X) + 1.5;
           
-          // Número em vermelho
+          // Número em vermelho bold
           pdf.setFont(fontFamily, 'bold');
           pdf.setFontSize(baseFontSize);
           pdf.setTextColor(...redColor);
-          pdf.text(`${verseNumber}.`, x, currentY);
+          pdf.text(`${verseNumber}.`, baseX, currentY);
           
-          // Texto da primeira linha
+          // Texto da primeira linha - justificado
           if (lines.length > 0) {
             pdf.setFont(fontFamily, 'normal');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
-            pdf.text(lines[0], x + numMarkerWidth, currentY);
+            pdf.text(lines[0], baseX + hangingIndent, currentY, { align: 'justify', maxWidth: maxTextWidth });
           }
           currentY += lyricLineHeight;
           
-          // Linhas adicionais (continuação)
+          // Linhas adicionais (continuação com recuo pendurado, justificadas)
           for (let lineIdx = 1; lineIdx < lines.length; lineIdx++) {
             if (currentY + lyricLineHeight > contentEnd) {
               advanceToNextColumn();
             }
-            const contX = (currentCol === 1 ? col1X : col2X) + 1.5 + numMarkerWidth;
+            const contX = (currentCol === 1 ? col1X : col2X) + 1.5 + hangingIndent;
             pdf.setFont(fontFamily, 'normal');
             pdf.setFontSize(baseFontSize);
             pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], contX, currentY);
+            pdf.text(lines[lineIdx], contX, currentY, { align: 'justify', maxWidth: maxTextWidth });
             currentY += lyricLineHeight;
           }
           continue;
@@ -947,11 +963,13 @@ export const exportSongBookletPDF = async (
           color = textMedium;
           addTextWithRedSlashes(trimmed, baseFontSize, style, color, indent, 0);
         } else if (insideRefraoBlock) {
-          // Dentro do bloco [REFRÃO]...[/REFRÃO]: "R:" apenas na primeira linha, texto preto negrito
-          indent = 2;
-          const markerWidth = isFirstLineOfRefrao ? 7 : 0;
-          const textIndent = 7; // Sempre indentar o texto para alinhar
-          const maxTextWidth = colWidth - 4 - indent - textIndent;
+          // Dentro do bloco [REFRÃO]...[/REFRÃO]: "REFRÃO:" em vermelho na primeira linha, texto em azul bold justificado
+          const markerStr = 'REFRÃO:';
+          pdf.setFont(fontFamily, 'bold');
+          pdf.setFontSize(baseFontSize);
+          const markerWidth = pdf.getTextWidth(markerStr + ' ');
+          const hangingIndent = markerWidth; // Recuo pendurado
+          const maxTextWidth = colWidth - 4 - hangingIndent;
           const lines = pdf.splitTextToSize(trimmed, maxTextWidth) as string[];
           
           for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
@@ -959,21 +977,25 @@ export const exportSongBookletPDF = async (
               advanceToNextColumn();
             }
             
-            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            const baseX = (currentCol === 1 ? col1X : col2X) + 1.5;
             
-            // "R:" apenas na primeira linha do bloco
+            // "REFRÃO:" apenas na primeira linha do bloco inteiro
             if (isFirstLineOfRefrao && lineIdx === 0) {
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
-              pdf.text('R:', x, currentY);
+              pdf.text(markerStr, baseX, currentY);
+              
+              // Texto em azul (cor primária) bold justificado
+              pdf.setTextColor(...theme.primary);
+              pdf.text(lines[lineIdx], baseX + markerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
+            } else {
+              // Linhas de continuação com recuo pendurado, em azul justificado
+              pdf.setFont(fontFamily, 'bold');
+              pdf.setFontSize(baseFontSize);
+              pdf.setTextColor(...theme.primary);
+              pdf.text(lines[lineIdx], baseX + hangingIndent, currentY, { align: 'justify', maxWidth: maxTextWidth });
             }
-            
-            // Texto em preto negrito
-            pdf.setFont(fontFamily, 'bold');
-            pdf.setFontSize(baseFontSize);
-            pdf.setTextColor(...textDark);
-            pdf.text(lines[lineIdx], x + textIndent, currentY);
             
             currentY += lyricLineHeight;
           }
