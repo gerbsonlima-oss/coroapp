@@ -711,63 +711,12 @@ export const exportSongBookletPDF = async (
   const redColor: [number, number, number] = [180, 30, 30];
 
   // Parse formatting markers from text
-  // Supports: <b>bold</b>, <i>italic</i>, <color:#hex>colored</color>
+  // Supports: <b>bold</b>, <i>italic</i>, <color:#hex>text</color>
   type FormattedSegment = {
     text: string;
     bold: boolean;
     italic: boolean;
     color: [number, number, number] | null;
-  };
-
-  const parseFormattedText = (text: string): FormattedSegment[] => {
-    const segments: FormattedSegment[] = [];
-    let remaining = text;
-    
-    // Regex to match formatting tags
-    const tagPattern = /<(b|i|color:[#a-fA-F0-9]+)>([\s\S]*?)<\/\1>/g;
-    
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    
-    // Reset lastIndex for global regex
-    tagPattern.lastIndex = 0;
-    
-    while ((match = tagPattern.exec(text)) !== null) {
-      // Add text before this match as plain text
-      if (match.index > lastIndex) {
-        const plainText = text.slice(lastIndex, match.index);
-        if (plainText) {
-          segments.push({ text: plainText, bold: false, italic: false, color: null });
-        }
-      }
-      
-      const tag = match[1];
-      const content = match[2];
-      
-      if (tag === 'b') {
-        segments.push({ text: content, bold: true, italic: false, color: null });
-      } else if (tag === 'i') {
-        segments.push({ text: content, bold: false, italic: true, color: null });
-      } else if (tag.startsWith('color:')) {
-        const hex = tag.replace('color:', '');
-        const color = hexToRgb(hex);
-        segments.push({ text: content, bold: false, italic: false, color });
-      }
-      
-      lastIndex = match.index + match[0].length;
-    }
-    
-    // Add remaining text
-    if (lastIndex < text.length) {
-      segments.push({ text: text.slice(lastIndex), bold: false, italic: false, color: null });
-    }
-    
-    // If no formatting found, return original text
-    if (segments.length === 0) {
-      segments.push({ text, bold: false, italic: false, color: null });
-    }
-    
-    return segments;
   };
 
   // Convert hex color to RGB
@@ -781,6 +730,170 @@ export const exportSongBookletPDF = async (
       ];
     }
     return [0, 0, 0]; // Default to black
+  };
+
+  const parseFormattedText = (text: string): FormattedSegment[] => {
+    const segments: FormattedSegment[] = [];
+    
+    // Process text character by character, tracking open tags
+    let i = 0;
+    let currentText = '';
+    let isBold = false;
+    let isItalic = false;
+    let currentColor: [number, number, number] | null = null;
+    
+    while (i < text.length) {
+      // Check for opening tags
+      if (text.slice(i, i + 3) === '<b>') {
+        // Save current segment if any
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isBold = true;
+        i += 3;
+        continue;
+      }
+      
+      if (text.slice(i, i + 4) === '</b>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isBold = false;
+        i += 4;
+        continue;
+      }
+      
+      if (text.slice(i, i + 3) === '<i>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isItalic = true;
+        i += 3;
+        continue;
+      }
+      
+      if (text.slice(i, i + 4) === '</i>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        isItalic = false;
+        i += 4;
+        continue;
+      }
+      
+      // Check for color tag: <color:#xxxxxx>
+      const colorMatch = text.slice(i).match(/^<color:(#[a-fA-F0-9]{6})>/);
+      if (colorMatch) {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        currentColor = hexToRgb(colorMatch[1]);
+        i += colorMatch[0].length;
+        continue;
+      }
+      
+      if (text.slice(i, i + 8) === '</color>') {
+        if (currentText) {
+          segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+          currentText = '';
+        }
+        currentColor = null;
+        i += 8;
+        continue;
+      }
+      
+      // Regular character
+      currentText += text[i];
+      i++;
+    }
+    
+    // Add remaining text
+    if (currentText) {
+      segments.push({ text: currentText, bold: isBold, italic: isItalic, color: currentColor });
+    }
+    
+    // If no segments, return original text
+    if (segments.length === 0) {
+      segments.push({ text, bold: false, italic: false, color: null });
+    }
+    
+    return segments;
+  };
+
+  // Função para renderizar texto inline com formatação (bold, italic, color) e "/" em vermelho
+  // Retorna a largura total renderizada
+  const renderFormattedTextInline = (
+    text: string,
+    startX: number,
+    y: number,
+    size: number,
+    baseStyle: 'normal' | 'bold' | 'italic',
+    baseColor: [number, number, number]
+  ): number => {
+    const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
+    
+    if (!hasFormatting) {
+      // Sem formatação customizada, renderiza com / em vermelho
+      return renderTextWithRedSlashes(text, startX, y, size, baseStyle, baseColor);
+    }
+    
+    // Parse segments
+    const segments = parseFormattedText(text);
+    let currentX = startX;
+    
+    for (const segment of segments) {
+      const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
+      const segmentColor = segment.color || baseColor;
+      
+      currentX = renderTextWithRedSlashes(segment.text, currentX, y, size, segmentStyle, segmentColor);
+    }
+    
+    return currentX;
+  };
+  
+  // Renderiza texto com "/" em vermelho e retorna a posição X final
+  const renderTextWithRedSlashes = (
+    text: string,
+    startX: number,
+    y: number,
+    size: number,
+    style: 'normal' | 'bold' | 'italic',
+    color: [number, number, number]
+  ): number => {
+    let currentX = startX;
+    
+    if (text.includes('/')) {
+      const parts = text.split('/');
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i]) {
+          pdf.setFont(fontFamily, style);
+          pdf.setFontSize(size);
+          pdf.setTextColor(...color);
+          pdf.text(parts[i], currentX, y);
+          currentX += pdf.getTextWidth(parts[i]);
+        }
+        if (i < parts.length - 1) {
+          pdf.setFont(fontFamily, style);
+          pdf.setFontSize(size);
+          pdf.setTextColor(180, 30, 30); // Vermelho
+          pdf.text('/', currentX, y);
+          currentX += pdf.getTextWidth('/');
+        }
+      }
+    } else {
+      pdf.setFont(fontFamily, style);
+      pdf.setFontSize(size);
+      pdf.setTextColor(...color);
+      pdf.text(text, currentX, y);
+      currentX += pdf.getTextWidth(text);
+    }
+    
+    return currentX;
   };
 
   // Função para desenhar texto com formatação rica (bold, italic, color) e "/" em vermelho
@@ -845,29 +958,7 @@ export const exportSongBookletPDF = async (
         }
         
         // Handle slashes in red
-        if (wordWithSpace.includes('/')) {
-          const parts = wordWithSpace.split('/');
-          for (let j = 0; j < parts.length; j++) {
-            if (parts[j]) {
-              pdf.setFont(fontFamily, segmentStyle);
-              pdf.setFontSize(size);
-              pdf.setTextColor(...segmentColor);
-              pdf.text(parts[j], currentX, currentY);
-              currentX += pdf.getTextWidth(parts[j]);
-            }
-            if (j < parts.length - 1) {
-              pdf.setTextColor(180, 30, 30);
-              pdf.text('/', currentX, currentY);
-              currentX += pdf.getTextWidth('/');
-            }
-          }
-        } else {
-          pdf.setFont(fontFamily, segmentStyle);
-          pdf.setFontSize(size);
-          pdf.setTextColor(...segmentColor);
-          pdf.text(wordWithSpace, currentX, currentY);
-          currentX += wordWidth;
-        }
+        currentX = renderTextWithRedSlashes(wordWithSpace, currentX, currentY, size, segmentStyle, segmentColor);
       }
     }
     
@@ -1073,35 +1164,28 @@ export const exportSongBookletPDF = async (
           // ============================================
           const indent = 2;
           const markerWidth = 7; // Largura do "R: "
-          const maxTextWidth = colWidth - 4 - indent - markerWidth;
           
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             const lineText = verse.lines[lineIdx];
-            const lines = pdf.splitTextToSize(lineText, maxTextWidth) as string[];
             
-            for (let subLineIdx = 0; subLineIdx < lines.length; subLineIdx++) {
-              if (currentY + lyricLineHeight > contentEnd) {
-                advanceToNextColumn();
-              }
-              
-              const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
-              
-              // "R:" apenas na primeira linha do primeiro verso de refrão
-              if (isFirstRefraoVerse && lineIdx === 0 && subLineIdx === 0) {
-                pdf.setFont(fontFamily, 'bold');
-                pdf.setFontSize(baseFontSize);
-                pdf.setTextColor(...redColor);
-                pdf.text('R:', x, currentY);
-              }
-              
-              // Texto em preto negrito
+            if (currentY + lyricLineHeight > contentEnd) {
+              advanceToNextColumn();
+            }
+            
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            
+            // "R:" apenas na primeira linha do primeiro verso de refrão
+            if (isFirstRefraoVerse && lineIdx === 0) {
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
-              pdf.setTextColor(...textDark);
-              pdf.text(lines[subLineIdx], x + markerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
-              
-              currentY += lyricLineHeight;
+              pdf.setTextColor(...redColor);
+              pdf.text('R:', x, currentY);
             }
+            
+            // Texto com formatação
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark);
+            
+            currentY += lyricLineHeight;
           }
           
           isFirstRefraoVerse = false;
@@ -1112,7 +1196,6 @@ export const exportSongBookletPDF = async (
           // ============================================
           const indent = 2;
           const markerWidth = 7;
-          const maxTextWidth = colWidth - 4 - indent - markerWidth;
           
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             let lineText = verse.lines[lineIdx];
@@ -1122,31 +1205,24 @@ export const exportSongBookletPDF = async (
               lineText = lineText.replace(/^(R:|REFRÃO:|REFRAO:|REF:)\s*/i, '');
             }
             
-            const lines = pdf.splitTextToSize(lineText, maxTextWidth) as string[];
+            if (currentY + lyricLineHeight > contentEnd) {
+              advanceToNextColumn();
+            }
             
-            for (let subLineIdx = 0; subLineIdx < lines.length; subLineIdx++) {
-              if (currentY + lyricLineHeight > contentEnd) {
-                advanceToNextColumn();
-              }
-              
-              const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
-              
-              // "R:" apenas na primeira linha
-              if (lineIdx === 0 && subLineIdx === 0) {
-                pdf.setFont(fontFamily, 'bold');
-                pdf.setFontSize(baseFontSize);
-                pdf.setTextColor(...redColor);
-                pdf.text('R:', x, currentY);
-              }
-              
-              // Texto em preto negrito
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5 + indent;
+            
+            // "R:" apenas na primeira linha
+            if (lineIdx === 0) {
               pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
-              pdf.setTextColor(...textDark);
-              pdf.text(lines[subLineIdx], x + markerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
-              
-              currentY += lyricLineHeight;
+              pdf.setTextColor(...redColor);
+              pdf.text('R:', x, currentY);
             }
+            
+            // Texto com formatação
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark);
+            
+            currentY += lyricLineHeight;
           }
           
         } else if (numberedVerseMatch) {
@@ -1155,7 +1231,6 @@ export const exportSongBookletPDF = async (
           // ============================================
           const verseNumber = numberedVerseMatch[1];
           const numMarkerWidth = 8; // Largura fixa para "N. "
-          const maxTextWidth = colWidth - 4 - numMarkerWidth;
           
           for (let lineIdx = 0; lineIdx < verse.lines.length; lineIdx++) {
             let lineText = verse.lines[lineIdx];
@@ -1165,55 +1240,24 @@ export const exportSongBookletPDF = async (
               lineText = numberedVerseMatch[2] || '';
             }
             
-            const lines = pdf.splitTextToSize(lineText, maxTextWidth) as string[];
-            
-            for (let subLineIdx = 0; subLineIdx < lines.length; subLineIdx++) {
-              if (currentY + lyricLineHeight > contentEnd) {
-                advanceToNextColumn();
-              }
-              
-              const x = (currentCol === 1 ? col1X : col2X) + 1.5;
-              
-              // Número em vermelho apenas na primeira linha
-              if (lineIdx === 0 && subLineIdx === 0) {
-                pdf.setFont(fontFamily, 'bold');
-                pdf.setFontSize(baseFontSize);
-                pdf.setTextColor(...redColor);
-                pdf.text(`${verseNumber}.`, x, currentY);
-              }
-              
-              // Texto com recuo consistente - usando addTextWithRedSlashes para manter / vermelho
-              const currentLine = lines[subLineIdx];
-              if (currentLine.includes('/')) {
-                // Renderizar manualmente com / em vermelho
-                const parts = currentLine.split('/');
-                let currentX = x + numMarkerWidth;
-                
-                pdf.setFont(fontFamily, 'normal');
-                pdf.setFontSize(baseFontSize);
-                
-                for (let i = 0; i < parts.length; i++) {
-                  if (parts[i]) {
-                    pdf.setTextColor(...textDark);
-                    pdf.text(parts[i], currentX, currentY);
-                    currentX += pdf.getTextWidth(parts[i]);
-                  }
-                  
-                  if (i < parts.length - 1) {
-                    pdf.setTextColor(180, 30, 30); // Vermelho
-                    pdf.text('/', currentX, currentY);
-                    currentX += pdf.getTextWidth('/');
-                  }
-                }
-              } else {
-                pdf.setFont(fontFamily, 'normal');
-                pdf.setFontSize(baseFontSize);
-                pdf.setTextColor(...textDark);
-                pdf.text(currentLine, x + numMarkerWidth, currentY, { align: 'justify', maxWidth: maxTextWidth });
-              }
-              
-              currentY += lyricLineHeight;
+            if (currentY + lyricLineHeight > contentEnd) {
+              advanceToNextColumn();
             }
+            
+            const x = (currentCol === 1 ? col1X : col2X) + 1.5;
+            
+            // Número em vermelho apenas na primeira linha
+            if (lineIdx === 0) {
+              pdf.setFont(fontFamily, 'bold');
+              pdf.setFontSize(baseFontSize);
+              pdf.setTextColor(...redColor);
+              pdf.text(`${verseNumber}.`, x, currentY);
+            }
+            
+            // Texto com formatação
+            renderFormattedTextInline(lineText, x + numMarkerWidth, currentY, baseFontSize, 'normal', textDark);
+            
+            currentY += lyricLineHeight;
           }
           
         } else if (hasSpecialMarker) {
