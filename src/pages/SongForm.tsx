@@ -12,6 +12,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown, FileType, Search, Guitar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LyricsSearchModal } from '@/components/LyricsSearchModal';
+import { LyricsEditor } from '@/components/LyricsEditor';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { convertPdfToImages, createCombinedImage } from '@/utils/pdfToImage';
@@ -606,29 +607,23 @@ const SongForm = () => {
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Anexe .txt, busque online ou digite abaixo</p>
+            <p className="text-xs text-muted-foreground">Anexe .txt, busque online ou use o editor abaixo</p>
             
             {/* Dica de formatação */}
             <div className="text-xs text-muted-foreground bg-secondary/30 p-2 rounded border border-primary/10">
               <p className="font-medium text-foreground/80 mb-1">Formatação:</p>
+              <p>• Selecione o texto e aplique <strong>negrito</strong>, <em>itálico</em> ou <span className="text-red-500">cores</span></p>
               <p>• Use <code className="bg-primary/10 px-1 rounded">[REFRÃO]</code>...<code className="bg-primary/10 px-1 rounded">[/REFRÃO]</code> para marcar refrões</p>
               <p>• Inicie estrofes com <code className="bg-primary/10 px-1 rounded">1.</code>, <code className="bg-primary/10 px-1 rounded">2.</code> etc para numerar</p>
             </div>
             
-            {/* Textarea para editar letra */}
-            <textarea
+            {/* Editor de texto rico para letra */}
+            <LyricsEditor
               value={lyricsText}
-              onChange={(e) => setLyricsText(e.target.value)}
-              placeholder={`[REFRÃO]\nGlória a Deus nas alturas\nE paz na terra aos homens\n[/REFRÃO]\n\n1. Primeira estrofe aqui...\n\n2. Segunda estrofe aqui...`}
+              onChange={setLyricsText}
               disabled={loading}
-              rows={10}
-              className="w-full rounded-lg bg-secondary/30 p-3 text-sm font-mono leading-relaxed border border-primary/10 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/20 resize-y min-h-[150px] placeholder:text-muted-foreground/50"
+              placeholder="[REFRÃO]&#10;Glória a Deus nas alturas&#10;E paz na terra aos homens&#10;[/REFRÃO]&#10;&#10;1. Primeira estrofe aqui..."
             />
-            {lyricsText && (
-              <p className="text-xs text-muted-foreground text-right">
-                {lyricsText.length} caracteres
-              </p>
-            )}
           </div>
 
           <LyricsSearchModal
