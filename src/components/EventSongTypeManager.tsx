@@ -436,7 +436,7 @@ export const EventSongTypeManager = ({
                 <Label htmlFor="type-label">Nome do tipo *</Label>
                 <Input
                   id="type-label"
-                  placeholder="Ex.: Canto de Entrada"
+                  placeholder="Ex.: Entrada"
                   value={typeLabelInput}
                   onChange={(e) => setTypeLabelInput(e.target.value)}
                   disabled={disabled}

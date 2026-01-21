@@ -26,17 +26,17 @@ interface TenantInfo {
 }
 
 const defaultTypeLabels: Record<string, string> = {
-  canto_entrada: 'Canto de Entrada',
+  canto_entrada: 'Entrada',
   ato_penitencial: 'Ato Penitencial',
   gloria: 'Glória',
-  salmo: 'Salmo Responsorial',
-  aclamacao: 'Aclamação ao Evangelho',
-  oferendas: 'Canto das Oferendas',
+  salmo: 'Salmo',
+  aclamacao: 'Aclamação',
+  oferendas: 'Ofertório',
   santo: 'Santo',
-  cordeiro: 'Cordeiro de Deus',
-  comunhao: 'Canto da Comunhão',
+  cordeiro: 'Cordeiro',
+  comunhao: 'Comunhão',
   acao_gracas: 'Ação de Graças',
-  final: 'Canto Final',
+  final: 'Final',
   outro: 'Outro',
 };
 
