@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 export interface LyricsExportOptions {
   fontSize: number;
-  fontFamily: 'times' | 'helvetica' | 'courier';
+  fontFamily: 'times' | 'helvetica' | 'courier' | 'libre-baskerville';
   margin: number;
   gutter: number;
 }
@@ -26,6 +26,7 @@ const fontFamilyLabels: Record<string, string> = {
   times: 'Times (Serifada)',
   helvetica: 'Helvetica (Sem serifa)',
   courier: 'Courier (Monoespaçada)',
+  'libre-baskerville': 'Libre Baskerville (Elegante)',
 };
 
 export const ExportLyricsDialog = ({
@@ -36,7 +37,7 @@ export const ExportLyricsDialog = ({
   initialOptions
 }: ExportLyricsDialogProps) => {
   const [fontSize, setFontSize] = useState(initialOptions?.fontSize ?? 11);
-  const [fontFamily, setFontFamily] = useState<'times' | 'helvetica' | 'courier'>(initialOptions?.fontFamily ?? 'times');
+  const [fontFamily, setFontFamily] = useState<'times' | 'helvetica' | 'courier' | 'libre-baskerville'>(initialOptions?.fontFamily ?? 'times');
   const [margin, setMargin] = useState(initialOptions?.margin ?? 18);
   const [gutter, setGutter] = useState(initialOptions?.gutter ?? 12);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -76,7 +77,7 @@ export const ExportLyricsDialog = ({
         <div className="py-4 space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">Fonte</Label>
-            <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as 'times' | 'helvetica' | 'courier')}>
+            <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as 'times' | 'helvetica' | 'courier' | 'libre-baskerville')}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -84,6 +85,7 @@ export const ExportLyricsDialog = ({
                 <SelectItem value="times">{fontFamilyLabels.times}</SelectItem>
                 <SelectItem value="helvetica">{fontFamilyLabels.helvetica}</SelectItem>
                 <SelectItem value="courier">{fontFamilyLabels.courier}</SelectItem>
+                <SelectItem value="libre-baskerville">{fontFamilyLabels['libre-baskerville']}</SelectItem>
               </SelectContent>
             </Select>
           </div>
