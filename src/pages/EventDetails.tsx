@@ -40,7 +40,8 @@ import { exportEventZIP } from '@/utils/exportEventZIP';
 import { exportSongBookletPDF } from '@/utils/exportSongBookletPDF';
 import { exportChordBookletPDF } from '@/utils/exportChordBookletPDF';
 import { EventMembersManager } from '@/components/EventMembersManager';
-import { ExportLyricsDialog } from '@/components/ExportLyricsDialog';
+import { ExportLyricsDialog, LyricsExportOptions } from '@/components/ExportLyricsDialog';
+import { useExportPreferences } from '@/hooks/useExportPreferences';
 
 interface Event {
   id: string;
@@ -162,6 +163,7 @@ const EventDetails = () => {
   } = useEventOfflineSave(id || '');
   
   const canEdit = isAdmin || isSuperAdmin;
+  const { preferences: exportPreferences, savePreferences: saveExportPreferences } = useExportPreferences();
   const [event, setEvent] = useState<Event | null>(null);
   const [songs, setSongs] = useState<EventSong[]>([]);
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
@@ -577,9 +579,10 @@ const EventDetails = () => {
 
   const { tenant } = useTenant();
   
-  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier'; margin: number; gutter: number }) => {
+  const handleExportSongBooklet = async (options: LyricsExportOptions) => {
     if (!event) return;
     
+    saveExportPreferences(options);
     setIsExportingLyrics(true);
     
     try {
@@ -1565,6 +1568,7 @@ const EventDetails = () => {
         onOpenChange={setShowExportLyricsDialog}
         onExport={handleExportSongBooklet}
         isExporting={isExportingLyrics}
+        initialOptions={exportPreferences}
       />
 
       <BottomNavigation />

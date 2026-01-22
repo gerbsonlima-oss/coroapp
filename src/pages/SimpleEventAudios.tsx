@@ -29,7 +29,8 @@ import { shareCompleteToWhatsApp } from '@/utils/whatsappShare';
 import { Helmet } from 'react-helmet-async';
 import { useTenant } from '@/contexts/TenantContext';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { ExportLyricsDialog } from '@/components/ExportLyricsDialog';
+import { ExportLyricsDialog, LyricsExportOptions } from '@/components/ExportLyricsDialog';
+import { useExportPreferences } from '@/hooks/useExportPreferences';
 
 interface Event {
   id: string;
@@ -100,6 +101,7 @@ const SimpleEventAudios = () => {
   const location = useLocation();
   const { tenantSlug, tenant } = useTenant();
   const { isAdmin } = useIsAdmin();
+  const { preferences: exportPreferences, savePreferences: saveExportPreferences } = useExportPreferences();
   
   // Check if this is accessed from internal navigation (not shared link /e/:id)
   const isInternalAccess = !location.pathname.startsWith('/e/');
@@ -531,8 +533,9 @@ const SimpleEventAudios = () => {
     }
   };
 
-  const handleExportSongBooklet = async (options: { fontSize: number; fontFamily: 'times' | 'helvetica' | 'courier'; margin: number; gutter: number }) => {
+  const handleExportSongBooklet = async (options: LyricsExportOptions) => {
     if (!event || songs.length === 0) return;
+    saveExportPreferences(options);
     setExportingLyrics(true);
     try {
       const { exportSongBookletPDF } = await import('@/utils/exportSongBookletPDF');
@@ -1682,6 +1685,7 @@ const SimpleEventAudios = () => {
           onOpenChange={setShowExportLyricsDialog}
           onExport={handleExportSongBooklet}
           isExporting={exportingLyrics}
+          initialOptions={exportPreferences}
         />
       </div>
     </>
