@@ -188,17 +188,26 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   );
 };
 
-// Convert plain text to HTML (preserving line breaks)
+// Convert plain text with formatting markers to HTML
 const textToHtml = (text: string): string => {
   if (!text) return '';
   
-  // If it already looks like HTML, return as-is
-  if (text.includes('<p>') || text.includes('<strong>') || text.includes('<em>')) {
+  // If it already looks like proper HTML with p tags and formatting, return as-is
+  if (text.includes('<p>') && (text.includes('<strong>') || text.includes('<em>') || text.includes('<span'))) {
     return text;
   }
   
-  // Convert plain text to HTML paragraphs
-  return text
+  // Convert formatting markers to HTML
+  let html = text
+    // Convert <b>...</b> to <strong>...</strong>
+    .replace(/<b>(.*?)<\/b>/g, '<strong>$1</strong>')
+    // Convert <i>...</i> to <em>...</em>
+    .replace(/<i>(.*?)<\/i>/g, '<em>$1</em>')
+    // Convert <color:#hex>...</color> to <span style="color: #hex">...</span>
+    .replace(/<color:(#[a-fA-F0-9]{6})>(.*?)<\/color>/g, '<span style="color: $1">$2</span>');
+  
+  // Split into lines and wrap in paragraphs
+  return html
     .split('\n')
     .map(line => `<p>${line || '<br>'}</p>`)
     .join('');
