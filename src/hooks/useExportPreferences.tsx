@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { LyricsExportOptions } from '@/components/ExportLyricsDialog';
 
 const STORAGE_KEY = 'lyrics-export-preferences';
@@ -11,7 +11,7 @@ const defaultOptions: LyricsExportOptions = {
 };
 
 export const useExportPreferences = () => {
-  const [preferences] = useState<LyricsExportOptions>(() => {
+  const [preferences, setPreferences] = useState<LyricsExportOptions>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? { ...defaultOptions, ...JSON.parse(saved) } : defaultOptions;
@@ -20,13 +20,14 @@ export const useExportPreferences = () => {
     }
   });
 
-  const savePreferences = (newPreferences: LyricsExportOptions) => {
+  const savePreferences = useCallback((newPreferences: LyricsExportOptions) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newPreferences));
+      setPreferences(newPreferences);
     } catch (e) {
       console.warn('Failed to save export preferences:', e);
     }
-  };
+  }, []);
 
   return { preferences, savePreferences };
 };
