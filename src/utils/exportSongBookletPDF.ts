@@ -253,13 +253,13 @@ export const exportSongBookletPDF = async (
   tenant?: TenantInfo, 
   options?: { 
     fontSize?: number; 
-    fontFamily?: 'times' | 'helvetica' | 'courier';
+    fontFamily?: 'times' | 'helvetica' | 'courier' | 'libre-baskerville';
     margin?: number;
     gutter?: number;
   }
 ) => {
   const baseFontSize = options?.fontSize || 11;
-  const fontFamily = options?.fontFamily || 'times';
+  const fontFamilyOption = options?.fontFamily || 'times';
   const userMargin = options?.margin || 18;
   const userGutter = options?.gutter || 12;
   const typeLabels = await loadTypeLabels();
@@ -277,6 +277,30 @@ export const exportSongBookletPDF = async (
   }
 
   const pdf = new jsPDF('p', 'mm', 'a4');
+  
+  // Carrega fonte Libre Baskerville se selecionada
+  let fontFamily: string = fontFamilyOption;
+  if (fontFamilyOption === 'libre-baskerville') {
+    try {
+      // Fetch the font from Google Fonts CDN
+      const fontUrl = 'https://fonts.gstatic.com/s/librebaskerville/v16/kmKnZrc3Hgbbcjq75U4uslyuy4kn0pNeYRI4CN2V.ttf';
+      const fontResponse = await fetch(fontUrl);
+      const fontBuffer = await fontResponse.arrayBuffer();
+      
+      // Convert to base64
+      const fontBase64 = btoa(
+        new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      
+      pdf.addFileToVFS('LibreBaskerville-Regular.ttf', fontBase64);
+      pdf.addFont('LibreBaskerville-Regular.ttf', 'LibreBaskerville', 'normal');
+      pdf.addFont('LibreBaskerville-Regular.ttf', 'LibreBaskerville', 'bold'); // Use same for bold
+      fontFamily = 'LibreBaskerville';
+    } catch (e) {
+      console.warn('Erro ao carregar fonte Libre Baskerville, usando Times:', e);
+      fontFamily = 'times';
+    }
+  }
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   
