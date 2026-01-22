@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,7 @@ interface ExportLyricsDialogProps {
   onOpenChange: (open: boolean) => void;
   onExport: (options: LyricsExportOptions) => void;
   isExporting: boolean;
+  initialOptions?: LyricsExportOptions;
 }
 
 const fontFamilyLabels: Record<string, string> = {
@@ -31,13 +32,24 @@ export const ExportLyricsDialog = ({
   open,
   onOpenChange,
   onExport,
-  isExporting
+  isExporting,
+  initialOptions
 }: ExportLyricsDialogProps) => {
-  const [fontSize, setFontSize] = useState(11);
-  const [fontFamily, setFontFamily] = useState<'times' | 'helvetica' | 'courier'>('times');
-  const [margin, setMargin] = useState(18);
-  const [gutter, setGutter] = useState(12);
+  const [fontSize, setFontSize] = useState(initialOptions?.fontSize ?? 11);
+  const [fontFamily, setFontFamily] = useState<'times' | 'helvetica' | 'courier'>(initialOptions?.fontFamily ?? 'times');
+  const [margin, setMargin] = useState(initialOptions?.margin ?? 18);
+  const [gutter, setGutter] = useState(initialOptions?.gutter ?? 12);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Sync state when dialog opens with new initialOptions
+  useEffect(() => {
+    if (open && initialOptions) {
+      setFontSize(initialOptions.fontSize);
+      setFontFamily(initialOptions.fontFamily);
+      setMargin(initialOptions.margin);
+      setGutter(initialOptions.gutter);
+    }
+  }, [open, initialOptions]);
 
   const fontSizeLabels: Record<number, string> = {
     8: 'Muito pequena',
