@@ -1131,7 +1131,7 @@ const EventDetails = () => {
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                     {user && canEdit && (
-                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
                                     )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -1184,7 +1184,7 @@ const EventDetails = () => {
                           <DropdownMenuContent align="end" className="z-50">
                             <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4 text-primary" /> Baixar partitura (PDF)</DropdownMenuItem>
                             {user && canEdit && <>
-                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
                               <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Remover do evento</DropdownMenuItem>
                             </>}
                           </DropdownMenuContent>
@@ -1272,7 +1272,7 @@ const EventDetails = () => {
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                 {user && canEdit && (
-                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1380,7 +1380,7 @@ const EventDetails = () => {
                             <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
                           </DropdownMenuItem>
                           {user && canEdit && (
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?eventId=${id}`); }}>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}>
                               <Edit className="mr-2 h-4 w-4" /> Editar Música
                             </DropdownMenuItem>
                           )}

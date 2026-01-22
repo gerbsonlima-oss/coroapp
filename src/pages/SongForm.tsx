@@ -59,6 +59,7 @@ const SongForm = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get('eventId');
+  const returnTo = searchParams.get('returnTo'); // URL to return after save
   const isEditMode = !!id;
   const [song, setSong] = useState<Song | null>(null);
   const [existingAudios, setExistingAudios] = useState<ExistingAudio[]>([]);
@@ -393,7 +394,10 @@ const SongForm = () => {
 
       toast.success(isEditMode ? 'Música atualizada com sucesso!' : 'Música cadastrada com sucesso!');
       
-      if (eventId) {
+      // Priority: returnTo > eventId > song details (edit) > songs list (create)
+      if (returnTo) {
+        navigate(returnTo);
+      } else if (eventId) {
         navigate(`/events/${eventId}`);
       } else if (isEditMode) {
         navigate(`/songs/${songId}`);
@@ -433,7 +437,7 @@ const SongForm = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
         <div className="flex items-center gap-4 px-4 py-3">
           <button 
-            onClick={() => navigate(eventId ? `/events/${eventId}` : (isEditMode ? `/songs/${id}` : '/songs'))}
+            onClick={() => navigate(returnTo || (eventId ? `/events/${eventId}` : (isEditMode ? `/songs/${id}` : '/songs')))}
             className="p-2 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
