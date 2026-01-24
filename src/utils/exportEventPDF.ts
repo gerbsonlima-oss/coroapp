@@ -276,31 +276,9 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   const pageHeight = coverPdf.internal.pageSize.getHeight();
   const margin = 20;
 
-  // Imagem de fundo da capa (se disponível)
-  if (event.cover_image_url) {
-    try {
-      const coverImg = await loadImage(event.cover_image_url);
-      coverPdf.addImage(coverImg, 'JPEG', 0, 0, pageWidth, pageHeight);
-      
-      // Apply overlay using GState for transparency
-      const gState = new (coverPdf as any).GState({ opacity: 0.6 });
-      coverPdf.setGState(gState);
-      coverPdf.setFillColor(...overlayColor);
-      coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
-      
-      // Reset to full opacity
-      const gStateOpaque = new (coverPdf as any).GState({ opacity: 1 });
-      coverPdf.setGState(gStateOpaque);
-    } catch (error) {
-      console.error('Erro ao carregar imagem de capa:', error);
-      coverPdf.setFillColor(...primaryColor);
-      coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
-    }
-  } else {
-    // Fundo azul sólido
-    coverPdf.setFillColor(...primaryColor);
-    coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
-  }
+  // Fundo sólido com a cor do tema selecionado
+  coverPdf.setFillColor(...primaryColor);
+  coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
   // ÁREA RESERVADA PARA LOGO: ocupa todo o centro disponível (15-165mm do topo)
   const logoAreaTop = 15;
