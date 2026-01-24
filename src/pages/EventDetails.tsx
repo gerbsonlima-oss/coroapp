@@ -1295,7 +1295,79 @@ const EventDetails = () => {
                   return audioNaipe === target;
                 });
               }));
-               return songAudios.map(audio => {
+              
+              // Se não há áudios, ainda mostra a música
+              if (songAudios.length === 0) {
+                const hasSheetMusic = Boolean(song.sheet_music_url || song.sheet_music_pdf_url);
+                return [(
+                  <div key={song.event_song_id} className="flex items-center justify-between gap-3 px-3 py-3 rounded-md transition-all hover:bg-primary/8">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <button onClick={async e => {
+                        e.stopPropagation();
+                        if (hasSheetMusic) {
+                          const url = song.sheet_music_pdf_url || song.sheet_music_url;
+                          if (url) {
+                            const cached = await getCachedUrl(url);
+                            setSheetMusicSrc(cached);
+                            setShowSheetViewer(true);
+                          }
+                        }
+                      }} className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${hasSheetMusic ? 'hover:bg-primary/20 cursor-pointer text-primary' : 'text-muted-foreground'}`}>
+                        <Music className="h-5 w-5 shrink-0" />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate font-bold text-sm uppercase tracking-tight text-foreground">
+                          {getTypeLabel(song.type, typeLabels)}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-xs text-muted-foreground truncate font-medium flex-1">
+                            {song.name}
+                          </p>
+                          <Badge variant="outline" className="py-0 px-1 text-[9px] h-3.5 shrink-0 text-muted-foreground border-muted-foreground/30">
+                            Sem áudio
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {song.lyrics && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setLyricsModalOpen(true); }} title="Ver letra">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {song.chords && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/15" onClick={e => { e.stopPropagation(); setSelectedSongForModal(song); setChordsModalOpen(true); }} title="Ver cifra">
+                          <Guitar className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0" onClick={e => e.stopPropagation()}>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}>
+                            <FileText className="mr-2 h-4 w-4" /> Baixar Partitura
+                          </DropdownMenuItem>
+                          {user && canEdit && (
+                            <>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}>
+                                <Edit className="mr-2 h-4 w-4" /> Editar Música
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Remover do evento
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                )];
+              }
+              
+              return songAudios.map(audio => {
                  const track = filteredPlaylist.find(t => t.id === audio.id);
                  const globalIndex = track ? filteredPlaylist.findIndex(t => t.id === audio.id) : -1;
                  const hasSheetMusic = Boolean(song.sheet_music_url || song.sheet_music_pdf_url);
