@@ -209,6 +209,18 @@ const Events = () => {
           </div>
         ) : (
           <div className="space-y-3 md:space-y-4">
+            {/* Desktop New Event Button */}
+            {user && canCreateEvent && (
+              <div className="hidden md:flex justify-end mb-4">
+                <Button
+                  onClick={() => navigate('/events/new')}
+                  className="gradient-primary shadow-glow hover:shadow-glow/50 transition-all"
+                >
+                  <Plus className="mr-2 h-5 w-5" />
+                  Novo Evento
+                </Button>
+              </div>
+            )}
             {events.map((event) => (
               <EventListItem key={event.id} event={event} />
             ))}
