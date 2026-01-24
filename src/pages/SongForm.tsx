@@ -29,7 +29,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
-  { key: 'unissono', label: 'Uníssono' },
+  { key: 'unissono', label: 'Música Original' },
 ];
 
 interface SongTypeOption {

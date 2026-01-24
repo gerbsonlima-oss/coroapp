@@ -73,7 +73,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
-  { key: 'unissono', label: 'Uníssono' },
+  { key: 'unissono', label: 'Música Original' },
 ] as const;
 
 type NaipeKey = (typeof NAIPES)[number]['key'];
@@ -1149,7 +1149,7 @@ const EventQuickEdit = () => {
                                     })
                                   }
                                 >
-                                  Áudios (uníssono)
+                                  Áudios (música original)
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
