@@ -163,7 +163,10 @@ const SimpleEventAudios = () => {
     let result = audios;
     if (selectedNaipes.length > 0) {
       result = result.filter(a => 
-        a.naipe.toLowerCase() === 'unissono' || selectedNaipes.includes(a.naipe)
+        // Include songs without audio (naipe is empty)
+        a.naipe === '' ||
+        a.naipe.toLowerCase() === 'unissono' || 
+        selectedNaipes.includes(a.naipe)
       );
     }
     if (searchQuery.trim()) {
@@ -171,7 +174,7 @@ const SimpleEventAudios = () => {
       result = result.filter(a => 
         a.song_name.toLowerCase().includes(query) ||
         a.song_type_name.toLowerCase().includes(query) ||
-        a.naipe.toLowerCase().includes(query)
+        (a.naipe && a.naipe.toLowerCase().includes(query))
       );
     }
     return result;
@@ -232,10 +235,11 @@ const SimpleEventAudios = () => {
     navigate(`${basePath}/events`);
   };
 
-  // Update global playlist when audios or filters change
+  // Update global playlist when audios or filters change (only include items with actual audio)
   useEffect(() => {
-    if (filteredAudios.length > 0) {
-      const tracks = filteredAudios.map(a => ({
+    const audiosWithSound = filteredAudios.filter(a => a.audio_url !== '');
+    if (audiosWithSound.length > 0) {
+      const tracks = audiosWithSound.map(a => ({
         id: a.id,
         songId: a.song_id,
         songName: a.song_name,
@@ -245,6 +249,8 @@ const SimpleEventAudios = () => {
         sheetMusicUrl: a.song_sheet_music_pdf_url
       }));
       setPlaylist(tracks);
+    } else {
+      setPlaylist([]);
     }
   }, [filteredAudios, setPlaylist]);
 
@@ -426,6 +432,31 @@ const SimpleEventAudios = () => {
         };
       });
 
+      // Find songs without audios and create placeholder entries for them
+      const songsWithAudios = new Set((audiosData || []).map((a: any) => a.song_id));
+      const songsWithoutAudios: SongAudio[] = eventSongsData
+        .filter((es: any) => !songsWithAudios.has(es.songs.id))
+        .map((es: any) => {
+          const typeSlug = es.type || es.songs?.type || '';
+          const songType = songTypesMap[typeSlug];
+          const defaultType = defaultTypeLabels[typeSlug];
+          
+          return {
+            id: `no-audio-${es.songs.id}`,
+            song_id: es.songs.id,
+            naipe: '',
+            audio_url: '',
+            name: '',
+            song_name: es.songs?.name || 'Música',
+            song_type_slug: typeSlug,
+            song_type_name: defaultType?.name || songType?.name || typeSlug,
+            song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
+            song_lyrics: es.songs?.lyrics || null,
+            song_chords: es.songs?.chords || null,
+            song_sheet_music_pdf_url: es.songs?.sheet_music_pdf_url || null
+          };
+        });
+
       // Map songs for PDF export
       const mappedSongs = eventSongsData.map((es: any) => {
         const typeSlug = es.type || es.songs?.type || '';
@@ -441,7 +472,9 @@ const SimpleEventAudios = () => {
       });
 
       setSongs(mappedSongs);
-      setAudios(sortByTypeOrder(mappedAudios));
+      // Combine audios with songs that have no audios
+      const allItems = [...mappedAudios, ...songsWithoutAudios];
+      setAudios(sortByTypeOrder(allItems));
     } catch (error) {
       console.error('Error fetching event data:', error);
       toast.error('Erro ao carregar dados do evento');
@@ -1213,7 +1246,7 @@ const SimpleEventAudios = () => {
           {audios.length === 0 ? (
             <Card className="p-8 text-center">
               <Music className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">Nenhum áudio disponível</p>
+              <p className="text-muted-foreground">Nenhuma música cadastrada</p>
             </Card>
           ) : filteredAudios.length === 0 ? (
             <Card className="p-8 text-center">
@@ -1230,7 +1263,8 @@ const SimpleEventAudios = () => {
           ) : (
             <div className="space-y-2">
               {filteredAudios.map((audio) => {
-                const isActive = currentTrack?.id === audio.id;
+                const hasAudio = audio.audio_url !== '';
+                const isActive = hasAudio && currentTrack?.id === audio.id;
                 const isActuallyPlaying = isActive && isPlaying;
                 
                 return (
@@ -1239,22 +1273,28 @@ const SimpleEventAudios = () => {
                     className={`p-3 transition-colors hover:bg-accent/50 ${isActive ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}
                   >
                     <div className="flex items-center gap-3">
-                      {/* Play Button */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
-                        onClick={() => handlePlay(audio)}
-                        disabled={isPlayerLoading && !isActive}
-                      >
-                        {isPlayerLoading && isActive ? (
-                          <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                        ) : isActuallyPlaying ? (
-                          <Pause className="h-5 w-5 text-primary" />
-                        ) : (
-                          <Play className="h-5 w-5 text-primary ml-0.5" />
-                        )}
-                      </Button>
+                      {/* Play Button or Music Icon */}
+                      {hasAudio ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
+                          onClick={() => handlePlay(audio)}
+                          disabled={isPlayerLoading && !isActive}
+                        >
+                          {isPlayerLoading && isActive ? (
+                            <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                          ) : isActuallyPlaying ? (
+                            <Pause className="h-5 w-5 text-primary" />
+                          ) : (
+                            <Play className="h-5 w-5 text-primary ml-0.5" />
+                          )}
+                        </Button>
+                      ) : (
+                        <div className="h-10 w-10 shrink-0 rounded-full bg-muted/50 flex items-center justify-center">
+                          <Music className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
 
                       {/* Song Info */}
                       <div className="flex-1 min-w-0">
@@ -1262,21 +1302,30 @@ const SimpleEventAudios = () => {
                           <p className="font-medium text-sm text-foreground truncate">
                             {audio.song_type_name}
                           </p>
-                          <Badge 
-                            variant={audio.naipe.toLowerCase() === 'unissono' ? "secondary" : "outline"}
-                            className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider pointer-events-none ${
-                              audio.naipe.toLowerCase() === 'soprano' ? 'border-pink-500/40 text-pink-600 dark:text-pink-400 bg-pink-500/5' :
-                              audio.naipe.toLowerCase() === 'contralto' ? 'border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
-                              audio.naipe.toLowerCase() === 'tenor' ? 'border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5' :
-                              audio.naipe.toLowerCase() === 'baixo' ? 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
-                              audio.naipe.toLowerCase() === 'unissono' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none' :
-                              'border-primary/40 text-primary bg-primary/5'
-                            }`}
-                          >
-                            {audio.naipe}
-                            {audio.naipe.toLowerCase() === 'unissono' && ' ★'}
-                          </Badge>
-                          {isCached(audio.audio_url) && (
+                          {hasAudio ? (
+                            <Badge 
+                              variant={audio.naipe.toLowerCase() === 'unissono' ? "secondary" : "outline"}
+                              className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider pointer-events-none ${
+                                audio.naipe.toLowerCase() === 'soprano' ? 'border-pink-500/40 text-pink-600 dark:text-pink-400 bg-pink-500/5' :
+                                audio.naipe.toLowerCase() === 'contralto' ? 'border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
+                                audio.naipe.toLowerCase() === 'tenor' ? 'border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5' :
+                                audio.naipe.toLowerCase() === 'baixo' ? 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
+                                audio.naipe.toLowerCase() === 'unissono' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none' :
+                                'border-primary/40 text-primary bg-primary/5'
+                              }`}
+                            >
+                              {audio.naipe}
+                              {audio.naipe.toLowerCase() === 'unissono' && ' ★'}
+                            </Badge>
+                          ) : (
+                            <Badge 
+                              variant="outline"
+                              className="h-4 px-1.5 text-[9px] font-medium uppercase tracking-wider pointer-events-none text-muted-foreground border-muted-foreground/30"
+                            >
+                              Sem áudio
+                            </Badge>
+                          )}
+                          {hasAudio && isCached(audio.audio_url) && (
                             <span title="Disponível offline" className="flex shrink-0">
                               <Check className="h-3 w-3 text-green-500" />
                             </span>
@@ -1334,17 +1383,21 @@ const SimpleEventAudios = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
-                            <MessageCircle className="mr-2 h-4 w-4" />
-                            Enviar por WhatsApp
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDownload(audio)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Baixar
-                          </DropdownMenuItem>
+                          {hasAudio && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
+                                <MessageCircle className="mr-2 h-4 w-4" />
+                                Enviar por WhatsApp
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDownload(audio)}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Baixar
+                              </DropdownMenuItem>
+                            </>
+                          )}
                           {isAdmin && (
                             <>
-                              <DropdownMenuSeparator />
+                              {hasAudio && <DropdownMenuSeparator />}
                               <DropdownMenuItem onClick={() => handleEditSong(audio.song_id)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Editar Música
@@ -1364,7 +1417,7 @@ const SimpleEventAudios = () => {
                     </div>
                     
                     {/* Progress Bar - Shows when active (playing or paused) */}
-                    {isActive && duration > 0 && (
+                    {hasAudio && isActive && duration > 0 && (
                       <div className="mt-3 flex items-center gap-2">
                         <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">
                           {formatTime(currentTime)}
