@@ -211,6 +211,8 @@ const SongTypeDetails = () => {
       'C': 'Contralto',
       'T': 'Tenor',
       'B': 'Baixo',
+      'unissono': 'Música Original',
+      'Unissono': 'Música Original',
     };
     const label = labels[naipe] || naipe;
     return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
