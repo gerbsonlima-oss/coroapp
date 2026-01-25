@@ -664,7 +664,7 @@ const EventDetails = () => {
     }
   };
 
-  const filterOptions = ['Soprano', 'Contralto', 'Tenor', 'Baixo', 'Música Original', 'Música Completa'];
+  const filterOptions = ['Soprano', 'Contralto', 'Tenor', 'Baixo', 'Música Completa'];
 
   const handleSaveOffline = async () => {
     if (!event) {

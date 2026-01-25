@@ -1314,7 +1314,7 @@ const SimpleEventAudios = () => {
                                 'border-primary/40 text-primary bg-primary/5'
                               }`}
                             >
-                              {audio.naipe.toLowerCase() === 'unissono' ? 'Música Original' : audio.naipe}
+                              {audio.naipe.toLowerCase() === 'unissono' ? 'Original' : audio.naipe}
                               {audio.naipe.toLowerCase() === 'unissono' && ' ★'}
                             </Badge>
                           ) : (
