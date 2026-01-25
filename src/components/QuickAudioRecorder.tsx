@@ -33,7 +33,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
-  { key: 'unissono', label: 'Música Original' },
+  { key: 'unissono', label: 'Original' },
 ];
 
 export const QuickAudioRecorder = ({ open, onOpenChange, mode, eventId, initialSongName, onSuccess }: QuickAudioRecorderProps) => {

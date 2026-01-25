@@ -73,7 +73,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
-  { key: 'unissono', label: 'Música Original' },
+  { key: 'unissono', label: 'Original' },
 ] as const;
 
 type NaipeKey = (typeof NAIPES)[number]['key'];
