@@ -13,14 +13,17 @@ interface ImportData {
   events: any[];
   eventSongs: any[];
   eventSongTypes: any[];
+  eventMembers: any[];
   choirMembers: any[];
   rehearsals: any[];
+  rehearsalAttendance: any[];
   idMapping: {
     tenants: Record<string, string>;
     songTypes: Record<string, string>;
     songs: Record<string, string>;
     events: Record<string, string>;
     choirMembers: Record<string, string>;
+    rehearsals: Record<string, string>;
   };
   urlMapping: Record<string, string>;
 }
@@ -70,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     const importData: ImportData = await req.json();
-    const { tenants, songTypes, songs, songAudios, events, eventSongs, eventSongTypes, choirMembers, rehearsals, idMapping, urlMapping } = importData;
+    const { tenants, songTypes, songs, songAudios, events, eventSongs, eventSongTypes, eventMembers, choirMembers, rehearsals, rehearsalAttendance, idMapping, urlMapping } = importData;
 
     const stats = {
       tenants: 0,
@@ -80,8 +83,10 @@ Deno.serve(async (req) => {
       events: 0,
       eventSongs: 0,
       eventSongTypes: 0,
+      eventMembers: 0,
       choirMembers: 0,
       rehearsals: 0,
+      rehearsalAttendance: 0,
       errors: [] as string[],
     };
 
@@ -296,13 +301,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 9. Insert rehearsals
+    // 9. Insert rehearsals (with ID mapping for attendance)
+    const rehearsalIdMapping: Record<string, string> = {};
     for (const rehearsal of rehearsals) {
+      const newId = crypto.randomUUID();
+      rehearsalIdMapping[rehearsal.id] = newId;
+      
       const newEventId = rehearsal.event_id ? idMapping.events[rehearsal.event_id] : null;
       const newTenantId = rehearsal.tenant_id ? idMapping.tenants[rehearsal.tenant_id] : null;
 
       const { error } = await supabaseAdmin.from('rehearsals').insert({
-        id: crypto.randomUUID(),
+        id: newId,
         date: rehearsal.date,
         location: rehearsal.location,
         notes: rehearsal.notes,
@@ -316,6 +325,48 @@ Deno.serve(async (req) => {
         stats.errors.push(`Rehearsal: ${error.message}`);
       } else {
         stats.rehearsals++;
+      }
+    }
+
+    // 10. Insert event_members
+    for (const em of eventMembers || []) {
+      const newEventId = idMapping.events[em.event_id];
+      const newMemberId = idMapping.choirMembers[em.member_id];
+      if (!newEventId || !newMemberId) continue;
+
+      const { error } = await supabaseAdmin.from('event_members').insert({
+        id: crypto.randomUUID(),
+        event_id: newEventId,
+        member_id: newMemberId,
+        created_at: em.created_at,
+      });
+
+      if (error) {
+        stats.errors.push(`Event member: ${error.message}`);
+      } else {
+        stats.eventMembers++;
+      }
+    }
+
+    // 11. Insert rehearsal_attendance
+    for (const ra of rehearsalAttendance || []) {
+      const newRehearsalId = rehearsalIdMapping[ra.rehearsal_id];
+      const newMemberId = ra.member_id ? idMapping.choirMembers[ra.member_id] : null;
+      if (!newRehearsalId) continue;
+
+      const { error } = await supabaseAdmin.from('rehearsal_attendance').insert({
+        id: crypto.randomUUID(),
+        rehearsal_id: newRehearsalId,
+        user_id: ra.user_id, // Keep original user_id
+        member_id: newMemberId,
+        attended: ra.attended,
+        created_at: ra.created_at,
+      });
+
+      if (error) {
+        stats.errors.push(`Rehearsal attendance: ${error.message}`);
+      } else {
+        stats.rehearsalAttendance++;
       }
     }
 

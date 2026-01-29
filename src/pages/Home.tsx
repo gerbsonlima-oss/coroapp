@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History, Users, UserCheck } from 'lucide-react';
+import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History, Users, UserCheck, Database, Upload } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -196,15 +196,35 @@ const Home = () => {
             </>
           )}
           {isSuperAdmin && (
-            <Button
-              onClick={() => navigate('/admin/tenants')}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Button>
+            <>
+              <Button
+                onClick={() => navigate('/admin/tenants')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+              <Button
+                onClick={() => navigate('/admin/backup')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Database className="h-4 w-4" />
+                <span className="hidden sm:inline">Backup</span>
+              </Button>
+              <Button
+                onClick={() => navigate('/admin/restore')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Restaurar</span>
+              </Button>
+            </>
           )}
         {user ? (
           <Button

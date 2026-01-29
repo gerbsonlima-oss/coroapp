@@ -18,8 +18,10 @@ interface BackupManifest {
     events: number;
     eventSongs: number;
     eventSongTypes: number;
+    eventMembers: number;
     choirMembers: number;
     rehearsals: number;
+    rehearsalAttendance: number;
     files: number;
   };
   files: string[];
@@ -87,8 +89,10 @@ Deno.serve(async (req) => {
       eventsRes,
       eventSongsRes,
       eventSongTypesRes,
+      eventMembersRes,
       choirMembersRes,
       rehearsalsRes,
+      rehearsalAttendanceRes,
     ] = await Promise.all([
       supabaseAdmin.from('tenants').select('*'),
       tenantId 
@@ -105,12 +109,14 @@ Deno.serve(async (req) => {
         : supabaseAdmin.from('events').select('*'),
       supabaseAdmin.from('event_songs').select('*'),
       supabaseAdmin.from('event_song_types').select('*'),
+      supabaseAdmin.from('event_members').select('*'),
       tenantId
         ? supabaseAdmin.from('choir_members').select('*').eq('tenant_id', tenantId)
         : supabaseAdmin.from('choir_members').select('*'),
       tenantId
         ? supabaseAdmin.from('rehearsals').select('*').eq('tenant_id', tenantId)
         : supabaseAdmin.from('rehearsals').select('*'),
+      supabaseAdmin.from('rehearsal_attendance').select('*'),
     ]);
 
     // Check for errors
@@ -122,8 +128,10 @@ Deno.serve(async (req) => {
       eventsRes.error,
       eventSongsRes.error,
       eventSongTypesRes.error,
+      eventMembersRes.error,
       choirMembersRes.error,
       rehearsalsRes.error,
+      rehearsalAttendanceRes.error,
     ].filter(Boolean);
 
     if (errors.length > 0) {
@@ -141,13 +149,20 @@ Deno.serve(async (req) => {
     const events = eventsRes.data || [];
     const eventSongs = eventSongsRes.data || [];
     const eventSongTypes = eventSongTypesRes.data || [];
+    const eventMembers = eventMembersRes.data || [];
     const choirMembers = choirMembersRes.data || [];
     const rehearsals = rehearsalsRes.data || [];
+    const rehearsalAttendance = rehearsalAttendanceRes.data || [];
 
-    // Filter event_songs and event_song_types to only include those from exported events
+    // Filter event_songs, event_song_types, and event_members to only include those from exported events
     const eventIds = new Set(events.map(e => e.id));
     const filteredEventSongs = eventSongs.filter(es => eventIds.has(es.event_id));
     const filteredEventSongTypes = eventSongTypes.filter(est => eventIds.has(est.event_id));
+    const filteredEventMembers = eventMembers.filter(em => eventIds.has(em.event_id));
+
+    // Filter rehearsal_attendance to only include those from exported rehearsals
+    const rehearsalIds = new Set(rehearsals.map(r => r.id));
+    const filteredRehearsalAttendance = rehearsalAttendance.filter(ra => rehearsalIds.has(ra.rehearsal_id));
 
     // Collect all file URLs
     const files: string[] = [];
@@ -209,8 +224,10 @@ Deno.serve(async (req) => {
         events: events.length,
         eventSongs: filteredEventSongs.length,
         eventSongTypes: filteredEventSongTypes.length,
+        eventMembers: filteredEventMembers.length,
         choirMembers: choirMembers.length,
         rehearsals: rehearsals.length,
+        rehearsalAttendance: filteredRehearsalAttendance.length,
         files: files.length,
       },
       files,
@@ -226,8 +243,10 @@ Deno.serve(async (req) => {
         events,
         eventSongs: filteredEventSongs,
         eventSongTypes: filteredEventSongTypes,
+        eventMembers: filteredEventMembers,
         choirMembers,
         rehearsals,
+        rehearsalAttendance: filteredRehearsalAttendance,
       },
     }), {
       status: 200,

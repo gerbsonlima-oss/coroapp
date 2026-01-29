@@ -14,8 +14,10 @@ export interface BackupManifest {
     events: number;
     eventSongs: number;
     eventSongTypes: number;
+    eventMembers: number;
     choirMembers: number;
     rehearsals: number;
+    rehearsalAttendance: number;
     files: number;
   };
   files: string[];
@@ -29,8 +31,10 @@ export interface BackupData {
   events: any[];
   eventSongs: any[];
   eventSongTypes: any[];
+  eventMembers: any[];
   choirMembers: any[];
   rehearsals: any[];
+  rehearsalAttendance: any[];
 }
 
 export interface ExportProgress {
@@ -107,8 +111,10 @@ export async function createBackupZip(
     dataFolder.file('events.json', JSON.stringify(data.events, null, 2));
     dataFolder.file('event_songs.json', JSON.stringify(data.eventSongs, null, 2));
     dataFolder.file('event_song_types.json', JSON.stringify(data.eventSongTypes, null, 2));
+    dataFolder.file('event_members.json', JSON.stringify(data.eventMembers, null, 2));
     dataFolder.file('choir_members.json', JSON.stringify(data.choirMembers, null, 2));
     dataFolder.file('rehearsals.json', JSON.stringify(data.rehearsals, null, 2));
+    dataFolder.file('rehearsal_attendance.json', JSON.stringify(data.rehearsalAttendance, null, 2));
   }
 
   // Download and add files
