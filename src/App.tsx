@@ -29,6 +29,8 @@ const AdminSongTypes = lazy(() => import("./pages/AdminSongTypes"));
 const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
 const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const AdminTenants = lazy(() => import("./pages/AdminTenants"));
+const AdminBackup = lazy(() => import("./pages/AdminBackup"));
+const AdminRestore = lazy(() => import("./pages/AdminRestore"));
 const TenantSelection = lazy(() => import("./pages/TenantSelection"));
 const ChoirMembers = lazy(() => import("./pages/ChoirMembers"));
 const ChoirMemberForm = lazy(() => import("./pages/ChoirMemberForm"));
@@ -159,6 +161,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminTenants />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/backup"
+              element={
+                <ProtectedRoute>
+                  <AdminBackup />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/restore"
+              element={
+                <ProtectedRoute>
+                  <AdminRestore />
                 </ProtectedRoute>
               }
             />
