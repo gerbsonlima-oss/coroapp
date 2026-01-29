@@ -19,8 +19,10 @@ export interface ImportResult {
     events: number;
     eventSongs: number;
     eventSongTypes: number;
+    eventMembers: number;
     choirMembers: number;
     rehearsals: number;
+    rehearsalAttendance: number;
     errors: string[];
   };
 }
@@ -57,8 +59,10 @@ export async function readBackupZip(file: File): Promise<{ manifest: BackupManif
     events: await readJsonFile('events.json'),
     eventSongs: await readJsonFile('event_songs.json'),
     eventSongTypes: await readJsonFile('event_song_types.json'),
+    eventMembers: await readJsonFile('event_members.json'),
     choirMembers: await readJsonFile('choir_members.json'),
     rehearsals: await readJsonFile('rehearsals.json'),
+    rehearsalAttendance: await readJsonFile('rehearsal_attendance.json'),
   };
 
   return { manifest, data, zip };

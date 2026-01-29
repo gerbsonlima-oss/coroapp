@@ -172,8 +172,10 @@ export default function AdminRestore() {
                       <li>Músicas: {result.stats.songs}</li>
                       <li>Áudios: {result.stats.songAudios}</li>
                       <li>Eventos: {result.stats.events}</li>
+                      <li>Membros em eventos: {result.stats.eventMembers}</li>
                       <li>Membros do coral: {result.stats.choirMembers}</li>
                       <li>Ensaios: {result.stats.rehearsals}</li>
+                      <li>Presenças em ensaios: {result.stats.rehearsalAttendance}</li>
                     </ul>
                     {result.stats.errors.length > 0 && (
                       <details className="mt-2">
