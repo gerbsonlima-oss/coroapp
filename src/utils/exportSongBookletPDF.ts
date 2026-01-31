@@ -315,10 +315,11 @@ export const exportSongBookletPDF = async (
       pdf.addFont('LibreBaskerville-Regular.ttf', 'LibreBaskerville', 'normal');
       pdf.addFont('LibreBaskerville-Italic.ttf', 'LibreBaskerville', 'italic');
       pdf.addFont('LibreBaskerville-Bold.ttf', 'LibreBaskerville', 'bold');
-      // Para bolditalic, usar a fonte bold (jsPDF aplica itálico via transformação)
-      pdf.addFont('LibreBaskerville-Italic.ttf', 'LibreBaskerville', 'bolditalic');
+      // Para bolditalic, usar a fonte bold
+      pdf.addFont('LibreBaskerville-Bold.ttf', 'LibreBaskerville', 'bolditalic');
       
       fontFamily = 'LibreBaskerville';
+      console.log('Fonte Libre Baskerville carregada com sucesso!');
     } catch (e) {
       console.warn('Erro ao carregar fonte Libre Baskerville, usando Times:', e);
       fontFamily = 'times';
@@ -1340,14 +1341,14 @@ export const exportSongBookletPDF = async (
             
             // "R:" apenas na primeira linha do primeiro verso de refrão
             if (isFirstRefraoVerse && lineIdx === 0) {
-              pdf.setFont(fontFamily, 'bolditalic');
+              pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
-            // Texto com formatação - passa indentação para quebras de linha (negrito + itálico)
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bolditalic', textDark, totalIndent);
+            // Texto com formatação - passa indentação para quebras de linha (negrito)
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
@@ -1379,14 +1380,14 @@ export const exportSongBookletPDF = async (
             
             // "R:" apenas na primeira linha
             if (lineIdx === 0) {
-              pdf.setFont(fontFamily, 'bolditalic');
+              pdf.setFont(fontFamily, 'bold');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
-            // Texto com formatação - passa indentação para quebras de linha (negrito + itálico)
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bolditalic', textDark, totalIndent);
+            // Texto com formatação - passa indentação para quebras de linha (negrito)
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
