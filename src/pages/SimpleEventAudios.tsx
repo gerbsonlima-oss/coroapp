@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1 } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1, ListOrdered } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
+import { ReorderSongsSheet } from '@/components/ReorderSongsSheet';
 import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
 import { useAudioCache } from '@/hooks/useAudioCache';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -146,6 +147,8 @@ const SimpleEventAudios = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [showExportLyricsDialog, setShowExportLyricsDialog] = useState(false);
+  const [showReorderSheet, setShowReorderSheet] = useState(false);
+  const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
 
   // Helper functions and Memoized values
   const availableNaipes = useMemo(() => {
@@ -459,19 +462,27 @@ const SimpleEventAudios = () => {
           };
         });
 
-      // Map songs for PDF export
+      // Map songs for PDF export and reordering
       const mappedSongs = eventSongsData.map((es: any) => {
         const typeSlug = es.type || es.songs?.type || '';
         const songType = songTypesMap[typeSlug];
         const defaultType = defaultTypeLabels[typeSlug];
         return {
           ...es.songs,
+          event_song_id: es.id, // ID from event_songs table for reordering
           type: typeSlug,
           typeName: songType?.name || defaultType?.name || typeSlug,
           typeOrder: songType?.order_index ?? defaultType?.order ?? 999,
           order_index: es.order_index
         };
       });
+
+      // Build type labels map for ReorderSongsSheet
+      const labelsMap: Record<string, string> = {};
+      Object.entries(songTypesMap).forEach(([slug, st]) => {
+        labelsMap[slug] = st.name;
+      });
+      setTypeLabels(labelsMap);
 
       setSongs(mappedSongs);
       // Combine audios with songs that have no audios
@@ -935,6 +946,10 @@ const SimpleEventAudios = () => {
                       <DropdownMenuItem onClick={handleAddSong}>
                         <Plus className="mr-2 h-4 w-4" />
                         Adicionar Música
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowReorderSheet(true)}>
+                        <ListOrdered className="mr-2 h-4 w-4" />
+                        Reordenar Músicas
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
@@ -1772,6 +1787,21 @@ const SimpleEventAudios = () => {
           onExport={handleExportSongBooklet}
           isExporting={exportingLyrics}
           initialOptions={exportPreferences}
+        />
+
+        {/* Reorder Songs Sheet */}
+        <ReorderSongsSheet
+          open={showReorderSheet}
+          onOpenChange={setShowReorderSheet}
+          eventId={id || ''}
+          songs={songs.map((s: any) => ({
+            id: s.id,
+            event_song_id: s.event_song_id || s.id,
+            name: s.name,
+            type: s.type,
+          }))}
+          typeLabels={typeLabels}
+          onReorderComplete={() => fetchEventData()}
         />
       </div>
     </>
