@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
 import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
+import { generateSongTypeLabelsWithNumerals } from './songTypeLabeling';
 
 interface Event {
   id: string;
@@ -1209,6 +1210,9 @@ export const exportSongBookletPDF = async (
   // ============================================
   // PROCESSAR MÚSICAS
   // ============================================
+  // Gerar labels com numerais romanos para tipos repetidos (ex: Comunhão I, Comunhão II)
+  const songTypeLabelMap = generateSongTypeLabelsWithNumerals(songsWithLyrics, typeLabels);
+  
   let songIndex = 0;
   for (const song of songsWithLyrics) {
     songIndex++;
@@ -1218,7 +1222,8 @@ export const exportSongBookletPDF = async (
       currentY += 4;
     }
 
-    const typeLabel = typeLabels[song.type] || song.type || 'Música';
+    // Usar label com numeral romano se houver múltiplas músicas do mesmo tipo
+    const typeLabel = songTypeLabelMap[song.id] || typeLabels[song.type] || song.type || 'Música';
     drawSongSection(songIndex, typeLabel);
 
     // Nome da música removido - apenas o tipo é exibido
