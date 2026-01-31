@@ -282,19 +282,42 @@ export const exportSongBookletPDF = async (
   let fontFamily: string = fontFamilyOption;
   if (fontFamilyOption === 'libre-baskerville') {
     try {
-      // Fetch the font from Google Fonts CDN
-      const fontUrl = 'https://fonts.gstatic.com/s/librebaskerville/v16/kmKnZrc3Hgbbcjq75U4uslyuy4kn0pNeYRI4CN2V.ttf';
-      const fontResponse = await fetch(fontUrl);
-      const fontBuffer = await fontResponse.arrayBuffer();
+      // Fetch the fonts from Google Fonts CDN
+      const fontUrlRegular = 'https://fonts.gstatic.com/s/librebaskerville/v16/kmKnZrc3Hgbbcjq75U4uslyuy4kn0pNeYRI4CN2V.ttf';
+      const fontUrlItalic = 'https://fonts.gstatic.com/s/librebaskerville/v16/kmKhZrc3Hgbbcjq75U4uslyuy4kn0qNcaxYaDc2V2ro.ttf';
+      const fontUrlBold = 'https://fonts.gstatic.com/s/librebaskerville/v16/kmKiZrc3Hgbbcjq75U4uslyuy4kn0qviTjYwI8Gcw6Oi.ttf';
+      
+      const [fontResponseRegular, fontResponseItalic, fontResponseBold] = await Promise.all([
+        fetch(fontUrlRegular),
+        fetch(fontUrlItalic),
+        fetch(fontUrlBold)
+      ]);
+      
+      const [fontBufferRegular, fontBufferItalic, fontBufferBold] = await Promise.all([
+        fontResponseRegular.arrayBuffer(),
+        fontResponseItalic.arrayBuffer(),
+        fontResponseBold.arrayBuffer()
+      ]);
       
       // Convert to base64
-      const fontBase64 = btoa(
-        new Uint8Array(fontBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      const toBase64 = (buffer: ArrayBuffer) => btoa(
+        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
       );
       
-      pdf.addFileToVFS('LibreBaskerville-Regular.ttf', fontBase64);
+      const fontBase64Regular = toBase64(fontBufferRegular);
+      const fontBase64Italic = toBase64(fontBufferItalic);
+      const fontBase64Bold = toBase64(fontBufferBold);
+      
+      pdf.addFileToVFS('LibreBaskerville-Regular.ttf', fontBase64Regular);
+      pdf.addFileToVFS('LibreBaskerville-Italic.ttf', fontBase64Italic);
+      pdf.addFileToVFS('LibreBaskerville-Bold.ttf', fontBase64Bold);
+      
       pdf.addFont('LibreBaskerville-Regular.ttf', 'LibreBaskerville', 'normal');
-      pdf.addFont('LibreBaskerville-Regular.ttf', 'LibreBaskerville', 'bold'); // Use same for bold
+      pdf.addFont('LibreBaskerville-Italic.ttf', 'LibreBaskerville', 'italic');
+      pdf.addFont('LibreBaskerville-Bold.ttf', 'LibreBaskerville', 'bold');
+      // Para bolditalic, usar a fonte bold (jsPDF aplica itálico via transformação)
+      pdf.addFont('LibreBaskerville-Italic.ttf', 'LibreBaskerville', 'bolditalic');
+      
       fontFamily = 'LibreBaskerville';
     } catch (e) {
       console.warn('Erro ao carregar fonte Libre Baskerville, usando Times:', e);
