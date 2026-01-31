@@ -1647,6 +1647,7 @@ const EventDetails = () => {
         onExport={handleExportSongBooklet}
         isExporting={isExportingLyrics}
         initialOptions={exportPreferences}
+        currentTheme={event?.pdf_theme || undefined}
       />
 
       {/* Reorder Songs Sheet */}

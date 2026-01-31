@@ -8,6 +8,7 @@ const defaultOptions: LyricsExportOptions = {
   fontFamily: 'times',
   margin: 18,
   gutter: 12,
+  theme: undefined, // Will use event theme by default
 };
 
 export const useExportPreferences = () => {
