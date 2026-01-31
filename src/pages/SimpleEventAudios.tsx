@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -120,7 +120,9 @@ const SimpleEventAudios = () => {
     duration, 
     seek, 
     setPlaylist,
-    isLoading: isPlayerLoading
+    isLoading: isPlayerLoading,
+    repeatMode,
+    toggleRepeat
   } = usePlayer();
 
   const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
@@ -1330,6 +1332,11 @@ const SimpleEventAudios = () => {
                               <Check className="h-3 w-3 text-green-500" />
                             </span>
                           )}
+                          {hasAudio && currentTrack?.id === audio.id && repeatMode === 'track' && (
+                            <span title="Repetindo esta música" className="flex shrink-0">
+                              <Repeat1 className="h-3 w-3 text-primary" />
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {audio.song_name}
@@ -1385,6 +1392,32 @@ const SimpleEventAudios = () => {
                         <DropdownMenuContent align="end" className="bg-popover">
                           {hasAudio && (
                             <>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  // Se a música atual não está tocando ou é outra, primeiro seleciona ela
+                                  if (currentTrack?.id !== audio.id) {
+                                    handlePlay(audio);
+                                  }
+                                  // Ativa/desativa repetição individual
+                                  if (repeatMode !== 'track') {
+                                    // Precisamos ativar repeat mode 'track'
+                                    // toggleRepeat vai de off -> playlist -> track -> off
+                                    // então precisamos chamar até chegar em 'track'
+                                    if (repeatMode === 'off') {
+                                      toggleRepeat(); // off -> playlist
+                                      setTimeout(() => toggleRepeat(), 50); // playlist -> track
+                                    } else if (repeatMode === 'playlist') {
+                                      toggleRepeat(); // playlist -> track
+                                    }
+                                  } else {
+                                    toggleRepeat(); // track -> off
+                                  }
+                                }}
+                              >
+                                <Repeat1 className={`mr-2 h-4 w-4 ${currentTrack?.id === audio.id && repeatMode === 'track' ? 'text-primary' : ''}`} />
+                                {currentTrack?.id === audio.id && repeatMode === 'track' ? 'Desativar Repetição' : 'Repetir Música'}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
                                 <MessageCircle className="mr-2 h-4 w-4" />
                                 Enviar por WhatsApp
