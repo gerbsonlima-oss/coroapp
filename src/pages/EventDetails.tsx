@@ -19,7 +19,7 @@ import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
-import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, Check, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save, BookOpen, Guitar, X } from 'lucide-react';
+import { ArrowLeft, Plus, Download, Music, Search, Edit, Trash2, MoreVertical, Share2, Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, FileText, FileArchive, ChevronDown, Sliders, Filter, Calendar, Users, Check, CheckCircle2, Volume2, VolumeX, Loader2, Upload, FileDown, Mic2, Mic, Music2, MessageCircle, Save, BookOpen, Guitar, X, ListOrdered } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -42,6 +42,7 @@ import { exportChordBookletPDF } from '@/utils/exportChordBookletPDF';
 import { EventMembersManager } from '@/components/EventMembersManager';
 import { ExportLyricsDialog, LyricsExportOptions } from '@/components/ExportLyricsDialog';
 import { useExportPreferences } from '@/hooks/useExportPreferences';
+import { ReorderSongsSheet } from '@/components/ReorderSongsSheet';
 
 interface Event {
   id: string;
@@ -212,6 +213,7 @@ const EventDetails = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showExportLyricsDialog, setShowExportLyricsDialog] = useState(false);
   const [isExportingLyrics, setIsExportingLyrics] = useState(false);
+  const [showReorderSheet, setShowReorderSheet] = useState(false);
   const songSheetInputRef = useRef<HTMLInputElement>(null);
 
   const [coverImageSrc, setCoverImageSrc] = useState<string | null>(null);
@@ -928,6 +930,10 @@ const EventDetails = () => {
                     <Music className="mr-2 h-4 w-4" />
                     Editar Músicas
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowReorderSheet(true)}>
+                    <ListOrdered className="mr-2 h-4 w-4" />
+                    Reordenar Músicas
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowAddDialog(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Música
@@ -1641,6 +1647,21 @@ const EventDetails = () => {
         onExport={handleExportSongBooklet}
         isExporting={isExportingLyrics}
         initialOptions={exportPreferences}
+      />
+
+      {/* Reorder Songs Sheet */}
+      <ReorderSongsSheet
+        open={showReorderSheet}
+        onOpenChange={setShowReorderSheet}
+        eventId={id || ''}
+        songs={songs.map(s => ({
+          id: s.id,
+          event_song_id: s.event_song_id,
+          name: s.name,
+          type: s.type,
+        }))}
+        typeLabels={typeLabels}
+        onReorderComplete={() => fetchEventDetails()}
       />
 
       <BottomNavigation />
