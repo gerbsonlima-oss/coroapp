@@ -717,10 +717,13 @@ export const exportSongBookletPDF = async (
   // ============================================
   // ADICIONAR TEXTO COM FLUXO DE COLUNAS
   // ============================================
+  // Tipo para estilos de fonte suportados pelo jsPDF
+  type FontStyle = 'normal' | 'bold' | 'italic' | 'bolditalic';
+
   const addText = (
     text: string, 
     size: number, 
-    style: 'normal' | 'bold' | 'italic', 
+    style: FontStyle, 
     color: [number, number, number], 
     indent: number = 0,
     spaceBefore: number = 0
@@ -883,7 +886,7 @@ export const exportSongBookletPDF = async (
     startX: number,
     y: number,
     size: number,
-    baseStyle: 'normal' | 'bold' | 'italic',
+    baseStyle: FontStyle,
     baseColor: [number, number, number],
     indentForWrap: number = 0 // Indentação para linhas que quebram
   ): void => {
@@ -941,7 +944,7 @@ export const exportSongBookletPDF = async (
     startX: number,
     y: number,
     size: number,
-    baseStyle: 'normal' | 'bold' | 'italic',
+    baseStyle: FontStyle,
     baseColor: [number, number, number]
   ): void => {
     const hasFormatting = text.includes('<b>') || text.includes('<i>') || text.includes('<color:');
@@ -955,7 +958,15 @@ export const exportSongBookletPDF = async (
     let currentX = startX;
     
     for (const segment of segments) {
-      const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
+      // Preservar bolditalic do baseStyle, ou aplicar formatação do segmento
+      let segmentStyle: FontStyle = baseStyle;
+      if (segment.bold && segment.italic) {
+        segmentStyle = 'bolditalic';
+      } else if (segment.bold) {
+        segmentStyle = baseStyle === 'bolditalic' ? 'bolditalic' : 'bold';
+      } else if (segment.italic) {
+        segmentStyle = baseStyle === 'bolditalic' ? 'bolditalic' : 'italic';
+      }
       const segmentColor = segment.color || baseColor;
       currentX = renderTextWithRedSlashes(segment.text, currentX, y, size, segmentStyle, segmentColor);
     }
@@ -967,7 +978,7 @@ export const exportSongBookletPDF = async (
     startX: number,
     y: number,
     size: number,
-    style: 'normal' | 'bold' | 'italic',
+    style: FontStyle,
     color: [number, number, number]
   ): number => {
     let currentX = startX;
@@ -1005,7 +1016,7 @@ export const exportSongBookletPDF = async (
   const addFormattedText = (
     text: string, 
     size: number, 
-    baseStyle: 'normal' | 'bold' | 'italic', 
+    baseStyle: FontStyle, 
     baseColor: [number, number, number], 
     indent: number = 0,
     spaceBefore: number = 0
@@ -1040,7 +1051,15 @@ export const exportSongBookletPDF = async (
     let currentX = startX;
     
     for (const segment of segments) {
-      const segmentStyle = segment.bold ? 'bold' : (segment.italic ? 'italic' : baseStyle);
+      // Preservar bolditalic do baseStyle, ou aplicar formatação do segmento
+      let segmentStyle: FontStyle = baseStyle;
+      if (segment.bold && segment.italic) {
+        segmentStyle = 'bolditalic';
+      } else if (segment.bold) {
+        segmentStyle = baseStyle === 'bolditalic' ? 'bolditalic' : 'bold';
+      } else if (segment.italic) {
+        segmentStyle = baseStyle === 'bolditalic' ? 'bolditalic' : 'italic';
+      }
       const segmentColor = segment.color || baseColor;
       
       // Split segment text to handle line wrapping
@@ -1085,7 +1104,7 @@ export const exportSongBookletPDF = async (
   const addTextWithRedSlashesSimple = (
     text: string, 
     size: number, 
-    style: 'normal' | 'bold' | 'italic', 
+    style: FontStyle, 
     color: [number, number, number], 
     indent: number = 0,
     spaceBefore: number = 0
@@ -1155,7 +1174,7 @@ export const exportSongBookletPDF = async (
   const addTextWithRedSlashes = (
     text: string, 
     size: number, 
-    style: 'normal' | 'bold' | 'italic', 
+    style: FontStyle, 
     color: [number, number, number], 
     indent: number = 0,
     spaceBefore: number = 0
@@ -1298,14 +1317,14 @@ export const exportSongBookletPDF = async (
             
             // "R:" apenas na primeira linha do primeiro verso de refrão
             if (isFirstRefraoVerse && lineIdx === 0) {
-              pdf.setFont(fontFamily, 'bold');
+              pdf.setFont(fontFamily, 'bolditalic');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
-            // Texto com formatação - passa indentação para quebras de linha
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
+            // Texto com formatação - passa indentação para quebras de linha (negrito + itálico)
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bolditalic', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
@@ -1337,14 +1356,14 @@ export const exportSongBookletPDF = async (
             
             // "R:" apenas na primeira linha
             if (lineIdx === 0) {
-              pdf.setFont(fontFamily, 'bold');
+              pdf.setFont(fontFamily, 'bolditalic');
               pdf.setFontSize(baseFontSize);
               pdf.setTextColor(...redColor);
               pdf.text('R:', x, currentY);
             }
             
-            // Texto com formatação - passa indentação para quebras de linha
-            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bold', textDark, totalIndent);
+            // Texto com formatação - passa indentação para quebras de linha (negrito + itálico)
+            renderFormattedTextInline(lineText, x + markerWidth, currentY, baseFontSize, 'bolditalic', textDark, totalIndent);
             
             currentY += lyricLineHeight;
           }
