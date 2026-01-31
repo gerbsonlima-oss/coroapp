@@ -1787,6 +1787,7 @@ const SimpleEventAudios = () => {
           onExport={handleExportSongBooklet}
           isExporting={exportingLyrics}
           initialOptions={exportPreferences}
+          currentTheme={(event as any)?.pdf_theme || undefined}
         />
 
         {/* Reorder Songs Sheet */}

@@ -257,12 +257,14 @@ export const exportSongBookletPDF = async (
     fontFamily?: 'times' | 'helvetica' | 'courier' | 'libre-baskerville';
     margin?: number;
     gutter?: number;
+    theme?: string;
   }
 ) => {
   const baseFontSize = options?.fontSize || 11;
   const fontFamilyOption = options?.fontFamily || 'times';
   const userMargin = options?.margin || 18;
   const userGutter = options?.gutter || 12;
+  const userTheme = options?.theme; // Theme override from dialog
   const typeLabels = await loadTypeLabels();
   
   const songsWithLyrics = songs
@@ -398,7 +400,8 @@ export const exportSongBookletPDF = async (
     },
   };
 
-  const themeKey = event.pdf_theme || 'deep_blue_gold';
+  // Use theme from options if provided, otherwise fall back to event theme
+  const themeKey = userTheme || event.pdf_theme || 'deep_blue_gold';
   const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
 
   const white: [number, number, number] = [255, 255, 255];

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, Settings2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export interface LyricsExportOptions {
@@ -12,6 +12,7 @@ export interface LyricsExportOptions {
   fontFamily: 'times' | 'helvetica' | 'courier' | 'libre-baskerville';
   margin: number;
   gutter: number;
+  theme?: string;
 }
 
 interface ExportLyricsDialogProps {
@@ -20,6 +21,7 @@ interface ExportLyricsDialogProps {
   onExport: (options: LyricsExportOptions) => void;
   isExporting: boolean;
   initialOptions?: LyricsExportOptions;
+  currentTheme?: string;
 }
 
 const fontFamilyLabels: Record<string, string> = {
@@ -29,17 +31,32 @@ const fontFamilyLabels: Record<string, string> = {
   'libre-baskerville': 'Libre Baskerville (Elegante)',
 };
 
+const themeOptions: { value: string; label: string; color: string }[] = [
+  { value: 'deep_blue_gold', label: 'Azul Profundo', color: '#19376D' },
+  { value: 'emerald_night', label: 'Esmeralda', color: '#064E3B' },
+  { value: 'violet_sunset', label: 'Violeta', color: '#581C87' },
+  { value: 'graphite_copper', label: 'Grafite', color: '#0F172A' },
+  { value: 'crimson_noir', label: 'Carmesim', color: '#7F1D1D' },
+  { value: 'sunrise_coral', label: 'Coral', color: '#EA580C' },
+  { value: 'ocean_teal', label: 'Oceano', color: '#0D9488' },
+  { value: 'forest_sage', label: 'Floresta', color: '#166534' },
+  { value: 'midnight_purple', label: 'Púrpura', color: '#4C1D95' },
+  { value: 'wine_burgundy', label: 'Vinho', color: '#881337' },
+];
+
 export const ExportLyricsDialog = ({
   open,
   onOpenChange,
   onExport,
   isExporting,
-  initialOptions
+  initialOptions,
+  currentTheme
 }: ExportLyricsDialogProps) => {
   const [fontSize, setFontSize] = useState(initialOptions?.fontSize ?? 11);
   const [fontFamily, setFontFamily] = useState<'times' | 'helvetica' | 'courier' | 'libre-baskerville'>(initialOptions?.fontFamily ?? 'times');
   const [margin, setMargin] = useState(initialOptions?.margin ?? 18);
   const [gutter, setGutter] = useState(initialOptions?.gutter ?? 12);
+  const [theme, setTheme] = useState(initialOptions?.theme ?? currentTheme ?? 'deep_blue_gold');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Sync state when dialog opens with new initialOptions
@@ -49,8 +66,18 @@ export const ExportLyricsDialog = ({
       setFontFamily(initialOptions.fontFamily);
       setMargin(initialOptions.margin);
       setGutter(initialOptions.gutter);
+      if (initialOptions.theme) {
+        setTheme(initialOptions.theme);
+      }
     }
   }, [open, initialOptions]);
+
+  // Update theme when currentTheme changes
+  useEffect(() => {
+    if (currentTheme && !initialOptions?.theme) {
+      setTheme(currentTheme);
+    }
+  }, [currentTheme, initialOptions?.theme]);
 
   const fontSizeLabels: Record<number, string> = {
     8: 'Muito pequena',
@@ -64,8 +91,10 @@ export const ExportLyricsDialog = ({
   };
 
   const handleExport = () => {
-    onExport({ fontSize, fontFamily, margin, gutter });
+    onExport({ fontSize, fontFamily, margin, gutter, theme });
   };
+
+  const selectedTheme = themeOptions.find(t => t.value === theme) || themeOptions[0];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,6 +104,40 @@ export const ExportLyricsDialog = ({
         </DialogHeader>
 
         <div className="py-4 space-y-4">
+          {/* Theme Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              Tema de Cores
+            </Label>
+            <Select value={theme} onValueChange={setTheme}>
+              <SelectTrigger>
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full border border-border" 
+                      style={{ backgroundColor: selectedTheme.color }}
+                    />
+                    {selectedTheme.label}
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {themeOptions.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-border" 
+                        style={{ backgroundColor: t.color }}
+                      />
+                      {t.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <Label className="text-sm font-medium">Fonte</Label>
             <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as 'times' | 'helvetica' | 'courier' | 'libre-baskerville')}>
