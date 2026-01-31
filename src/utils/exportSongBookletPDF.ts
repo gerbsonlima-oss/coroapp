@@ -515,15 +515,15 @@ export const exportSongBookletPDF = async (
     const maxTextWidth = pageWidth - textStartX - margin - 5;
     const centerX = textStartX + (maxTextWidth / 2);
 
-    // Linha 1: Nome do Tenant - fonte Times, tamanho 26
+    // Linha 1: Nome do Tenant - fonte customizada, tamanho 26
     const tenantName = tenant?.name || 'Coro Paroquial';
-    pdf.setFont('times', 'bold');
+    pdf.setFont(fontFamily, 'bold');
     pdf.setFontSize(26);
     pdf.setTextColor(...theme.primary);
     pdf.text(tenantName.toUpperCase(), centerX, line1Y, { align: 'center' });
 
-    // Linha 2: "Subsídio Litúrgico" - fonte Times, tamanho 26
-    pdf.setFont('times', 'italic');
+    // Linha 2: "Subsídio Litúrgico" - fonte customizada, tamanho 26
+    pdf.setFont(fontFamily, 'italic');
     pdf.setFontSize(26);
     // Usar uma cor intermediária entre primary e accent para o subtítulo
     const subtitleColor: [number, number, number] = [
@@ -534,8 +534,8 @@ export const exportSongBookletPDF = async (
     pdf.setTextColor(...subtitleColor);
     pdf.text('Subsídio Litúrgico', centerX, line2Y, { align: 'center' });
 
-    // Linha 3: Nome do evento - fonte Times, tamanho 22
-    pdf.setFont('times', 'bold');
+    // Linha 3: Nome do evento - fonte customizada, tamanho 22
+    pdf.setFont(fontFamily, 'bold');
     pdf.setFontSize(22);
     pdf.setTextColor(...theme.primary);
     const eventLines = pdf.splitTextToSize(event.name, maxTextWidth);
@@ -557,7 +557,7 @@ export const exportSongBookletPDF = async (
     pdf.setLineWidth(0.3);
     pdf.line(margin, footY - 3, pageWidth - margin, footY - 3);
 
-    pdf.setFont('times', 'normal');
+    pdf.setFont(fontFamily, 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(...textLight);
 
@@ -566,7 +566,7 @@ export const exportSongBookletPDF = async (
     }
 
     // Número da página com destaque
-    pdf.setFont('times', 'bold');
+    pdf.setFont(fontFamily, 'bold');
     pdf.setTextColor(...theme.primary);
     const pageStr = `${pageNum} / ${totalPages}`;
     pdf.text(pageStr, pageWidth - margin, footY, { align: 'right' });
@@ -697,7 +697,7 @@ export const exportSongBookletPDF = async (
     
     // Número centralizado no badge (branco, negrito)
     pdf.setTextColor(255, 255, 255);
-    pdf.setFont('times', 'bold');
+    pdf.setFont(fontFamily, 'bold');
     pdf.setFontSize(10);
     const numText = String(num);
     const numW = pdf.getTextWidth(numText);
@@ -706,7 +706,7 @@ export const exportSongBookletPDF = async (
     // Texto do tipo (negrito, cor primária, tamanho 12) - alinhado com internalPadding
     const labelText = label.toUpperCase();
     pdf.setTextColor(...theme.primary);
-    pdf.setFont('times', 'bold');
+    pdf.setFont(fontFamily, 'bold');
     pdf.setFontSize(12);
     pdf.text(labelText, currentBounds.left + internalPadding + badgeWidth + 3, currentY + 4.3);
 
@@ -1143,6 +1143,7 @@ export const exportSongBookletPDF = async (
         pdf.setFont(fontFamily, style);
         pdf.setFontSize(size);
         pdf.setTextColor(color[0], color[1], color[2]);
+        // Texto justificado por padrão
         pdf.text(line, x, currentY, { align: 'justify', maxWidth: currentMaxWidth });
       }
       
@@ -1440,7 +1441,7 @@ export const exportSongBookletPDF = async (
     pdf.addImage(qrDataUrl, 'PNG', qrX, currentY, qrSize, qrSize);
     
     // Texto abaixo do QR
-    pdf.setFont('times', 'italic');
+    pdf.setFont(fontFamily, 'italic');
     pdf.setFontSize(8);
     pdf.setTextColor(...textLight);
     const qrLabel = 'Escaneie para ouvir os áudios';
