@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { toast } from 'sonner';
+import { generateSongTypeLabelsWithNumerals } from './songTypeLabeling';
 
 interface Track {
   id: string;
@@ -33,15 +34,6 @@ export async function exportEventZIP(
   try {
     const zip = new JSZip();
     
-    // Grupo de tracks por tipo
-    const tracksByType: Record<string, Track[]> = {};
-    tracks.forEach(track => {
-      if (!tracksByType[track.songType]) {
-        tracksByType[track.songType] = [];
-      }
-      tracksByType[track.songType].push(track);
-    });
-
     // Ordem litúrgica
     const liturgicalOrder: Record<string, number> = {
       canto_entrada: 1,
@@ -58,45 +50,52 @@ export async function exportEventZIP(
       outro: 12,
     };
 
-    // Ordenar tipos
-    const sortedTypes = Object.keys(tracksByType).sort((a, b) => {
-      const orderA = liturgicalOrder[a] ?? 999;
-      const orderB = liturgicalOrder[b] ?? 999;
+    // Ordenar tracks por ordem litúrgica mantendo a ordem original dentro de cada tipo
+    const sortedTracks = [...tracks].sort((a, b) => {
+      const orderA = liturgicalOrder[a.songType] ?? 999;
+      const orderB = liturgicalOrder[b.songType] ?? 999;
       return orderA - orderB;
     });
 
+    // Gerar labels com numerais romanos para tipos repetidos (ex: Comunhão I, Comunhão II)
+    // Precisamos criar um array de "songs" a partir das tracks únicas por songId
+    const uniqueSongsMap = new Map<string, { id: string; type: string }>();
+    sortedTracks.forEach(track => {
+      if (!uniqueSongsMap.has(track.songId)) {
+        uniqueSongsMap.set(track.songId, { id: track.songId, type: track.songType });
+      }
+    });
+    const uniqueSongs = Array.from(uniqueSongsMap.values());
+    const songTypeLabelMap = generateSongTypeLabelsWithNumerals(uniqueSongs, typeLabels);
+
     let sequentialNumber = 1;
 
-    // Processar cada tipo em ordem
-    for (const type of sortedTypes) {
-      const typeTracks = tracksByType[type];
-      
-      for (const track of typeTracks) {
-        try {
-          // Baixar o áudio
-          const response = await fetch(track.url);
-          if (!response.ok) {
-            console.error(`Erro ao baixar ${track.url}`);
-            continue;
-          }
-          
-          const blob = await response.blob();
-          
-          // Formatar o nome do arquivo
-          const typeLabel = typeLabels[track.songType] || track.songType;
-          const naipeCapitalized = track.naipe.charAt(0).toUpperCase() + track.naipe.slice(1);
-          const paddedNumber = String(sequentialNumber).padStart(2, '0');
-          
-          // Nome: "01 Canto de Entrada - Nós somos as pedras vivas - Tenor"
-          const fileName = `${paddedNumber} ${typeLabel} - ${track.songName} - ${naipeCapitalized}.mp3`;
-          
-          // Adicionar ao ZIP
-          zip.file(fileName, blob);
-          
-          sequentialNumber++;
-        } catch (error) {
-          console.error(`Erro ao processar track ${track.id}:`, error);
+    // Processar cada track em ordem
+    for (const track of sortedTracks) {
+      try {
+        // Baixar o áudio
+        const response = await fetch(track.url);
+        if (!response.ok) {
+          console.error(`Erro ao baixar ${track.url}`);
+          continue;
         }
+        
+        const blob = await response.blob();
+        
+        // Formatar o nome do arquivo com numeral romano se aplicável
+        const typeLabel = songTypeLabelMap[track.songId] || typeLabels[track.songType] || track.songType;
+        const naipeCapitalized = track.naipe.charAt(0).toUpperCase() + track.naipe.slice(1);
+        const paddedNumber = String(sequentialNumber).padStart(2, '0');
+        
+        // Nome: "01 Comunhão I - Nós somos as pedras vivas - Tenor"
+        const fileName = `${paddedNumber} ${typeLabel} - ${track.songName} - ${naipeCapitalized}.mp3`;
+        
+        // Adicionar ao ZIP
+        zip.file(fileName, blob);
+        
+        sequentialNumber++;
+      } catch (error) {
+        console.error(`Erro ao processar track ${track.id}:`, error);
       }
     }
 

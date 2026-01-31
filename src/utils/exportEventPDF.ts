@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
 import { supabase } from '@/integrations/supabase/client';
+import { generateSongTypeLabelsWithNumerals } from './songTypeLabeling';
 
 interface TenantInfo {
   name: string;
@@ -421,6 +422,9 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     }
   });
   
+  // Gerar labels com numerais romanos para tipos repetidos (ex: Comunhão I, Comunhão II)
+  const songTypeLabelMap = generateSongTypeLabelsWithNumerals(songs, typeLabels);
+  
   // Adicionar índice em ordem de execução, com label de tipo
   let indexY = 45;
   indexPdf.setFont('helvetica', 'normal');
@@ -433,7 +437,8 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     }
 
     const numberText = `${index + 1}.`;
-    const typeLabel = typeLabels[song.type] || song.type || 'Outro';
+    // Usar label com numeral romano se houver múltiplas músicas do mesmo tipo
+    const typeLabel = songTypeLabelMap[song.id] || typeLabels[song.type] || song.type || 'Outro';
     const typeText = `(${typeLabel})`;
 
     // Número + nome da música (lado esquerdo)
