@@ -25,7 +25,7 @@ export const SplashScreen = () => {
   if (!show || isRoot || isAuth || isPublic || !tenant) return null;
 
   // Use tenant logo or fallback
-  const logoSrc = tenant?.logo_url || "/liturgia-plus-logo.png";
+  const logoSrc = tenant?.logo_url || "/liturgia-plus-logo.webp";
   
   // Parse tenant name for display (e.g. "Coro Diocese Quixadá" -> "Coro Diocese" + "de Quixadá")
   const tenantName = tenant?.name || 'Coro Diocesano';
