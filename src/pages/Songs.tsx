@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { exportSongsPDF } from '@/utils/exportSongsPDF';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { InstallPWAButton } from '@/components/InstallPWAButton';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -666,7 +666,7 @@ const Songs = () => {
             >
               <FileText className="h-5 w-5" />
             </Button>
-            <InstallPWAButton size="icon" showText={false} />
+            
             {isAdmin && (
               <>
                 <Button 

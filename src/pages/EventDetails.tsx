@@ -6,16 +6,13 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { useEventOfflineSave } from '@/hooks/useEventOfflineSave';
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import { OfflineBadge } from '@/components/OfflineBadge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { InstallPWAButton } from '@/components/InstallPWAButton';
+
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
@@ -151,17 +148,9 @@ const EventDetails = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
-  const { isEventAvailableOffline, refreshSavedEventIds } = useOfflineStorage();
-  const isOnline = useOnlineStatus();
+  const { saveTenantConfig, getTenantConfig } = useOfflineStorage();
   
-  // Use the unified offline save hook
-  const {
-    saveEventOffline,
-    removeEventOffline: removeEventFromOffline,
-    isSaving: isSavingOffline,
-    progress: offlineSaveProgress,
-    isEventSaved: isOfflineSaved
-  } = useEventOfflineSave(id || '');
+
   
   const canEdit = isAdmin || isSuperAdmin;
   const { preferences: exportPreferences, savePreferences: saveExportPreferences } = useExportPreferences();
@@ -729,23 +718,11 @@ const EventDetails = () => {
       localStorage.setItem(`event_songs_data_${event.id}`, JSON.stringify(songs));
       localStorage.setItem(`event_types_data_${event.id}`, JSON.stringify(eventTypes));
       
-      console.log('[Offline] Event metadata saved to localStorage');
       
-      refreshSavedEventIds();
-      
-      // Força o player a recarregar a track atual com a versão cacheada
-      if (currentTrack) {
-        const currentIndex = filteredPlaylist.findIndex(t => t.id === currentTrack.id);
-        if (currentIndex >= 0) {
-          console.log('[Offline] Reloading current track from cache');
-          playTrack(currentIndex);
-        }
-      }
-      
-      toast.success('Evento salvo para acesso offline!');
+      toast.success('Evento salvo!');
     } catch (error) {
-      console.error('[Offline] Error saving event:', error);
-      toast.error('Erro ao salvar evento offline');
+      console.error('Error saving event:', error);
+      toast.error('Erro ao salvar evento');
     }
   };
 
@@ -819,44 +796,8 @@ const EventDetails = () => {
     }
   };
 
-  const handleSaveForOffline = async () => {
-    if (!event) return;
-    
-    try {
-      await saveEventOffline();
-      refreshSavedEventIds();
-      toast.success('Evento salvo para acesso offline!');
-    } catch (error) {
-      console.error('Error saving for offline:', error);
-      toast.error('Erro ao salvar evento offline');
-    }
-  };
 
-  const handleRemoveOffline = async () => {
-    if (!id) return;
-    
-    try {
-      await removeEventFromOffline();
-      
-      // Also remove audios from cache
-      const audioUrls: string[] = [];
-      songs.forEach(song => {
-        song.audios.forEach(audio => {
-          audioUrls.push(audio.audio_url);
-        });
-      });
-      
-      for (const url of audioUrls) {
-        await removeFromCache(url);
-      }
-      
-      refreshSavedEventIds();
-      toast.success('Evento removido do modo offline');
-    } catch (error) {
-      console.error('Error removing offline:', error);
-      toast.error('Erro ao remover evento offline');
-    }
-  };
+
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!event) return <div className="flex min-h-screen items-center justify-center"><p>Evento não encontrado</p></div>;
@@ -884,17 +825,8 @@ const EventDetails = () => {
                 Compartilhar
               </DropdownMenuItem>
               
-              {isOfflineSaved ? (
-                <DropdownMenuItem onClick={handleRemoveOffline} className="text-destructive focus:text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Remover do Modo Offline
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={handleSaveForOffline} disabled={isSavingOffline}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSavingOffline ? 'Salvando...' : 'Salvar para Acesso Offline'}
-                </DropdownMenuItem>
-              )}
+
+
               {event.song_sheet_url && (
                 <DropdownMenuItem onClick={handleDownloadSongSheet}>
                   <FileDown className="mr-2 h-4 w-4" />
@@ -996,7 +928,7 @@ const EventDetails = () => {
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <h2 className="line-clamp-1 font-bold text-sm text-foreground leading-tight flex items-center gap-2 flex-wrap">
               {event.name}
-              {isOfflineSaved && <OfflineBadge variant="small" />}
+              
             </h2>
             <p className="text-xs text-muted-foreground font-medium">
               {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
@@ -1092,11 +1024,8 @@ const EventDetails = () => {
                                      <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                        {getTypeLabel(song.type, typeLabels)}
                                      </p>
-                                     {isAudioCached && (
-                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
-                                       </div>
-                                     )}
+
+
                                    </div>
                                    <p className="text-xs text-muted-foreground truncate font-medium">
                                      {song.name} • {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
@@ -1202,7 +1131,7 @@ const EventDetails = () => {
                         <p className="truncate font-bold text-sm uppercase tracking-tight text-primary">
                           {getTypeLabel(song.type, typeLabels)}
                         </p>
-                        {isOfflineSaved && <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />}
+                        
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 font-medium truncate">{song.name}</p>
                     </div>
@@ -1234,11 +1163,8 @@ const EventDetails = () => {
                                      <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                        {getTypeLabel(song.type, typeLabels)}
                                      </p>
-                                     {isAudioCached && (
-                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
-                                       </div>
-                                     )}
+
+
                                    </div>
                                <p className="truncate text-xs text-muted-foreground font-medium">
                                  {song.name} • {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
@@ -1398,11 +1324,8 @@ const EventDetails = () => {
                                      <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                        {getTypeLabel(song.type, typeLabels)}
                                      </p>
-                                     {isAudioCached && (
-                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
-                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
-                                       </div>
-                                     )}
+
+
                                    </div>
                          <div className="flex items-center gap-1.5 mt-0.5">
                            <p className="text-xs text-muted-foreground truncate font-medium flex-1">

@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
-import { OfflineEventsManager } from '@/components/OfflineEventsManager';
+
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { InstallPWAButton } from '@/components/InstallPWAButton';
+
 import { format, addMonths, addDays, getDaysInMonth, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
@@ -47,7 +47,7 @@ const Home = () => {
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
   const { tenant, tenantId, tenantSlug } = useTenant();
-  const { saveEvents } = useOfflineStorage();
+  
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
@@ -141,19 +141,8 @@ const Home = () => {
         ...(pastEventsData || []),
       ];
       
-      if (allEvents.length > 0 && tenantId) {
-        saveEvents(allEvents.map(event => ({
-          id: event.id,
-          name: event.name,
-          date: event.date,
-          location: event.location,
-          cover_image_url: event.cover_image_url,
-          notes: null,
-          tenant_id: tenantId,
-        })));
-      }
     }
-  }, [upcomingEventsData, pastEventsData, saveEvents, tenantId]);
+  }, [upcomingEventsData, pastEventsData, tenantId]);
 
   const liturgicalColor = liturgicalDay 
     ? getLiturgicalColor(liturgicalDay.liturgicalSeason)
@@ -171,7 +160,7 @@ const Home = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <OfflineEventsManager />
+          
           <TenantSwitcher />
           {(isAdmin || isSuperAdmin) && (
             <Button
@@ -205,7 +194,7 @@ const Home = () => {
             Entrar
           </Button>
         )}
-          <InstallPWAButton />
+          
         </div>
       </div>
 
