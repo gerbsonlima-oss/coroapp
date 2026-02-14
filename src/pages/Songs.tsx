@@ -289,14 +289,110 @@ const Songs = () => {
     (selectedType === null || song.type === selectedType)
   );
 
+  const renderSongRow = (song: SongListItem) => {
+    const isExpanded = expandedSong === song.id;
+    const audios = songAudios[song.id] || [];
+    const isLoadingThisAudio = loadingAudios === song.id;
+    const hasLyrics = !!song.lyrics;
+    const hasChords = !!song.chords;
+    const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
+
+    return (
+      <div key={song.id} className="transition-all">
+        <div
+          className={`flex items-center gap-2 px-2.5 py-1.5 cursor-pointer hover:bg-primary/5 group ${isExpanded ? 'bg-primary/5' : ''}`}
+          onClick={(e) => handleExpandSong(song.id, e)}
+        >
+          <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-primary/50 transition-transform ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
+          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+            <p className="truncate text-[13px] font-medium text-foreground group-hover:text-primary transition-colors">
+              {song.name}
+            </p>
+            {isMultiTenant && song.tenant_id && (
+              <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 shrink-0">
+                {userTenants.find(ut => ut.id === song.tenant_id)?.name || ''}
+              </Badge>
+            )}
+            <div className="flex items-center gap-0.5 ml-auto shrink-0">
+              {hasLyrics && <FileText className="h-2.5 w-2.5 text-muted-foreground/40" />}
+              {hasChords && <Guitar className="h-2.5 w-2.5 text-muted-foreground/40" />}
+              {hasSheet && <Music2 className="h-2.5 w-2.5 text-muted-foreground/40" />}
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0">
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover border border-border">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
+                <Eye className="mr-2 h-3.5 w-3.5" /> Ver Detalhes
+              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
+                  <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
+                <Share2 className="mr-2 h-3.5 w-3.5" /> WhatsApp
+              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem onClick={(e) => handleDeleteSong(song.id, song.name, e)} className="text-destructive focus:text-destructive">
+                  <Trash2 className="mr-2 h-3.5 w-3.5" /> Excluir
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {isExpanded && (
+          <div className="px-2.5 pb-2 pt-1 bg-primary/3 border-t border-border/20">
+            <div className="flex items-center gap-1.5 mb-2">
+              {hasLyrics && (
+                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2"
+                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=lyrics`)); }}>
+                  <FileText className="h-3 w-3" /> Letra
+                </Button>
+              )}
+              {hasSheet && (
+                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2"
+                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=sheet`)); }}>
+                  <Music2 className="h-3 w-3" /> Partitura
+                </Button>
+              )}
+              {hasChords && (
+                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2"
+                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=chords`)); }}>
+                  <Guitar className="h-3 w-3" /> Cifra
+                </Button>
+              )}
+            </div>
+            {isLoadingThisAudio ? (
+              <div className="flex items-center justify-center py-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            ) : audios.length > 0 ? (
+              <div className="space-y-0.5">
+                {audios.map((audio) => (
+                  <SongAudioInlinePlayer key={audio.id} audioUrl={audio.audio_url} naipe={audio.naipe} name={audio.name} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum áudio</p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSongsContent = () => {
     if (filteredSongs.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Music className="h-12 w-12 text-muted-foreground/30 mb-3" />
-          <p className="text-muted-foreground font-medium mb-1">Nenhuma música encontrada</p>
-          <p className="text-xs text-muted-foreground">
-            {searchQuery ? 'Tente outro termo de busca' : 'Comece a adicionar músicas ao repertório'}
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <Music className="h-8 w-8 text-muted-foreground/30 mb-2" />
+          <p className="text-sm text-muted-foreground">
+            {searchQuery ? 'Nenhum resultado' : 'Nenhuma música no repertório'}
           </p>
         </div>
       );
@@ -312,176 +408,23 @@ const Songs = () => {
 
         return (
           <div key={type.type}>
-            <div className="rounded-md bg-card border border-primary/20 overflow-hidden shadow-card hover:shadow-elevated transition-all">
+            <div className="rounded-md bg-card border border-primary/15 overflow-hidden">
               <div 
-                className="px-3 py-3.5 bg-gradient-to-r from-primary/8 to-transparent flex items-center justify-between cursor-pointer hover:from-primary/12 transition-all"
+                className="px-2.5 py-2 bg-gradient-to-r from-primary/6 to-transparent flex items-center justify-between cursor-pointer hover:from-primary/10 transition-all"
                 onClick={e => {
                   e.stopPropagation();
                   toggleGroup(groupKey);
                 }}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Badge className="bg-primary/20 text-primary border-primary/30">
-                    {type.name}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
-                    {typeGroupSongs.length} {typeGroupSongs.length === 1 ? 'música' : 'músicas'}
-                  </span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-semibold text-primary">{type.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{typeGroupSongs.length}</span>
                 </div>
-                <ChevronDown className={`h-5 w-5 text-primary/70 transform transition-transform shrink-0 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
+                <ChevronDown className={`h-4 w-4 text-primary/50 transition-transform shrink-0 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
               </div>
               {!isCollapsed && (
-                <div className="divide-y divide-primary/10">
-                  {typeGroupSongs.map((song) => {
-                    const isExpanded = expandedSong === song.id;
-                    const audios = songAudios[song.id] || [];
-                    const isLoadingThisAudio = loadingAudios === song.id;
-                    const hasLyrics = !!song.lyrics;
-                    const hasChords = !!song.chords;
-                    const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
-                    
-                    return (
-                      <div key={song.id} className="transition-all">
-                        <div 
-                          className={`flex items-center justify-between gap-3 px-3 py-3 transition-all hover:bg-primary/8 cursor-pointer group ${isExpanded ? 'bg-primary/5' : ''}`}
-                          onClick={(e) => handleExpandSong(song.id, e)}
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className={`h-6 w-6 flex items-center justify-center rounded transition-all text-primary ${isExpanded ? 'rotate-90' : ''}`}>
-                              <ChevronDown className="h-5 w-5 shrink-0" />
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                                  {song.name}
-                                </p>
-                                {isMultiTenant && song.tenant_id && (
-                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 shrink-0 font-medium">
-                                    {userTenants.find(ut => ut.id === song.tenant_id)?.name || ''}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                                  {song.typeName}
-                                </p>
-                                {/* Quick access icons */}
-                                <div className="flex items-center gap-1 ml-2">
-                                  {hasLyrics && (
-                                    <span title="Tem letra"><FileText className="h-3 w-3 text-muted-foreground/50" /></span>
-                                  )}
-                                  {hasChords && (
-                                    <span title="Tem cifra"><Guitar className="h-3 w-3 text-muted-foreground/50" /></span>
-                                  )}
-                                  {hasSheet && (
-                                    <span title="Tem partitura"><Music2 className="h-3 w-3 text-muted-foreground/50" /></span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-popover border border-border">
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
-                                <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
-                              </DropdownMenuItem>
-                              {isAdmin && (
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
-                                  <Pencil className="mr-2 h-4 w-4" /> Editar
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
-                                <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
-                              </DropdownMenuItem>
-                              {isAdmin && (
-                                <DropdownMenuItem 
-                                  onClick={(e) => handleDeleteSong(song.id, song.name, e)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        
-                        {/* Expanded Content */}
-                        {isExpanded && (
-                          <div className="px-3 pb-3 pt-1 bg-primary/3 border-t border-primary/10">
-                            {/* Quick Action Buttons */}
-                            <div className="flex items-center gap-2 mb-3">
-                              {hasLyrics && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs gap-1.5"
-                                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=lyrics`)); }}
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  Letra
-                                </Button>
-                              )}
-                              {hasSheet && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs gap-1.5"
-                                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=sheet`)); }}
-                                >
-                                  <Music2 className="h-3.5 w-3.5" />
-                                  Partitura
-                                </Button>
-                              )}
-                              {hasChords && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs gap-1.5"
-                                  onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=chords`)); }}
-                                >
-                                  <Guitar className="h-3.5 w-3.5" />
-                                  Cifra
-                                </Button>
-                              )}
-                            </div>
-                            
-                            {/* Audios */}
-                            {isLoadingThisAudio ? (
-                              <div className="flex items-center justify-center py-4">
-                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                              </div>
-                            ) : audios.length > 0 ? (
-                              <div className="space-y-1">
-                                {audios.map((audio) => (
-                                  <SongAudioInlinePlayer
-                                    key={audio.id}
-                                    audioUrl={audio.audio_url}
-                                    naipe={audio.naipe}
-                                    name={audio.name}
-                                  />
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-xs text-muted-foreground text-center py-3">
-                                Nenhum áudio disponível
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="divide-y divide-border/30">
+                  {typeGroupSongs.map((song) => renderSongRow(song))}
                 </div>
               )}
             </div>
@@ -491,256 +434,61 @@ const Songs = () => {
     }
 
     return (
-      <div className="space-y-2">
+      <div className="rounded-md bg-card border border-border/30 overflow-hidden divide-y divide-border/20">
         {filteredSongs
           .sort((a, b) => a.name.localeCompare(b.name))
-          .map((song) => {
-            const isExpanded = expandedSong === song.id;
-            const audios = songAudios[song.id] || [];
-            const isLoadingThisAudio = loadingAudios === song.id;
-            const hasLyrics = !!song.lyrics;
-            const hasChords = !!song.chords;
-            const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
-            
-            return (
-              <div 
-                key={song.id}
-                className={`rounded-md border border-primary/10 overflow-hidden transition-all ${isExpanded ? 'bg-primary/5' : ''}`}
-              >
-                <div 
-                  className={`flex items-center justify-between gap-3 px-3 py-3 transition-all hover:bg-primary/8 cursor-pointer group`}
-                  onClick={(e) => handleExpandSong(song.id, e)}
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`h-6 w-6 flex items-center justify-center rounded transition-all text-primary ${isExpanded ? 'rotate-90' : ''}`}>
-                      <ChevronDown className="h-5 w-5 shrink-0" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                          {song.name}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                          {song.typeName}
-                        </p>
-                        {/* Quick access icons */}
-                        <div className="flex items-center gap-1 ml-2">
-                          {hasLyrics && (
-                            <span title="Tem letra"><FileText className="h-3 w-3 text-muted-foreground/50" /></span>
-                          )}
-                          {hasChords && (
-                            <span title="Tem cifra"><Guitar className="h-3 w-3 text-muted-foreground/50" /></span>
-                          )}
-                          {hasSheet && (
-                            <span title="Tem partitura"><Music2 className="h-3 w-3 text-muted-foreground/50" /></span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 text-muted-foreground hover:text-foreground shrink-0"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-popover border border-border">
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
-                        <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
-                      </DropdownMenuItem>
-                      {isAdmin && (
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
-                          <Pencil className="mr-2 h-4 w-4" /> Editar
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
-                        <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
-                      </DropdownMenuItem>
-                      {isAdmin && (
-                        <DropdownMenuItem 
-                          onClick={(e) => handleDeleteSong(song.id, song.name, e)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                {/* Expanded Content */}
-                {isExpanded && (
-                  <div className="px-3 pb-3 pt-1 bg-primary/3 border-t border-primary/10">
-                    {/* Quick Action Buttons */}
-                    <div className="flex items-center gap-2 mb-3">
-                      {hasLyrics && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs gap-1.5"
-                          onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=lyrics`)); }}
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                          Letra
-                        </Button>
-                      )}
-                      {hasSheet && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs gap-1.5"
-                          onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=sheet`)); }}
-                        >
-                          <Music2 className="h-3.5 w-3.5" />
-                          Partitura
-                        </Button>
-                      )}
-                      {hasChords && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs gap-1.5"
-                          onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}?tab=chords`)); }}
-                        >
-                          <Guitar className="h-3.5 w-3.5" />
-                          Cifra
-                        </Button>
-                      )}
-                    </div>
-                    
-                    {/* Audios */}
-                    {isLoadingThisAudio ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      </div>
-                    ) : audios.length > 0 ? (
-                      <div className="space-y-1">
-                        {audios.map((audio) => (
-                          <SongAudioInlinePlayer
-                            key={audio.id}
-                            audioUrl={audio.audio_url}
-                            naipe={audio.naipe}
-                            name={audio.name}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground text-center py-3">
-                        Nenhum áudio disponível
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          .map((song) => renderSongRow(song))}
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-background pb-40">
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle px-4 py-3 md:px-6 md:py-4">
+    <div className="min-h-screen bg-background pb-28">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 px-3 py-2">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-              <Music className="h-6 w-6 md:h-7 md:w-7 text-primary" />
-            </div>
-            <h1 className="text-xl md:text-2xl font-bold">Repertório</h1>
+          <div className="flex items-center gap-2">
+            <Music className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-bold mb-0">Repertório</h1>
           </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleExportPDF}
-              className="hover:bg-accent/80 text-primary"
-              title="Exportar catálogo PDF"
-            >
-              <FileText className="h-5 w-5" />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={handleExportPDF} className="h-8 w-8 text-primary" title="Exportar PDF">
+              <FileText className="h-4 w-4" />
             </Button>
-            <InstallPWAButton size="icon" showText={false} />
             {isAdmin && (
               <>
-                <Button 
-                  onClick={() => navigate(buildPath('/songs/new'))}
-                  className="hidden md:flex gradient-primary shadow-glow hover:shadow-glow/50 transition-all h-9 px-3 text-xs"
-                >
-                  <Plus className="mr-1 h-3.5 w-3.5" />
-                  Nova Música
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => navigate(buildPath('/songs/admin/types'))}
-                  className="hover:bg-accent/80"
-                  title="Gerenciar tipos de música"
-                >
-                  <Settings className="h-5 w-5" />
+                <Button variant="ghost" size="icon" onClick={() => navigate(buildPath('/songs/admin/types'))} className="h-8 w-8" title="Tipos">
+                  <Settings className="h-4 w-4" />
                 </Button>
               </>
             )}
-            {user && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={signOut}
-                className="hover:bg-accent/80"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            )}
           </div>
+        </div>
+        {/* Inline search + filters */}
+        <div className="mx-auto max-w-[1280px] mt-1.5 flex gap-1.5">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 bg-secondary/50 border-primary/20 text-xs rounded-md" 
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setShowGroupModal(true)} className="h-8 px-2.5 text-xs gap-1 border-primary/20">
+            <Sliders className="h-3 w-3" />
+            Agrupar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowFilterModal(true)} className="h-8 px-2.5 text-xs gap-1 border-primary/20">
+            <Filter className="h-3 w-3" />
+            {selectedType ? songTypes.find(t => t.type === selectedType)?.name || 'Filtro' : 'Filtrar'}
+          </Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1280px] px-3 py-3 md:px-6 md:py-6">
-        <section className="space-y-6">
-          {/* Search e Filtros */}
-          <div className="space-y-2 border-b border-primary/15 bg-gradient-to-b from-primary/5 to-transparent px-0 pb-3">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Buscar música..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-full h-11 bg-secondary/50 border-primary/30 text-sm rounded-md shadow-subtle focus:shadow-glow focus:border-primary/60 transition-all" 
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowGroupModal(true)}
-                className="flex-1 h-10 text-sm px-3 gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
-              >
-                <Sliders className="h-4 w-4" />
-                <span>Agrupar</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowFilterModal(true)}
-                className="flex-1 h-10 text-sm px-3 gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filtrar</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Songs List */}
-          <div className="space-y-2.5">
-            {renderSongsContent()}
-          </div>
-        </section>
+      <main className="mx-auto max-w-[1280px] px-2 py-2 md:px-4">
+        <div className="space-y-1.5">
+          {renderSongsContent()}
+        </div>
       </main>
 
       {/* Floating Action Button */}
