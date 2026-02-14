@@ -138,9 +138,12 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 mb-4 shadow-xl">
             <img 
-              src="/liturgia-plus-logo.png" 
+              src="/liturgia-plus-logo.webp" 
               alt="CantoSacro" 
               className="w-24 h-24 md:w-32 md:h-32 object-contain"
+              width={128}
+              height={128}
+              fetchPriority="high"
             />
           </div>
           <h1 className="text-3xl md:text-4xl font-light tracking-wide text-white">
