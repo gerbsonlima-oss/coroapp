@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
-  const { tenant, tenantId, tenantSlug } = useTenant();
+  const { tenant, tenantId } = useTenant();
 
   // Count pending approvals
   const { data: pendingCount } = useQuery({
@@ -42,7 +42,7 @@ const AdminDashboard = () => {
     enabled: !!tenantId && (isAdmin || isSuperAdmin),
   });
 
-  const prefix = tenantSlug ? `/${tenantSlug}` : '';
+  const prefix = '';
 
   const adminCards: AdminCard[] = [
     {

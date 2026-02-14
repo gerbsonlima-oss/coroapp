@@ -236,8 +236,7 @@ const SimpleEventAudios = () => {
   }, [selectedNaipes]);
 
   const handleGoBack = () => {
-    const basePath = tenantSlug ? `/${tenantSlug}` : '';
-    navigate(`${basePath}/events`);
+    navigate('/events');
   };
 
   // Update global playlist when audios or filters change (only include items with actual audio)
@@ -629,8 +628,7 @@ const SimpleEventAudios = () => {
 
   // Navigation handlers for admin actions
   const handleEditEvent = () => {
-    const basePath = tenantSlug ? `/${tenantSlug}` : '';
-    navigate(`${basePath}/events/${id}/edit`);
+    navigate(`/events/${id}/edit`);
   };
 
   const handleAddSong = () => {
@@ -761,8 +759,7 @@ const SimpleEventAudios = () => {
   };
 
   const handleEditSong = (songId: string) => {
-    const basePath = tenantSlug ? `/${tenantSlug}` : '';
-    navigate(`${basePath}/songs/${songId}/edit`);
+    navigate(`/songs/${songId}/edit`);
   };
 
   const handleDeleteSong = async () => {
