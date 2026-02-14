@@ -433,7 +433,7 @@ const EventDetails = () => {
       
       let songsQuery = supabase.from('songs').select('*').order('name');
       if (tenantId) {
-        songsQuery = songsQuery.eq('tenant_id', tenantId);
+        songsQuery = songsQuery.or(`tenant_id.eq.${tenantId},is_public.eq.true`);
       }
       const {
         data: allSongs,

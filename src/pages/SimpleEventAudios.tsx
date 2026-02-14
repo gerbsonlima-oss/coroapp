@@ -646,7 +646,7 @@ const SimpleEventAudios = () => {
       const { data, error } = await supabase
         .from('songs')
         .select('id, name, type')
-        .eq('tenant_id', event.tenant_id)
+        .or(`tenant_id.eq.${event.tenant_id},is_public.eq.true`)
         .order('name');
       
       if (error) throw error;
