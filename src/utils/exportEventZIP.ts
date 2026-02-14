@@ -11,20 +11,7 @@ interface Track {
   url: string;
 }
 
-const typeLabels: Record<string, string> = {
-  canto_entrada: 'Entrada',
-  ato_penitencial: 'Ato Penitencial',
-  gloria: 'Glória',
-  salmo: 'Salmo',
-  aclamacao: 'Aclamação',
-  oferendas: 'Ofertório',
-  santo: 'Santo',
-  cordeiro: 'Cordeiro',
-  comunhao: 'Comunhão',
-  acao_gracas: 'Ação de Graças',
-  final: 'Final',
-  outro: 'Outro',
-};
+import { typeLabels } from '@/constants/songTypes';
 
 export async function exportEventZIP(
   eventName: string,

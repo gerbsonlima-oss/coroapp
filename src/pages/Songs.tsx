@@ -47,51 +47,7 @@ interface SongAudio {
   name: string;
 }
 
-// Ordem litúrgica dos cantos na Santa Missa
-const songTypeOrder = [
-  'canto_entrada',
-  'ato_penitencial',
-  'gloria',
-  'salmo',
-  'aclamacao',
-  'oferendas',
-  'santo',
-  'cordeiro',
-  'comunhao',
-  'acao_gracas',
-  'final',
-  'outro',
-];
-
-const typeLabels: Record<string, string> = {
-  canto_entrada: 'Entrada',
-  ato_penitencial: 'Ato Penitencial',
-  gloria: 'Glória',
-  salmo: 'Salmo',
-  aclamacao: 'Aclamação',
-  oferendas: 'Ofertório',
-  santo: 'Santo',
-  cordeiro: 'Cordeiro',
-  comunhao: 'Comunhão',
-  acao_gracas: 'Ação de Graças',
-  final: 'Final',
-  outro: 'Outros',
-};
-
-const typeGradients: Record<string, string> = {
-  canto_entrada: 'from-blue-500 to-blue-700',
-  ato_penitencial: 'from-purple-500 to-purple-700',
-  gloria: 'from-amber-500 to-amber-700',
-  salmo: 'from-green-500 to-green-700',
-  aclamacao: 'from-yellow-500 to-yellow-700',
-  oferendas: 'from-orange-500 to-orange-700',
-  santo: 'from-red-500 to-red-700',
-  cordeiro: 'from-pink-500 to-pink-700',
-  comunhao: 'from-indigo-500 to-indigo-700',
-  acao_gracas: 'from-teal-500 to-teal-700',
-  final: 'from-cyan-500 to-cyan-700',
-  outro: 'from-gray-500 to-gray-700',
-};
+import { songTypeOrder, typeLabels, typeGradients } from '@/constants/songTypes';
 
 const Songs = () => {
   const [songTypes, setSongTypes] = useState<SongTypeAlbum[]>([]);

@@ -40,12 +40,7 @@ interface Attendance {
   attended: boolean;
 }
 
-const naipeLabels: Record<string, string> = {
-  soprano: 'Soprano',
-  contralto: 'Contralto',
-  tenor: 'Tenor',
-  baixo: 'Baixo',
-};
+import { naipeLabels } from '@/constants/naipes';
 
 const Rehearsals = () => {
   const { eventId } = useParams();
