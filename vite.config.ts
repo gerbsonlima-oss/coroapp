@@ -4,7 +4,6 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -29,19 +28,19 @@ export default defineConfig(({ mode }) => ({
             src: "liturgia-plus-icon.png",
             sizes: "192x192",
             type: "image/png",
-            purpose: "any"
+            purpose: "any",
           },
           {
             src: "liturgia-plus-icon.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any"
+            purpose: "any",
           },
           {
             src: "liturgia-plus-icon.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "maskable"
+            purpose: "maskable",
           },
         ],
       },
@@ -49,8 +48,8 @@ export default defineConfig(({ mode }) => ({
       srcDir: "public",
       filename: "sw.js",
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff,woff2}'],
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
+        globPatterns: ["**/*.{js,css,html,ico,png,jpg,svg,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
     }),
   ].filter(Boolean),
@@ -58,6 +57,6 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ['react', 'react-dom'],
+    dedupe: ["react", "react-dom"],
   },
 }));
