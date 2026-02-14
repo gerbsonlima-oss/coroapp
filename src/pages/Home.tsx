@@ -1,20 +1,16 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Sparkles, MapPin, Clock, LogIn, LogOut, History, Settings, Building2 } from 'lucide-react';
+import { Calendar, Sparkles, MapPin, Clock, History, Building2, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
 import { OfflineEventsManager } from '@/components/OfflineEventsManager';
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
-import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
@@ -45,7 +41,6 @@ const getLiturgicalColor = (season: string): string => {
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
   const { tenant, tenantId, tenantSlug, userTenants, userTenantIds, isMultiTenant } = useTenant();
@@ -263,61 +258,9 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-28">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          {tenant && !isMultiTenant && (
-            <span className="text-sm font-medium text-muted-foreground truncate max-w-[150px]">
-              {tenant.name}
-            </span>
-          )}
-          {isMultiTenant && (
-            <div className="flex items-center gap-1.5">
-              {userTenants.map(ut => (
-                <Badge key={ut.id} variant="secondary" className="text-[10px] px-1.5 py-0.5">
-                  {ut.name}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <OfflineEventsManager />
-          <TenantSwitcher />
-          {(isAdmin || isSuperAdmin) && (
-            <Button
-              onClick={() => navigate(tenantSlug ? `/${tenantSlug}/admin` : '/admin')}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Button>
-          )}
-        {user ? (
-          <Button
-            onClick={() => signOut()}
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Sair</span>
-          </Button>
-        ) : (
-          <Button
-            onClick={() => navigate('/auth')}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <LogIn className="h-4 w-4" />
-            Entrar
-          </Button>
-        )}
-          <InstallPWAButton />
-        </div>
+      {/* Compact top actions - only offline manager */}
+      <div className="flex items-center justify-end px-4 pt-2">
+        <OfflineEventsManager />
       </div>
 
       {/* Compact Liturgy Strip */}
@@ -366,6 +309,20 @@ const Home = () => {
           pastEventsData || [],
           <History className="h-5 w-5 text-muted-foreground" />,
           true
+        )}
+
+        {/* Admin access */}
+        {(isAdmin || isSuperAdmin) && (
+          <Card
+            className="flex items-center gap-3 p-4 cursor-pointer hover:bg-accent/50 transition-colors border-dashed"
+            onClick={() => navigate(tenantSlug ? `/${tenantSlug}/admin` : '/admin')}
+          >
+            <Settings className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Painel Administrativo</p>
+              <p className="text-xs text-muted-foreground">Gerenciar membros, tipos de canto e configurações</p>
+            </div>
+          </Card>
         )}
       </div>
 
