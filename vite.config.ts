@@ -16,8 +16,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["liturgia-plus-logo.png", "favicon.png"],
       manifest: {
-        name: "CantoSacro - Gestão de Coral",
-        short_name: "CantoSacro",
+        name: "Liturgia+ - Gestão de Coral",
+        short_name: "Liturgia+",
         description: "App para gestão de repertório e liturgia de coral",
         theme_color: "#1a1a2e",
         background_color: "#0f0f1e",
@@ -44,8 +44,12 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
-      devOptions: {
-        enabled: false,
+      strategies: "injectManifest",
+      srcDir: "public",
+      filename: "sw.js",
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,ico,png,jpg,svg,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
     }),
   ].filter(Boolean),
