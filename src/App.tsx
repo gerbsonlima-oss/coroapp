@@ -48,9 +48,9 @@ function App() {
     <HelmetProvider>
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
+      <AuthProvider>
       <TenantProvider>
         <SplashScreen />
-      <AuthProvider>
       <PlayerProvider>
         <RouteTracker />
         <OfflineIndicator />
@@ -102,8 +102,8 @@ function App() {
           </Routes>
         </Suspense>
       </PlayerProvider>
-      </AuthProvider>
       </TenantProvider>
+      </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
     </HelmetProvider>
