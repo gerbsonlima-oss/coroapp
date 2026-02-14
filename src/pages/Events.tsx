@@ -7,15 +7,13 @@ import { useTenant } from '@/contexts/TenantContext';
 
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+
 import { Input } from '@/components/ui/input';
 
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { EventsReportExporter } from '@/components/EventsReportExporter';
-import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff, FileText, Search, X } from 'lucide-react';
+import { Plus, Calendar, LogOut, LogIn, WifiOff, FileText, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 import { EventListItem } from '@/components/EventListItem';
 
@@ -123,40 +121,39 @@ const Events = () => {
 
   return (
     <div className="min-h-screen bg-background pb-[144px]">
-      <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-xl shadow-subtle px-4 py-3 md:px-6 md:py-4">
+      <header className="sticky top-0 z-10 border-b border-border/40 bg-card/80 backdrop-blur-xl px-4 py-3 md:px-6 md:py-4">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-              <Music className="h-6 w-6 md:h-7 md:w-7 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-primary/15">
+              <Calendar className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold">Meus Eventos</h1>
+              <h1 className="text-lg md:text-xl font-bold leading-tight">Meus Eventos</h1>
               {isOffline && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
                   <WifiOff className="h-3 w-3" />
                   <span>Modo offline</span>
                 </div>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
+          <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setShowReportExporter(true)} 
-              className="hover:bg-accent/80"
+              className="h-9 w-9"
               title="Exportar Relatório"
             >
-              <FileText className="h-5 w-5" />
+              <FileText className="h-4.5 w-4.5" />
             </Button>
-            
             {user ? (
-              <Button variant="ghost" size="icon" onClick={signOut} className="hover:bg-accent/80">
-                <LogOut className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={signOut} className="h-9 w-9">
+                <LogOut className="h-4.5 w-4.5" />
               </Button>
             ) : (
-              <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} className="hover:bg-accent/80">
-                <LogIn className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} className="h-9 w-9">
+                <LogIn className="h-4.5 w-4.5" />
               </Button>
             )}
           </div>

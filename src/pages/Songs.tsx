@@ -648,13 +648,13 @@ const Songs = () => {
 
   return (
     <div className="min-h-screen bg-background pb-40">
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle px-4 py-3 md:px-6 md:py-4">
+      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border/40 px-4 py-3 md:px-6 md:py-4">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-              <Music className="h-6 w-6 md:h-7 md:w-7 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-primary/15">
+              <Music className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold">Repertório</h1>
+            <h1 className="text-lg md:text-xl font-bold leading-tight">Repertório</h1>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
             <Button 
