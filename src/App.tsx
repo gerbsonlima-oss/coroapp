@@ -31,6 +31,7 @@ const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const AdminTenants = lazy(() => import("./pages/AdminTenants"));
 const AdminBackup = lazy(() => import("./pages/AdminBackup"));
 const AdminRestore = lazy(() => import("./pages/AdminRestore"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const TenantSelection = lazy(() => import("./pages/TenantSelection"));
 const ChoirMembers = lazy(() => import("./pages/ChoirMembers"));
 const ChoirMemberForm = lazy(() => import("./pages/ChoirMemberForm"));
@@ -315,6 +316,16 @@ function App() {
               }
             />
             
+            {/* Admin Dashboard with tenant prefix */}
+            <Route
+              path="/:tenantSlug/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            
             {/* Redirect from old admin/user-approvals route to choir-members */}
             <Route
               path="/:tenantSlug/admin/user-approvals"
@@ -457,6 +468,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ChoirMemberForm />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Admin Dashboard without tenant prefix */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />
