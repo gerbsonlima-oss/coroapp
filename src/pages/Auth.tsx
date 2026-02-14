@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
-import { InstallPWAButton } from '@/components/InstallPWAButton';
+
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, MessageCircle, Mail, Lock, User, Calendar, Music, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -344,15 +344,6 @@ const Auth = () => {
             </Button>
           </form>
 
-          {/* PWA Install */}
-          <div className="mt-4">
-            <InstallPWAButton 
-              variant="ghost" 
-              size="sm"
-              className="w-full text-white/60 hover:text-white hover:bg-white/5"
-              showText={true}
-            />
-          </div>
         </div>
 
         {/* Footer */}

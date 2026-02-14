@@ -4,22 +4,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { InstallPWAButton } from '@/components/InstallPWAButton';
+
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { EventsReportExporter } from '@/components/EventsReportExporter';
 import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff, FileText, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useAudioCache } from '@/hooks/useAudioCache';
 
 import { EventListItem } from '@/components/EventListItem';
-import { OfflineBadge } from '@/components/OfflineBadge';
+
 
 interface Event {
   id: string;
@@ -40,11 +39,9 @@ const Events = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
-  const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canCreateEvent = isAdmin || isSuperAdmin;
   const navigate = useNavigate();
-  const { cachedAudios } = useAudioCache();
 
   const filteredEvents = useMemo(() => {
     if (!searchQuery.trim()) return events;
@@ -68,7 +65,7 @@ const Events = () => {
         if (cached.length > 0) setEvents(cached);
       });
     }
-  }, [cachedAudios, isOffline]);
+  }, [isOffline]);
 
   const fetchEvents = async () => {
     if (!tenantId) return;
@@ -82,25 +79,10 @@ const Events = () => {
 
       if (error) throw error;
       
-      // Se online, mostra todos os eventos E salva no cache offline
       setEvents(data || []);
       setIsOffline(false);
-      
-      // Save events to offline storage
-      if (data && data.length > 0) {
-        saveEvents(data.map(event => ({
-          id: event.id,
-          name: event.name,
-          date: event.date,
-          location: event.location,
-          cover_image_url: event.cover_image_url,
-          notes: event.notes,
-          tenant_id: event.tenant_id,
-        })));
-        
-        // Also save to legacy cache for backward compatibility
-        localStorage.setItem('cached_events', JSON.stringify(data));
-      }
+      // Also save to legacy cache for backward compatibility
+      localStorage.setItem('cached_events', JSON.stringify(data));
     } catch (error: any) {
       // Se offline, busca eventos do localStorage
       const cachedEvents = await getOfflineEvents();
@@ -167,7 +149,7 @@ const Events = () => {
             >
               <FileText className="h-5 w-5" />
             </Button>
-            <InstallPWAButton size="icon" showText={false} className="hidden md:flex" />
+            
             {user ? (
               <Button variant="ghost" size="icon" onClick={signOut} className="hover:bg-accent/80">
                 <LogOut className="h-5 w-5" />
@@ -183,12 +165,8 @@ const Events = () => {
 
       <main className="mx-auto max-w-[1280px] px-4 py-4 md:px-6 md:py-6">
         {/* Banner de instalação - visível apenas em mobile */}
-        <InstallPWAButton 
-          variant="default" 
-          size="lg" 
-          className="md:hidden w-full mb-4 gradient-primary shadow-glow"
-          showText={true}
-        />
+
+
         
         {events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 md:py-20 text-center px-4">

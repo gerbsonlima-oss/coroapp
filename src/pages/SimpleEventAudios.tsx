@@ -17,11 +17,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
-import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
 import { ReorderSongsSheet } from '@/components/ReorderSongsSheet';
-import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
 import { useAudioCache } from '@/hooks/useAudioCache';
-import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -132,7 +129,7 @@ const SimpleEventAudios = () => {
   const [exportingLyrics, setExportingLyrics] = useState(false);
   const [exportingChords, setExportingChords] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
-  const [saveOfflineDialogOpen, setSaveOfflineDialogOpen] = useState(false);
+  
   const [sheetViewerOpen, setSheetViewerOpen] = useState(false);
   const [sheetMusicUrl, setSheetMusicUrl] = useState<string | null>(null);
   const [sheetSongName, setSheetSongName] = useState<string>('');
@@ -259,24 +256,10 @@ const SimpleEventAudios = () => {
     }
   }, [filteredAudios, setPlaylist]);
 
-  // Offline save hook
-  const {
-    isSaving,
-    progress,
-    progressText,
-    isEventSaved,
-    saveEventOffline,
-    removeEventOffline
-  } = useEventOfflineSave(id || '');
 
-  // Audio cache hook for offline playback
+  // Audio cache hook
   const { getCachedUrl, isCached } = useAudioCache();
 
-  // Offline sync hook
-  const { isSyncing, syncSingleEvent, isOnline } = useOfflineSync();
-
-  // Check if we're in offline mode
-  const offlineMode = isOfflineMode();
 
   // Preload cached audio URLs for faster offline playback
   const preloadCachedUrls = useCallback(async (audioList: SongAudio[]) => {
@@ -305,65 +288,12 @@ const SimpleEventAudios = () => {
 
   useEffect(() => {
     if (id) {
-      // If offline mode or no connection, try to load from offline storage first
-      if (offlineMode || !navigator.onLine) {
-        loadFromOfflineStorage();
-      } else {
-        fetchEventData();
-      }
+      fetchEventData();
     }
-  }, [id, offlineMode]);
+  }, [id]);
 
-  const loadFromOfflineStorage = () => {
-    if (!id) return;
-    
-    const offlineData = loadOfflineEventData(id);
-    if (offlineData) {
-      // Add tenant_id: null and pdf_theme: null for compatibility
-      setEvent({ ...offlineData.event, tenant_id: null, pdf_theme: (offlineData.event as any).pdf_theme || null } as Event);
-      
-      // Convert offline data to SongAudio format
-      const offlineAudios: SongAudio[] = offlineData.audios.map(audio => {
-        const song = offlineData.songs.find(s => s.id === audio.song_id);
-        const eventSong = offlineData.eventSongs.find(es => es.song_id === audio.song_id);
-        const typeSlug = eventSong?.type || song?.type || 'outro';
-        const typeInfo = defaultTypeLabels[typeSlug] || defaultTypeLabels['outro'];
-        
-        return {
-          id: audio.id,
-          song_id: audio.song_id,
-          naipe: audio.naipe,
-          audio_url: audio.audio_url,
-          name: audio.name,
-          song_name: song?.name || 'Música',
-          song_type_slug: typeSlug,
-          song_type_name: typeInfo.name,
-          song_type_order: typeInfo.order,
-          song_lyrics: song?.lyrics || null,
-          song_chords: song?.chords || null,
-          song_sheet_music_pdf_url: song?.sheet_music_pdf_url || null
-        };
-      });
-      
-      const sortedAudios = sortByTypeOrder(offlineAudios);
-      setAudios(sortedAudios);
-      setSongs(offlineData.songs);
-      setLoading(false);
-      
-      // Preload cached URLs for faster playback
-      preloadCachedUrls(sortedAudios);
-      
-      toast.info('Carregado do armazenamento offline');
-    } else {
-      // If no offline data, try to fetch from network
-      if (navigator.onLine) {
-        fetchEventData();
-      } else {
-        setLoading(false);
-        toast.error('Evento não disponível offline');
-      }
-    }
-  };
+
+
 
   const fetchEventData = async () => {
     try {
@@ -832,17 +762,8 @@ const SimpleEventAudios = () => {
       </Helmet>
       
       <div className="min-h-screen bg-background">
-        {/* Offline Mode Banner */}
-        {offlineMode && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2">
-            <div className="max-w-2xl mx-auto flex items-center gap-2 text-amber-600 dark:text-amber-400">
-              <CloudDownload className="h-4 w-4 shrink-0" />
-              <p className="text-xs font-medium">
-                Modo Offline — Dados carregados do armazenamento local
-              </p>
-            </div>
-          </div>
-        )}
+
+
         
         {/* Header */}
         <div className="bg-gradient-to-b from-primary/10 to-background px-4 py-6">
@@ -893,18 +814,8 @@ const SimpleEventAudios = () => {
                 <p className="text-xs text-muted-foreground">
                   {audios.length} áudio{audios.length !== 1 ? 's' : ''}
                 </p>
-                {isEventSaved && (
-                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
-                    <CheckCircle className="h-3 w-3" />
-                    Offline
-                  </span>
-                )}
-                {isSyncing && (
-                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <RefreshCw className="h-3 w-3 animate-spin" />
-                    Sincronizando
-                  </span>
-                )}
+
+
               </div>
             </div>
             
@@ -955,43 +866,8 @@ const SimpleEventAudios = () => {
                     </>
                   )}
                   
-                  {/* Save Offline Option */}
-                  {isEventSaved ? (
-                    <>
-                      {/* Sync option when saved offline */}
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          if (id && isOnline) {
-                            toast.info('Sincronizando evento...');
-                            const success = await syncSingleEvent(id);
-                            if (success) {
-                              toast.success('Evento sincronizado!');
-                              // Reload data after sync
-                              fetchEventData();
-                            } else {
-                              toast.error('Falha ao sincronizar');
-                            }
-                          }
-                        }}
-                        disabled={isSyncing || !isOnline}
-                      >
-                        <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                        {isSyncing ? 'Sincronizando...' : 'Sincronizar agora'}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={removeEventOffline}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Remover offline
-                      </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <DropdownMenuItem onClick={() => setSaveOfflineDialogOpen(true)}>
-                      <CloudDownload className="mr-2 h-4 w-4" />
-                      Salvar offline
-                    </DropdownMenuItem>
-                  )}
+
+
                   
                   <DropdownMenuSeparator />
 
@@ -1342,11 +1218,8 @@ const SimpleEventAudios = () => {
                               Sem áudio
                             </Badge>
                           )}
-                          {hasAudio && isCached(audio.audio_url) && (
-                            <span title="Disponível offline" className="flex shrink-0">
-                              <Check className="h-3 w-3 text-green-500" />
-                            </span>
-                          )}
+
+
                           {hasAudio && currentTrack?.id === audio.id && repeatMode === 'track' && (
                             <span title="Repetindo esta música" className="flex shrink-0">
                               <Repeat1 className="h-3 w-3 text-primary" />
@@ -1588,19 +1461,8 @@ const SimpleEventAudios = () => {
           />
         )}
 
-        {/* Save Offline Dialog */}
-        <SaveEventOfflineDialog
-          open={saveOfflineDialogOpen}
-          onOpenChange={setSaveOfflineDialogOpen}
-          eventName={event.name}
-          eventId={event.id}
-          coverImageUrl={event.cover_image_url}
-          isSaving={isSaving}
-          progress={progress}
-          progressText={progressText}
-          onSave={saveEventOffline}
-          isCompleted={isEventSaved}
-        />
+
+
 
         {/* Delete Song Confirmation Dialog */}
         <AlertDialog open={!!songToDelete} onOpenChange={(open) => !open && setSongToDelete(null)}>
