@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
-import { OfflineEventsManager } from '@/components/OfflineEventsManager';
+
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -258,13 +258,9 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-28">
-      {/* Compact top actions - only offline manager */}
-      <div className="flex items-center justify-end px-4 pt-2">
-        <OfflineEventsManager />
-      </div>
 
       {/* Compact Liturgy Strip */}
-      <div className={`bg-gradient-to-r ${liturgicalColor} text-white py-2.5 px-4 rounded-b-xl shadow-md border-t border-white/10`}>
+      <div className={`bg-gradient-to-r ${liturgicalColor} text-white py-2.5 px-4 shadow-md border-t border-white/10`}>
         <div className="flex items-center justify-between gap-4">
           <div className="shrink-0">
             <p className="text-[10px] font-medium opacity-80 leading-none mb-0.5">Hoje,</p>
@@ -289,6 +285,16 @@ const Home = () => {
               </div>
             </div>
           )}
+
+          {(isAdmin || isSuperAdmin) && (
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(tenantSlug ? `/${tenantSlug}/admin` : '/admin'); }}
+              className="shrink-0 bg-white/15 hover:bg-white/25 rounded-full p-1.5 transition-colors"
+              aria-label="Painel Administrativo"
+            >
+              <Settings className="h-4 w-4 text-white" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -311,19 +317,6 @@ const Home = () => {
           true
         )}
 
-        {/* Admin access */}
-        {(isAdmin || isSuperAdmin) && (
-          <Card
-            className="flex items-center gap-3 p-4 cursor-pointer hover:bg-accent/50 transition-colors border-dashed"
-            onClick={() => navigate(tenantSlug ? `/${tenantSlug}/admin` : '/admin')}
-          >
-            <Settings className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-sm font-medium">Painel Administrativo</p>
-              <p className="text-xs text-muted-foreground">Gerenciar membros, tipos de canto e configurações</p>
-            </div>
-          </Card>
-        )}
       </div>
 
       <BottomNavigation />
