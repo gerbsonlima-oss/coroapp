@@ -1,0 +1,30 @@
+{
+  "name": "CantoSacro - Gestão de Coro e Liturgia",
+  "short_name": "CantoSacro",
+  "description": "App para gestão de repertório e liturgia de coral",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "/liturgia-plus-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/liturgia-plus-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/liturgia-plus-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

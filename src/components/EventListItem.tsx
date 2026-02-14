@@ -7,6 +7,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { CachedImage } from './CachedImage';
+import { OfflineBadge } from './OfflineBadge';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 
 interface Event {
   id: string;
@@ -28,10 +31,13 @@ interface EventListItemProps {
 
 export const EventListItem = ({ event }: EventListItemProps) => {
   const navigate = useNavigate();
+  const { isEventAvailableOffline } = useOfflineStorage();
   const [expanded, setExpanded] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
   const [loadingSongs, setLoadingSongs] = useState(false);
   const [songsLoaded, setSongsLoaded] = useState(false);
+  
+  const isOffline = isEventAvailableOffline(event.id);
 
   const handleExpand = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -76,24 +82,27 @@ export const EventListItem = ({ event }: EventListItemProps) => {
     return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
-  const isPast = new Date(event.date) < new Date();
-
   return (
-    <Card className={`overflow-hidden border-border/40 transition-all hover:shadow-elevated hover:border-border group ${isPast ? 'opacity-75 hover:opacity-100' : ''}`}>
+    <Card className="overflow-hidden border-0 bg-card hover:bg-accent/5 transition-colors shadow-sm">
       <div 
         className="flex flex-row cursor-pointer"
         onClick={() => navigate(`/events/${event.id}`)}
       >
         {/* Imagem */}
-        <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 overflow-hidden rounded-l-xl">
+        <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-muted">
           {event.cover_image_url ? (
-            <img
+            <CachedImage
               src={event.cover_image_url}
               alt={event.name}
-              className={`h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 ${isPast ? 'grayscale-[0.3] group-hover:grayscale-0' : ''}`}
+              className="h-full w-full object-cover"
+              fallback={
+                <div className="h-full w-full flex items-center justify-center bg-primary/10">
+                  <Music className="h-8 w-8 text-primary/40" />
+                </div>
+              }
             />
           ) : (
-            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+            <div className="h-full w-full flex items-center justify-center bg-primary/10">
               <Music className="h-8 w-8 text-primary/40" />
             </div>
           )}
@@ -102,17 +111,20 @@ export const EventListItem = ({ event }: EventListItemProps) => {
         {/* Conteúdo */}
         <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
           <div>
-            <h3 className="font-bold text-base sm:text-lg line-clamp-2 group-hover:text-primary transition-colors">{event.name}</h3>
-            <div className="space-y-1 mt-1.5 text-xs sm:text-sm text-muted-foreground">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h3 className="font-bold text-base sm:text-lg line-clamp-2 flex-1">{event.name}</h3>
+              {isOffline && <OfflineBadge variant="small" className="shrink-0 mt-0.5" />}
+            </div>
+            <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 flex-shrink-0 text-primary/60" />
+                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="line-clamp-1">
                   {format(new Date(event.date), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                 </span>
               </div>
               {event.location && (
                 <div className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-primary/60" />
+                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                   <span className="line-clamp-1 truncate">{event.location}</span>
                 </div>
               )}
@@ -123,18 +135,18 @@ export const EventListItem = ({ event }: EventListItemProps) => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary"
+              className="h-8 px-2 text-xs hover:bg-primary/10 hover:text-primary"
               onClick={handleExpand}
             >
               {expanded ? (
                 <>
                   <ChevronUp className="h-4 w-4 mr-1" />
-                  Ocultar
+                  Ocultar músicas
                 </>
               ) : (
                 <>
                   <ChevronDown className="h-4 w-4 mr-1" />
-                  Músicas
+                  Ver músicas
                 </>
               )}
             </Button>
@@ -144,7 +156,7 @@ export const EventListItem = ({ event }: EventListItemProps) => {
 
       {/* Lista de Músicas Expandida */}
       {expanded && (
-        <div className="border-t border-border/40 bg-secondary/30 px-4 py-3 animate-in slide-in-from-top-2">
+        <div className="border-t border-border/50 bg-muted/30 px-4 py-3 animate-in slide-in-from-top-2">
           {loadingSongs ? (
             <div className="flex justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -157,7 +169,7 @@ export const EventListItem = ({ event }: EventListItemProps) => {
                     <span className="text-muted-foreground text-xs w-4 text-right shrink-0">{index + 1}.</span>
                     <span className="font-medium truncate text-foreground/90">{song.name}</span>
                   </div>
-                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 font-normal text-muted-foreground bg-secondary/50 border-border/50">
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 font-normal text-muted-foreground bg-background/50">
                     {getTypeLabel(song.type)}
                   </Badge>
                 </div>

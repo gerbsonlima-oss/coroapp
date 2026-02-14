@@ -4,19 +4,22 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
-
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-
+import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { EventsReportExporter } from '@/components/EventsReportExporter';
-import { Plus, Calendar, LogOut, LogIn, WifiOff, FileText, Search, X } from 'lucide-react';
+import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff, FileText, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useAudioCache } from '@/hooks/useAudioCache';
 
 import { EventListItem } from '@/components/EventListItem';
-
+import { OfflineBadge } from '@/components/OfflineBadge';
 
 interface Event {
   id: string;
@@ -37,9 +40,11 @@ const Events = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
+  const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canCreateEvent = isAdmin || isSuperAdmin;
   const navigate = useNavigate();
+  const { cachedAudios } = useAudioCache();
 
   const filteredEvents = useMemo(() => {
     if (!searchQuery.trim()) return events;
@@ -63,7 +68,7 @@ const Events = () => {
         if (cached.length > 0) setEvents(cached);
       });
     }
-  }, [isOffline]);
+  }, [cachedAudios, isOffline]);
 
   const fetchEvents = async () => {
     if (!tenantId) return;
@@ -77,10 +82,25 @@ const Events = () => {
 
       if (error) throw error;
       
+      // Se online, mostra todos os eventos E salva no cache offline
       setEvents(data || []);
       setIsOffline(false);
-      // Also save to legacy cache for backward compatibility
-      localStorage.setItem('cached_events', JSON.stringify(data));
+      
+      // Save events to offline storage
+      if (data && data.length > 0) {
+        saveEvents(data.map(event => ({
+          id: event.id,
+          name: event.name,
+          date: event.date,
+          location: event.location,
+          cover_image_url: event.cover_image_url,
+          notes: event.notes,
+          tenant_id: event.tenant_id,
+        })));
+        
+        // Also save to legacy cache for backward compatibility
+        localStorage.setItem('cached_events', JSON.stringify(data));
+      }
     } catch (error: any) {
       // Se offline, busca eventos do localStorage
       const cachedEvents = await getOfflineEvents();
@@ -121,39 +141,40 @@ const Events = () => {
 
   return (
     <div className="min-h-screen bg-background pb-[144px]">
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-card/80 backdrop-blur-xl px-4 py-3 md:px-6 md:py-4">
+      <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-xl shadow-subtle px-4 py-3 md:px-6 md:py-4">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/15">
-              <Calendar className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+              <Music className="h-6 w-6 md:h-7 md:w-7 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg md:text-xl font-bold leading-tight">Meus Eventos</h1>
+              <h1 className="text-xl md:text-2xl font-bold">Meus Eventos</h1>
               {isOffline && (
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                   <WifiOff className="h-3 w-3" />
                   <span>Modo offline</span>
                 </div>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 md:gap-2">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setShowReportExporter(true)} 
-              className="h-9 w-9"
+              className="hover:bg-accent/80"
               title="Exportar Relatório"
             >
-              <FileText className="h-4.5 w-4.5" />
+              <FileText className="h-5 w-5" />
             </Button>
+            <InstallPWAButton size="icon" showText={false} className="hidden md:flex" />
             {user ? (
-              <Button variant="ghost" size="icon" onClick={signOut} className="h-9 w-9">
-                <LogOut className="h-4.5 w-4.5" />
+              <Button variant="ghost" size="icon" onClick={signOut} className="hover:bg-accent/80">
+                <LogOut className="h-5 w-5" />
               </Button>
             ) : (
-              <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} className="h-9 w-9">
-                <LogIn className="h-4.5 w-4.5" />
+              <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} className="hover:bg-accent/80">
+                <LogIn className="h-5 w-5" />
               </Button>
             )}
           </div>
@@ -162,8 +183,12 @@ const Events = () => {
 
       <main className="mx-auto max-w-[1280px] px-4 py-4 md:px-6 md:py-6">
         {/* Banner de instalação - visível apenas em mobile */}
-
-
+        <InstallPWAButton 
+          variant="default" 
+          size="lg" 
+          className="md:hidden w-full mb-4 gradient-primary shadow-glow"
+          showText={true}
+        />
         
         {events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 md:py-20 text-center px-4">

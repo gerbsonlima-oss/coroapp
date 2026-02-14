@@ -109,7 +109,7 @@ const fetchDefaultSongTypes = async () => {
       const { data, error } = await supabase
         .from('songs')
         .select('*')
-        .or(`tenant_id.eq.${tenantId},is_public.eq.true`)
+        .eq('tenant_id', tenantId)
         .order('name');
 
       if (error) throw error;

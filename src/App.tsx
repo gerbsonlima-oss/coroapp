@@ -6,6 +6,8 @@ import { PlayerProvider } from "@/contexts/PlayerContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
 import { SplashScreen } from "@/components/SplashScreen";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LoadingFallback } from "@/components/LoadingFallback";
@@ -42,6 +44,93 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 import { AuthOrTenantSelection } from "@/components/AuthOrTenantSelection";
 
+
+
+// Component that renders all app routes (used both at root and under tenant prefix)
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/public/events/:id" element={<EventDetails />} />
+      <Route path="/events" element={<Events />} />
+      <Route
+        path="/events/new"
+        element={
+          <ProtectedRoute>
+            <NewEvent />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events/edit/:id"
+        element={
+          <ProtectedRoute>
+            <EditEvent />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/events/:id" element={<EventDetails />} />
+      <Route
+        path="/audio-to-sheet"
+        element={
+          <ProtectedRoute>
+            <AudioToSheet />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/songs" element={<Songs />} />
+      <Route path="/songs/type/:type" element={<SongTypeDetails />} />
+      <Route
+        path="/songs/admin/types"
+        element={
+          <ProtectedRoute>
+            <AdminSongTypes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/songs/new"
+        element={
+          <ProtectedRoute>
+            <SongForm />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/songs/:id" element={<SongDetails />} />
+      <Route
+        path="/songs/:id/edit"
+        element={
+          <ProtectedRoute>
+            <SongForm />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events/:id/quick-edit"
+        element={
+          <ProtectedRoute>
+            <EventQuickEdit />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/rehearsals" element={<Rehearsals />} />
+      <Route path="/events/:eventId/rehearsals" element={<Rehearsals />} />
+      <Route
+        path="/admin/tenants"
+        element={
+          <ProtectedRoute>
+            <AdminTenants />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route path="/liturgy" element={<Liturgy />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
+
 function App() {
   const queryClient = useMemo(() => new QueryClient(), []);
 
@@ -54,6 +143,8 @@ function App() {
       <AuthProvider>
       <PlayerProvider>
         <RouteTracker />
+        <OfflineIndicator />
+        <OfflineSyncManager />
         <Toaster />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>

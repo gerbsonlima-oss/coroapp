@@ -6,13 +6,16 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useEventOfflineSave } from '@/hooks/useEventOfflineSave';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { OfflineBadge } from '@/components/OfflineBadge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { SheetViewer } from '@/components/SheetViewer';
 import { MusicRain } from '@/components/MusicRain';
 import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
@@ -148,9 +151,17 @@ const EventDetails = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
-  const { saveTenantConfig, getTenantConfig } = useOfflineStorage();
+  const { isEventAvailableOffline, refreshSavedEventIds } = useOfflineStorage();
+  const isOnline = useOnlineStatus();
   
-
+  // Use the unified offline save hook
+  const {
+    saveEventOffline,
+    removeEventOffline: removeEventFromOffline,
+    isSaving: isSavingOffline,
+    progress: offlineSaveProgress,
+    isEventSaved: isOfflineSaved
+  } = useEventOfflineSave(id || '');
   
   const canEdit = isAdmin || isSuperAdmin;
   const { preferences: exportPreferences, savePreferences: saveExportPreferences } = useExportPreferences();
@@ -422,7 +433,7 @@ const EventDetails = () => {
       
       let songsQuery = supabase.from('songs').select('*').order('name');
       if (tenantId) {
-        songsQuery = songsQuery.or(`tenant_id.eq.${tenantId},is_public.eq.true`);
+        songsQuery = songsQuery.eq('tenant_id', tenantId);
       }
       const {
         data: allSongs,
@@ -718,11 +729,23 @@ const EventDetails = () => {
       localStorage.setItem(`event_songs_data_${event.id}`, JSON.stringify(songs));
       localStorage.setItem(`event_types_data_${event.id}`, JSON.stringify(eventTypes));
       
+      console.log('[Offline] Event metadata saved to localStorage');
       
-      toast.success('Evento salvo!');
+      refreshSavedEventIds();
+      
+      // Força o player a recarregar a track atual com a versão cacheada
+      if (currentTrack) {
+        const currentIndex = filteredPlaylist.findIndex(t => t.id === currentTrack.id);
+        if (currentIndex >= 0) {
+          console.log('[Offline] Reloading current track from cache');
+          playTrack(currentIndex);
+        }
+      }
+      
+      toast.success('Evento salvo para acesso offline!');
     } catch (error) {
-      console.error('Error saving event:', error);
-      toast.error('Erro ao salvar evento');
+      console.error('[Offline] Error saving event:', error);
+      toast.error('Erro ao salvar evento offline');
     }
   };
 
@@ -796,8 +819,44 @@ const EventDetails = () => {
     }
   };
 
+  const handleSaveForOffline = async () => {
+    if (!event) return;
+    
+    try {
+      await saveEventOffline();
+      refreshSavedEventIds();
+      toast.success('Evento salvo para acesso offline!');
+    } catch (error) {
+      console.error('Error saving for offline:', error);
+      toast.error('Erro ao salvar evento offline');
+    }
+  };
 
-
+  const handleRemoveOffline = async () => {
+    if (!id) return;
+    
+    try {
+      await removeEventFromOffline();
+      
+      // Also remove audios from cache
+      const audioUrls: string[] = [];
+      songs.forEach(song => {
+        song.audios.forEach(audio => {
+          audioUrls.push(audio.audio_url);
+        });
+      });
+      
+      for (const url of audioUrls) {
+        await removeFromCache(url);
+      }
+      
+      refreshSavedEventIds();
+      toast.success('Evento removido do modo offline');
+    } catch (error) {
+      console.error('Error removing offline:', error);
+      toast.error('Erro ao remover evento offline');
+    }
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!event) return <div className="flex min-h-screen items-center justify-center"><p>Evento não encontrado</p></div>;
@@ -806,13 +865,12 @@ const EventDetails = () => {
     <div className="min-h-screen bg-background pb-28">
       {showMusicRain && <MusicRain onComplete={() => setShowMusicRain(false)} />}
       <EnhancedMiniPlayer />
-      <header className="sticky top-0 z-20 border-b border-border/40 bg-card/80 backdrop-blur-xl px-4 py-3 md:px-6 md:py-4">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-9 w-9 shrink-0">
-            <ArrowLeft className="h-4.5 w-4.5" />
-          </Button>
-          <div className="flex-1" />
-          <div className="flex items-center gap-1">
+      <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-background/95 backdrop-blur-md">
+        <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-8 w-8 shrink-0 text-foreground">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1" />
+        <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground">
@@ -826,8 +884,17 @@ const EventDetails = () => {
                 Compartilhar
               </DropdownMenuItem>
               
-
-
+              {isOfflineSaved ? (
+                <DropdownMenuItem onClick={handleRemoveOffline} className="text-destructive focus:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remover do Modo Offline
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handleSaveForOffline} disabled={isSavingOffline}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSavingOffline ? 'Salvando...' : 'Salvar para Acesso Offline'}
+                </DropdownMenuItem>
+              )}
               {event.song_sheet_url && (
                 <DropdownMenuItem onClick={handleDownloadSongSheet}>
                   <FileDown className="mr-2 h-4 w-4" />
@@ -915,24 +982,24 @@ const EventDetails = () => {
           </DropdownMenu>
           <input ref={songSheetInputRef} type="file" accept="application/pdf" onChange={handleSongSheetUpload} className="hidden" />
         </div>
-        </div>
-      </header>
+      </div>
 
-      <div className="sticky top-[53px] md:top-[65px] z-10 bg-card/80 backdrop-blur-xl border-b border-border/40 px-4 py-3 md:px-6">
-        <div className="mx-auto max-w-[1280px] flex items-center gap-3">
-          <div className="h-14 w-14 md:h-16 md:w-16 shrink-0 rounded-xl shadow-card overflow-hidden bg-gradient-to-br from-primary/30 to-primary/15 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity" onClick={handleImageClick}>
+      <div className="sticky top-12 z-10 bg-background/95 backdrop-blur-md border-b border-primary/20 shadow-subtle px-3 py-2 animate-slide-up">
+        <div className="flex items-center gap-3">
+          <div className="h-16 w-16 shrink-0 rounded-lg shadow-card overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-75 transition-opacity" onClick={handleImageClick}>
             {event.cover_image_url ? (
               <img src={coverImageSrc || event.cover_image_url} alt={event.name} className="h-full w-full object-cover" />
             ) : (
-              <Music className="h-6 w-6 text-primary/60" />
+              <Music className="h-6 w-6 text-primary/70 animate-float" />
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="line-clamp-1 font-bold text-base md:text-lg text-foreground leading-tight">
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <h2 className="line-clamp-1 font-bold text-sm text-foreground leading-tight flex items-center gap-2 flex-wrap">
               {event.name}
-            </h1>
-            <p className="text-xs text-muted-foreground font-medium mt-0.5">
-              {format(new Date(event.date), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })} • {tracks.length} {tracks.length === 1 ? 'faixa' : 'faixas'}
+              {isOfflineSaved && <OfflineBadge variant="small" />}
+            </h2>
+            <p className="text-xs text-muted-foreground font-medium">
+              {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -941,10 +1008,10 @@ const EventDetails = () => {
                 variant="ghost" 
                 size="icon" 
                 onClick={handleDownloadSongSheet}
-                className="h-9 w-9"
+                className="h-7 w-7 text-primary hover:bg-primary/15 transition-all"
                 title="Folha de cantos"
               >
-                <FileDown className="h-4.5 w-4.5" />
+                <FileDown className="h-4 w-4" />
               </Button>
             )}
             {canEdit && id && (
@@ -955,7 +1022,7 @@ const EventDetails = () => {
       </div>
 
 
-      <main className="mx-auto max-w-[1280px] px-4 py-4 md:px-6 md:py-6 space-y-3">
+      <div className="px-3 py-3 space-y-2.5">
         {filteredSongs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Nenhuma música adicionada a este evento ainda.</p>
         ) : groupBy === 'naipe' ? (
@@ -1025,8 +1092,11 @@ const EventDetails = () => {
                                      <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                        {getTypeLabel(song.type, typeLabels)}
                                      </p>
-
-
+                                     {isAudioCached && (
+                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                       </div>
+                                     )}
                                    </div>
                                    <p className="text-xs text-muted-foreground truncate font-medium">
                                      {song.name} • {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
@@ -1132,7 +1202,7 @@ const EventDetails = () => {
                         <p className="truncate font-bold text-sm uppercase tracking-tight text-primary">
                           {getTypeLabel(song.type, typeLabels)}
                         </p>
-                        
+                        {isOfflineSaved && <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 font-medium truncate">{song.name}</p>
                     </div>
@@ -1164,8 +1234,11 @@ const EventDetails = () => {
                                      <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                        {getTypeLabel(song.type, typeLabels)}
                                      </p>
-
-
+                                     {isAudioCached && (
+                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                       </div>
+                                     )}
                                    </div>
                                <p className="truncate text-xs text-muted-foreground font-medium">
                                  {song.name} • {audio.naipe.charAt(0).toUpperCase() + audio.naipe.slice(1).toLowerCase()}
@@ -1325,8 +1398,11 @@ const EventDetails = () => {
                                      <p className={`truncate font-bold text-sm uppercase tracking-tight ${globalIndex >= 0 && currentTrackIndex === globalIndex ? 'text-primary' : 'text-foreground'}`}>
                                        {getTypeLabel(song.type, typeLabels)}
                                      </p>
-
-
+                                     {isAudioCached && (
+                                       <div className="flex items-center gap-1 shrink-0" title={isOnline ? 'Disponível offline' : 'Reproduzindo offline'}>
+                                         <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
+                                       </div>
+                                     )}
                                    </div>
                          <div className="flex items-center gap-1.5 mt-0.5">
                            <p className="text-xs text-muted-foreground truncate font-medium flex-1">
@@ -1396,7 +1472,7 @@ const EventDetails = () => {
             {filteredPlaylist.length === 0 && <div className="px-4 py-8 text-sm text-muted-foreground text-center">Nenhum áudio encontrado com os filtros atuais.</div>}
           </div>
         )}
-      </main>
+      </div>
 
 
 

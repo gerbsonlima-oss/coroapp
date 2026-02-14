@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
-
+import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, MessageCircle, Mail, Lock, User, Calendar, Music, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -24,7 +24,10 @@ const authSchema = z.object({
 
 // Função para aplicar máscara de telefone
 const formatPhone = (value: string): string => {
+  // Remove tudo que não é número
   const numbers = value.replace(/\D/g, '');
+  
+  // Aplica a máscara
   if (numbers.length <= 2) {
     return numbers;
   } else if (numbers.length <= 7) {
@@ -49,6 +52,7 @@ const Auth = () => {
   const { signUp, signIn, user } = useAuth();
   const navigate = useNavigate();
 
+  // Buscar lista de tenants (coros)
   const { data: tenants } = useQuery({
     queryKey: ['tenants-list'],
     queryFn: async () => {
@@ -56,6 +60,7 @@ const Auth = () => {
         .from('tenants')
         .select('id, name, slug')
         .order('name');
+      
       if (error) throw error;
       return data;
     },
@@ -82,6 +87,7 @@ const Auth = () => {
         ? { email, password, fullName, naipe, birthDate, tenantId, phone } 
         : { email, password };
       
+      // Validação customizada para signup
       if (isSignUp) {
         if (!fullName || fullName.length < 3) {
           setErrors({ fullName: 'Nome deve ter no mínimo 3 caracteres' });
@@ -120,17 +126,17 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#1a2642] to-[#0f1e3a] flex items-center justify-center p-4">
       {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/15 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/8 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-card/60 backdrop-blur-sm border border-border/50 mb-4 shadow-elevated">
+          <div className="inline-flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 mb-4 shadow-xl">
             <img 
               src="/liturgia-plus-logo.webp" 
               alt="CantoSacro" 
@@ -140,25 +146,25 @@ const Auth = () => {
               fetchPriority="high"
             />
           </div>
-          <h1 className="text-3xl md:text-4xl font-light tracking-wide text-foreground">
+          <h1 className="text-3xl md:text-4xl font-light tracking-wide text-white">
             Canto<span className="font-semibold text-primary">Sacro</span>
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground tracking-wide">
+          <p className="mt-2 text-sm text-white/60 tracking-wide">
             Harmonia e organização para o seu ministério
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-6 md:p-8 shadow-elevated">
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
           {/* Tab Toggle */}
-          <div className="flex mb-6 bg-secondary/50 rounded-xl p-1">
+          <div className="flex mb-6 bg-white/5 rounded-xl p-1">
             <button
               type="button"
               onClick={() => setIsSignUp(false)}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
                 !isSignUp 
-                  ? 'bg-primary text-primary-foreground shadow-lg' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-white shadow-lg' 
+                  : 'text-white/60 hover:text-white'
               }`}
             >
               Entrar
@@ -168,8 +174,8 @@ const Auth = () => {
               onClick={() => setIsSignUp(true)}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
                 isSignUp 
-                  ? 'bg-primary text-primary-foreground shadow-lg' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-white shadow-lg' 
+                  : 'text-white/60 hover:text-white'
               }`}
             >
               Criar conta
@@ -189,7 +195,7 @@ const Auth = () => {
             {isSignUp && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="fullName" className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Label htmlFor="fullName" className="text-sm text-white/80 flex items-center gap-2">
                     <User className="h-3.5 w-3.5" />
                     Nome Completo *
                   </Label>
@@ -200,7 +206,7 @@ const Auth = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     disabled={loading}
-                    className={`h-11 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:ring-primary/20 ${errors.fullName ? 'border-destructive' : ''}`}
+                    className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary focus:ring-primary/20 ${errors.fullName ? 'border-destructive' : ''}`}
                   />
                   {errors.fullName && (
                     <p className="text-xs text-destructive mt-1">{errors.fullName}</p>
@@ -209,15 +215,15 @@ const Auth = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="naipe" className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Label htmlFor="naipe" className="text-sm text-white/80 flex items-center gap-2">
                       <Music className="h-3.5 w-3.5" />
                       Naipe
                     </Label>
                     <Select value={naipe} onValueChange={setNaipe} disabled={loading}>
-                      <SelectTrigger className="h-11 bg-secondary/50 border-border/50 text-foreground focus:border-primary">
+                      <SelectTrigger className="h-11 bg-white/5 border-white/10 text-white focus:border-primary">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-[#1a2642] border-white/10">
                         <SelectItem value="soprano">Soprano</SelectItem>
                         <SelectItem value="contralto">Contralto</SelectItem>
                         <SelectItem value="tenor">Tenor</SelectItem>
@@ -227,7 +233,7 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="birthDate" className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Label htmlFor="birthDate" className="text-sm text-white/80 flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5" />
                       Nascimento
                     </Label>
@@ -237,14 +243,14 @@ const Auth = () => {
                       value={birthDate}
                       onChange={(e) => setBirthDate(e.target.value)}
                       disabled={loading}
-                      className="h-11 bg-secondary/50 border-border/50 text-foreground focus:border-primary"
+                      className="h-11 bg-white/5 border-white/10 text-white focus:border-primary"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm text-muted-foreground flex items-center gap-2">
-                    <MessageCircle className="h-3.5 w-3.5 text-success" />
+                  <Label htmlFor="phone" className="text-sm text-white/80 flex items-center gap-2">
+                    <MessageCircle className="h-3.5 w-3.5 text-green-400" />
                     WhatsApp
                   </Label>
                   <Input
@@ -255,7 +261,7 @@ const Auth = () => {
                     onChange={handlePhoneChange}
                     disabled={loading}
                     maxLength={15}
-                    className={`h-11 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground/50 focus:border-primary ${errors.phone ? 'border-destructive' : ''}`}
+                    className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.phone ? 'border-destructive' : ''}`}
                   />
                   {errors.phone && (
                     <p className="text-xs text-destructive mt-1">{errors.phone}</p>
@@ -263,15 +269,15 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="tenantId" className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Label htmlFor="tenantId" className="text-sm text-white/80 flex items-center gap-2">
                     <Users className="h-3.5 w-3.5" />
                     Coro *
                   </Label>
                   <Select value={tenantId} onValueChange={setTenantId} disabled={loading}>
-                    <SelectTrigger className={`h-11 bg-secondary/50 border-border/50 text-foreground focus:border-primary ${errors.tenantId ? 'border-destructive' : ''}`}>
+                    <SelectTrigger className={`h-11 bg-white/5 border-white/10 text-white focus:border-primary ${errors.tenantId ? 'border-destructive' : ''}`}>
                       <SelectValue placeholder="Selecione seu coro" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#1a2642] border-white/10">
                       {tenants?.map((tenant) => (
                         <SelectItem key={tenant.id} value={tenant.id}>
                           {tenant.name}
@@ -287,7 +293,7 @@ const Auth = () => {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm text-muted-foreground flex items-center gap-2">
+              <Label htmlFor="email" className="text-sm text-white/80 flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5" />
                 Email
               </Label>
@@ -298,7 +304,7 @@ const Auth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className={`h-11 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground/50 focus:border-primary ${errors.email ? 'border-destructive' : ''}`}
+                className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.email ? 'border-destructive' : ''}`}
               />
               {errors.email && (
                 <p className="text-xs text-destructive mt-1">{errors.email}</p>
@@ -306,7 +312,7 @@ const Auth = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm text-muted-foreground flex items-center gap-2">
+              <Label htmlFor="password" className="text-sm text-white/80 flex items-center gap-2">
                 <Lock className="h-3.5 w-3.5" />
                 Senha
               </Label>
@@ -317,7 +323,7 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className={`h-11 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground/50 focus:border-primary ${errors.password ? 'border-destructive' : ''}`}
+                className={`h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-primary ${errors.password ? 'border-destructive' : ''}`}
               />
               {errors.password && (
                 <p className="text-xs text-destructive mt-1">{errors.password}</p>
@@ -327,22 +333,31 @@ const Auth = () => {
             <Button
               type="submit"
               size="lg"
-              className="w-full h-12 mt-4 gradient-primary shadow-glow hover:shadow-glow/50 font-medium transition-all"
+              className="w-full h-12 mt-4 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg shadow-primary/25 transition-all"
               disabled={loading}
             >
               {loading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 isSignUp ? 'Criar Conta' : 'Entrar'
               )}
             </Button>
           </form>
 
+          {/* PWA Install */}
+          <div className="mt-4">
+            <InstallPWAButton 
+              variant="ghost" 
+              size="sm"
+              className="w-full text-white/60 hover:text-white hover:bg-white/5"
+              showText={true}
+            />
+          </div>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground/60 mt-6">
-          CantoSacro - Gestão de Coral
+        <p className="text-center text-xs text-white/40 mt-6">
+          Liturgia+ - Gestão de Coral
         </p>
       </div>
     </div>

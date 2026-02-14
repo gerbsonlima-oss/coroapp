@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Crown, Heart, Gift, Sun, Zap, BookOpen } from 'lucide-react';
-import DOMPurify from 'dompurify';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -236,7 +235,7 @@ const Liturgy = () => {
                 <div className="prose prose-sm dark:prose-invert max-w-none bg-card rounded-lg border p-6 space-y-4">
                   <div
                     className="text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(liturgyData.body) }}
+                    dangerouslySetInnerHTML={{ __html: liturgyData.body }}
                   />
                 </div>
               )}

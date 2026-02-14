@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { exportSongsPDF } from '@/utils/exportSongsPDF';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-
+import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -37,8 +37,6 @@ interface SongListItem {
   chords?: string | null;
   sheet_music_url?: string | null;
   sheet_music_pdf_url?: string | null;
-  tenant_id?: string | null;
-  is_public?: boolean;
 }
 
 interface SongAudio {
@@ -192,7 +190,7 @@ const Songs = () => {
         await Promise.all([
           // ✅ Tipos de música agora são globais
           supabase.from('song_types').select('id, slug, name, order_index').order('order_index'),
-          supabase.from('songs').select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url, tenant_id, is_public').or(`tenant_id.eq.${tenantId},is_public.eq.true`),
+          supabase.from('songs').select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url').eq('tenant_id', tenantId),
         ]);
 
       if (songTypesError) throw songTypesError;
@@ -223,8 +221,6 @@ const Songs = () => {
         chords: song.chords,
         sheet_music_url: song.sheet_music_url,
         sheet_music_pdf_url: song.sheet_music_pdf_url,
-        tenant_id: song.tenant_id,
-        is_public: song.is_public,
       }));
 
       setSongTypes(albums);
@@ -334,8 +330,6 @@ const Songs = () => {
                     const hasLyrics = !!song.lyrics;
                     const hasChords = !!song.chords;
                     const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
-                    const isFromOtherTenant = song.tenant_id !== tenantId;
-                    const canEdit = isAdmin && !isFromOtherTenant;
                     
                     return (
                       <div key={song.id} className="transition-all">
@@ -353,9 +347,6 @@ const Songs = () => {
                                 <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
                                   {song.name}
                                 </p>
-                                {isFromOtherTenant && (
-                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-accent/50 border-accent text-accent-foreground shrink-0">Pública</Badge>
-                                )}
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -391,7 +382,7 @@ const Songs = () => {
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
                                 <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
                               </DropdownMenuItem>
-                              {canEdit && (
+                              {isAdmin && (
                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
                                   <Pencil className="mr-2 h-4 w-4" /> Editar
                                 </DropdownMenuItem>
@@ -399,7 +390,7 @@ const Songs = () => {
                               <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
                                 <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
                               </DropdownMenuItem>
-                              {canEdit && (
+                              {isAdmin && (
                                 <DropdownMenuItem 
                                   onClick={(e) => handleDeleteSong(song.id, song.name, e)}
                                   className="text-destructive focus:text-destructive"
@@ -496,8 +487,6 @@ const Songs = () => {
             const hasLyrics = !!song.lyrics;
             const hasChords = !!song.chords;
             const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
-            const isFromOtherTenant = song.tenant_id !== tenantId;
-            const canEdit = isAdmin && !isFromOtherTenant;
             
             return (
               <div 
@@ -518,9 +507,6 @@ const Songs = () => {
                         <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
                           {song.name}
                         </p>
-                        {isFromOtherTenant && (
-                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-accent/50 border-accent text-accent-foreground shrink-0">Pública</Badge>
-                        )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -556,7 +542,7 @@ const Songs = () => {
                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
                         <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
                       </DropdownMenuItem>
-                      {canEdit && (
+                      {isAdmin && (
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
                           <Pencil className="mr-2 h-4 w-4" /> Editar
                         </DropdownMenuItem>
@@ -564,7 +550,7 @@ const Songs = () => {
                       <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
                         <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
                       </DropdownMenuItem>
-                      {canEdit && (
+                      {isAdmin && (
                         <DropdownMenuItem 
                           onClick={(e) => handleDeleteSong(song.id, song.name, e)}
                           className="text-destructive focus:text-destructive"
@@ -648,25 +634,25 @@ const Songs = () => {
 
   return (
     <div className="min-h-screen bg-background pb-40">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border/40 px-4 py-3 md:px-6 md:py-4">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle px-4 py-3 md:px-6 md:py-4">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/15">
-              <Music className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+              <Music className="h-6 w-6 md:h-7 md:w-7 text-primary" />
             </div>
-            <h1 className="text-lg md:text-xl font-bold leading-tight">Repertório</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Repertório</h1>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 md:gap-2">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleExportPDF}
-              className="h-9 w-9"
+              className="hover:bg-accent/80 text-primary"
               title="Exportar catálogo PDF"
             >
-              <FileText className="h-4.5 w-4.5" />
+              <FileText className="h-5 w-5" />
             </Button>
-            
+            <InstallPWAButton size="icon" showText={false} />
             {isAdmin && (
               <>
                 <Button 
@@ -680,10 +666,10 @@ const Songs = () => {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => navigate(buildPath('/songs/admin/types'))}
-                  className="h-9 w-9"
+                  className="hover:bg-accent/80"
                   title="Gerenciar tipos de música"
                 >
-                  <Settings className="h-4.5 w-4.5" />
+                  <Settings className="h-5 w-5" />
                 </Button>
               </>
             )}
@@ -692,9 +678,9 @@ const Songs = () => {
                 variant="ghost" 
                 size="icon" 
                 onClick={signOut}
-                className="h-9 w-9"
+                className="hover:bg-accent/80"
               >
-                <LogOut className="h-4.5 w-4.5" />
+                <LogOut className="h-5 w-5" />
               </Button>
             )}
           </div>
