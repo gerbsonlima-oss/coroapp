@@ -37,6 +37,7 @@ interface SongListItem {
   chords?: string | null;
   sheet_music_url?: string | null;
   sheet_music_pdf_url?: string | null;
+  tenant_id?: string | null;
 }
 
 interface SongAudio {
@@ -67,19 +68,22 @@ const Songs = () => {
   const [loadingAudios, setLoadingAudios] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { tenantId, tenant } = useTenant();
+  const { tenantId, tenant, userTenants, userTenantIds, isMultiTenant } = useTenant();
   const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
+
+  // Use all user tenant IDs for multi-tenant
+  const queryTenantIds = isMultiTenant ? userTenantIds : (tenantId ? [tenantId] : []);
 
   useEffect(() => {
     localStorage.setItem('songs_groupBy', groupBy);
   }, [groupBy]);
 
   useEffect(() => {
-    if (tenantId) {
+    if (queryTenantIds.length > 0) {
       fetchSongTypes();
     }
-  }, [user, tenantId]);
+  }, [user, queryTenantIds.join(',')]);
 
   const toggleGroup = (key: string) => {
     setCollapsedGroups(prev => ({
@@ -186,11 +190,15 @@ const Songs = () => {
 
   const fetchSongTypes = async () => {
     try {
+      // Build the songs query based on multi-tenant or single tenant
+      const songsQuery = supabase.from('songs')
+        .select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url, tenant_id')
+        .in('tenant_id', queryTenantIds);
+
       const [{ data: songTypesData, error: songTypesError }, { data: songsData, error: songsError }] =
         await Promise.all([
-          // ✅ Tipos de música agora são globais
           supabase.from('song_types').select('id, slug, name, order_index').order('order_index'),
-          supabase.from('songs').select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url').eq('tenant_id', tenantId),
+          songsQuery,
         ]);
 
       if (songTypesError) throw songTypesError;
@@ -221,11 +229,12 @@ const Songs = () => {
         chords: song.chords,
         sheet_music_url: song.sheet_music_url,
         sheet_music_pdf_url: song.sheet_music_pdf_url,
+        tenant_id: song.tenant_id,
       }));
 
       setSongTypes(albums);
       setSongs(songsList);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error('Erro ao carregar biblioteca');
     } finally {
       setLoading(false);
@@ -347,6 +356,11 @@ const Songs = () => {
                                 <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
                                   {song.name}
                                 </p>
+                                {isMultiTenant && song.tenant_id && (
+                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 shrink-0 font-medium">
+                                    {userTenants.find(ut => ut.id === song.tenant_id)?.name || ''}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">

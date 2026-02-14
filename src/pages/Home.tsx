@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Music, Sparkles, MapPin, Clock, LogIn, Download, Shield, LogOut, History, Users, UserCheck, Database, Upload, Settings } from 'lucide-react';
+import { Calendar, Sparkles, MapPin, Clock, LogIn, LogOut, History, Settings, Building2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
@@ -14,11 +15,11 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
-import { format, addMonths, addDays, getDaysInMonth, isPast, isToday } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getLiturgicalDay } from '@/data/liturgicalCalendar';
+
 import { injectTenantManifest } from '@/utils/injectTenantManifest';
 
 interface Event {
@@ -27,6 +28,7 @@ interface Event {
   date: string;
   location: string | null;
   cover_image_url: string | null;
+  tenant_id: string | null;
 }
 
 const getLiturgicalColor = (season: string): string => {
@@ -46,26 +48,27 @@ const Home = () => {
   const { user, signOut } = useAuth();
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
-  const { tenant, tenantId, tenantSlug } = useTenant();
+  const { tenant, tenantId, tenantSlug, userTenants, userTenantIds, isMultiTenant } = useTenant();
   const { saveEvents } = useOfflineStorage();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [pastEvents, setPastEvents] = useState<Event[]>([]);
+
+  // Use all user tenant IDs for multi-tenant, or just the current one
+  const queryTenantIds = isMultiTenant ? userTenantIds : (tenantId ? [tenantId] : []);
 
   const { data: upcomingEventsData } = useQuery({
-    queryKey: ['upcoming-events', tenantId],
+    queryKey: ['upcoming-events', queryTenantIds],
     queryFn: async () => {
-      if (!tenantId) return [];
+      if (queryTenantIds.length === 0) return [];
       
       try {
         const { data, error } = await supabase
           .from('events')
-          .select('id, name, date, location, cover_image_url')
-          .eq('tenant_id', tenantId)
+          .select('id, name, date, location, cover_image_url, tenant_id')
+          .in('tenant_id', queryTenantIds)
           .gte('date', format(today, 'yyyy-MM-dd'))
           .order('date', { ascending: true })
-          .limit(5);
+          .limit(10);
 
         if (error) throw error;
         return data as Event[] || [];
@@ -80,25 +83,25 @@ const Home = () => {
         return savedEvents
           .filter(event => event.date >= todayStr)
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          .slice(0, 5);
+          .slice(0, 10);
       }
     },
-    enabled: !!tenantId,
+    enabled: queryTenantIds.length > 0,
   });
 
   const { data: pastEventsData } = useQuery({
-    queryKey: ['past-events', tenantId],
+    queryKey: ['past-events', queryTenantIds],
     queryFn: async () => {
-      if (!tenantId) return [];
+      if (queryTenantIds.length === 0) return [];
       
       try {
         const { data, error } = await supabase
           .from('events')
-          .select('id, name, date, location, cover_image_url')
-          .eq('tenant_id', tenantId)
+          .select('id, name, date, location, cover_image_url, tenant_id')
+          .in('tenant_id', queryTenantIds)
           .lt('date', format(today, 'yyyy-MM-dd'))
           .order('date', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (error) throw error;
         return data as Event[] || [];
@@ -113,10 +116,10 @@ const Home = () => {
         return savedEvents
           .filter(event => event.date < todayStr)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-          .slice(0, 5);
+          .slice(0, 10);
       }
     },
-    enabled: !!tenantId,
+    enabled: queryTenantIds.length > 0,
   });
 
   // Inject tenant-specific PWA manifest
@@ -127,14 +130,6 @@ const Home = () => {
   }, [tenantSlug, tenant?.name]);
 
   useEffect(() => {
-    if (upcomingEventsData) {
-      setUpcomingEvents(upcomingEventsData);
-    }
-    if (pastEventsData) {
-      setPastEvents(pastEventsData);
-    }
-    
-    // Save combined events to offline storage
     if (upcomingEventsData || pastEventsData) {
       const allEvents = [
         ...(upcomingEventsData || []),
@@ -149,7 +144,7 @@ const Home = () => {
           location: event.location,
           cover_image_url: event.cover_image_url,
           notes: null,
-          tenant_id: tenantId,
+          tenant_id: event.tenant_id || tenantId,
         })));
       }
     }
@@ -159,15 +154,131 @@ const Home = () => {
     ? getLiturgicalColor(liturgicalDay.liturgicalSeason)
     : 'from-blue-600 to-blue-900';
 
+  // Helper to get tenant name by ID
+  const getTenantName = (tId: string | null) => {
+    if (!tId) return '';
+    const t = userTenants.find(ut => ut.id === tId);
+    return t?.name || '';
+  };
+
+  // Group events by tenant for display
+  const groupEventsByTenant = (events: Event[]) => {
+    if (!isMultiTenant) return [{ tenant: null, events }];
+    
+    const groups: { tenant: typeof userTenants[0] | null; events: Event[] }[] = [];
+    
+    for (const ut of userTenants) {
+      const tenantEvents = events.filter(e => e.tenant_id === ut.id);
+      if (tenantEvents.length > 0) {
+        groups.push({ tenant: ut, events: tenantEvents });
+      }
+    }
+    
+    return groups;
+  };
+
+  const renderEventCard = (event: Event, isPast: boolean, index: number) => (
+    <Card
+      key={event.id}
+      className={`overflow-hidden cursor-pointer hover:shadow-md transition-all border-0 group flex flex-row ${isPast ? 'bg-muted/30' : ''}`}
+      onClick={() => navigate(`/events/${event.id}`)}
+    >
+      {event.cover_image_url && (
+        <div className={`relative ${isPast ? 'w-20 h-20' : 'w-24 h-24'} flex-shrink-0 overflow-hidden bg-muted`}>
+          <img
+            src={event.cover_image_url}
+            alt={event.name}
+            loading={!isPast && index < 3 ? "eager" : "lazy"}
+            decoding={!isPast && index < 3 ? "sync" : "async"}
+            fetchPriority={!isPast && index < 2 ? "high" : undefined}
+            className={`h-full w-full object-cover group-hover:scale-110 transition-transform duration-300 ${isPast ? 'grayscale-[0.5] group-hover:grayscale-0' : ''}`}
+          />
+        </div>
+      )}
+      <div className="p-3 flex-1 flex flex-col justify-between min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className={`font-bold ${isPast ? 'text-sm line-clamp-1' : 'text-sm line-clamp-2'} group-hover:text-primary transition-colors`}>{event.name}</h3>
+          {isMultiTenant && event.tenant_id && (
+            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 shrink-0 font-medium">
+              {getTenantName(event.tenant_id)}
+            </Badge>
+          )}
+        </div>
+        <div className={`space-y-1 ${isPast ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3 w-3 flex-shrink-0" />
+            <span className="line-clamp-1">
+              {format(new Date(event.date), "dd MMM 'às' HH:mm", { locale: ptBR })}
+            </span>
+          </div>
+          {event.location && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="line-clamp-1 truncate">{event.location}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+
+  const renderEventSection = (title: string, events: Event[], icon: React.ReactNode, isPast: boolean) => {
+    if (!events || events.length === 0) return null;
+
+    const groups = groupEventsByTenant(events);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h3 className="font-semibold text-lg">{title}</h3>
+        </div>
+
+        {isMultiTenant ? (
+          <div className="space-y-4">
+            {groups.map((group) => (
+              <div key={group.tenant?.id || 'default'} className="space-y-2">
+                {group.tenant && (
+                  <div className="flex items-center gap-2 pl-1">
+                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {group.tenant.name}
+                    </span>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {group.events.map((event, index) => renderEventCard(event, isPast, index))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {events.map((event, index) => renderEventCard(event, isPast, index))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/50 pb-28">
-      {/* Header with Auth and Install buttons */}
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          {tenant && (
+          {tenant && !isMultiTenant && (
             <span className="text-sm font-medium text-muted-foreground truncate max-w-[150px]">
               {tenant.name}
             </span>
+          )}
+          {isMultiTenant && (
+            <div className="flex items-center gap-1.5">
+              {userTenants.map(ut => (
+                <Badge key={ut.id} variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                  {ut.name}
+                </Badge>
+              ))}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -243,104 +354,19 @@ const Home = () => {
         {/* Birthday Panel */}
         {tenantId && <BirthdayPanel tenantId={tenantId} />}
 
-        {/* Próximos Eventos */}
-        {upcomingEvents.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-lg">Próximos Eventos</h3>
-            </div>
-
-            <div className="space-y-2">
-              {upcomingEvents.map((event, index) => (
-                <Card
-                  key={event.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-md transition-all border-0 group flex flex-row"
-                  onClick={() => navigate(`/events/${event.id}`)}
-                >
-                  {event.cover_image_url && (
-                    <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden bg-muted">
-                      <img
-                        src={event.cover_image_url}
-                        alt={event.name}
-                        loading={index < 3 ? "eager" : "lazy"}
-                        decoding={index < 3 ? "sync" : "async"}
-                        fetchPriority={index < 2 ? "high" : undefined}
-                        className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="p-3 flex-1 flex flex-col justify-between min-w-0">
-                    <h3 className="font-bold text-sm line-clamp-2 group-hover:text-primary transition-colors">{event.name}</h3>
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3 flex-shrink-0" />
-                        <span className="line-clamp-1">
-                          {format(new Date(event.date), "dd MMM 'às' HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
-                      {event.location && (
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="h-3 w-3 flex-shrink-0" />
-                          <span className="line-clamp-1 truncate">{event.location}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
+        {renderEventSection(
+          'Próximos Eventos',
+          upcomingEventsData || [],
+          <Calendar className="h-5 w-5 text-primary" />,
+          false
         )}
 
-        {/* Eventos Recentes */}
-        {pastEvents.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5 text-muted-foreground" />
-              <h3 className="font-semibold text-lg">Eventos Recentes</h3>
-            </div>
-
-            <div className="space-y-2">
-              {pastEvents.map((event, index) => (
-                <Card
-                  key={event.id}
-                  className="overflow-hidden cursor-pointer hover:shadow-md transition-all border-0 group flex flex-row bg-muted/30"
-                  onClick={() => navigate(`/events/${event.id}`)}
-                >
-                  {event.cover_image_url && (
-                    <div className="relative w-20 h-20 flex-shrink-0 overflow-hidden bg-muted">
-                      <img
-                        src={event.cover_image_url}
-                        alt={event.name}
-                        loading="lazy"
-                        className="h-full w-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="p-3 flex-1 flex flex-col justify-between min-w-0">
-                    <h3 className="font-bold text-sm line-clamp-1 group-hover:text-primary transition-colors">{event.name}</h3>
-                    <div className="space-y-1 text-[10px] text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3 flex-shrink-0" />
-                        <span>
-                          {format(new Date(event.date), "dd MMM 'às' HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
-                      {event.location && (
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{event.location}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
+        {renderEventSection(
+          'Eventos Recentes',
+          pastEventsData || [],
+          <History className="h-5 w-5 text-muted-foreground" />,
+          true
         )}
-
       </div>
 
       <BottomNavigation />
