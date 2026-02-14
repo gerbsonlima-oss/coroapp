@@ -7,19 +7,16 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { EventsReportExporter } from '@/components/EventsReportExporter';
-import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff, FileText, Search, X } from 'lucide-react';
+import { Plus, Calendar, Music, WifiOff, FileText, Search, X, LogOut, LogIn, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { useAudioCache } from '@/hooks/useAudioCache';
 
 import { EventListItem } from '@/components/EventListItem';
-import { OfflineBadge } from '@/components/OfflineBadge';
 
 interface Event {
   id: string;
@@ -28,6 +25,7 @@ interface Event {
   location: string | null;
   notes: string | null;
   cover_image_url: string | null;
+  tenant_id: string | null;
 }
 
 const Events = () => {
@@ -39,12 +37,15 @@ const Events = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
-  const { tenantId } = useTenant();
+  const { tenantId, userTenants, userTenantIds, isMultiTenant } = useTenant();
   const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canCreateEvent = isAdmin || isSuperAdmin;
   const navigate = useNavigate();
   const { cachedAudios } = useAudioCache();
+
+  // Use all user tenant IDs for multi-tenant, or just the current one
+  const queryTenantIds = isMultiTenant ? userTenantIds : (tenantId ? [tenantId] : []);
 
   const filteredEvents = useMemo(() => {
     if (!searchQuery.trim()) return events;
@@ -57,10 +58,10 @@ const Events = () => {
   }, [events, searchQuery]);
 
   useEffect(() => {
-    if (tenantId) {
+    if (queryTenantIds.length > 0) {
       fetchEvents();
     }
-  }, [tenantId]);
+  }, [queryTenantIds.join(',')]);
 
   useEffect(() => {
     if (isOffline) {
@@ -71,22 +72,20 @@ const Events = () => {
   }, [cachedAudios, isOffline]);
 
   const fetchEvents = async () => {
-    if (!tenantId) return;
+    if (queryTenantIds.length === 0) return;
     
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
-        .eq('tenant_id', tenantId)
+        .select('id, name, date, location, notes, cover_image_url, tenant_id')
+        .in('tenant_id', queryTenantIds)
         .order('date', { ascending: false });
 
       if (error) throw error;
       
-      // Se online, mostra todos os eventos E salva no cache offline
       setEvents(data || []);
       setIsOffline(false);
       
-      // Save events to offline storage
       if (data && data.length > 0) {
         saveEvents(data.map(event => ({
           id: event.id,
@@ -98,11 +97,9 @@ const Events = () => {
           tenant_id: event.tenant_id,
         })));
         
-        // Also save to legacy cache for backward compatibility
         localStorage.setItem('cached_events', JSON.stringify(data));
       }
-    } catch (error: any) {
-      // Se offline, busca eventos do localStorage
+    } catch (error: unknown) {
       const cachedEvents = await getOfflineEvents();
       
       if (cachedEvents.length > 0) {
@@ -120,16 +117,31 @@ const Events = () => {
 
   const getOfflineEvents = async (): Promise<Event[]> => {
     try {
-      // Busca eventos salvos no localStorage
       const savedEventsJson = localStorage.getItem('cached_events');
       if (!savedEventsJson) return [];
-      
       return JSON.parse(savedEventsJson);
-    } catch (error) {
-      console.error('Erro ao buscar eventos offline:', error);
+    } catch {
       return [];
     }
   };
+
+  // Helper to get tenant name
+  const getTenantName = (tId: string | null) => {
+    if (!tId) return '';
+    return userTenants.find(ut => ut.id === tId)?.name || '';
+  };
+
+  // Group events by tenant
+  const groupedEvents = useMemo(() => {
+    if (!isMultiTenant) return [{ tenant: null, events: filteredEvents }];
+    
+    return userTenants
+      .map(ut => ({
+        tenant: ut,
+        events: filteredEvents.filter(e => e.tenant_id === ut.id),
+      }))
+      .filter(g => g.events.length > 0);
+  }, [filteredEvents, isMultiTenant, userTenants]);
 
   if (loading) {
     return (
@@ -182,7 +194,6 @@ const Events = () => {
       </header>
 
       <main className="mx-auto max-w-[1280px] px-4 py-4 md:px-6 md:py-6">
-        {/* Banner de instalação - visível apenas em mobile */}
         <InstallPWAButton 
           variant="default" 
           size="lg" 
@@ -258,7 +269,30 @@ const Events = () => {
                 <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Nenhum evento encontrado para "{searchQuery}"</p>
               </div>
+            ) : isMultiTenant ? (
+              // Multi-tenant: group by tenant sections
+              <div className="space-y-6">
+                {groupedEvents.map((group) => (
+                  <div key={group.tenant?.id || 'default'} className="space-y-2">
+                    {group.tenant && (
+                      <div className="flex items-center gap-2 px-1 pt-2">
+                        <Building2 className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-bold text-foreground">
+                          {group.tenant.name}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          {group.events.length}
+                        </Badge>
+                      </div>
+                    )}
+                    {group.events.map((event) => (
+                      <EventListItem key={event.id} event={event} />
+                    ))}
+                  </div>
+                ))}
+              </div>
             ) : (
+              // Single tenant: flat list
               filteredEvents.map((event) => (
                 <EventListItem key={event.id} event={event} />
               ))
