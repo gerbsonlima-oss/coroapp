@@ -656,15 +656,15 @@ const Songs = () => {
             </div>
             <h1 className="text-lg md:text-xl font-bold leading-tight">Repertório</h1>
           </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
+          <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleExportPDF}
-              className="hover:bg-accent/80 text-primary"
+              className="h-9 w-9"
               title="Exportar catálogo PDF"
             >
-              <FileText className="h-5 w-5" />
+              <FileText className="h-4.5 w-4.5" />
             </Button>
             
             {isAdmin && (
@@ -680,10 +680,10 @@ const Songs = () => {
                   variant="ghost" 
                   size="icon" 
                   onClick={() => navigate(buildPath('/songs/admin/types'))}
-                  className="hover:bg-accent/80"
+                  className="h-9 w-9"
                   title="Gerenciar tipos de música"
                 >
-                  <Settings className="h-5 w-5" />
+                  <Settings className="h-4.5 w-4.5" />
                 </Button>
               </>
             )}
@@ -692,9 +692,9 @@ const Songs = () => {
                 variant="ghost" 
                 size="icon" 
                 onClick={signOut}
-                className="hover:bg-accent/80"
+                className="h-9 w-9"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4.5 w-4.5" />
               </Button>
             )}
           </div>
