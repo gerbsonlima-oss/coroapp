@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +11,7 @@ export interface Tenant {
 }
 
 interface TenantContextType {
-  /** Current tenant (from URL or selection) */
+  /** Current active tenant (first user tenant or selected) */
   tenant: Tenant | null;
   tenantId: string | null;
   tenantSlug: string | null;
@@ -33,54 +32,7 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 const TENANT_STORAGE_KEY = 'selected_tenant_slug';
 
-// Routes that should NOT have tenant prefix
-const PUBLIC_ROUTES = ['/auth', '/public'];
-
-function getTenantFromPath(pathname: string): string | null {
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
-    return null;
-  }
-  
-  const segments = pathname.split('/').filter(Boolean);
-  if (segments.length > 0) {
-    const potentialSlug = segments[0];
-    if (/^[a-z0-9-]+$/.test(potentialSlug) && !isReservedRoute(potentialSlug)) {
-      return potentialSlug;
-    }
-  }
-  return null;
-}
-
-function isReservedRoute(segment: string): boolean {
-  const reserved = [
-    'events', 'songs', 'auth', 'admin', 'liturgy', 
-    'rehearsals', 'public', 'audio-to-sheet'
-  ];
-  return reserved.includes(segment);
-}
-
-function getTenantSlugFromHostname(): string | null {
-  const hostname = window.location.hostname;
-  
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return null;
-  }
-  
-  if (hostname.endsWith('.lovable.app')) {
-    return null;
-  }
-  
-  const parts = hostname.split('.');
-  if (parts.length >= 3) {
-    return parts[0];
-  }
-  
-  return null;
-}
-
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { saveTenantConfig, getTenantConfig } = useOfflineStorage();
   const { user } = useAuth();
   
@@ -89,20 +41,6 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [userTenants, setUserTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const getTenantSlug = (): string => {
-    const pathTenant = getTenantFromPath(location.pathname);
-    if (pathTenant) return pathTenant;
-    
-    const subdomainTenant = getTenantSlugFromHostname();
-    if (subdomainTenant) return subdomainTenant;
-    
-    const storedTenant = localStorage.getItem(TENANT_STORAGE_KEY);
-    if (storedTenant) return storedTenant;
-    
-    if (location.pathname === '/') return '';
-    return 'quixada';
-  };
 
   // Fetch all tenants
   useEffect(() => {
@@ -123,11 +61,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     fetchTenants();
   }, []);
 
-  // Fetch user's tenants (from user_roles)
+  // Fetch user's tenants (from user_roles) and set active tenant
   useEffect(() => {
     async function fetchUserTenants() {
       if (!user) {
         setUserTenants([]);
+        setTenant(null);
+        setLoading(false);
         return;
       }
 
@@ -139,6 +79,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
         if (rolesError) {
           console.error('Error fetching user roles:', rolesError);
+          setLoading(false);
           return;
         }
 
@@ -150,6 +91,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
         if (tenantIds.length === 0) {
           setUserTenants([]);
+          setLoading(false);
           return;
         }
 
@@ -161,85 +103,38 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
         if (!tenantsError && tenants) {
           setUserTenants(tenants);
+          
+          // Set active tenant: use stored preference or first tenant
+          const storedSlug = localStorage.getItem(TENANT_STORAGE_KEY);
+          const storedTenant = storedSlug ? tenants.find(t => t.slug === storedSlug) : null;
+          const activeTenant = storedTenant || tenants[0];
+          
+          if (activeTenant) {
+            setTenant(activeTenant);
+            saveTenantConfig(activeTenant);
+            localStorage.setItem(TENANT_STORAGE_KEY, activeTenant.slug);
+          }
         }
       } catch (err) {
         console.error('Error fetching user tenants:', err);
-      }
-    }
-    fetchUserTenants();
-  }, [user]);
-
-  // Fetch current tenant from URL
-  useEffect(() => {
-    async function fetchTenant() {
-      try {
-        const slug = getTenantSlug();
-        
-        if (!slug && location.pathname === '/') {
-          setTenant(null);
-          setLoading(false);
-          return;
-        }
-
-        const { data, error: fetchError } = await supabase
-          .from('tenants')
-          .select('id, slug, name, logo_url')
-          .eq('slug', slug)
-          .maybeSingle();
-
-        if (fetchError) {
-          const cachedTenant = getTenantConfig();
-          if (cachedTenant) {
-            setTenant(cachedTenant);
-            setError(null);
-          } else {
-            setError('Erro ao carregar organização');
-          }
-          setLoading(false);
-          return;
-        }
-
-        if (!data) {
-          const { data: defaultData } = await supabase
-            .from('tenants')
-            .select('id, slug, name, logo_url')
-            .eq('slug', 'quixada')
-            .maybeSingle();
-          
-          if (defaultData) {
-            setTenant(defaultData);
-            saveTenantConfig(defaultData);
-            localStorage.setItem(TENANT_STORAGE_KEY, defaultData.slug);
-          } else {
-            setError('Organização não encontrada');
-          }
-          setLoading(false);
-          return;
-        }
-
-        setTenant(data);
-        saveTenantConfig(data);
-        localStorage.setItem(TENANT_STORAGE_KEY, data.slug);
-        setError(null);
-      } catch (err) {
         const cachedTenant = getTenantConfig();
         if (cachedTenant) {
           setTenant(cachedTenant);
-          setError(null);
-        } else {
-          setError('Erro ao carregar organização');
         }
       } finally {
         setLoading(false);
       }
     }
-
-    fetchTenant();
-  }, [location.pathname, saveTenantConfig, getTenantConfig]);
+    fetchUserTenants();
+  }, [user]);
 
   const switchTenant = (slug: string) => {
-    localStorage.setItem(TENANT_STORAGE_KEY, slug);
-    navigate(`/${slug}`);
+    const found = userTenants.find(t => t.slug === slug) || availableTenants.find(t => t.slug === slug);
+    if (found) {
+      setTenant(found);
+      saveTenantConfig(found);
+      localStorage.setItem(TENANT_STORAGE_KEY, slug);
+    }
   };
 
   const userTenantIds = userTenants.map(t => t.id);
@@ -273,18 +168,11 @@ export function useTenant() {
   return context;
 }
 
-// Helper hook to build tenant-aware paths
+// Helper hook - now just returns path as-is (no tenant prefix)
 export function useTenantPath() {
   const { tenantSlug } = useTenant();
   
-  const buildPath = (path: string): string => {
-    if (!tenantSlug) return path;
-    if (PUBLIC_ROUTES.some(route => path.startsWith(route))) {
-      return path;
-    }
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    return `/${tenantSlug}/${cleanPath}`;
-  };
+  const buildPath = (path: string): string => path;
   
   return { buildPath, tenantSlug };
 }

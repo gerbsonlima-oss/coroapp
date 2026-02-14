@@ -43,7 +43,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
-  const { tenant, tenantId, tenantSlug, userTenants, userTenantIds, isMultiTenant } = useTenant();
+  const { tenant, tenantId, userTenants, userTenantIds, isMultiTenant } = useTenant();
   const { saveEvents } = useOfflineStorage();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
@@ -119,10 +119,10 @@ const Home = () => {
 
   // Inject tenant-specific PWA manifest
   useEffect(() => {
-    if (tenantSlug && tenant?.name) {
-      injectTenantManifest(tenantSlug, tenant.name);
+    if (tenant?.slug && tenant?.name) {
+      injectTenantManifest(tenant.slug, tenant.name);
     }
-  }, [tenantSlug, tenant?.name]);
+  }, [tenant?.slug, tenant?.name]);
 
   useEffect(() => {
     if (upcomingEventsData || pastEventsData) {
@@ -288,7 +288,7 @@ const Home = () => {
 
           {(isAdmin || isSuperAdmin) && (
             <button
-              onClick={(e) => { e.stopPropagation(); navigate(tenantSlug ? `/${tenantSlug}/admin` : '/admin'); }}
+              onClick={(e) => { e.stopPropagation(); navigate('/admin'); }}
               className="shrink-0 bg-white/15 hover:bg-white/25 rounded-full p-1.5 transition-colors"
               aria-label="Painel Administrativo"
             >

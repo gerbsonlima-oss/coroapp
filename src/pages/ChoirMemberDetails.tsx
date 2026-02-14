@@ -83,9 +83,7 @@ export default function ChoirMemberDetails() {
     }
   };
 
-  const buildPath = (path: string) => {
-    return tenantSlug ? `/${tenantSlug}${path}` : path;
-  };
+  const buildPath = (path: string) => path;
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();

@@ -312,9 +312,7 @@ export default function ChoirMembers() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const buildPath = (path: string) => {
-    return tenantSlug ? `/${tenantSlug}${path}` : path;
-  };
+  const buildPath = (path: string) => path;
 
   const formatPhoneForWhatsApp = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '');
