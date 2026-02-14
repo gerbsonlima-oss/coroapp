@@ -806,12 +806,13 @@ const EventDetails = () => {
     <div className="min-h-screen bg-background pb-28">
       {showMusicRain && <MusicRain onComplete={() => setShowMusicRain(false)} />}
       <EnhancedMiniPlayer />
-      <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-background/95 backdrop-blur-md">
-        <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-8 w-8 shrink-0 text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1" />
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-20 border-b border-border/40 bg-card/80 backdrop-blur-xl px-4 py-3 md:px-6 md:py-4">
+        <div className="mx-auto flex max-w-[1280px] items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-9 w-9 shrink-0">
+            <ArrowLeft className="h-4.5 w-4.5" />
+          </Button>
+          <div className="flex-1" />
+          <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground">
@@ -914,24 +915,24 @@ const EventDetails = () => {
           </DropdownMenu>
           <input ref={songSheetInputRef} type="file" accept="application/pdf" onChange={handleSongSheetUpload} className="hidden" />
         </div>
-      </div>
+        </div>
+      </header>
 
-      <div className="sticky top-12 z-10 bg-background/95 backdrop-blur-md border-b border-primary/20 shadow-subtle px-3 py-2 animate-slide-up">
-        <div className="flex items-center gap-3">
-          <div className="h-16 w-16 shrink-0 rounded-lg shadow-card overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-75 transition-opacity" onClick={handleImageClick}>
+      <div className="sticky top-[53px] md:top-[65px] z-10 bg-card/80 backdrop-blur-xl border-b border-border/40 px-4 py-3 md:px-6">
+        <div className="mx-auto max-w-[1280px] flex items-center gap-3">
+          <div className="h-14 w-14 md:h-16 md:w-16 shrink-0 rounded-xl shadow-card overflow-hidden bg-gradient-to-br from-primary/30 to-primary/15 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity" onClick={handleImageClick}>
             {event.cover_image_url ? (
               <img src={coverImageSrc || event.cover_image_url} alt={event.name} className="h-full w-full object-cover" />
             ) : (
-              <Music className="h-6 w-6 text-primary/70 animate-float" />
+              <Music className="h-6 w-6 text-primary/60" />
             )}
           </div>
-          <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <h2 className="line-clamp-1 font-bold text-sm text-foreground leading-tight flex items-center gap-2 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <h1 className="line-clamp-1 font-bold text-base md:text-lg text-foreground leading-tight">
               {event.name}
-              
-            </h2>
-            <p className="text-xs text-muted-foreground font-medium">
-              {tracks.length} {tracks.length === 1 ? 'música' : 'músicas'}
+            </h1>
+            <p className="text-xs text-muted-foreground font-medium mt-0.5">
+              {format(new Date(event.date), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })} • {tracks.length} {tracks.length === 1 ? 'faixa' : 'faixas'}
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -940,10 +941,10 @@ const EventDetails = () => {
                 variant="ghost" 
                 size="icon" 
                 onClick={handleDownloadSongSheet}
-                className="h-7 w-7 text-primary hover:bg-primary/15 transition-all"
+                className="h-9 w-9"
                 title="Folha de cantos"
               >
-                <FileDown className="h-4 w-4" />
+                <FileDown className="h-4.5 w-4.5" />
               </Button>
             )}
             {canEdit && id && (
@@ -954,7 +955,7 @@ const EventDetails = () => {
       </div>
 
 
-      <div className="px-3 py-3 space-y-2.5">
+      <main className="mx-auto max-w-[1280px] px-4 py-4 md:px-6 md:py-6 space-y-3">
         {filteredSongs.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Nenhuma música adicionada a este evento ainda.</p>
         ) : groupBy === 'naipe' ? (
@@ -1395,7 +1396,7 @@ const EventDetails = () => {
             {filteredPlaylist.length === 0 && <div className="px-4 py-8 text-sm text-muted-foreground text-center">Nenhum áudio encontrado com os filtros atuais.</div>}
           </div>
         )}
-      </div>
+      </main>
 
 
 
