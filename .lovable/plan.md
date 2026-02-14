@@ -1,56 +1,38 @@
 
+# Musicas publicas no evento - Plano de correcao
 
-## Musicas Publicas (Compartilhadas entre Tenants)
+## Problema identificado
 
-### Objetivo
-Permitir que admins marquem uma musica como "publica", tornando-a visivel para todos os tenants (somente leitura). Apenas o tenant dono pode editar/excluir.
+O tenant "Seminario Diocesano" nao consegue ver os tipos de musica (song_types) porque todos os tipos pertencem ao tenant "Coro Diocese Quixada" e a politica de seguranca (RLS) da tabela `song_types` so permite visualizar tipos do proprio tenant.
 
-### Alteracoes
+Isso impacta:
+- Criacao de eventos (o formulario de tipos fica vazio)
+- Adicao de musicas ao evento (o seletor de tipo fica vazio)
+- Labels dos tipos nao aparecem na interface
 
-#### 1. Banco de Dados
-- Adicionar coluna `is_public BOOLEAN DEFAULT false` na tabela `songs`
-- Atualizar a politica RLS de SELECT para incluir musicas onde `is_public = true` (alem das do proprio tenant)
-- Manter as politicas de UPDATE/DELETE inalteradas (apenas o tenant dono gerencia)
+Alem disso, as musicas publicas ja estao sendo buscadas corretamente nas queries (usando `is_public.eq.true`), entao o problema nao esta na busca de musicas, mas sim nos tipos de musica.
 
-#### 2. Formulario de Musica (`SongForm.tsx`)
-- Adicionar um toggle/switch "Musica publica" visivel apenas para admins
-- Salvar o campo `is_public` no insert/update
+## Solucao
 
-#### 3. Listagem de Musicas (`Songs.tsx`)
-- Alterar a query para buscar musicas do tenant **OU** musicas publicas de outros tenants
-- Adicionar um indicador visual (badge/icone) para musicas publicas de outros tenants
-- Musicas publicas de outros tenants serao somente leitura (sem opcoes de editar/excluir)
+### 1. Atualizar a politica RLS da tabela `song_types` (SELECT)
 
-#### 4. Detalhes da Musica (`SongDetails.tsx`)
-- Mostrar badge "Publica" quando `is_public = true`
-- Esconder opcoes de edicao/exclusao para musicas de outros tenants
+Tornar os song_types visiveis para todos os usuarios autenticados (ja que sao categorias liturgicas globais, nao dados sensiveis).
 
----
-
-### Detalhes Tecnicos
-
-**Migracao SQL:**
 ```sql
-ALTER TABLE public.songs ADD COLUMN is_public BOOLEAN DEFAULT false;
-
--- Atualizar politica SELECT para incluir publicas
-DROP POLICY "Users can view songs in their tenant" ON public.songs;
-CREATE POLICY "Users can view songs in their tenant or public"
-  ON public.songs FOR SELECT
-  USING (
-    (tenant_id = get_user_tenant_id(auth.uid()))
-    OR is_public = true
-    OR (auth.uid() IS NULL)
-  );
+DROP POLICY "Users can view song types in their tenant" ON public.song_types;
+CREATE POLICY "Users can view all song types"
+  ON public.song_types FOR SELECT
+  USING (true);
 ```
 
-**Logica de query na listagem:**
-```typescript
-// Antes: .eq('tenant_id', tenantId)
-// Depois: .or(`tenant_id.eq.${tenantId},is_public.eq.true`)
-```
+### 2. Sem alteracoes de codigo necessarias
 
-**Identificacao de musica externa:**
-- Comparar `song.tenant_id !== tenantId` para saber se e de outro tenant
-- Nesse caso, exibir badge "Publica" e bloquear edicao/exclusao
+As queries no frontend ja buscam song_types sem filtro de tenant (ex: `NewEvent.tsx`, `EventQuickEdit.tsx`), confiando na RLS. Uma vez que a RLS permita visualizar todos os tipos, tudo funcionara automaticamente.
 
+## Detalhes tecnicos
+
+- Tabela afetada: `song_types`
+- Politica atual de SELECT: `(tenant_id = get_user_tenant_id(auth.uid())) OR (auth.uid() IS NULL)`
+- Nova politica de SELECT: `true` (todos podem visualizar)
+- Politicas de escrita (INSERT/UPDATE/DELETE) permanecem inalteradas - apenas admins do tenant dono podem gerenciar
+- Impacto: todos os tenants poderao ver os mesmos tipos liturgicos e usar nos seus eventos
