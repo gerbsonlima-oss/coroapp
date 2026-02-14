@@ -44,9 +44,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 import { AuthOrTenantSelection } from "@/components/AuthOrTenantSelection";
 
-
-
-
 function App() {
   const queryClient = useMemo(() => new QueryClient(), []);
 
