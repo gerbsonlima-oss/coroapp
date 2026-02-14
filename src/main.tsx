@@ -2,8 +2,19 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Service Worker is registered automatically by VitePWA plugin
-// Manual registration removed to avoid conflicts in preview/dev mode
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(registration => {
+        console.log('[SW] Service Worker registered successfully');
+        setInterval(() => registration.update(), 60 * 60 * 1000);
+      })
+      .catch(err => {
+        console.error('[SW] Service Worker registration failed:', err);
+      });
+  });
+}
 
 // Setup online/offline event listeners globally
 window.addEventListener('online', () => {
