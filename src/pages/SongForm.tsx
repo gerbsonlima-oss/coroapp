@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Switch } from '@/components/ui/switch';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -81,6 +82,7 @@ const SongForm = () => {
   const [lyricsText, setLyricsText] = useState('');
   const [chordsText, setChordsText] = useState('');
   const [lyricsSearchOpen, setLyricsSearchOpen] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [convertingPdf, setConvertingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -142,6 +144,9 @@ const SongForm = () => {
       }
       if (data.chords) {
         setChordsText(data.chords);
+      }
+      if (data.is_public) {
+        setIsPublic(data.is_public);
       }
 
       await fetchAudios();
@@ -271,6 +276,7 @@ const SongForm = () => {
         const updateData: any = {
           name,
           type,
+          is_public: isPublic,
         };
         
         if (sheetMusicUrl) {
@@ -304,6 +310,7 @@ const SongForm = () => {
           name,
           type,
           sheet_music_url: sheetMusicUrl,
+          is_public: isPublic,
         };
         
         if (sheetMusicPdfUrl) {
@@ -509,6 +516,17 @@ const SongForm = () => {
                 </PopoverContent>
               </Popover>
               {errors.type && <p className="text-xs text-red-500">{errors.type}</p>}
+            </div>
+          </div>
+
+          {/* Música Pública */}
+          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs font-semibold">Música Pública</Label>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Visível para todos os coros (somente leitura)</p>
+              </div>
+              <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={loading} />
             </div>
           </div>
 

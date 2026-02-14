@@ -56,6 +56,8 @@ interface Song {
   sheet_music_pdf_url?: string | null;
   lyrics?: string | null;
   chords?: string | null;
+  tenant_id?: string | null;
+  is_public?: boolean;
 }
 
 interface SongAudio {
@@ -304,9 +306,14 @@ const SongDetails = () => {
             </Button>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{song.name}</h1>
-              <Badge className={`bg-primary/10 text-primary border-primary/30 mt-1 text-xs font-medium`}>
-                {typeLabels[song.type]}
-              </Badge>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className={`bg-primary/10 text-primary border-primary/30 text-xs font-medium`}>
+                  {typeLabels[song.type]}
+                </Badge>
+                {song.is_public && song.tenant_id !== tenantId && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-accent/50 border-accent text-accent-foreground">Pública</Badge>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -329,7 +336,7 @@ const SongDetails = () => {
                   </DropdownMenuItem>
                 )}
 
-                {(isAdmin || isSuperAdmin) && (
+                {(isAdmin || isSuperAdmin) && song.tenant_id === tenantId && (
                   <>
                     <div className="h-px bg-muted my-1" />
                     {isSuperAdmin && song && tenantId && (

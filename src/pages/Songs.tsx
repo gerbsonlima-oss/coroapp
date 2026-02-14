@@ -37,6 +37,8 @@ interface SongListItem {
   chords?: string | null;
   sheet_music_url?: string | null;
   sheet_music_pdf_url?: string | null;
+  tenant_id?: string | null;
+  is_public?: boolean;
 }
 
 interface SongAudio {
@@ -190,7 +192,7 @@ const Songs = () => {
         await Promise.all([
           // ✅ Tipos de música agora são globais
           supabase.from('song_types').select('id, slug, name, order_index').order('order_index'),
-          supabase.from('songs').select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url').eq('tenant_id', tenantId),
+          supabase.from('songs').select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url, tenant_id, is_public').or(`tenant_id.eq.${tenantId},is_public.eq.true`),
         ]);
 
       if (songTypesError) throw songTypesError;
@@ -221,6 +223,8 @@ const Songs = () => {
         chords: song.chords,
         sheet_music_url: song.sheet_music_url,
         sheet_music_pdf_url: song.sheet_music_pdf_url,
+        tenant_id: song.tenant_id,
+        is_public: song.is_public,
       }));
 
       setSongTypes(albums);
@@ -330,6 +334,8 @@ const Songs = () => {
                     const hasLyrics = !!song.lyrics;
                     const hasChords = !!song.chords;
                     const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
+                    const isFromOtherTenant = song.tenant_id !== tenantId;
+                    const canEdit = isAdmin && !isFromOtherTenant;
                     
                     return (
                       <div key={song.id} className="transition-all">
@@ -347,6 +353,9 @@ const Songs = () => {
                                 <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
                                   {song.name}
                                 </p>
+                                {isFromOtherTenant && (
+                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-accent/50 border-accent text-accent-foreground shrink-0">Pública</Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -382,7 +391,7 @@ const Songs = () => {
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
                                 <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
                               </DropdownMenuItem>
-                              {isAdmin && (
+                              {canEdit && (
                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
                                   <Pencil className="mr-2 h-4 w-4" /> Editar
                                 </DropdownMenuItem>
@@ -390,7 +399,7 @@ const Songs = () => {
                               <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
                                 <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
                               </DropdownMenuItem>
-                              {isAdmin && (
+                              {canEdit && (
                                 <DropdownMenuItem 
                                   onClick={(e) => handleDeleteSong(song.id, song.name, e)}
                                   className="text-destructive focus:text-destructive"
@@ -487,6 +496,8 @@ const Songs = () => {
             const hasLyrics = !!song.lyrics;
             const hasChords = !!song.chords;
             const hasSheet = !!(song.sheet_music_pdf_url || song.sheet_music_url);
+            const isFromOtherTenant = song.tenant_id !== tenantId;
+            const canEdit = isAdmin && !isFromOtherTenant;
             
             return (
               <div 
@@ -507,6 +518,9 @@ const Songs = () => {
                         <p className="truncate font-bold text-sm text-foreground group-hover:text-primary transition-colors">
                           {song.name}
                         </p>
+                        {isFromOtherTenant && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-accent/50 border-accent text-accent-foreground shrink-0">Pública</Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
@@ -542,7 +556,7 @@ const Songs = () => {
                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}`)); }}>
                         <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
                       </DropdownMenuItem>
-                      {isAdmin && (
+                      {canEdit && (
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit`)); }}>
                           <Pencil className="mr-2 h-4 w-4" /> Editar
                         </DropdownMenuItem>
@@ -550,7 +564,7 @@ const Songs = () => {
                       <DropdownMenuItem onClick={(e) => handleShareViaWhatsApp(song.id, song.name, e as any)}>
                         <Share2 className="mr-2 h-4 w-4" /> Compartilhar via WhatsApp
                       </DropdownMenuItem>
-                      {isAdmin && (
+                      {canEdit && (
                         <DropdownMenuItem 
                           onClick={(e) => handleDeleteSong(song.id, song.name, e)}
                           className="text-destructive focus:text-destructive"
