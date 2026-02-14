@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -8,10 +8,11 @@ import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { EventsReportExporter } from '@/components/EventsReportExporter';
-import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff, FileText } from 'lucide-react';
+import { Plus, Calendar, MapPin, LogOut, LogIn, Music, WifiOff, FileText, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -34,6 +35,7 @@ const Events = () => {
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
   const [showReportExporter, setShowReportExporter] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
@@ -43,6 +45,16 @@ const Events = () => {
   const canCreateEvent = isAdmin || isSuperAdmin;
   const navigate = useNavigate();
   const { cachedAudios } = useAudioCache();
+
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery.trim()) return events;
+    const q = searchQuery.toLowerCase();
+    return events.filter(e =>
+      e.name.toLowerCase().includes(q) ||
+      (e.location && e.location.toLowerCase().includes(q)) ||
+      e.date.includes(q)
+    );
+  }, [events, searchQuery]);
 
   useEffect(() => {
     if (tenantId) {
@@ -209,6 +221,25 @@ const Events = () => {
           </div>
         ) : (
           <div className="space-y-3 md:space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, local ou data..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
             {/* Desktop New Event Button */}
             {user && canCreateEvent && (
               <div className="hidden md:flex justify-end mb-4">
@@ -221,9 +252,17 @@ const Events = () => {
                 </Button>
               </div>
             )}
-            {events.map((event) => (
-              <EventListItem key={event.id} event={event} />
-            ))}
+
+            {filteredEvents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Nenhum evento encontrado para "{searchQuery}"</p>
+              </div>
+            ) : (
+              filteredEvents.map((event) => (
+                <EventListItem key={event.id} event={event} />
+              ))
+            )}
           </div>
         )}
       </main>
@@ -248,6 +287,5 @@ const Events = () => {
     </div>
   );
 };
-
 
 export default Events;

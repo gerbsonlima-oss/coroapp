@@ -27,20 +27,7 @@ interface TenantInfo {
   logo_url: string | null;
 }
 
-const defaultTypeLabels: Record<string, string> = {
-  canto_entrada: 'Entrada',
-  ato_penitencial: 'Ato Penitencial',
-  gloria: 'Glória',
-  salmo: 'Salmo',
-  aclamacao: 'Aclamação',
-  oferendas: 'Ofertório',
-  santo: 'Santo',
-  cordeiro: 'Cordeiro',
-  comunhao: 'Comunhão',
-  acao_gracas: 'Ação de Graças',
-  final: 'Final',
-  outro: 'Outro',
-};
+import { typeLabels as defaultTypeLabels } from '@/constants/songTypes';
 
 const liturgicalOrder: Record<string, number> = {
   canto_entrada: 1,

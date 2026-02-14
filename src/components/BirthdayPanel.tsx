@@ -20,19 +20,7 @@ interface BirthdayPanelProps {
   tenantId: string;
 }
 
-const naipeLabels: Record<string, string> = {
-  soprano: 'Soprano',
-  contralto: 'Contralto',
-  tenor: 'Tenor',
-  baixo: 'Baixo',
-};
-
-const naipeColors: Record<string, string> = {
-  soprano: 'bg-pink-500/5 text-pink-600 dark:text-pink-400 border-pink-500/40',
-  contralto: 'bg-yellow-500/5 text-yellow-600 dark:text-yellow-400 border-yellow-500/40',
-  tenor: 'bg-green-500/5 text-green-600 dark:text-green-400 border-green-500/40',
-  baixo: 'bg-blue-500/5 text-blue-600 dark:text-blue-400 border-blue-500/40',
-};
+import { naipeLabels, naipeColors } from '@/constants/naipes';
 
 const getInitials = (name: string) => {
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();

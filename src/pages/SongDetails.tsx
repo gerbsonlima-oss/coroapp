@@ -65,50 +65,8 @@ interface SongAudio {
   name: string;
 }
 
-const typeLabels: Record<string, string> = {
-  canto_entrada: 'Entrada',
-  ato_penitencial: 'Ato Penitencial',
-  gloria: 'Glória',
-  salmo: 'Salmo',
-  aclamacao: 'Aclamação',
-  oferendas: 'Ofertório',
-  santo: 'Santo',
-  cordeiro: 'Cordeiro',
-  comunhao: 'Comunhão',
-  acao_gracas: 'Ação de Graças',
-  final: 'Final',
-  outro: 'Outro',
-};
-
-const typeColors: Record<string, string> = {
-  // Novos tipos
-  canto_entrada: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  ato_penitencial: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  gloria: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  salmo: 'bg-green-500/10 text-green-500 border-green-500/20',
-  aclamacao: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-  oferendas: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  santo: 'bg-red-500/10 text-red-500 border-red-500/20',
-  cordeiro: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
-  comunhao: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
-  acao_gracas: 'bg-teal-500/10 text-teal-500 border-teal-500/20',
-  final: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
-  // Tipos antigos (para retrocompatibilidade)
-  entrada: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  perdao: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  ofertorio: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  outro: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
-};
-
-const naipeColors: Record<string, string> = {
-  soprano: 'bg-pink-500/5 text-pink-600 border-pink-500/40',
-  contralto: 'bg-yellow-500/5 text-yellow-600 border-yellow-500/40',
-  tenor: 'bg-green-500/5 text-green-600 border-green-500/40',
-  baixo: 'bg-blue-500/5 text-blue-600 border-blue-500/40',
-  unissono: 'bg-slate-100 text-slate-800 border-none',
-};
-
-const NAIPE_ORDER = ['soprano', 'contralto', 'tenor', 'baixo', 'unissono'];
+import { typeLabels, typeColors as songTypeColors } from '@/constants/songTypes';
+import { naipeColors, NAIPE_ORDER } from '@/constants/naipes';
 
 const SongDetails = () => {
   const { id } = useParams();
