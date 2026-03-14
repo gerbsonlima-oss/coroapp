@@ -30,7 +30,7 @@ export function TenantSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[200px]">
-        {availableTenants.map((t) => (
+        {tenantsToShow.map((t) => (
           <DropdownMenuItem
             key={t.id}
             onClick={() => switchTenant(t.slug)}
