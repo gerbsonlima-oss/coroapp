@@ -299,8 +299,9 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Tenant Switcher + Content */}
       <div className="px-4 py-6 space-y-6 max-w-6xl mx-auto">
+        <TenantSwitcher />
         {/* Birthday Panel */}
         {tenantId && <BirthdayPanel tenantId={tenantId} />}
 
