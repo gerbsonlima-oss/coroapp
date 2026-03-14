@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
+import { TenantSwitcher } from '@/components/TenantSwitcher';
 
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
