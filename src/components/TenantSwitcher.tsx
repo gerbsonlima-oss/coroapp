@@ -10,11 +10,13 @@ import {
 import { Building2, ChevronDown, Check } from 'lucide-react';
 
 export function TenantSwitcher() {
-  const { tenant, availableTenants, switchTenant, loading } = useTenant();
+  const { tenant, userTenants, isMultiTenant, switchTenant, loading, availableTenants } = useTenant();
   const { isSuperAdmin } = useSuperAdmin();
 
-  // Only show for super admins with multiple tenants
-  if (!isSuperAdmin || availableTenants.length <= 1 || loading) {
+  // Show for any user with multiple tenants, or super admins
+  const tenantsToShow = isSuperAdmin ? availableTenants : userTenants;
+  
+  if ((!isMultiTenant && !isSuperAdmin) || tenantsToShow.length <= 1 || loading) {
     return null;
   }
 
@@ -28,7 +30,7 @@ export function TenantSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[200px]">
-        {availableTenants.map((t) => (
+        {tenantsToShow.map((t) => (
           <DropdownMenuItem
             key={t.id}
             onClick={() => switchTenant(t.slug)}
