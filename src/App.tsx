@@ -50,7 +50,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
       <AuthProvider>
       <TenantProvider>
-        <SplashScreen />
+        
       <PlayerProvider>
         <RouteTracker />
         <OfflineIndicator />
