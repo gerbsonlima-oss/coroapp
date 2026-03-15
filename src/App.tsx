@@ -5,7 +5,7 @@ import { TenantProvider } from "@/contexts/TenantContext";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { RouteTracker } from "@/components/RouteTracker";
-import { SplashScreen } from "@/components/SplashScreen";
+
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { OfflineSyncManager } from "@/components/OfflineSyncManager";
 import { lazy, Suspense, useMemo } from "react";
