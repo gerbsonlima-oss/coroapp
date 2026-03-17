@@ -438,7 +438,8 @@ const SimpleEventAudios = () => {
           song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
           song_lyrics: eventSong?.songs?.lyrics || null,
           song_chords: eventSong?.songs?.chords || null,
-          song_sheet_music_pdf_url: eventSong?.songs?.sheet_music_pdf_url || null
+          song_sheet_music_pdf_url: eventSong?.songs?.sheet_music_pdf_url || null,
+          event_order_index: eventSong?.order_index ?? 999
         };
       });
 
