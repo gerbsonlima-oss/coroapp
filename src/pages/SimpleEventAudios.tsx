@@ -75,6 +75,7 @@ interface SongAudio {
   song_lyrics: string | null;
   song_chords: string | null;
   song_sheet_music_pdf_url: string | null;
+  event_order_index?: number;
 }
 
 interface SongType {
@@ -86,7 +87,12 @@ interface SongType {
 
 const sortByTypeOrder = (audios: SongAudio[]): SongAudio[] => {
   return [...audios].sort((a, b) => {
-    // First sort by song type order
+    // First sort by event order_index (from drag-and-drop reordering)
+    const aOrder = a.event_order_index ?? 999;
+    const bOrder = b.event_order_index ?? 999;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    
+    // Fallback: sort by song type order
     const typeOrderCompare = a.song_type_order - b.song_type_order;
     if (typeOrderCompare !== 0) return typeOrderCompare;
     
@@ -432,7 +438,8 @@ const SimpleEventAudios = () => {
           song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
           song_lyrics: eventSong?.songs?.lyrics || null,
           song_chords: eventSong?.songs?.chords || null,
-          song_sheet_music_pdf_url: eventSong?.songs?.sheet_music_pdf_url || null
+          song_sheet_music_pdf_url: eventSong?.songs?.sheet_music_pdf_url || null,
+          event_order_index: eventSong?.order_index ?? 999
         };
       });
 
@@ -457,7 +464,8 @@ const SimpleEventAudios = () => {
             song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
             song_lyrics: es.songs?.lyrics || null,
             song_chords: es.songs?.chords || null,
-            song_sheet_music_pdf_url: es.songs?.sheet_music_pdf_url || null
+            song_sheet_music_pdf_url: es.songs?.sheet_music_pdf_url || null,
+            event_order_index: es.order_index ?? 999
           };
         });
 
