@@ -397,6 +397,7 @@ const EventDetails = () => {
         error: eventSongsError
       } = await supabase.from('event_songs').select(`
           id,
+          type,
           songs (*)
         `).eq('event_id', id).order('order_index');
       if (eventSongsError) throw eventSongsError;
@@ -426,6 +427,7 @@ const EventDetails = () => {
 
       const formattedSongs = eventSongsData.map((es: any) => ({
         ...es.songs,
+        type: es.type || es.songs.type,
         event_song_id: es.id,
         audios: audiosData?.filter((a: any) => a.song_id === es.songs.id) || []
       }));
