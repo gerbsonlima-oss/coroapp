@@ -104,16 +104,21 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         if (!tenantsError && tenants) {
           setUserTenants(tenants);
           
-          // Set active tenant: use stored preference or first tenant
-          const storedSlug = localStorage.getItem(TENANT_STORAGE_KEY);
-          const storedTenant = storedSlug ? tenants.find(t => t.slug === storedSlug) : null;
-          const activeTenant = storedTenant || tenants[0];
-          
-          if (activeTenant) {
-            setTenant(activeTenant);
-            saveTenantConfig(activeTenant);
-            localStorage.setItem(TENANT_STORAGE_KEY, activeTenant.slug);
-          }
+          // Only set active tenant if none is currently selected or current is invalid
+          setTenant(prev => {
+            const currentStillValid = prev && tenants.find(t => t.id === prev.id);
+            if (currentStillValid) return prev;
+            
+            const storedSlug = localStorage.getItem(TENANT_STORAGE_KEY);
+            const storedTenant = storedSlug ? tenants.find(t => t.slug === storedSlug) : null;
+            const activeTenant = storedTenant || tenants[0];
+            
+            if (activeTenant) {
+              saveTenantConfig(activeTenant);
+              localStorage.setItem(TENANT_STORAGE_KEY, activeTenant.slug);
+            }
+            return activeTenant || null;
+          });
         }
       } catch (err) {
         console.error('Error fetching user tenants:', err);
