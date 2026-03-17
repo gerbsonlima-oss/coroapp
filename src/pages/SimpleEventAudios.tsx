@@ -87,7 +87,12 @@ interface SongType {
 
 const sortByTypeOrder = (audios: SongAudio[]): SongAudio[] => {
   return [...audios].sort((a, b) => {
-    // First sort by song type order
+    // First sort by event order_index (from drag-and-drop reordering)
+    const aOrder = a.event_order_index ?? 999;
+    const bOrder = b.event_order_index ?? 999;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    
+    // Fallback: sort by song type order
     const typeOrderCompare = a.song_type_order - b.song_type_order;
     if (typeOrderCompare !== 0) return typeOrderCompare;
     
