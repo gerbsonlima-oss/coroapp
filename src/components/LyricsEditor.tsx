@@ -67,7 +67,7 @@ const ToolbarButton = ({
   </TooltipProvider>
 );
 
-const MenuBar = ({ editor }: { editor: any }) => {
+const MenuBar = ({ editor }: { editor: Editor | null }) => {
   const [colorPopoverOpen, setColorPopoverOpen] = useState(false);
   
   if (!editor) return null;
