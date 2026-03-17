@@ -58,6 +58,7 @@ const defaultTypeLabels: Record<string, { name: string; order: number }> = {
   cordeiro: { name: 'Cordeiro', order: 8 },
   comunhao: { name: 'Canto da Comunhão', order: 9 },
   acao_gracas: { name: 'Ação de Graças', order: 10 },
+  canto_processional: { name: 'Canto Processional', order: 12 },
   final: { name: 'Final', order: 11 },
   outro: { name: 'Outro', order: 99 },
 };
