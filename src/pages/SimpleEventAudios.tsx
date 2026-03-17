@@ -75,6 +75,7 @@ interface SongAudio {
   song_lyrics: string | null;
   song_chords: string | null;
   song_sheet_music_pdf_url: string | null;
+  event_order_index?: number;
 }
 
 interface SongType {
