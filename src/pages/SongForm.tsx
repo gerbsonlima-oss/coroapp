@@ -105,6 +105,7 @@ const SongForm = () => {
         const { data, error } = await supabase
           .from('song_types')
           .select('id, slug, name')
+          .is('tenant_id', null)
           .order('order_index');
 
         if (error) throw error;

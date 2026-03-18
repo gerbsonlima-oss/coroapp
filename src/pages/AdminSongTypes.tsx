@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,7 +51,6 @@ interface SongType {
 
 const AdminSongTypes = () => {
   const navigate = useNavigate();
-  const { tenantId } = useTenant();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
@@ -77,10 +75,8 @@ const AdminSongTypes = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (tenantId) {
-      fetchSongTypes();
-    }
-  }, [tenantId]);
+    fetchSongTypes();
+  }, []);
 
   const fetchSongTypes = async () => {
     try {
@@ -88,6 +84,7 @@ const AdminSongTypes = () => {
       const { data, error } = await supabase
         .from('song_types')
         .select('*')
+        .is('tenant_id', null)
         .order('order_index');
 
       if (error) throw error;
@@ -157,7 +154,7 @@ const AdminSongTypes = () => {
               slug: validatedData.slug,
               description: validatedData.description || null,
               order_index: maxOrderIndex + 1,
-              tenant_id: tenantId,
+              tenant_id: null,
             },
           ]);
 

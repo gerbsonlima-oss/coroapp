@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, X, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
@@ -67,8 +67,6 @@ export const EventSongTypeManager = ({
   const [newSongName, setNewSongName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isTypeDialogOpen, setIsTypeDialogOpen] = useState(false);
-  const [editingType, setEditingType] = useState<EventSongType | null>(null);
-  const [typeLabelInput, setTypeLabelInput] = useState('');
   const [globalSongTypes, setGlobalSongTypes] = useState<SongType[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
 
@@ -82,6 +80,7 @@ export const EventSongTypeManager = ({
       const { data, error } = await supabase
         .from('song_types')
         .select('*')
+        .is('tenant_id', null)
         .order('order_index');
 
       if (error) throw error;
@@ -142,76 +141,13 @@ export const EventSongTypeManager = ({
     }
   };
 
-  const normalizeLabelToTypeId = (label: string) => {
-    const base = label
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    return base || `tipo_${Date.now()}`;
-  };
-
   const openNewTypeDialog = () => {
     if (disabled || loadingTypes) return;
-    setEditingType(null);
-    setTypeLabelInput('');
-    setIsTypeDialogOpen(true);
-  };
-
-  const openEditTypeDialog = (type: EventSongType) => {
-    if (disabled) return;
-    setEditingType(type);
-    setTypeLabelInput(type.label);
     setIsTypeDialogOpen(true);
   };
 
   const closeTypeDialog = () => {
     setIsTypeDialogOpen(false);
-    setEditingType(null);
-    setTypeLabelInput('');
-  };
-
-  const handleSaveType = () => {
-    const label = typeLabelInput.trim();
-    if (!label) {
-      toast.error('Nome do tipo é obrigatório');
-      return;
-    }
-
-    const existingLabels = eventSongTypes.map((t) => t.label.toLowerCase());
-    if (
-      (!editingType || editingType.label.toLowerCase() !== label.toLowerCase()) &&
-      existingLabels.includes(label.toLowerCase())
-    ) {
-      toast.error('Já existe um tipo com esse nome');
-      return;
-    }
-
-    if (editingType) {
-      const updated = eventSongTypes.map((t) =>
-        t.type === editingType.type ? { ...t, label } : t
-      );
-      onSongTypesChange(updated);
-    } else {
-      let typeId = normalizeLabelToTypeId(label);
-      const existingIds = new Set(eventSongTypes.map((t) => t.type));
-      let suffix = 1;
-      while (existingIds.has(typeId)) {
-        typeId = `${typeId}_${suffix++}`;
-      }
-
-      const updated = [
-        ...eventSongTypes,
-        {
-          type: typeId,
-          label,
-        },
-      ];
-      onSongTypesChange(updated);
-    }
-
-    closeTypeDialog();
   };
 
   const handleDeleteType = (typeId: string) => {
@@ -253,18 +189,6 @@ export const EventSongTypeManager = ({
               <div className="flex-1">
                 <p className="text-sm font-medium">{item.label}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    className="px-0"
-                    onClick={() => openEditTypeDialog(item)}
-                    disabled={disabled}
-                  >
-                    <Edit2 className="mr-1 h-3 w-3" />
-                    Editar tipo
-                  </Button>
-                  <span className="text-border">•</span>
                   <Button
                     type="button"
                     variant="link"
@@ -420,119 +344,68 @@ export const EventSongTypeManager = ({
       <Dialog open={isTypeDialogOpen} onOpenChange={closeTypeDialog}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingType ? 'Editar tipo de música' : 'Adicionar tipo de música'}
-            </DialogTitle>
+            <DialogTitle>Adicionar tipo de música</DialogTitle>
             <DialogDescription>
-              {editingType 
-                ? 'Edite o nome do tipo de música para este evento.'
-                : 'Selecione um tipo existente ou crie um novo tipo personalizado.'}
+              Selecione um tipo global para este evento.
             </DialogDescription>
           </DialogHeader>
 
-          {editingType ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="type-label">Nome do tipo *</Label>
-                <Input
-                  id="type-label"
-                  placeholder="Ex.: Entrada"
-                  value={typeLabelInput}
-                  onChange={(e) => setTypeLabelInput(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={closeTypeDialog}>
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSaveType}
-                  className="gradient-primary shadow-glow"
-                >
-                  Salvar alterações
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Tipos de música disponíveis</Label>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {globalSongTypes.map((type) => {
-                    const alreadyAdded = eventSongTypes.some(
-                      (et) => et.songTypeId === type.id
-                    );
-                    return (
-                      <Card
-                        key={type.id}
-                        className={cn(
-                          'p-3 cursor-pointer hover:bg-muted/50 transition-colors',
-                          alreadyAdded && 'opacity-50 cursor-not-allowed'
-                        )}
-                        onClick={() => {
-                          if (alreadyAdded) return;
-                          const updated = [
-                            ...eventSongTypes,
-                            {
-                              type: type.slug,
-                              label: type.name,
-                              songTypeId: type.id,
-                            },
-                          ];
-                          onSongTypesChange(updated);
-                          closeTypeDialog();
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{type.name}</p>
-                            {type.description && (
-                              <p className="text-xs text-muted-foreground">
-                                {type.description}
-                              </p>
-                            )}
-                          </div>
-                          {alreadyAdded && (
-                            <Badge variant="secondary" className="text-xs">
-                              Adicionado
-                            </Badge>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tipos de música disponíveis</Label>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {globalSongTypes.map((type) => {
+                  const alreadyAdded = eventSongTypes.some(
+                    (et) => et.songTypeId === type.id
+                  );
+                  return (
+                    <Card
+                      key={type.id}
+                      className={cn(
+                        'p-3 cursor-pointer hover:bg-muted/50 transition-colors',
+                        alreadyAdded && 'opacity-50 cursor-not-allowed'
+                      )}
+                      onClick={() => {
+                        if (alreadyAdded) return;
+                        const updated = [
+                          ...eventSongTypes,
+                          {
+                            type: type.slug,
+                            label: type.name,
+                            songTypeId: type.id,
+                          },
+                        ];
+                        onSongTypesChange(updated);
+                        closeTypeDialog();
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{type.name}</p>
+                          {type.description && (
+                            <p className="text-xs text-muted-foreground">
+                              {type.description}
+                            </p>
                           )}
                         </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="custom-type-label">Ou criar tipo personalizado</Label>
-                <Input
-                  id="custom-type-label"
-                  placeholder="Ex.: Canto Especial"
-                  value={typeLabelInput}
-                  onChange={(e) => setTypeLabelInput(e.target.value)}
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={closeTypeDialog}>
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSaveType}
-                  className="gradient-primary shadow-glow"
-                  disabled={!typeLabelInput.trim()}
-                >
-                  Criar tipo personalizado
-                </Button>
+                        {alreadyAdded && (
+                          <Badge variant="secondary" className="text-xs">
+                            Adicionado
+                          </Badge>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={closeTypeDialog}>
+                Fechar
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

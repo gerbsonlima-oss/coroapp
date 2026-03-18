@@ -217,6 +217,7 @@ const loadTypeLabels = async (): Promise<Record<string, string>> => {
     const { data, error } = await supabase
       .from('song_types')
       .select('slug, name')
+      .is('tenant_id', null)
       .order('order_index');
 
     if (error) throw error;
