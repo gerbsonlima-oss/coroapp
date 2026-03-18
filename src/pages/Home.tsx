@@ -76,6 +76,7 @@ const Home = () => {
         const todayStr = format(today, 'yyyy-MM-dd');
         
         return savedEvents
+          .filter(event => (!tenantId || event.tenant_id === tenantId))
           .filter(event => event.date >= todayStr)
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 10);
@@ -109,6 +110,7 @@ const Home = () => {
         const todayStr = format(today, 'yyyy-MM-dd');
         
         return savedEvents
+          .filter(event => (!tenantId || event.tenant_id === tenantId))
           .filter(event => event.date < todayStr)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 10);

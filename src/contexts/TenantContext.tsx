@@ -104,15 +104,16 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         if (!tenantsError && tenants) {
           setUserTenants(tenants);
           
-          // Only set active tenant if none is currently selected or current is invalid
+          // Only set active tenant if none is currently selected
           setTenant(prev => {
-            const currentStillValid = prev && tenants.find(t => t.id === prev.id);
-            if (currentStillValid) return prev;
-            
+            if (prev) return prev;
+
             const storedSlug = localStorage.getItem(TENANT_STORAGE_KEY);
-            const storedTenant = storedSlug ? tenants.find(t => t.slug === storedSlug) : null;
+            const storedTenant =
+              (storedSlug ? availableTenants.find(t => t.slug === storedSlug) : null) ||
+              (storedSlug ? tenants.find(t => t.slug === storedSlug) : null);
             const activeTenant = storedTenant || tenants[0];
-            
+
             if (activeTenant) {
               saveTenantConfig(activeTenant);
               localStorage.setItem(TENANT_STORAGE_KEY, activeTenant.slug);
@@ -131,7 +132,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       }
     }
     fetchUserTenants();
-  }, [user]);
+  }, [user, availableTenants]);
 
   const switchTenant = (slug: string) => {
     const found = userTenants.find(t => t.slug === slug) || availableTenants.find(t => t.slug === slug);

@@ -102,8 +102,12 @@ const Events = () => {
     } catch (error: unknown) {
       const cachedEvents = await getOfflineEvents();
       
-      if (cachedEvents.length > 0) {
-        setEvents(cachedEvents);
+      const filteredCached = tenantId
+        ? cachedEvents.filter(e => e.tenant_id === tenantId)
+        : cachedEvents;
+
+      if (filteredCached.length > 0) {
+        setEvents(filteredCached);
         setIsOffline(true);
         toast.info('Modo offline: mostrando eventos salvos');
       } else {
