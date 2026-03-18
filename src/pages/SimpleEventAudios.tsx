@@ -1,17 +1,16 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, Filter, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1, ListOrdered } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1, ListOrdered } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -105,7 +104,6 @@ const sortByTypeOrder = (audios: SongAudio[]): SongAudio[] => {
 
 const SimpleEventAudios = () => {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { tenantSlug, tenant } = useTenant();
@@ -146,15 +144,10 @@ const SimpleEventAudios = () => {
   const [sheetMusicUrl, setSheetMusicUrl] = useState<string | null>(null);
   const [sheetSongName, setSheetSongName] = useState<string>('');
   const [isSeeking, setIsSeeking] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(() => {
-    return localStorage.getItem('simpleEvent_searchQuery') || '';
-  });
   const [selectedNaipes, setSelectedNaipes] = useState<string[]>(() => {
     const saved = localStorage.getItem('simpleEvent_selectedNaipes');
     return saved ? JSON.parse(saved) : [];
   });
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [showExportLyricsDialog, setShowExportLyricsDialog] = useState(false);
   const [showReorderSheet, setShowReorderSheet] = useState(false);
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
@@ -187,16 +180,8 @@ const SimpleEventAudios = () => {
         selectedNaipes.includes(a.naipe)
       );
     }
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      result = result.filter(a => 
-        a.song_name.toLowerCase().includes(query) ||
-        a.song_type_name.toLowerCase().includes(query) ||
-        (a.naipe && a.naipe.toLowerCase().includes(query))
-      );
-    }
     return result;
-  }, [audios, selectedNaipes, searchQuery]);
+  }, [audios, selectedNaipes]);
 
   const handlePlay = async (audio: SongAudio) => {
     const index = filteredAudios.findIndex(a => a.id === audio.id);
@@ -238,12 +223,6 @@ const SimpleEventAudios = () => {
   const [addingSong, setAddingSong] = useState(false);
   const [songTypesForModal, setSongTypesForModal] = useState<SongType[]>([]);
   
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    localStorage.setItem('simpleEvent_searchQuery', searchQuery);
-  }, [searchQuery]);
-
   useEffect(() => {
     localStorage.setItem('simpleEvent_selectedNaipes', JSON.stringify(selectedNaipes));
   }, [selectedNaipes]);
@@ -512,7 +491,6 @@ const SimpleEventAudios = () => {
 
   const clearFilters = () => {
     setSelectedNaipes([]);
-    setSearchQuery('');
   };
 
   const handleDownload = async (audio: SongAudio) => {
@@ -875,51 +853,6 @@ const SimpleEventAudios = () => {
                 </Button>
               )}
               <div className="min-w-0 flex-1" />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 shrink-0"
-                onClick={() => setSearchOpen(true)}
-                title="Buscar música"
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-              <Button
-                variant={selectedNaipes.length > 0 ? "default" : "ghost"}
-                size="icon"
-                className="h-11 w-11 shrink-0"
-                onClick={() => setFilterOpen(true)}
-                title="Filtrar por voz"
-              >
-                <Filter className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="hidden">
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="flex h-11 flex-1 items-center gap-2 rounded-xl border border-border/70 bg-background px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/40"
-              >
-                <Search className="h-4 w-4 shrink-0" />
-                <span className="truncate">
-                  {searchQuery ? `Busca: ${searchQuery}` : 'Buscar música ou parte da celebração'}
-                </span>
-              </button>
-              <Button
-                variant="outline"
-                className="h-11 gap-2 rounded-xl px-4"
-                onClick={handleDownloadAllAudios}
-                disabled={isDownloadingAll || audios.length === 0}
-                title="Baixar áudios"
-              >
-                {isDownloadingAll ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <FileArchive className="h-4 w-4" />
-                )}
-                <span className="hidden sm:inline">Baixar</span>
-              </Button>
             </div>
           </div>
         </div>
@@ -1068,16 +1001,6 @@ const SimpleEventAudios = () => {
                   
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem onClick={() => setSearchOpen(true)}>
-                    <Search className="mr-2 h-4 w-4" />
-                    Buscar Música
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem onClick={() => setFilterOpen(true)}>
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filtrar por Voz
-                  </DropdownMenuItem>
-                  
                   <DropdownMenuItem 
                     onClick={handleDownloadAllAudios} 
                     disabled={isDownloadingAll || audios.length === 0}
@@ -1235,103 +1158,24 @@ const SimpleEventAudios = () => {
           )}
           
           {/* Active filters indicator */}
-          {(searchQuery || selectedNaipes.length > 0) && (
+          {selectedNaipes.length > 0 && (
             <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                   {filteredAudios.length} {filteredAudios.length === 1 ? 'resultado' : 'resultados'}
                 </span>
               </div>
-              {searchQuery && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
-                  onClick={clearFilters}
-                >
-                  <X className="h-3.5 w-3.5 mr-1" />
-                  Limpar busca
-                </Button>
-              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                onClick={clearFilters}
+              >
+                <X className="h-3.5 w-3.5 mr-1" />
+                Limpar filtros
+              </Button>
             </div>
           )}
-
-          {/* Search Dialog */}
-          <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-            <DialogContent className="w-[90vw] max-w-sm p-4 pt-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  autoFocus
-                  placeholder="Buscar música..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-11"
-                />
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Button 
-                  variant="ghost" 
-                  className="flex-1" 
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSearchOpen(false);
-                  }}
-                >
-                  Limpar
-                </Button>
-                <Button 
-                  className="flex-1" 
-                  onClick={() => setSearchOpen(false)}
-                >
-                  Pronto
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Filter Dialog */}
-          <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-            <DialogContent className="w-[90vw] max-w-sm p-4 pt-8">
-              <DialogHeader>
-                <DialogTitle className="text-base">Filtrar por voz</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-2 py-4">
-                {availableNaipes.map((naipe) => (
-                  <Button
-                    key={naipe}
-                    variant={selectedNaipes.includes(naipe) ? "default" : "outline"}
-                    className="justify-start gap-2 h-10 px-3"
-                    onClick={() => toggleNaipe(naipe)}
-                  >
-                    <Checkbox
-                      checked={selectedNaipes.includes(naipe)}
-                      className="border-current data-[state=checked]:bg-foreground data-[state=checked]:text-background"
-                    />
-                    <span className="truncate">{naipe}</span>
-                  </Button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="ghost" 
-                  className="flex-1" 
-                  onClick={() => {
-                    setSelectedNaipes([]);
-                    setFilterOpen(false);
-                  }}
-                >
-                  Limpar
-                </Button>
-                <Button 
-                  className="flex-1" 
-                  onClick={() => setFilterOpen(false)}
-                >
-                  Aplicar
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           {audios.length === 0 ? (
             <Card className="p-8 text-center">

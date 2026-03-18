@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
+import { ChatbotAssistant } from '@/components/ChatbotAssistant';
 
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
@@ -256,6 +257,8 @@ const Home = () => {
 
       {/* Tenant Switcher + Content */}
       <div className="px-4 py-6 space-y-6 max-w-6xl mx-auto">
+        <ChatbotAssistant />
+
         {/* Birthday Panel */}
         {tenantId && <BirthdayPanel tenantId={tenantId} />}
 

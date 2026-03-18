@@ -20,7 +20,6 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Events = lazy(() => import("./pages/Events"));
 const NewEvent = lazy(() => import("./pages/NewEvent"));
 const EditEvent = lazy(() => import("./pages/EditEvent"));
-const EventDetails = lazy(() => import("./pages/EventDetails"));
 const EventQuickEdit = lazy(() => import("./pages/EventQuickEdit"));
 const SimpleEventAudios = lazy(() => import("./pages/SimpleEventAudios"));
 const Songs = lazy(() => import("./pages/Songs"));
@@ -64,7 +63,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/e/:id" element={<SimpleEventAudios />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
-            <Route path="/public/events/:id" element={<EventDetails />} />
+            <Route path="/public/events/:id" element={<SimpleEventAudios />} />
 
             {/* Main app routes */}
             <Route path="/" element={<AuthOrTenantSelection />} />
