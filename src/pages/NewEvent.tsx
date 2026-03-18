@@ -302,7 +302,6 @@ const NewEvent = () => {
               />
               {errors.notes && <p className="text-xs text-red-500">{errors.notes}</p>}
             </div>
-            </div>
 
             <Button
               type="submit"
