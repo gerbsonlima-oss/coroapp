@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Sparkles, MapPin, Clock, History, Building2, Settings } from 'lucide-react';
+import { Calendar, Sparkles, MapPin, Clock, History, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
@@ -44,13 +43,13 @@ const Home = () => {
   const navigate = useNavigate();
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
-  const { tenant, tenantId, userTenants, userTenantIds, isMultiTenant } = useTenant();
+  const { tenant, tenantId } = useTenant();
   const { saveEvents } = useOfflineStorage();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
 
-  // Use all user tenant IDs for multi-tenant, or just the current one
-  const queryTenantIds = isMultiTenant ? userTenantIds : (tenantId ? [tenantId] : []);
+  // Always use current tenant only
+  const queryTenantIds = tenantId ? [tenantId] : [];
 
   const { data: upcomingEventsData } = useQuery({
     queryKey: ['upcoming-events', queryTenantIds],
@@ -150,29 +149,6 @@ const Home = () => {
     ? getLiturgicalColor(liturgicalDay.liturgicalSeason)
     : 'from-blue-600 to-blue-900';
 
-  // Helper to get tenant name by ID
-  const getTenantName = (tId: string | null) => {
-    if (!tId) return '';
-    const t = userTenants.find(ut => ut.id === tId);
-    return t?.name || '';
-  };
-
-  // Group events by tenant for display
-  const groupEventsByTenant = (events: Event[]) => {
-    if (!isMultiTenant) return [{ tenant: null, events }];
-    
-    const groups: { tenant: typeof userTenants[0] | null; events: Event[] }[] = [];
-    
-    for (const ut of userTenants) {
-      const tenantEvents = events.filter(e => e.tenant_id === ut.id);
-      if (tenantEvents.length > 0) {
-        groups.push({ tenant: ut, events: tenantEvents });
-      }
-    }
-    
-    return groups;
-  };
-
   const renderEventCard = (event: Event, isPast: boolean, index: number) => (
     <Card
       key={event.id}
@@ -194,11 +170,6 @@ const Home = () => {
       <div className="p-3 flex-1 flex flex-col justify-between min-w-0">
         <div className="flex items-center gap-2">
           <h3 className={`font-bold ${isPast ? 'text-sm line-clamp-1' : 'text-sm line-clamp-2'} group-hover:text-primary transition-colors`}>{event.name}</h3>
-          {isMultiTenant && event.tenant_id && (
-            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 shrink-0 font-medium">
-              {getTenantName(event.tenant_id)}
-            </Badge>
-          )}
         </div>
         <div className={`space-y-1 ${isPast ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
           <div className="flex items-center gap-1.5">
@@ -221,8 +192,6 @@ const Home = () => {
   const renderEventSection = (title: string, events: Event[], icon: React.ReactNode, isPast: boolean) => {
     if (!events || events.length === 0) return null;
 
-    const groups = groupEventsByTenant(events);
-
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -230,29 +199,9 @@ const Home = () => {
           <h3 className="font-semibold text-lg">{title}</h3>
         </div>
 
-        {isMultiTenant ? (
-          <div className="space-y-4">
-            {groups.map((group) => (
-              <div key={group.tenant?.id || 'default'} className="space-y-2">
-                {group.tenant && (
-                  <div className="flex items-center gap-2 pl-1">
-                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {group.tenant.name}
-                    </span>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  {group.events.map((event, index) => renderEventCard(event, isPast, index))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {events.map((event, index) => renderEventCard(event, isPast, index))}
-          </div>
-        )}
+        <div className="space-y-2">
+          {events.map((event, index) => renderEventCard(event, isPast, index))}
+        </div>
       </div>
     );
   };
@@ -287,21 +236,23 @@ const Home = () => {
             </div>
           )}
 
-          {(isAdmin || isSuperAdmin) && (
-            <button
-              onClick={(e) => { e.stopPropagation(); navigate('/admin'); }}
-              className="shrink-0 bg-white/15 hover:bg-white/25 rounded-full p-1.5 transition-colors"
-              aria-label="Painel Administrativo"
-            >
-              <Settings className="h-4 w-4 text-white" />
-            </button>
-          )}
+          <div className="flex items-center gap-1.5">
+            <TenantSwitcher buttonClassName="text-white hover:text-white/90 hover:bg-white/15" />
+            {(isAdmin || isSuperAdmin) && (
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate('/admin'); }}
+                className="shrink-0 bg-white/15 hover:bg-white/25 rounded-full p-1.5 transition-colors"
+                aria-label="Painel Administrativo"
+              >
+                <Settings className="h-4 w-4 text-white" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Tenant Switcher + Content */}
       <div className="px-4 py-6 space-y-6 max-w-6xl mx-auto">
-        <TenantSwitcher />
         {/* Birthday Panel */}
         {tenantId && <BirthdayPanel tenantId={tenantId} />}
 

@@ -9,6 +9,7 @@ import { format, addMonths, getDaysInMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useLiturgy } from '@/hooks/useLiturgy';
 import { getLiturgicalDay } from '@/data/liturgicalCalendar';
+import { TenantSwitcher } from '@/components/TenantSwitcher';
 
 interface DayCard {
   date: Date;
@@ -154,7 +155,9 @@ const Liturgy = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-bold">Liturgia</h1>
-        <div className="w-8" />
+        <div className="w-8 flex justify-end">
+          <TenantSwitcher />
+        </div>
       </div>
 
       {/* Content */}

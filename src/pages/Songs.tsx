@@ -13,7 +13,6 @@ import { exportSongsPDF } from '@/utils/exportSongsPDF';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SongAudioInlinePlayer } from '@/components/SongAudioInlinePlayer';
+import { TenantSwitcher } from '@/components/TenantSwitcher';
 
 interface SongTypeAlbum {
   type: string;
@@ -68,12 +68,12 @@ const Songs = () => {
   const [loadingAudios, setLoadingAudios] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { tenantId, tenant, userTenants, userTenantIds, isMultiTenant } = useTenant();
+  const { tenantId, tenant } = useTenant();
   const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
 
-  // Use all user tenant IDs for multi-tenant
-  const queryTenantIds = isMultiTenant ? userTenantIds : (tenantId ? [tenantId] : []);
+  // Always use current tenant only
+  const queryTenantIds = tenantId ? [tenantId] : [];
 
   useEffect(() => {
     localStorage.setItem('songs_groupBy', groupBy);
@@ -197,7 +197,11 @@ const Songs = () => {
 
       const [{ data: songTypesData, error: songTypesError }, { data: songsData, error: songsError }] =
         await Promise.all([
-          supabase.from('song_types').select('id, slug, name, order_index').order('order_index'),
+          supabase
+            .from('song_types')
+            .select('id, slug, name, order_index')
+            .is('tenant_id', null)
+            .order('order_index'),
           songsQuery,
         ]);
 
@@ -308,11 +312,6 @@ const Songs = () => {
             <p className="truncate text-[13px] font-medium text-foreground group-hover:text-primary transition-colors">
               {song.name}
             </p>
-            {isMultiTenant && song.tenant_id && (
-              <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 shrink-0">
-                {userTenants.find(ut => ut.id === song.tenant_id)?.name || ''}
-              </Badge>
-            )}
             <div className="flex items-center gap-0.5 ml-auto shrink-0">
               {hasLyrics && <FileText className="h-2.5 w-2.5 text-muted-foreground/40" />}
               {hasChords && <Guitar className="h-2.5 w-2.5 text-muted-foreground/40" />}
@@ -451,6 +450,7 @@ const Songs = () => {
             <h1 className="text-lg font-bold mb-0">Repertório</h1>
           </div>
           <div className="flex items-center gap-1">
+            <TenantSwitcher />
             <Button variant="ghost" size="icon" onClick={handleExportPDF} className="h-8 w-8 text-primary" title="Exportar PDF">
               <FileText className="h-4 w-4" />
             </Button>

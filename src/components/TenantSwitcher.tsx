@@ -1,15 +1,21 @@
 import { useTenant } from '@/contexts/TenantContext';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, ChevronDown, Check } from 'lucide-react';
+import { Building2, Check } from 'lucide-react';
 
-export function TenantSwitcher() {
+interface TenantSwitcherProps {
+  buttonClassName?: string;
+  menuClassName?: string;
+}
+
+export function TenantSwitcher({ buttonClassName, menuClassName }: TenantSwitcherProps) {
   const { tenant, userTenants, isMultiTenant, switchTenant, loading, availableTenants } = useTenant();
   const { isSuperAdmin } = useSuperAdmin();
 
@@ -18,29 +24,24 @@ export function TenantSwitcher() {
   const tenantsToShow = isSuperAdmin ? availableTenants : userTenants;
   const canSwitch = tenantsToShow.length > 1;
 
-  // Single tenant: show as a static badge
-  if (!canSwitch) {
-    return (
-      <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/50 px-4 py-2.5">
-        <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span className="text-sm font-medium text-foreground truncate">{tenant.name}</span>
-      </div>
-    );
-  }
+  // Single tenant: hide switcher entirely
+  if (!canSwitch) return null;
 
-  // Multiple tenants: show dropdown
+  // Multiple tenants: show compact icon dropdown
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2 w-full justify-between rounded-xl h-11">
-          <div className="flex items-center gap-2 min-w-0">
-            <Building2 className="h-4 w-4 shrink-0" />
-            <span className="truncate text-sm font-medium">{tenant.name}</span>
-          </div>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("h-8 w-8 text-muted-foreground hover:text-foreground", buttonClassName)}
+          aria-label="Trocar tenant"
+          title="Trocar tenant"
+        >
+          <Building2 className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+      <DropdownMenuContent align="end" className={cn("min-w-[220px]", menuClassName)}>
         {tenantsToShow.map((t) => (
           <DropdownMenuItem
             key={t.id}

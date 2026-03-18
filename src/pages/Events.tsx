@@ -8,13 +8,13 @@ import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { EventsReportExporter } from '@/components/EventsReportExporter';
-import { Plus, Calendar, Music, WifiOff, FileText, Search, X, LogOut, LogIn, Building2 } from 'lucide-react';
+import { Plus, Calendar, Music, WifiOff, FileText, Search, X, LogOut, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAudioCache } from '@/hooks/useAudioCache';
+import { TenantSwitcher } from '@/components/TenantSwitcher';
 
 import { EventListItem } from '@/components/EventListItem';
 
@@ -37,15 +37,15 @@ const Events = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
-  const { tenantId, userTenants, userTenantIds, isMultiTenant } = useTenant();
+  const { tenantId } = useTenant();
   const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canCreateEvent = isAdmin || isSuperAdmin;
   const navigate = useNavigate();
   const { cachedAudios } = useAudioCache();
 
-  // Use all user tenant IDs for multi-tenant, or just the current one
-  const queryTenantIds = isMultiTenant ? userTenantIds : (tenantId ? [tenantId] : []);
+  // Always use current tenant only
+  const queryTenantIds = tenantId ? [tenantId] : [];
 
   const filteredEvents = useMemo(() => {
     if (!searchQuery.trim()) return events;
@@ -125,24 +125,6 @@ const Events = () => {
     }
   };
 
-  // Helper to get tenant name
-  const getTenantName = (tId: string | null) => {
-    if (!tId) return '';
-    return userTenants.find(ut => ut.id === tId)?.name || '';
-  };
-
-  // Group events by tenant
-  const groupedEvents = useMemo(() => {
-    if (!isMultiTenant) return [{ tenant: null, events: filteredEvents }];
-    
-    return userTenants
-      .map(ut => ({
-        tenant: ut,
-        events: filteredEvents.filter(e => e.tenant_id === ut.id),
-      }))
-      .filter(g => g.events.length > 0);
-  }, [filteredEvents, isMultiTenant, userTenants]);
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -170,6 +152,7 @@ const Events = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5 md:gap-2">
+            <TenantSwitcher />
             <Button 
               variant="ghost" 
               size="icon" 
@@ -269,30 +252,7 @@ const Events = () => {
                 <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Nenhum evento encontrado para "{searchQuery}"</p>
               </div>
-            ) : isMultiTenant ? (
-              // Multi-tenant: group by tenant sections
-              <div className="space-y-6">
-                {groupedEvents.map((group) => (
-                  <div key={group.tenant?.id || 'default'} className="space-y-2">
-                    {group.tenant && (
-                      <div className="flex items-center gap-2 px-1 pt-2">
-                        <Building2 className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-bold text-foreground">
-                          {group.tenant.name}
-                        </span>
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                          {group.events.length}
-                        </Badge>
-                      </div>
-                    )}
-                    {group.events.map((event) => (
-                      <EventListItem key={event.id} event={event} />
-                    ))}
-                  </div>
-                ))}
-              </div>
             ) : (
-              // Single tenant: flat list
               filteredEvents.map((event) => (
                 <EventListItem key={event.id} event={event} />
               ))
