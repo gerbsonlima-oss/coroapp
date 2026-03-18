@@ -208,7 +208,6 @@ const EditEvent = () => {
         .eq('id', id);
 
       if (eventError) throw eventError;
-      }
 
       toast.success('Evento atualizado com sucesso!');
       navigate(`/events/${id}`);
