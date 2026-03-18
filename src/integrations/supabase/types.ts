@@ -103,45 +103,6 @@ export type Database = {
           },
         ]
       }
-      event_song_types: {
-        Row: {
-          created_at: string
-          event_id: string
-          id: string
-          order_index: number
-          song_type_id: string
-        }
-        Insert: {
-          created_at?: string
-          event_id: string
-          id?: string
-          order_index?: number
-          song_type_id: string
-        }
-        Update: {
-          created_at?: string
-          event_id?: string
-          id?: string
-          order_index?: number
-          song_type_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "event_song_types_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "event_song_types_song_type_id_fkey"
-            columns: ["song_type_id"]
-            isOneToOne: false
-            referencedRelation: "song_types"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       event_songs: {
         Row: {
           created_at: string | null

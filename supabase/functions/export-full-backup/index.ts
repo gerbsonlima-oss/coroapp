@@ -17,7 +17,6 @@ interface BackupManifest {
     songAudios: number;
     events: number;
     eventSongs: number;
-    eventSongTypes: number;
     eventMembers: number;
     choirMembers: number;
     rehearsals: number;
@@ -88,16 +87,13 @@ Deno.serve(async (req) => {
       songAudiosRes,
       eventsRes,
       eventSongsRes,
-      eventSongTypesRes,
       eventMembersRes,
       choirMembersRes,
       rehearsalsRes,
       rehearsalAttendanceRes,
     ] = await Promise.all([
       supabaseAdmin.from('tenants').select('*'),
-      tenantId 
-        ? supabaseAdmin.from('song_types').select('*').eq('tenant_id', tenantId)
-        : supabaseAdmin.from('song_types').select('*'),
+      supabaseAdmin.from('song_types').select('*').is('tenant_id', null),
       tenantId
         ? supabaseAdmin.from('songs').select('*').eq('tenant_id', tenantId)
         : supabaseAdmin.from('songs').select('*'),
@@ -108,7 +104,6 @@ Deno.serve(async (req) => {
         ? supabaseAdmin.from('events').select('*').eq('tenant_id', tenantId)
         : supabaseAdmin.from('events').select('*'),
       supabaseAdmin.from('event_songs').select('*'),
-      supabaseAdmin.from('event_song_types').select('*'),
       supabaseAdmin.from('event_members').select('*'),
       tenantId
         ? supabaseAdmin.from('choir_members').select('*').eq('tenant_id', tenantId)
@@ -127,7 +122,6 @@ Deno.serve(async (req) => {
       songAudiosRes.error,
       eventsRes.error,
       eventSongsRes.error,
-      eventSongTypesRes.error,
       eventMembersRes.error,
       choirMembersRes.error,
       rehearsalsRes.error,
@@ -148,16 +142,14 @@ Deno.serve(async (req) => {
     const songAudios = songAudiosRes.data || [];
     const events = eventsRes.data || [];
     const eventSongs = eventSongsRes.data || [];
-    const eventSongTypes = eventSongTypesRes.data || [];
     const eventMembers = eventMembersRes.data || [];
     const choirMembers = choirMembersRes.data || [];
     const rehearsals = rehearsalsRes.data || [];
     const rehearsalAttendance = rehearsalAttendanceRes.data || [];
 
-    // Filter event_songs, event_song_types, and event_members to only include those from exported events
+    // Filter event_songs and event_members to only include those from exported events
     const eventIds = new Set(events.map(e => e.id));
     const filteredEventSongs = eventSongs.filter(es => eventIds.has(es.event_id));
-    const filteredEventSongTypes = eventSongTypes.filter(est => eventIds.has(est.event_id));
     const filteredEventMembers = eventMembers.filter(em => eventIds.has(em.event_id));
 
     // Filter rehearsal_attendance to only include those from exported rehearsals
@@ -223,7 +215,6 @@ Deno.serve(async (req) => {
         songAudios: songAudios.length,
         events: events.length,
         eventSongs: filteredEventSongs.length,
-        eventSongTypes: filteredEventSongTypes.length,
         eventMembers: filteredEventMembers.length,
         choirMembers: choirMembers.length,
         rehearsals: rehearsals.length,
@@ -242,7 +233,6 @@ Deno.serve(async (req) => {
         songAudios,
         events,
         eventSongs: filteredEventSongs,
-        eventSongTypes: filteredEventSongTypes,
         eventMembers: filteredEventMembers,
         choirMembers,
         rehearsals,

@@ -22,25 +22,6 @@ const eventSchema = z.object({
 });
 
 
-interface Song {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface EventSongType {
-  type: string;
-  label: string;
-  song?: Song;
-  songTypeId?: string;
-}
-
-interface SongType {
-  id: string;
-  slug: string;
-  name: string;
-}
-
 const NewEvent = () => {
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
@@ -51,10 +32,6 @@ const NewEvent = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [eventSongTypes, setEventSongTypes] = useState<EventSongType[]>([]);
-  const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
-  const [songTypes, setSongTypes] = useState<SongType[]>([]);
-  const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { tenantId, loading: tenantLoading } = useTenant();
@@ -67,104 +44,6 @@ const NewEvent = () => {
     }
   }, [isAdmin, adminLoading, navigate]);
 
-  useEffect(() => {
-    if (tenantId) {
-      fetchInitialData();
-    }
-  }, [tenantId]);
-
-  const fetchInitialData = async () => {
-    await Promise.all([fetchAvailableSongs(), fetchDefaultSongTypes()]);
-  };
-
-const fetchDefaultSongTypes = async () => {
-  try {
-    // ✅ Tipos de música agora são globais
-    const { data, error } = await supabase
-      .from('song_types')
-      .select('*')
-      .order('order_index');
-
-    if (error) throw error;
-
-    const types = data || [];
-    setSongTypes(types);
-
-    // Todos os tipos selecionados por padrão
-    const initialSelection: Record<string, boolean> = {};
-    types.forEach((type) => {
-      initialSelection[type.id] = true;
-    });
-    setSelectedTypeIds(initialSelection);
-  } catch (error) {
-    console.error('Error fetching song types:', error);
-    toast.error('Erro ao carregar tipos de música');
-  }
-};
-
-  const fetchAvailableSongs = async () => {
-    if (!tenantId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('songs')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('name');
-
-      if (error) throw error;
-      setAvailableSongs(data || []);
-    } catch (error) {
-      console.error('Error fetching songs:', error);
-    }
-  };
-
-const handleSongSelect = (type: string, song: Song) => {
-  setEventSongTypes((prev) =>
-    prev.map((item) => (item.type === type ? { ...item, song } : item))
-  );
-};
-
-const handleSongRemove = (type: string) => {
-  setEventSongTypes((prev) =>
-    prev.map((item) => (item.type === type ? { ...item, song: undefined } : item))
-  );
-};
-
-const handleSongCreate = async (type: string, songName: string) => {
-  try {
-    const { data: songData, error: songError } = await supabase
-      .from('songs')
-      .insert([
-        {
-          user_id: user?.id,
-          tenant_id: tenantId,
-          name: songName,
-          type: type,
-          notes: '',
-          sheet_music_url: null,
-        },
-      ])
-      .select()
-      .single();
-
-    if (songError) throw songError;
-
-    setAvailableSongs((prev) => [...prev, songData]);
-    handleSongSelect(type, songData);
-    toast.success('Música criada com sucesso!');
-  } catch (error) {
-    toast.error('Erro ao criar música');
-    throw error;
-  }
-};
-
-const toggleTypeSelection = (typeId: string) => {
-  setSelectedTypeIds((prev) => ({
-    ...prev,
-    [typeId]: !prev[typeId],
-  }));
-};
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -275,21 +154,6 @@ const toggleTypeSelection = (typeId: string) => {
         .single();
 
       if (eventError) throw eventError;
-
-      // Salvar seleção de tipos para o evento
-      const selectedTypes = songTypes.filter((type) => selectedTypeIds[type.id]);
-      if (selectedTypes.length > 0) {
-        const { error: typesError } = await supabase
-          .from('event_song_types')
-          .insert(
-            selectedTypes.map((type, index) => ({
-              event_id: eventData.id,
-              song_type_id: type.id,
-              order_index: index,
-            }))
-          );
-
-        if (typesError) throw typesError;
       }
 
       toast.success('Evento criado com sucesso!');
@@ -439,30 +303,6 @@ const toggleTypeSelection = (typeId: string) => {
               />
               {errors.notes && <p className="text-xs text-red-500">{errors.notes}</p>}
             </div>
-
-            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
-              <Label className="text-xs font-semibold">Tipos de música deste evento</Label>
-              <p className="text-xs text-muted-foreground">
-                Selecione quais tipos litúrgicos serão utilizados neste evento. Todos vêm
-                selecionados por padrão.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {songTypes.map((type) => (
-                  <label
-                    key={type.id}
-                    className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs"
-                  >
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-border accent-primary"
-                      checked={!!selectedTypeIds[type.id]}
-                      onChange={() => toggleTypeSelection(type.id)}
-                      disabled={loading}
-                    />
-                    <span className="font-medium truncate">{type.name}</span>
-                  </label>
-                ))}
-              </div>
             </div>
 
             <Button

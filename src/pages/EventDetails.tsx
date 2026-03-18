@@ -247,12 +247,6 @@ const EventDetails = () => {
   const [isCreatingSong, setIsCreatingSong] = useState(false);
 
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
-  const [eventTypes, setEventTypes] = useState<{
-    id: string;
-    slug: string;
-    name: string;
-    order_index: number;
-  }[]>([]);
   const navigate = useNavigate();
   const {
     cacheMultipleAudios,
@@ -267,14 +261,16 @@ const EventDetails = () => {
   }>({});
 
   useEffect(() => {
-    if (tenantId) {
-      fetchSongTypes();
-    }
-  }, [tenantId]);
+    fetchSongTypes();
+  }, []);
 
   const fetchSongTypes = async () => {
     try {
-      const { data, error } = await supabase.from('song_types').select('*').order('order_index');
+      const { data, error } = await supabase
+        .from('song_types')
+        .select('*')
+        .is('tenant_id', null)
+        .order('order_index');
       if (error) throw error;
       const labels: Record<string, string> = {};
       (data || []).forEach(type => {
@@ -401,23 +397,6 @@ const EventDetails = () => {
           songs (*)
         `).eq('event_id', id).order('order_index');
       if (eventSongsError) throw eventSongsError;
-      const {
-        data: eventTypesData,
-        error: eventTypesError
-      } = await supabase.from('event_song_types').select(`
-          id,
-          order_index,
-          song_types (
-            id,
-            slug,
-            name,
-            order_index
-          )
-        `).eq('event_id', id).order('order_index');
-      if (eventTypesError) throw eventTypesError;
-      const types = (eventTypesData || []).map((row: any) => row.song_types).filter(Boolean);
-      setEventTypes(types);
-
       const songIds = eventSongsData.map((es: any) => es.songs.id);
       const {
         data: audiosData,
@@ -455,8 +434,6 @@ const EventDetails = () => {
         setEvent(cachedEvent);
         const cachedSongs = localStorage.getItem(`event_songs_data_${id}`);
         if (cachedSongs) setSongs(JSON.parse(cachedSongs));
-        const cachedTypes = localStorage.getItem(`event_types_data_${id}`);
-        if (cachedTypes) setEventTypes(JSON.parse(cachedTypes));
         toast.info('Modo offline: visualizando evento salvo');
       } else {
         toast.error('Erro ao carregar detalhes do evento');
@@ -729,7 +706,6 @@ const EventDetails = () => {
       localStorage.setItem(`event_audios_${event.id}`, JSON.stringify(allAudioUrls));
       localStorage.setItem(`event_sheets_${event.id}`, JSON.stringify(sheetMusicUrls));
       localStorage.setItem(`event_songs_data_${event.id}`, JSON.stringify(songs));
-      localStorage.setItem(`event_types_data_${event.id}`, JSON.stringify(eventTypes));
       
       console.log('[Offline] Event metadata saved to localStorage');
       
