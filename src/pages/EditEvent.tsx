@@ -109,7 +109,6 @@ const EditEvent = () => {
       setInitialLoading(false);
     }
   };
-  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
