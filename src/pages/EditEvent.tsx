@@ -45,6 +45,9 @@ const EditEvent = () => {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [pdfTheme, setPdfTheme] = useState<string>('deep_blue_gold');
   const { user } = useAuth();
   const { tenantId } = useTenant();
