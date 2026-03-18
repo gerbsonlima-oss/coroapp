@@ -58,6 +58,8 @@ const Events = () => {
     );
   }, [events, searchQuery]);
 
+  const hasActiveSearch = searchQuery.trim().length > 0;
+
   useEffect(() => {
     if (queryTenantIds.length > 0) {
       fetchEvents();
@@ -148,6 +150,9 @@ const Events = () => {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-bold">Meus Eventos</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {filteredEvents.length} de {events.length} evento(s)
+              </p>
               {isOffline && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                   <WifiOff className="h-3 w-3" />
@@ -233,11 +238,18 @@ const Events = () => {
                 <button
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Limpar busca"
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
             </div>
+
+            {hasActiveSearch && (
+              <p className="text-xs text-muted-foreground px-1">
+                Resultados para "{searchQuery}"
+              </p>
+            )}
 
             {/* Desktop New Event Button */}
             {user && canCreateEvent && (

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,15 +89,33 @@ const SongForm = () => {
   const [songTypes, setSongTypes] = useState<SongTypeOption[]>([]);
   const { user } = useAuth();
   const { tenantId } = useTenant();
+  const { buildPath } = useTenantPath();
   const navigate = useNavigate();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const totalNewAudios = Object.values(naipeAudios).reduce((sum, audios) => sum + audios.length, 0);
+  const totalAudioCount = existingAudios.length + totalNewAudios;
+  const completionSteps = [
+    Boolean(name.trim()),
+    Boolean(type),
+    Boolean(sheetMusic || (isEditMode && song?.sheet_music_url)),
+    Boolean(lyricsText.trim()),
+    Boolean(chordsText.trim()),
+  ];
+  const completionPercent = Math.round((completionSteps.filter(Boolean).length / completionSteps.length) * 100);
+  const backPath = returnTo
+    ? returnTo
+    : eventId
+      ? buildPath(`/events/${eventId}`)
+      : isEditMode
+        ? buildPath(`/songs/${id}`)
+        : buildPath('/songs');
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('Você não tem permissão para acessar esta página');
-      navigate('/songs');
+      navigate(buildPath('/songs'));
     }
-  }, [isAdmin, adminLoading, navigate]);
+  }, [isAdmin, adminLoading, navigate, buildPath]);
 
   useEffect(() => {
     const fetchSongTypes = async () => {
@@ -148,7 +166,7 @@ const SongForm = () => {
       await fetchAudios();
     } catch (error: any) {
       toast.error('Erro ao carregar música');
-      navigate('/songs');
+      navigate(buildPath('/songs'));
     } finally {
       setFetchLoading(false);
     }
@@ -399,11 +417,11 @@ const SongForm = () => {
       if (returnTo) {
         navigate(returnTo);
       } else if (eventId) {
-        navigate(`/events/${eventId}`);
+        navigate(buildPath(`/events/${eventId}`));
       } else if (isEditMode) {
-        navigate(`/songs/${songId}`);
+        navigate(buildPath(`/songs/${songId}`));
       } else {
-        navigate('/songs');
+        navigate(buildPath('/songs'));
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -438,7 +456,7 @@ const SongForm = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
         <div className="flex items-center gap-4 px-4 py-3">
           <button 
-            onClick={() => navigate(returnTo || (eventId ? `/events/${eventId}` : (isEditMode ? `/songs/${id}` : '/songs')))}
+            onClick={() => navigate(backPath)}
             className="p-2 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -447,7 +465,27 @@ const SongForm = () => {
         </div>
       </header>
 
-      <main className="px-3 py-3 max-w-2xl mx-auto h-[calc(100vh-80px)] flex flex-col">
+      <main className="px-3 py-3 max-w-2xl mx-auto h-[calc(100vh-80px)] flex flex-col pb-24">
+        <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card mb-3">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className="font-semibold">Progresso do cadastro</span>
+            <span className="text-muted-foreground">{completionPercent}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-secondary/60 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary/70 to-primary transition-all"
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+            <span className={`px-2 py-1 rounded-full border ${name.trim() ? 'border-primary/30 text-primary' : 'border-border/50'}`}>Nome</span>
+            <span className={`px-2 py-1 rounded-full border ${type ? 'border-primary/30 text-primary' : 'border-border/50'}`}>Tipo</span>
+            <span className={`px-2 py-1 rounded-full border ${(sheetMusic || (isEditMode && song?.sheet_music_url)) ? 'border-primary/30 text-primary' : 'border-border/50'}`}>Partitura</span>
+            <span className={`px-2 py-1 rounded-full border ${lyricsText.trim() ? 'border-primary/30 text-primary' : 'border-border/50'}`}>Letra</span>
+            <span className={`px-2 py-1 rounded-full border ${chordsText.trim() ? 'border-primary/30 text-primary' : 'border-border/50'}`}>Cifra</span>
+            <span className="px-2 py-1 rounded-full border border-border/50">Audios: {totalAudioCount}</span>
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-3 flex-1 overflow-y-auto">
           {/* Informações Básicas Card */}
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
@@ -612,7 +650,21 @@ const SongForm = () => {
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Anexe .txt, busque online ou use o editor abaixo</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Anexe .txt, busque online ou use o editor abaixo</p>
+              {lyricsText && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLyricsText('');
+                    setLyricsFile(null);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
             
             {/* Dica de formatação */}
             <div className="text-xs text-muted-foreground bg-secondary/30 p-2 rounded border border-primary/10">
@@ -682,9 +734,18 @@ const SongForm = () => {
               className="w-full rounded-lg bg-secondary/30 p-3 text-sm font-mono leading-relaxed border border-primary/10 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/20 resize-y min-h-[150px] placeholder:text-muted-foreground/50"
             />
             {chordsText && (
-              <p className="text-xs text-muted-foreground text-right">
-                {chordsText.length} caracteres
-              </p>
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setChordsText('')}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Limpar cifra
+                </button>
+                <p className="text-xs text-muted-foreground text-right">
+                  {chordsText.length} caracteres
+                </p>
+              </div>
             )}
           </div>
 
@@ -710,21 +771,31 @@ const SongForm = () => {
           </div>
         </form>
 
-        {/* Botão Salvar - Fixed Bottom */}
-        <Button
-          type="submit"
-          onClick={handleSubmit}
-          className="w-full h-12 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:to-primary text-primary-foreground hover:scale-105 transition-all text-sm font-bold shadow-glow hover:shadow-glow/50 mt-3"
-          disabled={loading || convertingPdf}
-        >
-          {loading || convertingPdf ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-          ) : (
-            <>
-              {isEditMode ? 'Salvar' : 'Cadastrar'}
-            </>
-          )}
-        </Button>
+        <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border/50 bg-background/90 backdrop-blur-md p-3">
+          <div className="mx-auto max-w-2xl flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 px-4"
+              onClick={() => navigate(backPath)}
+              disabled={loading || convertingPdf}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              className="flex-1 h-11 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:to-primary text-primary-foreground transition-all text-sm font-bold shadow-glow hover:shadow-glow/50"
+              disabled={loading || convertingPdf}
+            >
+              {loading || convertingPdf ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              ) : (
+                isEditMode ? 'Salvar alterações' : 'Cadastrar música'
+              )}
+            </Button>
+          </div>
+        </div>
       </main>
     </div>
   );
