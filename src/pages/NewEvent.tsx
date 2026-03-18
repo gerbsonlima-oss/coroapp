@@ -154,7 +154,6 @@ const NewEvent = () => {
         .single();
 
       if (eventError) throw eventError;
-      }
 
       toast.success('Evento criado com sucesso!');
       navigate('/events');
