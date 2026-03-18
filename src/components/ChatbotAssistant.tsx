@@ -238,7 +238,7 @@ export function ChatbotAssistant() {
   }
 
   function startIntent(nextIntent: ChatIntent) {
-    pushUser(nextIntent.replaceAll("_", " "));
+    pushUser(nextIntent.replace(/_/g, " "));
     if (!canWrite) {
       pushAssistant("Sem permissão de escrita no momento. Um admin pode executar esse fluxo.", "status");
       return;
