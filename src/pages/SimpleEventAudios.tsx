@@ -774,7 +774,10 @@ const SimpleEventAudios = () => {
   };
 
   const handleEditSong = (songId: string) => {
-    navigate(`/songs/${songId}/edit`);
+    const returnTo = `${location.pathname}${location.search}`;
+    navigate(
+      buildPath(`/songs/${songId}/edit?returnTo=${encodeURIComponent(returnTo)}`)
+    );
   };
 
   const handleDeleteSong = async () => {
