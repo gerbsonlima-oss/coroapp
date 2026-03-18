@@ -93,7 +93,6 @@ const SongTypeDetails = () => {
         .from('song_types')
         .select('name')
         .eq('slug', type)
-        .is('tenant_id', null)
         .maybeSingle();
 
       if (error) {

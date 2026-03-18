@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
@@ -27,7 +27,7 @@ interface FormData {
 export default function ChoirMemberForm() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { tenantId } = useTenant();
+  const { tenantId, tenantSlug } = useTenant();
   const { isAdmin } = useIsAdmin();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = Boolean(id);
@@ -38,8 +38,6 @@ export default function ChoirMemberForm() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [originalImageSrc, setOriginalImageSrc] = useState<string>('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [formData, setFormData] = useState<FormData>({
     name: '',
     birth_date: '',
@@ -66,7 +64,7 @@ export default function ChoirMemberForm() {
         .single();
 
       if (error) throw error;
-
+      
       setFormData({
         name: data.full_name || '',
         birth_date: data.birth_date || '',
@@ -90,13 +88,16 @@ export default function ChoirMemberForm() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione uma imagem valida.');
+      toast.error('Por favor, selecione uma imagem válida.');
       return;
     }
 
+    // Create object URL for cropper
     const imageUrl = URL.createObjectURL(file);
     setOriginalImageSrc(imageUrl);
     setShowCropper(true);
+    
+    // Reset the input so the same file can be selected again
     e.target.value = '';
   };
 
@@ -104,7 +105,8 @@ export default function ChoirMemberForm() {
     const file = new File([croppedBlob], `cropped-${Date.now()}.webp`, { type: 'image/webp' });
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(croppedBlob));
-
+    
+    // Clean up the original image URL
     if (originalImageSrc) {
       URL.revokeObjectURL(originalImageSrc);
       setOriginalImageSrc('');
@@ -130,41 +132,24 @@ export default function ChoirMemberForm() {
 
     if (uploadError) throw uploadError;
 
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('choir-member-photos').getPublicUrl(fileName);
+    const { data: { publicUrl } } = supabase.storage
+      .from('choir-member-photos')
+      .getPublicUrl(fileName);
 
     return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!formData.name.trim()) {
-      toast.error('O nome e obrigatorio.');
+      toast.error('O nome é obrigatório.');
       return;
     }
 
     if (!formData.email.trim()) {
-      toast.error('O e-mail e obrigatorio.');
+      toast.error('O e-mail é obrigatório.');
       return;
-    }
-
-    if (!isEditing) {
-      if (!tenantId) {
-        toast.error('Nenhum coro selecionado.');
-        return;
-      }
-
-      if (password.length < 6) {
-        toast.error('A senha deve ter no minimo 6 caracteres.');
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        toast.error('A confirmacao de senha nao confere.');
-        return;
-      }
     }
 
     setSaving(true);
@@ -182,27 +167,17 @@ export default function ChoirMemberForm() {
       };
 
       if (isEditing) {
-        const { error } = await supabase.from('profiles').update(profileData).eq('id', id);
+        const { error } = await supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('id', id);
 
         if (error) throw error;
         toast.success('Coralista atualizado com sucesso!');
       } else {
-        const { error: createError } = await supabase.functions.invoke('create-user-by-admin', {
-          body: {
-            email: formData.email.trim(),
-            password,
-            fullName: formData.name.trim(),
-            tenantId,
-            naipe: formData.naipe || undefined,
-            birthDate: formData.birth_date || undefined,
-            phone: formData.phone.trim() || undefined,
-            parish: formData.parish.trim() || undefined,
-            active: formData.active,
-          },
-        });
-
-        if (createError) throw createError;
-        toast.success('Usuario criado com sucesso!');
+        // For new members, we need an email - they need to register themselves
+        toast.error('Novos coralistas devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
+        return;
       }
 
       navigate(buildPath('/choir-members'));
@@ -215,6 +190,7 @@ export default function ChoirMemberForm() {
 
   const handleDelete = async () => {
     try {
+      // We don't delete profiles, just deactivate them
       const { error } = await supabase
         .from('profiles')
         .update({ active: false, approval_status: 'rejected' })
@@ -231,12 +207,7 @@ export default function ChoirMemberForm() {
   const buildPath = (path: string) => path;
 
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
   if (!isAdmin) {
@@ -257,13 +228,16 @@ export default function ChoirMemberForm() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate(buildPath('/choir-members'))}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold">{isEditing ? 'Editar Coralista' : 'Novo Coralista'}</h1>
+            <h1 className="text-xl font-bold">
+              {isEditing ? 'Editar Coralista' : 'Novo Coralista'}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             {isEditing && (
@@ -277,7 +251,7 @@ export default function ChoirMemberForm() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Excluir coralista?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta acao nao pode ser desfeita. O coralista sera removido permanentemente.
+                      Esta ação não pode ser desfeita. O coralista será removido permanentemente.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -298,10 +272,15 @@ export default function ChoirMemberForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-6">
+        {/* Photo */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-              <AvatarImage src={photoPreview || undefined} alt={formData.name} className="object-cover" />
+              <AvatarImage 
+                src={photoPreview || undefined} 
+                alt={formData.name}
+                className="object-cover"
+              />
               <AvatarFallback className="bg-primary/10 text-primary text-2xl font-medium">
                 {formData.name ? getInitials(formData.name) : '?'}
               </AvatarFallback>
@@ -315,7 +294,13 @@ export default function ChoirMemberForm() {
             >
               <Camera className="h-4 w-4" />
             </Button>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Crop className="h-4 w-4" />
@@ -323,6 +308,7 @@ export default function ChoirMemberForm() {
           </div>
         </div>
 
+        {/* Name */}
         <div className="space-y-2">
           <Label htmlFor="name">Nome completo *</Label>
           <Input
@@ -334,6 +320,7 @@ export default function ChoirMemberForm() {
           />
         </div>
 
+        {/* Birth Date */}
         <div className="space-y-2">
           <Label htmlFor="birth_date">Data de nascimento</Label>
           <Input
@@ -344,6 +331,7 @@ export default function ChoirMemberForm() {
           />
         </div>
 
+        {/* Naipe */}
         <div className="space-y-2">
           <Label>Naipe</Label>
           <Select value={formData.naipe} onValueChange={(value) => setFormData({ ...formData, naipe: value })}>
@@ -359,16 +347,18 @@ export default function ChoirMemberForm() {
           </Select>
         </div>
 
+        {/* Parish */}
         <div className="space-y-2">
-          <Label htmlFor="parish">Paroquia</Label>
+          <Label htmlFor="parish">Paróquia</Label>
           <Input
             id="parish"
             value={formData.parish}
             onChange={(e) => setFormData({ ...formData, parish: e.target.value })}
-            placeholder="Digite a paroquia"
+            placeholder="Digite a paróquia"
           />
         </div>
 
+        {/* Phone */}
         <div className="space-y-2">
           <Label htmlFor="phone">Telefone</Label>
           <Input
@@ -380,6 +370,7 @@ export default function ChoirMemberForm() {
           />
         </div>
 
+        {/* Email */}
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
           <Input
@@ -391,42 +382,11 @@ export default function ChoirMemberForm() {
           />
         </div>
 
-        {!isEditing && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha inicial *</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Defina uma senha"
-                minLength={6}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha *</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repita a senha"
-                minLength={6}
-                required
-              />
-            </div>
-          </>
-        )}
-
+        {/* Active */}
         <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
           <div>
-            <Label htmlFor="active" className="text-base">
-              Status ativo
-            </Label>
-            <p className="text-sm text-muted-foreground">Coralistas inativos nao aparecem para selecao</p>
+            <Label htmlFor="active" className="text-base">Status ativo</Label>
+            <p className="text-sm text-muted-foreground">Coralistas inativos não aparecem para seleção</p>
           </div>
           <Switch
             id="active"
@@ -436,6 +396,7 @@ export default function ChoirMemberForm() {
         </div>
       </form>
 
+      {/* Image Cropper Modal */}
       <ImageCropper
         open={showCropper}
         onClose={handleCropperClose}

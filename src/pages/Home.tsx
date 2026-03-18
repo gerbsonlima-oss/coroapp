@@ -5,12 +5,11 @@ import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { BirthdayPanel } from '@/components/BirthdayPanel';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
-import { ChatbotAssistant } from '@/components/ChatbotAssistant';
 
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant, useTenantPath } from '@/contexts/TenantContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -45,7 +44,6 @@ const Home = () => {
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
   const { tenant, tenantId } = useTenant();
-  const { buildPath } = useTenantPath();
   const { saveEvents } = useOfflineStorage();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
@@ -78,7 +76,6 @@ const Home = () => {
         const todayStr = format(today, 'yyyy-MM-dd');
         
         return savedEvents
-          .filter(event => (!tenantId || event.tenant_id === tenantId))
           .filter(event => event.date >= todayStr)
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 10);
@@ -112,7 +109,6 @@ const Home = () => {
         const todayStr = format(today, 'yyyy-MM-dd');
         
         return savedEvents
-          .filter(event => (!tenantId || event.tenant_id === tenantId))
           .filter(event => event.date < todayStr)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 10);
@@ -157,7 +153,7 @@ const Home = () => {
     <Card
       key={event.id}
       className={`overflow-hidden cursor-pointer hover:shadow-md transition-all border-0 group flex flex-row ${isPast ? 'bg-muted/30' : ''}`}
-      onClick={() => navigate(buildPath(`/events/${event.id}`))}
+      onClick={() => navigate(`/events/${event.id}`)}
     >
       {event.cover_image_url && (
         <div className={`relative ${isPast ? 'w-20 h-20' : 'w-24 h-24'} flex-shrink-0 overflow-hidden bg-muted`}>
@@ -226,7 +222,7 @@ const Home = () => {
           {liturgicalDay && (
             <div 
               className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg px-2.5 py-1.5 border border-white/10 cursor-pointer hover:bg-white/20 transition-all flex items-center gap-2 min-w-0"
-              onClick={() => navigate(buildPath('/liturgy'))}
+              onClick={() => navigate('/liturgy')}
             >
               <Sparkles className="h-3.5 w-3.5 text-yellow-300 shrink-0" />
               <div className="min-w-0">
@@ -244,7 +240,7 @@ const Home = () => {
             <TenantSwitcher buttonClassName="text-white hover:text-white/90 hover:bg-white/15" />
             {(isAdmin || isSuperAdmin) && (
               <button
-                onClick={(e) => { e.stopPropagation(); navigate(buildPath('/admin')); }}
+                onClick={(e) => { e.stopPropagation(); navigate('/admin'); }}
                 className="shrink-0 bg-white/15 hover:bg-white/25 rounded-full p-1.5 transition-colors"
                 aria-label="Painel Administrativo"
               >
@@ -257,8 +253,6 @@ const Home = () => {
 
       {/* Tenant Switcher + Content */}
       <div className="px-4 py-6 space-y-6 max-w-6xl mx-auto">
-        <ChatbotAssistant />
-
         {/* Birthday Panel */}
         {tenantId && <BirthdayPanel tenantId={tenantId} />}
 

@@ -2,7 +2,6 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLocation, useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,10 +16,8 @@ interface TenantSwitcherProps {
 }
 
 export function TenantSwitcher({ buttonClassName, menuClassName }: TenantSwitcherProps) {
-  const { tenant, tenantSlug, userTenants, isMultiTenant, switchTenant, loading, availableTenants } = useTenant();
+  const { tenant, userTenants, isMultiTenant, switchTenant, loading, availableTenants } = useTenant();
   const { isSuperAdmin } = useSuperAdmin();
-  const location = useLocation();
-  const navigate = useNavigate();
 
   if (loading || !tenant) return null;
 
@@ -48,14 +45,7 @@ export function TenantSwitcher({ buttonClassName, menuClassName }: TenantSwitche
         {tenantsToShow.map((t) => (
           <DropdownMenuItem
             key={t.id}
-            onClick={() => {
-              switchTenant(t.slug);
-              const currentPath = location.pathname;
-              const withoutSlug = tenantSlug && currentPath.startsWith(`/${tenantSlug}`)
-                ? (currentPath.slice(tenantSlug.length + 1) || '/')
-                : currentPath;
-              navigate(`/${t.slug}${withoutSlug}${location.search}${location.hash}`);
-            }}
+            onClick={() => switchTenant(t.slug)}
             className="flex items-center justify-between"
           >
             <span className="truncate">{t.name}</span>

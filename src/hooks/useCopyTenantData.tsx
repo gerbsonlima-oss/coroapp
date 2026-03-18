@@ -19,7 +19,7 @@ export function useCopyTenantData() {
   const copyData = async (
     sourceTenantId: string,
     targetTenantId: string,
-    dataType: "songs" | "events",
+    dataType: "songTypes" | "songs" | "events",
     itemIds: string[]
   ) => {
     setProgress({

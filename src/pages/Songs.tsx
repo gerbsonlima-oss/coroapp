@@ -4,12 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { Plus, Music, Settings, Search, X, Filter, ChevronDown, MoreVertical, Share2, FileText, Eye, Pencil, Trash2, Guitar, Music2 } from 'lucide-react';
+import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download, Eye, Pencil, Trash2, Guitar, Music2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { exportSongsPDF } from '@/utils/exportSongsPDF';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { InstallPWAButton } from '@/components/InstallPWAButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -46,14 +48,7 @@ interface SongAudio {
   name: string;
 }
 
-const normalizeTypeKey = (value: string | null | undefined) =>
-  (value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+import { songTypeOrder, typeLabels, typeGradients } from '@/constants/songTypes';
 
 const Songs = () => {
   const [songTypes, setSongTypes] = useState<SongTypeAlbum[]>([]);
@@ -62,16 +57,17 @@ const Songs = () => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupBy, setGroupBy] = useState<'tipo' | 'lista'>(() => {
     const saved = localStorage.getItem('songs_groupBy');
-    return (saved === 'tipo' || saved === 'lista') ? saved : 'lista';
+    return (saved === 'tipo' || saved === 'lista') ? saved : 'tipo';
   });
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [expandedSong, setExpandedSong] = useState<string | null>(null);
   const [songAudios, setSongAudios] = useState<Record<string, SongAudio[]>>({});
   const [loadingAudios, setLoadingAudios] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { tenantId, tenant } = useTenant();
   const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
@@ -84,15 +80,9 @@ const Songs = () => {
   }, [groupBy]);
 
   useEffect(() => {
-    if (queryTenantIds.length === 0) {
-      setSongs([]);
-      setSongTypes([]);
-      setLoading(false);
-      return;
+    if (queryTenantIds.length > 0) {
+      fetchSongTypes();
     }
-
-    setLoading(true);
-    fetchSongTypes();
   }, [user, queryTenantIds.join(',')]);
 
   const toggleGroup = (key: string) => {
@@ -210,7 +200,7 @@ const Songs = () => {
           supabase
             .from('song_types')
             .select('id, slug, name, order_index')
-            .or(`tenant_id.is.null,tenant_id.eq.${tenantId}`)
+            .is('tenant_id', null)
             .order('order_index'),
           songsQuery,
         ]);
@@ -218,61 +208,33 @@ const Songs = () => {
       if (songTypesError) throw songTypesError;
       if (songsError) throw songsError;
 
-      const typeNameMap = new Map<string, string>();
-      const normalizedSlugToSlug = new Map<string, string>();
-      const normalizedNameToSlug = new Map<string, string>();
-
-      (songTypesData || []).forEach((type) => {
-        typeNameMap.set(type.slug, type.name);
-        normalizedSlugToSlug.set(normalizeTypeKey(type.slug), type.slug);
-        normalizedNameToSlug.set(normalizeTypeKey(type.name), type.slug);
-      });
-
-      const songsList: SongListItem[] = (songsData || []).map((song) => {
-        const rawType = song.type || '';
-        const normalizedRawType = normalizeTypeKey(rawType);
-        const canonicalType =
-          (typeNameMap.has(rawType) ? rawType : undefined) ||
-          normalizedSlugToSlug.get(normalizedRawType) ||
-          normalizedNameToSlug.get(normalizedRawType) ||
-          normalizedRawType ||
-          'outros';
-
-        return {
-          id: song.id,
-          name: song.name,
-          type: canonicalType,
-          typeName: typeNameMap.get(canonicalType) || rawType || 'Outros',
-          lyrics: song.lyrics,
-          chords: song.chords,
-          sheet_music_url: song.sheet_music_url,
-          sheet_music_pdf_url: song.sheet_music_pdf_url,
-          tenant_id: song.tenant_id,
-        };
-      });
-
-      const typeCount = songsList.reduce((acc: Record<string, number>, song) => {
+      const typeCount = (songsData || []).reduce((acc: Record<string, number>, song) => {
         acc[song.type] = (acc[song.type] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const officialAlbums: SongTypeAlbum[] = (songTypesData || []).map((type) => ({
+      const typeNameMap = new Map<string, string>();
+      (songTypesData || []).forEach((type) => {
+        typeNameMap.set(type.slug, type.name);
+      });
+
+      const albums: SongTypeAlbum[] = (songTypesData || []).map((type) => ({
         type: type.slug,
         name: type.name,
         count: typeCount[type.slug] || 0,
       }));
 
-      const knownSlugs = new Set(officialAlbums.map((item) => item.type));
-      const dynamicAlbums: SongTypeAlbum[] = Array.from(new Set(songsList.map((song) => song.type)))
-        .filter((slug) => !knownSlugs.has(slug))
-        .map((slug) => ({
-          type: slug,
-          name: songsList.find((song) => song.type === slug)?.typeName || slug || 'Outros',
-          count: typeCount[slug] || 0,
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      const albums: SongTypeAlbum[] = [...officialAlbums, ...dynamicAlbums];
+      const songsList: SongListItem[] = (songsData || []).map((song) => ({
+        id: song.id,
+        name: song.name,
+        type: song.type,
+        typeName: typeNameMap.get(song.type) || 'Outros',
+        lyrics: song.lyrics,
+        chords: song.chords,
+        sheet_music_url: song.sheet_music_url,
+        sheet_music_pdf_url: song.sheet_music_pdf_url,
+        tenant_id: song.tenant_id,
+      }));
 
       setSongTypes(albums);
       setSongs(songsList);
@@ -330,16 +292,6 @@ const Songs = () => {
     song.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
     (selectedType === null || song.type === selectedType)
   );
-  const groupedTypeCount = new Set(filteredSongs.map((song) => song.type)).size;
-  const hasActiveFilters = selectedType !== null || searchQuery.trim().length > 0;
-  const selectedTypeLabel = selectedType
-    ? (songTypes.find(t => t.type === selectedType)?.name || selectedType)
-    : 'Todos';
-
-  const clearFilters = () => {
-    setSelectedType(null);
-    setSearchQuery('');
-  };
 
   const renderSongRow = (song: SongListItem) => {
     const isExpanded = expandedSong === song.id;
@@ -436,82 +388,48 @@ const Songs = () => {
   const renderSongsContent = () => {
     if (filteredSongs.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-10 text-center bg-card border border-border/40 rounded-lg">
+        <div className="flex flex-col items-center justify-center py-8 text-center">
           <Music className="h-8 w-8 text-muted-foreground/30 mb-2" />
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground">
             {searchQuery ? 'Nenhum resultado' : 'Nenhuma música no repertório'}
           </p>
-          {hasActiveFilters && (
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              Limpar busca e filtros
-            </Button>
-          )}
         </div>
       );
     }
 
     if (groupBy === 'tipo') {
-      const typeNameBySlug = new Map(songTypes.map((t) => [t.type, t.name]));
-      const typeOrder = new Map(songTypes.map((t, idx) => [t.type, idx]));
-      const grouped = filteredSongs.reduce<Map<string, SongListItem[]>>((acc, song) => {
-        const typeKey = song.type || 'outros';
-        const current = acc.get(typeKey) || [];
-        current.push(song);
-        acc.set(typeKey, current);
-        return acc;
-      }, new Map<string, SongListItem[]>());
+      return songTypes.map(type => {
+        const typeGroupSongs = filteredSongs.filter(s => s.type === type.type).sort((a, b) => a.name.localeCompare(b.name));
+        if (typeGroupSongs.length === 0) return null;
 
-      const groupedEntries = Array.from(grouped.entries());
-      if (groupedEntries.length === 0) {
+        const groupKey = `type:${type.type}`;
+        const isCollapsed = Boolean(collapsedGroups[groupKey]);
+
         return (
-          <div className="rounded-md bg-card border border-border/30 overflow-hidden divide-y divide-border/20">
-            {filteredSongs
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((song) => renderSongRow(song))}
+          <div key={type.type}>
+            <div className="rounded-md bg-card border border-primary/15 overflow-hidden">
+              <div 
+                className="px-2.5 py-2 bg-gradient-to-r from-primary/6 to-transparent flex items-center justify-between cursor-pointer hover:from-primary/10 transition-all"
+                onClick={e => {
+                  e.stopPropagation();
+                  toggleGroup(groupKey);
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-semibold text-primary">{type.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{typeGroupSongs.length}</span>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-primary/50 transition-transform shrink-0 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
+              </div>
+              {!isCollapsed && (
+                <div className="divide-y divide-border/30">
+                  {typeGroupSongs.map((song) => renderSongRow(song))}
+                </div>
+              )}
+            </div>
           </div>
         );
-      }
-
-      return groupedEntries
-        .sort(([typeA], [typeB]) => {
-          const orderA = typeOrder.get(typeA);
-          const orderB = typeOrder.get(typeB);
-          if (orderA !== undefined && orderB !== undefined) return orderA - orderB;
-          if (orderA !== undefined) return -1;
-          if (orderB !== undefined) return 1;
-          return (typeNameBySlug.get(typeA) || typeA).localeCompare(typeNameBySlug.get(typeB) || typeB);
-        })
-        .map(([typeSlug, songsInType]) => {
-          const sortedSongs = songsInType.sort((a, b) => a.name.localeCompare(b.name));
-          const groupKey = `type:${typeSlug}`;
-          const isCollapsed = Boolean(collapsedGroups[groupKey]);
-          const typeName = typeNameBySlug.get(typeSlug) || sortedSongs[0]?.typeName || typeSlug;
-
-          return (
-            <div key={typeSlug}>
-              <div className="rounded-md bg-card border border-primary/15 overflow-hidden">
-                <div
-                  className="px-2.5 py-2 bg-gradient-to-r from-primary/6 to-transparent flex items-center justify-between cursor-pointer hover:from-primary/10 transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleGroup(groupKey);
-                  }}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-semibold text-primary">{typeName}</span>
-                    <span className="text-[10px] text-muted-foreground">{sortedSongs.length}</span>
-                  </div>
-                  <ChevronDown className={`h-4 w-4 text-primary/50 transition-transform shrink-0 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
-                </div>
-                {!isCollapsed && (
-                  <div className="divide-y divide-border/30">
-                    {sortedSongs.map((song) => renderSongRow(song))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        });
+      }).filter(Boolean);
     }
 
     return (
@@ -525,14 +443,11 @@ const Songs = () => {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border/50 px-3 py-2.5">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 px-3 py-2">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between">
           <div className="flex items-center gap-2">
             <Music className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-bold mb-0">Repertório</h1>
-              <p className="text-[11px] text-muted-foreground">
-                {filteredSongs.length} de {songs.length} música(s)
-              </p>
           </div>
           <div className="flex items-center gap-1">
             <TenantSwitcher />
@@ -548,82 +463,30 @@ const Songs = () => {
             )}
           </div>
         </div>
-        <div className="mx-auto max-w-[1280px] mt-2 flex items-center gap-2 flex-wrap">
-          <div className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] text-primary">
-            Tipo: {selectedTypeLabel}
-          </div>
-          <div className="rounded-full border border-border/50 bg-secondary/40 px-2.5 py-1 text-[11px] text-muted-foreground">
-            Visualização: {groupBy === 'tipo' ? 'Agrupado por tipo' : 'Lista simples'}
-          </div>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={clearFilters}>
-              Limpar filtros
-            </Button>
-          )}
-        </div>
-
         {/* Inline search + filters */}
-        <div className="mx-auto max-w-[1280px] mt-2 flex gap-1.5">
+        <div className="mx-auto max-w-[1280px] mt-1.5 flex gap-1.5">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
+            <Input 
               placeholder="Buscar..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-8 h-8 bg-secondary/50 border-primary/20 text-xs rounded-md"
-              aria-label="Buscar música"
+              className="pl-8 h-8 bg-secondary/50 border-primary/20 text-xs rounded-md" 
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                aria-label="Limpar busca"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
           </div>
-
+          <Button variant="outline" size="sm" onClick={() => setShowGroupModal(true)} className="h-8 px-2.5 text-xs gap-1 border-primary/20">
+            <Sliders className="h-3 w-3" />
+            Agrupar
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowFilterModal(true)} className="h-8 px-2.5 text-xs gap-1 border-primary/20">
             <Filter className="h-3 w-3" />
             {selectedType ? songTypes.find(t => t.type === selectedType)?.name || 'Filtro' : 'Filtrar'}
           </Button>
         </div>
-
-        <div className="mx-auto max-w-[1280px] mt-2 flex items-center gap-2">
-          <div className="inline-flex h-8 rounded-md border border-primary/20 bg-secondary/40 p-0.5">
-            <button
-              type="button"
-              onClick={() => setGroupBy('lista')}
-              className={`px-2.5 text-xs rounded ${groupBy === 'lista' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Lista
-            </button>
-            <button
-              type="button"
-              onClick={() => setGroupBy('tipo')}
-              className={`px-2.5 text-xs rounded ${groupBy === 'tipo' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Por tipo
-            </button>
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            {groupBy === 'tipo' ? `${groupedTypeCount} grupo(s)` : `${filteredSongs.length} item(ns)`}
-          </p>
-        </div>
       </header>
 
-      <main className="mx-auto max-w-[1280px] px-2 py-3 md:px-4">
-        {isAdmin && (
-          <div className="hidden md:flex justify-end mb-3">
-            <Button onClick={() => navigate(buildPath('/songs/new'))} className="gradient-primary shadow-glow">
-              <Plus className="mr-2 h-4 w-4" />
-              Nova música
-            </Button>
-          </div>
-        )}
-
-        <div className="space-y-2">
+      <main className="mx-auto max-w-[1280px] px-2 py-2 md:px-4">
+        <div className="space-y-1.5">
           {renderSongsContent()}
         </div>
       </main>
@@ -684,6 +547,43 @@ const Songs = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Group Modal */}
+      <Dialog open={showGroupModal} onOpenChange={setShowGroupModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agrupar Músicas</DialogTitle>
+            <DialogDescription>Escolha como exibir as músicas</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setGroupBy('tipo');
+                setShowGroupModal(false);
+              }}
+              className={`w-full text-left px-3 py-2 rounded-md transition-all ${
+                groupBy === 'tipo'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-secondary text-foreground'
+              }`}
+            >
+              Agrupar por Tipo
+            </button>
+            <button
+              onClick={() => {
+                setGroupBy('lista');
+                setShowGroupModal(false);
+              }}
+              className={`w-full text-left px-3 py-2 rounded-md transition-all ${
+                groupBy === 'lista'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-secondary text-foreground'
+              }`}
+            >
+              Lista Simples
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNavigation />
     </div>
@@ -691,4 +591,3 @@ const Songs = () => {
 };
 
 export default Songs;
-

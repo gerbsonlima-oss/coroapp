@@ -12,14 +12,13 @@ import { lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LoadingFallback } from "@/components/LoadingFallback";
 import { HelmetProvider } from "react-helmet-async";
-import { TenantSlugLayout } from "@/components/TenantSlugLayout";
-import { TenantSlugRedirect } from "@/components/TenantSlugRedirect";
 
 const Home = lazy(() => import("./pages/Home"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Events = lazy(() => import("./pages/Events"));
 const NewEvent = lazy(() => import("./pages/NewEvent"));
 const EditEvent = lazy(() => import("./pages/EditEvent"));
+const EventDetails = lazy(() => import("./pages/EventDetails"));
 const EventQuickEdit = lazy(() => import("./pages/EventQuickEdit"));
 const SimpleEventAudios = lazy(() => import("./pages/SimpleEventAudios"));
 const Songs = lazy(() => import("./pages/Songs"));
@@ -63,49 +62,41 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/e/:id" element={<SimpleEventAudios />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
-            <Route path="/public/events/:id" element={<SimpleEventAudios />} />
+            <Route path="/public/events/:id" element={<EventDetails />} />
 
             {/* Main app routes */}
             <Route path="/" element={<AuthOrTenantSelection />} />
+            
+            <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+            <Route path="/events/new" element={<ProtectedRoute><NewEvent /></ProtectedRoute>} />
+            <Route path="/events/edit/:id" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
+            <Route path="/events/:id" element={<ProtectedRoute><SimpleEventAudios /></ProtectedRoute>} />
+            <Route path="/events/:id/edit" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
+            <Route path="/events/:id/quick-edit" element={<ProtectedRoute><EventQuickEdit /></ProtectedRoute>} />
+            <Route path="/events/:eventId/rehearsals" element={<ProtectedRoute><Rehearsals /></ProtectedRoute>} />
 
-            {/* Tenant-scoped routes */}
-            <Route path="/:tenantSlug" element={<TenantSlugLayout />}>
-              <Route index element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/songs" element={<ProtectedRoute><Songs /></ProtectedRoute>} />
+            <Route path="/songs/type/:type" element={<ProtectedRoute><SongTypeDetails /></ProtectedRoute>} />
+            <Route path="/songs/admin/types" element={<ProtectedRoute><AdminSongTypes /></ProtectedRoute>} />
+            <Route path="/songs/new" element={<ProtectedRoute><SongForm /></ProtectedRoute>} />
+            <Route path="/songs/:id" element={<ProtectedRoute><SongDetails /></ProtectedRoute>} />
+            <Route path="/songs/:id/edit" element={<ProtectedRoute><SongForm /></ProtectedRoute>} />
 
-              <Route path="events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-              <Route path="events/new" element={<ProtectedRoute><NewEvent /></ProtectedRoute>} />
-              <Route path="events/edit/:id" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
-              <Route path="events/:id" element={<ProtectedRoute><SimpleEventAudios /></ProtectedRoute>} />
-              <Route path="events/:id/edit" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
-              <Route path="events/:id/quick-edit" element={<ProtectedRoute><EventQuickEdit /></ProtectedRoute>} />
-              <Route path="events/:eventId/rehearsals" element={<ProtectedRoute><Rehearsals /></ProtectedRoute>} />
+            <Route path="/rehearsals" element={<ProtectedRoute><Rehearsals /></ProtectedRoute>} />
+            <Route path="/liturgy" element={<ProtectedRoute><Liturgy /></ProtectedRoute>} />
+            <Route path="/audio-to-sheet" element={<ProtectedRoute><AudioToSheet /></ProtectedRoute>} />
 
-              <Route path="songs" element={<ProtectedRoute><Songs /></ProtectedRoute>} />
-              <Route path="songs/type/:type" element={<ProtectedRoute><SongTypeDetails /></ProtectedRoute>} />
-              <Route path="songs/admin/types" element={<ProtectedRoute><AdminSongTypes /></ProtectedRoute>} />
-              <Route path="songs/new" element={<ProtectedRoute><SongForm /></ProtectedRoute>} />
-              <Route path="songs/:id" element={<ProtectedRoute><SongDetails /></ProtectedRoute>} />
-              <Route path="songs/:id/edit" element={<ProtectedRoute><SongForm /></ProtectedRoute>} />
+            {/* Choir Members */}
+            <Route path="/choir-members" element={<ProtectedRoute><ChoirMembers /></ProtectedRoute>} />
+            <Route path="/choir-members/new" element={<ProtectedRoute><ChoirMemberForm /></ProtectedRoute>} />
+            <Route path="/choir-members/:id" element={<ProtectedRoute><ChoirMemberDetails /></ProtectedRoute>} />
+            <Route path="/choir-members/:id/edit" element={<ProtectedRoute><ChoirMemberForm /></ProtectedRoute>} />
 
-              <Route path="rehearsals" element={<ProtectedRoute><Rehearsals /></ProtectedRoute>} />
-              <Route path="liturgy" element={<ProtectedRoute><Liturgy /></ProtectedRoute>} />
-              <Route path="audio-to-sheet" element={<ProtectedRoute><AudioToSheet /></ProtectedRoute>} />
-
-              {/* Choir Members */}
-              <Route path="choir-members" element={<ProtectedRoute><ChoirMembers /></ProtectedRoute>} />
-              <Route path="choir-members/new" element={<ProtectedRoute><ChoirMemberForm /></ProtectedRoute>} />
-              <Route path="choir-members/:id" element={<ProtectedRoute><ChoirMemberDetails /></ProtectedRoute>} />
-              <Route path="choir-members/:id/edit" element={<ProtectedRoute><ChoirMemberForm /></ProtectedRoute>} />
-
-              {/* Admin */}
-              <Route path="admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-              <Route path="admin/tenants" element={<ProtectedRoute><AdminTenants /></ProtectedRoute>} />
-              <Route path="admin/backup" element={<ProtectedRoute><AdminBackup /></ProtectedRoute>} />
-              <Route path="admin/restore" element={<ProtectedRoute><AdminRestore /></ProtectedRoute>} />
-            </Route>
-
-            {/* Redirect non-scoped routes to tenant-scoped */}
-            <Route path="/*" element={<TenantSlugRedirect />} />
+            {/* Admin */}
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/tenants" element={<ProtectedRoute><AdminTenants /></ProtectedRoute>} />
+            <Route path="/admin/backup" element={<ProtectedRoute><AdminBackup /></ProtectedRoute>} />
+            <Route path="/admin/restore" element={<ProtectedRoute><AdminRestore /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

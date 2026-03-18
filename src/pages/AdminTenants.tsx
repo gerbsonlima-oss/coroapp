@@ -55,7 +55,7 @@ interface TenantFormData {
 interface CopyDialogData {
   sourceTenantId: string | null;
   targetTenantId: string | null;
-  dataType: 'songs' | 'events' | null;
+  dataType: 'songTypes' | 'songs' | 'events' | null;
   selectedItems: string[];
   availableItems: Array<{ id: string; name: string }>;
 }
@@ -316,7 +316,14 @@ export default function AdminTenants() {
     try {
       let items: Array<{ id: string; name: string }> = [];
 
-      if (copyData_state.dataType === 'songs') {
+      if (copyData_state.dataType === 'songTypes') {
+        const { data } = await supabase
+          .from('song_types')
+          .select('id, name')
+          .eq('tenant_id', copyData_state.sourceTenantId)
+          .order('order_index');
+        items = data || [];
+      } else if (copyData_state.dataType === 'songs') {
         const { data } = await supabase
           .from('songs')
           .select('id, name')
@@ -470,6 +477,7 @@ export default function AdminTenants() {
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="songTypes">Tipos de Música</SelectItem>
                         <SelectItem value="songs">Músicas + Áudios</SelectItem>
                         <SelectItem value="events">Eventos</SelectItem>
                       </SelectContent>

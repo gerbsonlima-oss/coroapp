@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant, useTenantPath } from '@/contexts/TenantContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +34,17 @@ const eventSchema = z.object({
   notes: z.string().max(1000, 'Notas muito longas').optional(),
 });
 
+interface Song {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface SongType {
+  id: string;
+  slug: string;
+  name: string;
+}
 
 const EditEvent = () => {
   const { id } = useParams<{ id: string }>();
@@ -48,23 +59,25 @@ const EditEvent = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [songTypes, setSongTypes] = useState<SongType[]>([]);
+  const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
   const [pdfTheme, setPdfTheme] = useState<string>('deep_blue_gold');
   const { user } = useAuth();
   const { tenantId } = useTenant();
-  const { buildPath } = useTenantPath();
   const navigate = useNavigate();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('Você não tem permissão para acessar esta página');
-      navigate(buildPath('/events'));
+      navigate('/events');
     }
   }, [isAdmin, adminLoading, navigate]);
 
   useEffect(() => {
     if (id && tenantId) {
       fetchEventData();
+      fetchEventSongTypes(id);
     }
   }, [id, tenantId]);
 
@@ -105,9 +118,43 @@ const EditEvent = () => {
       setCoverImageUrl(eventData.cover_image_url || null);
     } catch (error) {
       toast.error('Erro ao carregar dados do evento');
-      navigate(buildPath('/events'));
+      navigate('/events');
     } finally {
       setInitialLoading(false);
+    }
+  };
+
+  const fetchEventSongTypes = async (eventId: string) => {
+    try {
+      const [{ data: allTypes, error: typesError }, { data: eventTypes, error: eventTypesError }] =
+        await Promise.all([
+          // ✅ Tipos de música agora são globais
+          supabase.from('song_types').select('*').order('order_index'),
+          supabase.from('event_song_types').select('song_type_id').eq('event_id', eventId),
+        ]);
+
+      if (typesError) throw typesError;
+      if (eventTypesError) throw eventTypesError;
+
+      const types = allTypes || [];
+      setSongTypes(types);
+
+      const selection: Record<string, boolean> = {};
+      if (eventTypes && eventTypes.length > 0) {
+        eventTypes.forEach((row) => {
+          selection[row.song_type_id] = true;
+        });
+      } else {
+        // Se não houver configuração específica, todos os tipos ficam selecionados
+        types.forEach((type) => {
+          selection[type.id] = true;
+        });
+      }
+
+      setSelectedTypeIds(selection);
+    } catch (error) {
+      console.error('Erro ao carregar tipos do evento:', error);
+      toast.error('Erro ao carregar tipos de música do evento');
     }
   };
 
@@ -212,8 +259,32 @@ const EditEvent = () => {
 
       if (eventError) throw eventError;
 
+      // Sincronizar tipos selecionados para o evento
+      const selectedTypes = songTypes.filter((type) => selectedTypeIds[type.id]);
+
+      const { error: deleteError } = await supabase
+        .from('event_song_types')
+        .delete()
+        .eq('event_id', id);
+
+      if (deleteError) throw deleteError;
+
+      if (selectedTypes.length > 0) {
+        const { error: insertError } = await supabase
+          .from('event_song_types')
+          .insert(
+            selectedTypes.map((type, index) => ({
+              event_id: id,
+              song_type_id: type.id,
+              order_index: index,
+            }))
+          );
+
+        if (insertError) throw insertError;
+      }
+
       toast.success('Evento atualizado com sucesso!');
-      navigate(buildPath(`/events/${id}`));
+      navigate(`/events/${id}`);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -244,7 +315,7 @@ const EditEvent = () => {
 
       toast.success('Evento excluído com sucesso!');
       setShowDeleteDialog(false);
-      navigate(buildPath('/events'));
+      navigate('/events');
     } catch (error: any) {
       toast.error('Erro ao excluir evento');
     }
@@ -263,7 +334,7 @@ const EditEvent = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
         <div className="flex items-center gap-4 px-4 py-3">
           <button 
-            onClick={() => navigate(buildPath(`/events/${id}`))}
+            onClick={() => navigate(`/events/${id}`)}
             className="p-2 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -588,6 +659,36 @@ const EditEvent = () => {
                 className={`rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.notes ? 'border-red-500' : ''}`}
               />
               {errors.notes && <p className="text-xs text-red-500">{errors.notes}</p>}
+            </div>
+
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+              <Label className="text-xs font-semibold">Tipos de música deste evento</Label>
+              <p className="text-xs text-muted-foreground">
+                Selecione quais tipos litúrgicos serão utilizados neste evento. Todos vêm
+                selecionados por padrão.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {songTypes.map((type) => (
+                  <label
+                    key={type.id}
+                    className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-border accent-primary"
+                      checked={!!selectedTypeIds[type.id]}
+                      onChange={() =>
+                        setSelectedTypeIds((prev) => ({
+                          ...prev,
+                          [type.id]: !prev[type.id],
+                        }))
+                      }
+                      disabled={loading}
+                    />
+                    <span className="font-medium truncate">{type.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <Button

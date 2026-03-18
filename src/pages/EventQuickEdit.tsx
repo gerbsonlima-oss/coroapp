@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant, useTenantPath } from '@/contexts/TenantContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -180,7 +180,6 @@ const EventQuickEdit = () => {
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { tenantId } = useTenant();
-  const { buildPath } = useTenantPath();
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [songs, setSongs] = useState<QuickSong[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,7 +222,6 @@ const EventQuickEdit = () => {
       const { data, error } = await supabase
         .from('song_types')
         .select('*')
-        .is('tenant_id', null)
         .order('order_index');
 
       if (error) throw error;
@@ -255,7 +253,7 @@ const EventQuickEdit = () => {
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('Você não tem permissão para acessar esta página');
-      navigate(buildPath('/events'));
+      navigate('/events');
     }
   }, [isAdmin, adminLoading, navigate]);
 
@@ -972,7 +970,7 @@ const EventQuickEdit = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(buildPath(`/events/${id}`))}
+            onClick={() => navigate(`/events/${id}`)}
             className="shrink-0 hover-scale"
           >
             <ArrowLeft className="h-5 w-5" />

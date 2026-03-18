@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { useTenant, useTenantPath } from '@/contexts/TenantContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,6 @@ const Events = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
-  const { buildPath } = useTenantPath();
   const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canCreateEvent = isAdmin || isSuperAdmin;
@@ -57,8 +56,6 @@ const Events = () => {
       e.date.includes(q)
     );
   }, [events, searchQuery]);
-
-  const hasActiveSearch = searchQuery.trim().length > 0;
 
   useEffect(() => {
     if (queryTenantIds.length > 0) {
@@ -105,12 +102,8 @@ const Events = () => {
     } catch (error: unknown) {
       const cachedEvents = await getOfflineEvents();
       
-      const filteredCached = tenantId
-        ? cachedEvents.filter(e => e.tenant_id === tenantId)
-        : cachedEvents;
-
-      if (filteredCached.length > 0) {
-        setEvents(filteredCached);
+      if (cachedEvents.length > 0) {
+        setEvents(cachedEvents);
         setIsOffline(true);
         toast.info('Modo offline: mostrando eventos salvos');
       } else {
@@ -150,9 +143,6 @@ const Events = () => {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-bold">Meus Eventos</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {filteredEvents.length} de {events.length} evento(s)
-              </p>
               {isOffline && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                   <WifiOff className="h-3 w-3" />
@@ -205,7 +195,7 @@ const Events = () => {
             </p>
             {user && canCreateEvent && (
               <Button
-                onClick={() => navigate(buildPath('/events/new'))}
+                onClick={() => navigate('/events/new')}
                 className="gradient-primary shadow-glow hover:shadow-glow/50 transition-all"
                 size="lg"
               >
@@ -238,24 +228,17 @@ const Events = () => {
                 <button
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Limpar busca"
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
             </div>
 
-            {hasActiveSearch && (
-              <p className="text-xs text-muted-foreground px-1">
-                Resultados para "{searchQuery}"
-              </p>
-            )}
-
             {/* Desktop New Event Button */}
             {user && canCreateEvent && (
               <div className="hidden md:flex justify-end mb-4">
                 <Button
-                  onClick={() => navigate(buildPath('/events/new'))}
+                  onClick={() => navigate('/events/new')}
                   className="gradient-primary shadow-glow hover:shadow-glow/50 transition-all"
                 >
                   <Plus className="mr-2 h-5 w-5" />
@@ -281,7 +264,7 @@ const Events = () => {
       {/* Floating Action Button - Mobile */}
       {user && canCreateEvent && (
         <button
-          onClick={() => navigate(buildPath('/events/new'))}
+          onClick={() => navigate('/events/new')}
           className="fixed bottom-24 right-4 z-20 md:hidden h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/80 shadow-glow hover:shadow-glow/50 transition-all active:scale-95 flex items-center justify-center text-white hover:scale-110 duration-200"
           title="Novo Evento"
         >

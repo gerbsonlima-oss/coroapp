@@ -34,8 +34,7 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
 const fetchTypeLabels = async (): Promise<Record<string, string>> => {
   const { data } = await supabase
     .from('song_types')
-    .select('slug, name')
-    .is('tenant_id', null);
+    .select('slug, name');
   
   const labels: Record<string, string> = {};
   if (data) {

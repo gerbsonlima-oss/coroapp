@@ -12,16 +12,6 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
-const hasDialogDescription = (node: React.ReactNode): boolean => {
-  return React.Children.toArray(node).some((child) => {
-    if (!React.isValidElement(child)) return false;
-
-    if (child.type === DialogPrimitive.Description) return true;
-
-    return hasDialogDescription(child.props?.children);
-  });
-};
-
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -52,11 +42,6 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      {!hasDialogDescription(children) && (
-        <DialogPrimitive.Description className="sr-only">
-          Dialog content
-        </DialogPrimitive.Description>
-      )}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-accent data-[state=open]:text-muted-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>

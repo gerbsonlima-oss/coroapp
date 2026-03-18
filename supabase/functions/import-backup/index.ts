@@ -12,6 +12,7 @@ interface ImportData {
   songAudios: any[];
   events: any[];
   eventSongs: any[];
+  eventSongTypes: any[];
   eventMembers: any[];
   choirMembers: any[];
   rehearsals: any[];
@@ -72,16 +73,17 @@ Deno.serve(async (req) => {
     }
 
     const importData: ImportData = await req.json();
-  const { tenants, songTypes, songs, songAudios, events, eventSongs, eventMembers, choirMembers, rehearsals, rehearsalAttendance, idMapping, urlMapping } = importData;
+    const { tenants, songTypes, songs, songAudios, events, eventSongs, eventSongTypes, eventMembers, choirMembers, rehearsals, rehearsalAttendance, idMapping, urlMapping } = importData;
 
     const stats = {
       tenants: 0,
       songTypes: 0,
       songs: 0,
       songAudios: 0,
-    events: 0,
-    eventSongs: 0,
-    eventMembers: 0,
+      events: 0,
+      eventSongs: 0,
+      eventSongTypes: 0,
+      eventMembers: 0,
       choirMembers: 0,
       rehearsals: 0,
       rehearsalAttendance: 0,
@@ -127,6 +129,7 @@ Deno.serve(async (req) => {
     // 2. Insert song_types
     for (const songType of songTypes) {
       const newId = idMapping.songTypes[songType.id];
+      const newTenantId = songType.tenant_id ? idMapping.tenants[songType.tenant_id] : null;
       if (!newId) continue;
 
       const { error } = await supabaseAdmin.from('song_types').insert({
@@ -135,7 +138,7 @@ Deno.serve(async (req) => {
         slug: songType.slug,
         description: songType.description,
         order_index: songType.order_index,
-        tenant_id: null,
+        tenant_id: newTenantId,
         created_at: songType.created_at,
       });
 
@@ -249,7 +252,28 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 7. Insert choir_members
+    // 7. Insert event_song_types
+    for (const est of eventSongTypes) {
+      const newEventId = idMapping.events[est.event_id];
+      const newSongTypeId = idMapping.songTypes[est.song_type_id];
+      if (!newEventId || !newSongTypeId) continue;
+
+      const { error } = await supabaseAdmin.from('event_song_types').insert({
+        id: crypto.randomUUID(),
+        event_id: newEventId,
+        song_type_id: newSongTypeId,
+        order_index: est.order_index,
+        created_at: est.created_at,
+      });
+
+      if (error) {
+        stats.errors.push(`Event song type: ${error.message}`);
+      } else {
+        stats.eventSongTypes++;
+      }
+    }
+
+    // 8. Insert choir_members
     for (const member of choirMembers) {
       const newId = idMapping.choirMembers[member.id];
       const newTenantId = member.tenant_id ? idMapping.tenants[member.tenant_id] : null;

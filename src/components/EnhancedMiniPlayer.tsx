@@ -13,11 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface EnhancedMiniPlayerProps {
-  bottomOffsetClassName?: string;
-}
-
-export function EnhancedMiniPlayer({ bottomOffsetClassName = 'bottom-[68px]' }: EnhancedMiniPlayerProps) {
+export function EnhancedMiniPlayer() {
   const {
     currentTrack,
     isPlaying,
@@ -92,10 +88,7 @@ export function EnhancedMiniPlayer({ bottomOffsetClassName = 'bottom-[68px]' }: 
   return (
     <>
       <div 
-        className={cn(
-          "fixed left-0 right-0 z-50 border-t bg-background/98 backdrop-blur-xl shadow-elevated transition-transform duration-300",
-          bottomOffsetClassName
-        )}
+        className="fixed bottom-[68px] left-0 right-0 z-50 border-t bg-background/98 backdrop-blur-xl shadow-elevated transition-transform duration-300"
         style={{ 
           borderColor: 'hsl(var(--player-border))',
         }}

@@ -104,16 +104,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         if (!tenantsError && tenants) {
           setUserTenants(tenants);
           
-          // Only set active tenant if none is currently selected
+          // Only set active tenant if none is currently selected or current is invalid
           setTenant(prev => {
-            if (prev) return prev;
-
+            const currentStillValid = prev && tenants.find(t => t.id === prev.id);
+            if (currentStillValid) return prev;
+            
             const storedSlug = localStorage.getItem(TENANT_STORAGE_KEY);
-            const storedTenant =
-              (storedSlug ? availableTenants.find(t => t.slug === storedSlug) : null) ||
-              (storedSlug ? tenants.find(t => t.slug === storedSlug) : null);
+            const storedTenant = storedSlug ? tenants.find(t => t.slug === storedSlug) : null;
             const activeTenant = storedTenant || tenants[0];
-
+            
             if (activeTenant) {
               saveTenantConfig(activeTenant);
               localStorage.setItem(TENANT_STORAGE_KEY, activeTenant.slug);
@@ -132,7 +131,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       }
     }
     fetchUserTenants();
-  }, [user, availableTenants]);
+  }, [user]);
 
   const switchTenant = (slug: string) => {
     const found = userTenants.find(t => t.slug === slug) || availableTenants.find(t => t.slug === slug);
@@ -178,16 +177,7 @@ export function useTenant() {
 export function useTenantPath() {
   const { tenantSlug } = useTenant();
   
-  const buildPath = (path: string): string => {
-    if (!tenantSlug) return path;
-    if (!path) return `/${tenantSlug}`;
-    if (path.startsWith(`/${tenantSlug}`)) return path;
-    if (path.startsWith('/auth') || path.startsWith('/e/') || path.startsWith('/public') || path.startsWith('/pending-approval')) {
-      return path;
-    }
-    if (path === '/') return `/${tenantSlug}`;
-    return path.startsWith('/') ? `/${tenantSlug}${path}` : `/${tenantSlug}/${path}`;
-  };
+  const buildPath = (path: string): string => path;
   
   return { buildPath, tenantSlug };
 }

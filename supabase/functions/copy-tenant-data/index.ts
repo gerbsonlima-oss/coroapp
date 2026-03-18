@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 interface CopyRequest {
   sourceTenantId: string;
   targetTenantId: string;
-  dataType: "songs" | "events";
+  dataType: "songTypes" | "songs" | "events";
   itemIds: string[];
 }
 
@@ -21,10 +21,49 @@ interface CopyResponse {
 
 const generateId = () => crypto.randomUUID();
 
+async function copySongType(
+  sourceTenantId: string,
+  targetTenantId: string,
+  songTypeId: string,
+  mapping: Record<string, string>
+): Promise<string> {
+  const { data: sourceType, error: fetchError } = await supabase
+    .from("song_types")
+    .select("*")
+    .eq("id", songTypeId)
+    .eq("tenant_id", sourceTenantId)
+    .single();
+
+  if (fetchError || !sourceType) {
+    throw new Error(`Falha ao buscar tipo de música: ${songTypeId}`);
+  }
+
+  const newId = generateId();
+
+  const { error: insertError } = await supabase
+    .from("song_types")
+    .insert({
+      id: newId,
+      tenant_id: targetTenantId,
+      name: sourceType.name,
+      slug: sourceType.slug,
+      description: sourceType.description,
+      order_index: sourceType.order_index,
+    });
+
+  if (insertError) {
+    throw new Error(`Falha ao inserir tipo de música: ${insertError.message}`);
+  }
+
+  mapping[songTypeId] = newId;
+  return newId;
+}
+
 async function copySong(
   sourceTenantId: string,
   targetTenantId: string,
   songId: string,
+  songTypeMapping: Record<string, string>,
   songMapping: Record<string, string>
 ): Promise<string> {
   const { data: sourceSong, error: fetchError } = await supabase
@@ -39,7 +78,7 @@ async function copySong(
   }
 
   const newSongId = generateId();
-  const newTypeId = sourceSong.type;
+  const newTypeId = songTypeMapping[sourceSong.type] || sourceSong.type;
 
   const { error: insertError } = await supabase
     .from("songs")
@@ -161,23 +200,45 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (dataType !== "songs" && dataType !== "events") {
-      return new Response(
-        JSON.stringify({ error: "Tipos de música são globais e não precisam ser copiados" }),
-        { status: 400 }
-      );
-    }
-
+    const songTypeMapping: Record<string, string> = {};
     const songMapping: Record<string, string> = {};
     const eventMapping: Record<string, string> = {};
     let copiedCount = 0;
 
-    if (dataType === "songs") {
+    if (dataType === "songTypes") {
+      for (const typeId of itemIds) {
+        await copySongType(sourceTenantId, targetTenantId, typeId, songTypeMapping);
+        copiedCount++;
+      }
+    } else if (dataType === "songs") {
+      const { data: sourceTypes } = await supabase
+        .from("song_types")
+        .select("*")
+        .eq("tenant_id", sourceTenantId);
+
+      if (sourceTypes) {
+        for (const type of sourceTypes) {
+          const { data: existingType } = await supabase
+            .from("song_types")
+            .select("id")
+            .eq("tenant_id", targetTenantId)
+            .eq("slug", type.slug)
+            .single();
+
+          if (existingType) {
+            songTypeMapping[type.id] = existingType.id;
+          } else {
+            await copySongType(sourceTenantId, targetTenantId, type.id, songTypeMapping);
+          }
+        }
+      }
+
       for (const songId of itemIds) {
         await copySong(
           sourceTenantId,
           targetTenantId,
           songId,
+          songTypeMapping,
           songMapping
         );
         copiedCount++;
@@ -204,7 +265,7 @@ Deno.serve(async (req) => {
     const response: CopyResponse = {
       success: true,
       copied: copiedCount,
-      mapping: { ...songMapping, ...eventMapping },
+      mapping: { ...songTypeMapping, ...songMapping, ...eventMapping },
     };
 
     return new Response(JSON.stringify(response), {
