@@ -154,7 +154,6 @@ const NewEvent = () => {
         .single();
 
       if (eventError) throw eventError;
-      }
 
       toast.success('Evento criado com sucesso!');
       navigate('/events');
@@ -302,7 +301,6 @@ const NewEvent = () => {
                 className={`rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.notes ? 'border-red-500' : ''}`}
               />
               {errors.notes && <p className="text-xs text-red-500">{errors.notes}</p>}
-            </div>
             </div>
 
             <Button
