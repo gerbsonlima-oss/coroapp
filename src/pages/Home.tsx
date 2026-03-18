@@ -9,7 +9,7 @@ import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { useLiturgicalCalendar } from '@/hooks/useLiturgicalCalendar';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,6 +44,7 @@ const Home = () => {
   const { isSuperAdmin } = useSuperAdmin();
   const { isAdmin } = useIsAdmin();
   const { tenant, tenantId } = useTenant();
+  const { buildPath } = useTenantPath();
   const { saveEvents } = useOfflineStorage();
   const today = new Date();
   const { today: liturgicalDay } = useLiturgicalCalendar(today);
@@ -155,7 +156,7 @@ const Home = () => {
     <Card
       key={event.id}
       className={`overflow-hidden cursor-pointer hover:shadow-md transition-all border-0 group flex flex-row ${isPast ? 'bg-muted/30' : ''}`}
-      onClick={() => navigate(`/events/${event.id}`)}
+      onClick={() => navigate(buildPath(`/events/${event.id}`))}
     >
       {event.cover_image_url && (
         <div className={`relative ${isPast ? 'w-20 h-20' : 'w-24 h-24'} flex-shrink-0 overflow-hidden bg-muted`}>

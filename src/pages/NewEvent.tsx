@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,12 +35,13 @@ const NewEvent = () => {
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { tenantId, loading: tenantLoading } = useTenant();
+  const { buildPath } = useTenantPath();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('Apenas administradores podem criar eventos');
-      navigate('/events');
+      navigate(buildPath('/events'));
     }
   }, [isAdmin, adminLoading, navigate]);
 
@@ -156,7 +157,7 @@ const NewEvent = () => {
       if (eventError) throw eventError;
 
       toast.success('Evento criado com sucesso!');
-      navigate('/events');
+      navigate(buildPath('/events'));
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -179,7 +180,7 @@ const NewEvent = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
         <div className="flex items-center gap-4 px-4 py-3">
           <button 
-            onClick={() => navigate('/events')}
+            onClick={() => navigate(buildPath('/events'))}
             className="p-2 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />

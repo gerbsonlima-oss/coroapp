@@ -19,6 +19,7 @@ import FullscreenChordViewer from '@/components/FullscreenChordViewer';
 import { SimpleSheetViewer } from '@/components/SimpleSheetViewer';
 import { SaveEventOfflineDialog } from '@/components/SaveEventOfflineDialog';
 import { ReorderSongsSheet } from '@/components/ReorderSongsSheet';
+import { EnhancedMiniPlayer } from '@/components/EnhancedMiniPlayer';
 import { useEventOfflineSave, loadOfflineEventData, isOfflineMode } from '@/hooks/useEventOfflineSave';
 import { useAudioCache } from '@/hooks/useAudioCache';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -28,7 +29,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { shareCompleteToWhatsApp } from '@/utils/whatsappShare';
 import { Helmet } from 'react-helmet-async';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { ExportLyricsDialog, LyricsExportOptions } from '@/components/ExportLyricsDialog';
 import { useExportPreferences } from '@/hooks/useExportPreferences';
@@ -108,6 +109,7 @@ const SimpleEventAudios = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { tenantSlug, tenant } = useTenant();
+  const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
   const { preferences: exportPreferences, savePreferences: saveExportPreferences } = useExportPreferences();
   
@@ -159,7 +161,11 @@ const SimpleEventAudios = () => {
 
   // Helper functions and Memoized values
   const availableNaipes = useMemo(() => {
-    const naipes = new Set(audios.map(a => a.naipe).filter(n => n.toLowerCase() !== 'unissono'));
+    const naipes = new Set(
+      audios
+        .map(a => a.naipe?.trim())
+        .filter((n): n is string => Boolean(n) && n.toLowerCase() !== 'unissono')
+    );
     return Array.from(naipes).sort();
   }, [audios]);
 
@@ -243,7 +249,7 @@ const SimpleEventAudios = () => {
   }, [selectedNaipes]);
 
   const handleGoBack = () => {
-    navigate('/events');
+    navigate(buildPath('/events'));
   };
 
   // Update global playlist when audios or filters change (only include items with actual audio)
@@ -637,7 +643,7 @@ const SimpleEventAudios = () => {
 
   // Navigation handlers for admin actions
   const handleEditEvent = () => {
-    navigate(`/events/${id}/edit`);
+    navigate(buildPath(`/events/${id}/edit`));
   };
 
   const handleAddSong = () => {
@@ -837,7 +843,9 @@ const SimpleEventAudios = () => {
         <meta name="twitter:image" content={ogImageUrl} />
       </Helmet>
       
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-36">
+        <EnhancedMiniPlayer bottomOffsetClassName="bottom-0 safe-area-inset-bottom" />
+
         {/* Offline Mode Banner */}
         {offlineMode && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2">
@@ -850,21 +858,73 @@ const SimpleEventAudios = () => {
           </div>
         )}
         
-        {/* Header */}
-        <div className="bg-gradient-to-b from-primary/10 to-background px-4 py-6">
-          <div className="flex items-start gap-4 max-w-2xl mx-auto relative">
-            {/* Back button - only show when accessed internally */}
-            {isInternalAccess && (
+        <div className="sticky top-0 z-20 border-b border-border/60 bg-background/95 backdrop-blur-xl">
+          <div className="max-w-2xl mx-auto px-3 py-3">
+            <div className="flex items-center gap-2">
+              {isInternalAccess && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 shrink-0"
+                  onClick={handleGoBack}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+              <div className="min-w-0 flex-1" />
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 shrink-0 -ml-2"
-                onClick={handleGoBack}
+                className="h-11 w-11 shrink-0"
+                onClick={() => setSearchOpen(true)}
+                title="Buscar música"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <Search className="h-5 w-5" />
               </Button>
-            )}
-            <div className="h-20 w-20 shrink-0 rounded-lg shadow-lg overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center">
+              <Button
+                variant={selectedNaipes.length > 0 ? "default" : "ghost"}
+                size="icon"
+                className="h-11 w-11 shrink-0"
+                onClick={() => setFilterOpen(true)}
+                title="Filtrar por voz"
+              >
+                <Filter className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="hidden">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="flex h-11 flex-1 items-center gap-2 rounded-xl border border-border/70 bg-background px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/40"
+              >
+                <Search className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {searchQuery ? `Busca: ${searchQuery}` : 'Buscar música ou parte da celebração'}
+                </span>
+              </button>
+              <Button
+                variant="outline"
+                className="h-11 gap-2 rounded-xl px-4"
+                onClick={handleDownloadAllAudios}
+                disabled={isDownloadingAll || audios.length === 0}
+                title="Baixar áudios"
+              >
+                {isDownloadingAll ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileArchive className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">Baixar</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="bg-gradient-to-b from-primary/8 to-background px-4 py-4">
+          <div className="flex items-start gap-3 max-w-2xl mx-auto relative">
+            <div className="h-16 w-16 shrink-0 rounded-md shadow-lg overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center">
               {event.cover_image_url ? (
                 <img 
                   src={event.cover_image_url} 
@@ -877,13 +937,13 @@ const SimpleEventAudios = () => {
             </div>
             <div className="flex-1 min-w-0 pr-8">
               <div className="flex items-center gap-2">
-                <h1 className="font-bold text-xl text-foreground leading-tight">
+                <h1 className="font-bold text-lg text-foreground leading-tight line-clamp-2">
                   {event.name}
                 </h1>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
                   onClick={() => {
                     const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'wxagqywobyzntrlkhfao';
                     const ogUrl = `https://${supabaseProjectId}.supabase.co/functions/v1/og-event?id=${id}`;
@@ -895,7 +955,11 @@ const SimpleEventAudios = () => {
                   <Link2 className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                <p className="text-xs text-muted-foreground">
+                  {formattedDate}
+                  {event.location ? ` - ${event.location}` : ""}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {audios.length} áudio{audios.length !== 1 ? 's' : ''}
                 </p>
@@ -919,7 +983,7 @@ const SimpleEventAudios = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="hidden h-9 w-9 sm:inline-flex"
                 onClick={handleDownloadAllAudios}
                 disabled={isDownloadingAll || audios.length === 0}
                 title="Baixar áudios"
@@ -1128,10 +1192,10 @@ const SimpleEventAudios = () => {
         </div>
 
         {/* Audio List */}
-        <div className="px-4 py-2 max-w-2xl mx-auto pb-24">
+        <div className="px-2 py-2 max-w-2xl mx-auto pb-20">
           {/* Naipe Filter Chips */}
           {availableNaipes.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-1.5 mb-3 px-2">
               {availableNaipes.map((naipe) => {
                 const lowerNaipe = naipe.toLowerCase();
                 const isActive = selectedNaipes.includes(naipe);
@@ -1147,7 +1211,7 @@ const SimpleEventAudios = () => {
                     key={naipe}
                     variant={isActive ? "default" : "outline"}
                     size="sm"
-                    className={`h-7 px-3 text-xs font-medium rounded-full ${colorClasses}`}
+                    className={`h-8 px-3 text-xs font-medium rounded-full ${colorClasses}`}
                     onClick={() => toggleNaipe(naipe)}
                   >
                     {naipe}
@@ -1158,7 +1222,7 @@ const SimpleEventAudios = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => setSelectedNaipes([])}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -1284,7 +1348,7 @@ const SimpleEventAudios = () => {
               </Button>
             </Card>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {filteredAudios.map((audio) => {
                 const hasAudio = audio.audio_url !== '';
                 const isActive = hasAudio && currentTrack?.id === audio.id;
@@ -1293,7 +1357,7 @@ const SimpleEventAudios = () => {
                 return (
                   <Card 
                     key={audio.id} 
-                    className={`p-3 transition-colors hover:bg-accent/50 ${isActive ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}
+                    className={`rounded-none border-x-0 border-t-0 px-3 py-2.5 shadow-none transition-colors hover:bg-accent/40 ${isActive ? 'bg-primary/5 border-primary/20' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       {/* Play Button or Music Icon */}
@@ -1301,7 +1365,7 @@ const SimpleEventAudios = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-10 w-10 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
+                          className="h-9 w-9 shrink-0 rounded-full bg-primary/10 hover:bg-primary/20"
                           onClick={() => handlePlay(audio)}
                           disabled={isPlayerLoading && !isActive}
                         >
@@ -1314,17 +1378,14 @@ const SimpleEventAudios = () => {
                           )}
                         </Button>
                       ) : (
-                        <div className="h-10 w-10 shrink-0 rounded-full bg-muted/50 flex items-center justify-center">
-                          <Music className="h-5 w-5 text-muted-foreground" />
+                        <div className="h-9 w-9 shrink-0 rounded-full bg-muted/50 flex items-center justify-center">
+                          <Music className="h-4 w-4 text-muted-foreground" />
                         </div>
                       )}
 
                       {/* Song Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-sm text-foreground truncate">
-                            {audio.song_type_name}
-                          </p>
+                        <div className="flex flex-wrap items-center gap-1.5">
                           {hasAudio ? (
                             <Badge 
                               variant={audio.naipe.toLowerCase() === 'unissono' ? "secondary" : "outline"}
@@ -1350,67 +1411,45 @@ const SimpleEventAudios = () => {
                           )}
                           {hasAudio && isCached(audio.audio_url) && (
                             <span title="Disponível offline" className="flex shrink-0">
-                              <Check className="h-3 w-3 text-green-500" />
+                              <Check className="h-3.5 w-3.5 text-green-500" />
                             </span>
                           )}
                           {hasAudio && currentTrack?.id === audio.id && repeatMode === 'track' && (
                             <span title="Repetindo esta música" className="flex shrink-0">
-                              <Repeat1 className="h-3 w-3 text-primary" />
+                              <Repeat1 className="h-3.5 w-3.5 text-primary" />
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        <Badge variant="outline" className="mt-1 h-4 w-fit px-1.5 text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {audio.song_type_name}
+                        </Badge>
+                        <p className="mt-1 truncate text-sm font-semibold text-foreground">
                           {audio.song_name}
                         </p>
+                        {!hasAudio && (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            Sem áudio disponível
+                          </p>
+                        )}
                       </div>
 
-                      {/* Lyrics Button */}
-                      {audio.song_lyrics && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => handleOpenLyrics(audio)}
-                          title="Ver letra"
-                        >
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      )}
-
-                      {/* Chords Button */}
-                      {audio.song_chords && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => handleOpenChords(audio)}
-                          title="Ver cifra"
-                        >
-                          <Guitar className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      )}
-
-                      {/* Sheet Music Button */}
-                      {audio.song_sheet_music_pdf_url && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => handleOpenSheetMusic(audio)}
-                          title="Ver partitura"
-                        >
-                          <Music2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      )}
-
-                      {/* Actions Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover">
+                      <div className="flex shrink-0 items-center gap-1">
+                        {audio.song_lyrics && (
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground/70" />
+                        )}
+                        {audio.song_chords && (
+                          <Guitar className="h-3.5 w-3.5 text-muted-foreground/70" />
+                        )}
+                        {audio.song_sheet_music_pdf_url && (
+                          <Music2 className="h-3.5 w-3.5 text-muted-foreground/70" />
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-popover">
                           {hasAudio && (
                             <>
                               <DropdownMenuItem 
@@ -1439,6 +1478,25 @@ const SimpleEventAudios = () => {
                                 {currentTrack?.id === audio.id && repeatMode === 'track' ? 'Desativar Repetição' : 'Repetir Música'}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
+                              {audio.song_lyrics && (
+                                <DropdownMenuItem onClick={() => handleOpenLyrics(audio)}>
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Ver letra
+                                </DropdownMenuItem>
+                              )}
+                              {audio.song_chords && (
+                                <DropdownMenuItem onClick={() => handleOpenChords(audio)}>
+                                  <Guitar className="mr-2 h-4 w-4" />
+                                  Ver cifra
+                                </DropdownMenuItem>
+                              )}
+                              {audio.song_sheet_music_pdf_url && (
+                                <DropdownMenuItem onClick={() => handleOpenSheetMusic(audio)}>
+                                  <Music2 className="mr-2 h-4 w-4" />
+                                  Ver partitura
+                                </DropdownMenuItem>
+                              )}
+                              {(audio.song_lyrics || audio.song_chords || audio.song_sheet_music_pdf_url) && <DropdownMenuSeparator />}
                               <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
                                 <MessageCircle className="mr-2 h-4 w-4" />
                                 Enviar por WhatsApp
@@ -1466,13 +1524,14 @@ const SimpleEventAudios = () => {
                               </DropdownMenuItem>
                             </>
                           )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                     
                     {/* Progress Bar - Shows when active (playing or paused) */}
                     {hasAudio && isActive && duration > 0 && (
-                      <div className="mt-3 flex items-center gap-2">
+                      <div className="mt-2 flex items-center gap-2">
                         <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">
                           {formatTime(currentTime)}
                         </span>

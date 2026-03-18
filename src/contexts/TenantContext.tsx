@@ -178,7 +178,16 @@ export function useTenant() {
 export function useTenantPath() {
   const { tenantSlug } = useTenant();
   
-  const buildPath = (path: string): string => path;
+  const buildPath = (path: string): string => {
+    if (!tenantSlug) return path;
+    if (!path) return `/${tenantSlug}`;
+    if (path.startsWith(`/${tenantSlug}`)) return path;
+    if (path.startsWith('/auth') || path.startsWith('/e/') || path.startsWith('/public') || path.startsWith('/pending-approval')) {
+      return path;
+    }
+    if (path === '/') return `/${tenantSlug}`;
+    return path.startsWith('/') ? `/${tenantSlug}${path}` : `/${tenantSlug}/${path}`;
+  };
   
   return { buildPath, tenantSlug };
 }

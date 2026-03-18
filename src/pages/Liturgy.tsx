@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { useLiturgy } from '@/hooks/useLiturgy';
 import { getLiturgicalDay } from '@/data/liturgicalCalendar';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 interface DayCard {
   date: Date;
@@ -23,6 +24,7 @@ interface DayCard {
 const Liturgy = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { buildPath } = useTenantPath();
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
@@ -149,7 +151,7 @@ const Liturgy = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => navigate('/events')}
+          onClick={() => navigate(buildPath('/events'))}
           className="h-8 w-8 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />

@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CachedImage } from './CachedImage';
 import { OfflineBadge } from './OfflineBadge';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 interface Event {
   id: string;
@@ -31,6 +32,7 @@ interface EventListItemProps {
 
 export const EventListItem = ({ event }: EventListItemProps) => {
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
   const { isEventAvailableOffline } = useOfflineStorage();
   const [expanded, setExpanded] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
@@ -86,7 +88,7 @@ export const EventListItem = ({ event }: EventListItemProps) => {
     <Card className="overflow-hidden border-0 bg-card hover:bg-accent/5 transition-colors shadow-sm">
       <div 
         className="flex flex-row cursor-pointer"
-        onClick={() => navigate(`/events/${event.id}`)}
+        onClick={() => navigate(buildPath(`/events/${event.id}`))}
       >
         {/* Imagem */}
         <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-muted">

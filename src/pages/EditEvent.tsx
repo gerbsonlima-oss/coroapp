@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,13 +51,14 @@ const EditEvent = () => {
   const [pdfTheme, setPdfTheme] = useState<string>('deep_blue_gold');
   const { user } = useAuth();
   const { tenantId } = useTenant();
+  const { buildPath } = useTenantPath();
   const navigate = useNavigate();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('Você não tem permissão para acessar esta página');
-      navigate('/events');
+      navigate(buildPath('/events'));
     }
   }, [isAdmin, adminLoading, navigate]);
 
@@ -104,7 +105,7 @@ const EditEvent = () => {
       setCoverImageUrl(eventData.cover_image_url || null);
     } catch (error) {
       toast.error('Erro ao carregar dados do evento');
-      navigate('/events');
+      navigate(buildPath('/events'));
     } finally {
       setInitialLoading(false);
     }
@@ -212,7 +213,7 @@ const EditEvent = () => {
       if (eventError) throw eventError;
 
       toast.success('Evento atualizado com sucesso!');
-      navigate(`/events/${id}`);
+      navigate(buildPath(`/events/${id}`));
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -243,7 +244,7 @@ const EditEvent = () => {
 
       toast.success('Evento excluído com sucesso!');
       setShowDeleteDialog(false);
-      navigate('/events');
+      navigate(buildPath('/events'));
     } catch (error: any) {
       toast.error('Erro ao excluir evento');
     }
@@ -262,7 +263,7 @@ const EditEvent = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
         <div className="flex items-center gap-4 px-4 py-3">
           <button 
-            onClick={() => navigate(`/events/${id}`)}
+            onClick={() => navigate(buildPath(`/events/${id}`))}
             className="p-2 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { useEventOfflineSave } from '@/hooks/useEventOfflineSave';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -151,6 +151,7 @@ const EventDetails = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
+  const { buildPath } = useTenantPath();
   const { isEventAvailableOffline, refreshSavedEventIds } = useOfflineStorage();
   const isOnline = useOnlineStatus();
   
@@ -900,11 +901,11 @@ const EventDetails = () => {
               {user && canEdit && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
+                  <DropdownMenuItem onClick={() => navigate(buildPath(`/events/edit/${id}`))}>
                     <Edit className="mr-2 h-4 w-4" />
                     Editar Evento
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
+                  <DropdownMenuItem onClick={() => navigate(buildPath(`/events/${id}/quick-edit`))}>
                     <Music className="mr-2 h-4 w-4" />
                     Editar Músicas
                   </DropdownMenuItem>
@@ -934,7 +935,7 @@ const EventDetails = () => {
               {user && canEdit && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/rehearsals`)}>
+                  <DropdownMenuItem onClick={() => navigate(buildPath(`/events/${id}/rehearsals`))}>
                     <Calendar className="mr-2 h-4 w-4" />
                     Ensaios
                   </DropdownMenuItem>
@@ -1115,7 +1116,7 @@ const EventDetails = () => {
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                     {user && canEdit && (
-                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
                                     )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -1168,7 +1169,7 @@ const EventDetails = () => {
                           <DropdownMenuContent align="end" className="z-50">
                             <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4 text-primary" /> Baixar partitura (PDF)</DropdownMenuItem>
                             {user && canEdit && <>
-                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
                               <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Remover do evento</DropdownMenuItem>
                             </>}
                           </DropdownMenuContent>
@@ -1256,7 +1257,7 @@ const EventDetails = () => {
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                 {user && canEdit && (
-                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1336,7 +1337,7 @@ const EventDetails = () => {
                           </DropdownMenuItem>
                           {user && canEdit && (
                             <>
-                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}>
                                 <Edit className="mr-2 h-4 w-4" /> Editar Música
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive">
@@ -1386,9 +1387,6 @@ const EventDetails = () => {
                            <p className="text-xs text-muted-foreground truncate font-medium flex-1">
                              {song.name}
                            </p>
-                            <Badge variant="outline" className={cn("py-0 px-1 text-[9px] h-3.5 shrink-0 uppercase tracking-tighter", naipeColors[audio.naipe.toLowerCase()] || "bg-secondary/30 border-primary/10 text-muted-foreground")}>
-                              {audio.naipe}
-                            </Badge>
                          </div>
                        </div>
                     </div>
@@ -1436,7 +1434,7 @@ const EventDetails = () => {
                             <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
                           </DropdownMenuItem>
                           {user && canEdit && (
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}>
                               <Edit className="mr-2 h-4 w-4" /> Editar Música
                             </DropdownMenuItem>
                           )}

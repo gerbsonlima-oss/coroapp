@@ -1,23 +1,25 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Music, BookOpen, Calendar } from 'lucide-react';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 export function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { buildPath } = useTenantPath();
   
   const isActive = (basePath: string): boolean => {
     const pathname = location.pathname;
     if (basePath === '/') {
-      return pathname === '/';
+      return pathname === '/' || pathname.split('/').length === 2;
     }
-    return pathname.startsWith(basePath);
+    return pathname.includes(basePath);
   };
 
   const navItems = [
-    { label: 'Início', icon: Home, path: '/', isActive: isActive('/') },
-    { label: 'Eventos', icon: Calendar, path: '/events', isActive: isActive('/events') },
-    { label: 'Repertório', icon: Music, path: '/songs', isActive: isActive('/songs') },
-    { label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isActive('/liturgy') },
+    { label: 'Início', icon: Home, path: buildPath('/'), isActive: isActive('/'), basePath: '/' },
+    { label: 'Eventos', icon: Calendar, path: buildPath('/events'), isActive: isActive('/events'), basePath: '/events' },
+    { label: 'Repertório', icon: Music, path: buildPath('/songs'), isActive: isActive('/songs'), basePath: '/songs' },
+    { label: 'Liturgia', icon: BookOpen, path: buildPath('/liturgy'), isActive: isActive('/liturgy'), basePath: '/liturgy' },
   ];
 
   return (
