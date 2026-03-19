@@ -50,7 +50,7 @@ const Auth = () => {
   const [phone, setPhone] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const { signUp, signIn, user } = useAuth();
+  const { signUp, signIn, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const { buildPath } = useTenantPath();
 

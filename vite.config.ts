@@ -52,6 +52,9 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff,woff2}'],
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
       },
+      workbox: {
+        navigateFallbackDenylist: [/^\/~oauth/],
+      },
     }),
   ].filter(Boolean),
   resolve: {
