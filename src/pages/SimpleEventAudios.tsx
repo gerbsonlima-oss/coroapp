@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, ArrowLeft, Link2, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1, ListOrdered } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, ArrowLeft, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1, ListOrdered } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -49,15 +49,15 @@ const defaultTypeLabels: Record<string, { name: string; order: number }> = {
   entrada: { name: 'Entrada', order: 1 },
   ato_penitencial: { name: 'Ato Penitencial', order: 2 },
   perdao: { name: 'Ato Penitencial', order: 2 },
-  gloria: { name: 'GlÃƒÆ’Ã‚Â³ria', order: 3 },
+  gloria: { name: 'Glória', order: 3 },
   salmo: { name: 'Salmo', order: 4 },
-  aclamacao: { name: 'AclamaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o', order: 5 },
-  oferendas: { name: 'OfertÃƒÆ’Ã‚Â³rio', order: 6 },
-  ofertorio: { name: 'OfertÃƒÆ’Ã‚Â³rio', order: 6 },
+  aclamacao: { name: 'Aclamação', order: 5 },
+  oferendas: { name: 'Ofertório', order: 6 },
+  ofertorio: { name: 'Ofertório', order: 6 },
   santo: { name: 'Santo', order: 7 },
   cordeiro: { name: 'Cordeiro', order: 8 },
-  comunhao: { name: 'Canto da ComunhÃƒÆ’Ã‚Â£o', order: 9 },
-  acao_gracas: { name: 'AÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o de GraÃƒÆ’Ã‚Â§as', order: 10 },
+  comunhao: { name: 'Canto da Comunhão', order: 9 },
+  acao_gracas: { name: 'Ação de Graças', order: 10 },
   canto_processional: { name: 'Canto Processional', order: 12 },
   final: { name: 'Final', order: 11 },
   outro: { name: 'Outro', order: 99 },
@@ -87,12 +87,47 @@ interface SongType {
   order_index: number;
 }
 
+const MAIN_NAIPE_FILTERS = ['soprano', 'contralto', 'tenor', 'baixo'] as const;
+const AUDIO_NAIPE_OPTIONS = ['soprano', 'contralto', 'tenor', 'baixo', '4 vozes'] as const;
+
+const normalizeNaipe = (value: string) => value.trim().toLowerCase();
+const normalizeNaipeAlias = (value: string) => {
+  const normalized = normalizeNaipe(value).replace(/\s+/g, ' ');
+  if (normalized === 'unissono' || normalized === 'todos' || normalized === '4vozes' || normalized === '4 vozes') {
+    return '4 vozes';
+  }
+  return normalized;
+};
+const isFourVoices = (value: string) => {
+  return normalizeNaipeAlias(value) === '4 vozes';
+};
+
+const NAIPE_ORDER: Record<string, number> = {
+  soprano: 0,
+  contralto: 1,
+  tenor: 2,
+  baixo: 3,
+  '4 vozes': 4,
+};
+
+const getNaipeSortOrder = (naipe: string) => {
+  const normalized = normalizeNaipeAlias(naipe);
+  return NAIPE_ORDER[normalized] ?? 99;
+};
+
 const sortByTypeOrder = (audios: SongAudio[]): SongAudio[] => {
   return [...audios].sort((a, b) => {
     // First sort by event order_index (from drag-and-drop reordering)
     const aOrder = a.event_order_index ?? 999;
     const bOrder = b.event_order_index ?? 999;
     if (aOrder !== bOrder) return aOrder - bOrder;
+
+    // Inside the same song group, always sort by naipe:
+    // soprano -> contralto -> tenor -> baixo -> 4 vozes
+    if (a.song_id === b.song_id) {
+      const naipeOrderCompare = getNaipeSortOrder(a.naipe) - getNaipeSortOrder(b.naipe);
+      if (naipeOrderCompare !== 0) return naipeOrderCompare;
+    }
     
     // Fallback: sort by song type order
     const typeOrderCompare = a.song_type_order - b.song_type_order;
@@ -128,7 +163,7 @@ const SimpleEventAudios = () => {
     currentTrack, 
     currentTime, 
     duration, 
-    seek, 
+    seek,
     setPlaylist,
     isLoading: isPlayerLoading,
     repeatMode,
@@ -151,34 +186,33 @@ const SimpleEventAudios = () => {
   });
   const [selectedNaipes, setSelectedNaipes] = useState<string[]>(() => {
     const saved = localStorage.getItem('simpleEvent_selectedNaipes');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((item: unknown) => String(item))
+        .map(normalizeNaipe)
+        .filter((naipe) => MAIN_NAIPE_FILTERS.includes(naipe as typeof MAIN_NAIPE_FILTERS[number]));
+    } catch {
+      return [];
+    }
   });
   const [showExportLyricsDialog, setShowExportLyricsDialog] = useState(false);
   const [showReorderSheet, setShowReorderSheet] = useState(false);
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
 
   // Helper functions and Memoized values
-  const availableNaipes = useMemo(() => {
-    const naipes = new Set(audios.map(a => a.naipe).filter(n => n.trim() !== ''));
-    return Array.from(naipes).sort();
-  }, [audios]);
-
-  const toggleNaipe = (naipe: string) => {
-    setSelectedNaipes(prev => 
-      prev.includes(naipe) 
-        ? prev.filter(n => n !== naipe)
-        : [...prev, naipe]
-    );
-  };
-
   const filteredAudios = useMemo(() => {
     let result = audios;
     if (selectedNaipes.length > 0) {
       result = result.filter(a => 
         // Include songs without audio (naipe is empty)
         a.naipe === '' ||
+        // Always include "4 vozes" tracks
+        isFourVoices(a.naipe) ||
         
-        selectedNaipes.includes(a.naipe)
+        selectedNaipes.includes(normalizeNaipe(a.naipe))
       );
     }
     if (searchQuery.trim()) {
@@ -186,15 +220,11 @@ const SimpleEventAudios = () => {
       result = result.filter(a => 
         a.song_name.toLowerCase().includes(query) ||
         a.song_type_name.toLowerCase().includes(query) ||
-        (a.naipe && a.naipe.toLowerCase().includes(query))
+        (a.naipe && normalizeNaipeAlias(a.naipe).includes(query))
       );
     }
     return result;
   }, [audios, selectedNaipes, searchQuery]);
-
-  const isUnfilteredView = useMemo(() => {
-    return searchQuery.trim() === '' && selectedNaipes.length === 0;
-  }, [searchQuery, selectedNaipes]);
 
   const songGroupNumberBySongId = useMemo(() => {
     const map: Record<string, number> = {};
@@ -210,8 +240,13 @@ const SimpleEventAudios = () => {
     return map;
   }, [filteredAudios]);
 
+  const playableAudios = useMemo(
+    () => filteredAudios.filter((audio) => audio.audio_url !== ''),
+    [filteredAudios]
+  );
+
   const handlePlay = async (audio: SongAudio) => {
-    const index = filteredAudios.findIndex(a => a.id === audio.id);
+    const index = playableAudios.findIndex(a => a.id === audio.id);
     if (index >= 0) {
       if (currentTrack?.id === audio.id) {
         togglePlay();
@@ -220,10 +255,6 @@ const SimpleEventAudios = () => {
       }
     }
   };
-
-  const handleSeek = useCallback((value: number[]) => {
-    seek(value[0]);
-  }, [seek]);
 
   const formatTime = (time: number): string => {
     if (!time || isNaN(time)) return '0:00';
@@ -253,6 +284,10 @@ const SimpleEventAudios = () => {
   const [audioForTypeEdit, setAudioForTypeEdit] = useState<SongAudio | null>(null);
   const [selectedTypeForEdit, setSelectedTypeForEdit] = useState('');
   const [savingTypeForEvent, setSavingTypeForEvent] = useState(false);
+  const [editNaipeModalOpen, setEditNaipeModalOpen] = useState(false);
+  const [audioForNaipeEdit, setAudioForNaipeEdit] = useState<SongAudio | null>(null);
+  const [selectedNaipeForEdit, setSelectedNaipeForEdit] = useState('');
+  const [savingNaipeForAudio, setSavingNaipeForAudio] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -270,9 +305,8 @@ const SimpleEventAudios = () => {
 
   // Update global playlist when audios or filters change (only include items with actual audio)
   useEffect(() => {
-    const audiosWithSound = filteredAudios.filter(a => a.audio_url !== '');
-    if (audiosWithSound.length > 0) {
-      const tracks = audiosWithSound.map(a => ({
+    if (playableAudios.length > 0) {
+      const tracks = playableAudios.map(a => ({
         id: a.id,
         songId: a.song_id,
         songName: a.song_name,
@@ -285,7 +319,7 @@ const SimpleEventAudios = () => {
     } else {
       setPlaylist([]);
     }
-  }, [filteredAudios, setPlaylist]);
+  }, [playableAudios, setPlaylist]);
 
   // Offline save hook
   const {
@@ -364,7 +398,7 @@ const SimpleEventAudios = () => {
           naipe: audio.naipe,
           audio_url: audio.audio_url,
           name: audio.name,
-          song_name: song?.name || 'MÃƒÆ’Ã‚Âºsica',
+          song_name: song?.name || 'Música',
           song_type_slug: typeSlug,
           song_type_name: typeInfo.name,
           song_type_order: typeInfo.order,
@@ -389,7 +423,7 @@ const SimpleEventAudios = () => {
         fetchEventData();
       } else {
         setLoading(false);
-        toast.error('Evento nÃƒÆ’Ã‚Â£o disponÃƒÆ’Ã‚Â­vel offline');
+        toast.error('Evento não disponível offline');
       }
     }
   };
@@ -457,7 +491,7 @@ const SimpleEventAudios = () => {
         return {
           ...audio,
           event_song_id: eventSong?.id,
-          song_name: eventSong?.songs?.name || 'MÃƒÆ’Ã‚Âºsica',
+          song_name: eventSong?.songs?.name || 'Música',
           song_type_slug: typeSlug,
           song_type_name: defaultType?.name || songType?.name || typeSlug,
           song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
@@ -484,7 +518,7 @@ const SimpleEventAudios = () => {
             naipe: '',
             audio_url: '',
             name: '',
-            song_name: es.songs?.name || 'MÃƒÆ’Ã‚Âºsica',
+            song_name: es.songs?.name || 'Música',
             song_type_slug: typeSlug,
             song_type_name: defaultType?.name || songType?.name || typeSlug,
             song_type_order: songType?.order_index ?? defaultType?.order ?? 999,
@@ -534,6 +568,24 @@ const SimpleEventAudios = () => {
     setSearchQuery('');
   };
 
+  const toggleNaipeFilter = (naipe: string) => {
+    setSelectedNaipes((prev) => {
+      const next = prev.includes(naipe)
+        ? prev.filter((item) => item !== naipe)
+        : [...prev, naipe];
+
+      return [...next].sort(
+        (a, b) =>
+          MAIN_NAIPE_FILTERS.indexOf(a as typeof MAIN_NAIPE_FILTERS[number]) -
+          MAIN_NAIPE_FILTERS.indexOf(b as typeof MAIN_NAIPE_FILTERS[number])
+      );
+    });
+  };
+
+  const handleSeek = useCallback((value: number[]) => {
+    seek(value[0]);
+  }, [seek]);
+
   const handleDownload = async (audio: SongAudio) => {
     try {
       const response = await fetch(audio.audio_url);
@@ -541,14 +593,14 @@ const SimpleEventAudios = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${audio.song_name} - ${audio.naipe}.mp3`;
+      a.download = `${audio.song_name} - ${normalizeNaipeAlias(audio.naipe)}.mp3`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast.success('Download iniciado!');
     } catch (error) {
-      toast.error('Erro ao baixar ÃƒÆ’Ã‚Â¡udio');
+      toast.error('Erro ao baixar áudio');
     }
   };
 
@@ -556,7 +608,7 @@ const SimpleEventAudios = () => {
     if (audios.length === 0 || !event) return;
     
     setIsDownloadingAll(true);
-    const toastId = toast.loading('Preparando download de todos os ÃƒÆ’Ã‚Â¡udios...');
+    const toastId = toast.loading('Preparando download de todos os áudios...');
     
     try {
       const { exportEventZIP } = await import('@/utils/exportEventZIP');
@@ -567,12 +619,12 @@ const SimpleEventAudios = () => {
         songId: a.song_id,
         songName: a.song_name,
         songType: a.song_type_slug,
-        naipe: a.naipe,
+        naipe: normalizeNaipeAlias(a.naipe),
         url: a.audio_url
       }));
 
       // If naipes are selected, the ZIP utility will label it accordingly
-      const naipeLabel = selectedNaipes.length === 1 ? selectedNaipes[0] : 'todos';
+      const naipeLabel = selectedNaipes.length === 1 ? selectedNaipes[0] : '4 vozes';
       
       await exportEventZIP(event.name, tracks, naipeLabel);
       toast.dismiss(toastId);
@@ -590,7 +642,7 @@ const SimpleEventAudios = () => {
       audio.song_name,
       audio.audio_url,
       audio.song_sheet_music_pdf_url || undefined,
-      audio.naipe
+      normalizeNaipeAlias(audio.naipe)
     );
   };
 
@@ -689,7 +741,7 @@ const SimpleEventAudios = () => {
       setAvailableSongs(filtered);
     } catch (error) {
       console.error('Error fetching songs:', error);
-      toast.error('Erro ao carregar mÃƒÆ’Ã‚Âºsicas');
+      toast.error('Erro ao carregar músicas');
     } finally {
       setLoadingAvailableSongs(false);
     }
@@ -740,7 +792,7 @@ const SimpleEventAudios = () => {
       fetchEventData();
     } catch (error) {
       console.error('Error adding song:', error);
-      toast.error('Erro ao adicionar mÃƒÆ’Ã‚Âºsica');
+      toast.error('Erro ao adicionar música');
     } finally {
       setAddingSong(false);
     }
@@ -786,7 +838,7 @@ const SimpleEventAudios = () => {
       fetchEventData();
     } catch (error) {
       console.error('Error creating song:', error);
-      toast.error('Erro ao criar mÃƒÆ’Ã‚Âºsica');
+      toast.error('Erro ao criar música');
     } finally {
       setIsCreatingNewSong(false);
     }
@@ -871,6 +923,56 @@ const SimpleEventAudios = () => {
     }
   };
 
+  const openNaipeEditModal = (audio: SongAudio) => {
+    setAudioForNaipeEdit(audio);
+    setSelectedNaipeForEdit(normalizeNaipeAlias(audio.naipe));
+    setEditNaipeModalOpen(true);
+  };
+
+  const handleSaveNaipeForAudio = async () => {
+    if (!audioForNaipeEdit || !selectedNaipeForEdit) return;
+
+    setSavingNaipeForAudio(true);
+    try {
+      const { error } = await supabase
+        .from('song_audios')
+        .update({ naipe: selectedNaipeForEdit })
+        .eq('id', audioForNaipeEdit.id);
+
+      if (error) throw error;
+
+      setAudios((prev) =>
+        sortByTypeOrder(
+          prev.map((a) =>
+            a.id === audioForNaipeEdit.id
+              ? {
+                  ...a,
+                  naipe: selectedNaipeForEdit,
+                }
+              : a
+          )
+        )
+      );
+
+      setSelectedAudio((prev) =>
+        prev && prev.id === audioForNaipeEdit.id
+          ? {
+              ...prev,
+              naipe: selectedNaipeForEdit,
+            }
+          : prev
+      );
+
+      toast.success('Naipe do áudio atualizado');
+      setEditNaipeModalOpen(false);
+    } catch (error) {
+      console.error('Error updating audio naipe:', error);
+      toast.error('Erro ao atualizar naipe do áudio');
+    } finally {
+      setSavingNaipeForAudio(false);
+    }
+  };
+
   const handleDeleteSong = async () => {
     if (!songToDelete) return;
     
@@ -885,12 +987,12 @@ const SimpleEventAudios = () => {
       
       if (error) throw error;
       
-      toast.success('MÃƒÆ’Ã‚Âºsica removida do evento');
+      toast.success('Música removida do evento');
       // Refresh data
       fetchEventData();
     } catch (error) {
       console.error('Error removing song:', error);
-      toast.error('Erro ao remover mÃƒÆ’Ã‚Âºsica');
+      toast.error('Erro ao remover música');
     } finally {
       setDeletingSongId(null);
       setSongToDelete(null);
@@ -915,7 +1017,7 @@ const SimpleEventAudios = () => {
   if (!event) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground">Evento nÃƒÆ’Ã‚Â£o encontrado</p>
+        <p className="text-muted-foreground">Evento não encontrado</p>
       </div>
     );
   }
@@ -926,14 +1028,14 @@ const SimpleEventAudios = () => {
   return (
     <>
       <Helmet>
-        <title>{event.name} - ÃƒÆ’Ã‚Âudios</title>
+        <title>{event.name} - Áudios</title>
         <meta property="og:title" content={event.name} />
-        <meta property="og:description" content={`${formattedDate}${event.location ? ` - ${event.location}` : ''} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${audios.length} ÃƒÆ’Ã‚Â¡udios`} />
+        <meta property="og:description" content={`${formattedDate}${event.location ? ` - ${event.location}` : ''} • ${audios.length} áudios`} />
         <meta property="og:image" content={ogImageUrl} />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={event.name} />
-        <meta name="twitter:description" content={`${formattedDate}${event.location ? ` - ${event.location}` : ''} ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ ${audios.length} ÃƒÆ’Ã‚Â¡udios`} />
+        <meta name="twitter:description" content={`${formattedDate}${event.location ? ` - ${event.location}` : ''} • ${audios.length} áudios`} />
         <meta name="twitter:image" content={ogImageUrl} />
       </Helmet>
       
@@ -944,27 +1046,38 @@ const SimpleEventAudios = () => {
             <div className="max-w-2xl mx-auto flex items-center gap-2 text-amber-600 dark:text-amber-400">
               <CloudDownload className="h-4 w-4 shrink-0" />
               <p className="text-xs font-medium">
-                Modo Offline ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Dados carregados do armazenamento local
+                Modo Offline - Dados carregados do armazenamento local
               </p>
             </div>
           </div>
         )}
         
         {/* Header */}
-        <div className="bg-gradient-to-b from-primary/10 to-background px-4 py-6">
-          <div className="flex items-start gap-4 max-w-2xl mx-auto relative">
+        <div className="relative overflow-hidden border-b border-white/10 bg-[#111111] px-4 py-6">
+          {event.cover_image_url ? (
+            <img
+              src={event.cover_image_url}
+              alt={event.name}
+              className="absolute inset-0 h-[230px] w-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 h-[230px] w-full bg-gradient-to-br from-[#1b63e6]/30 via-[#111111] to-[#111111]" />
+          )}
+          <div className="absolute inset-0 h-[230px] bg-gradient-to-b from-black/30 via-black/65 to-[#111111]" />
+          <div className="absolute inset-x-0 top-[220px] h-14 bg-black/70 blur-3xl" />
+          <div className="relative flex items-start gap-4 max-w-2xl mx-auto">
             {/* Back button - only show when accessed internally */}
             {isInternalAccess && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 shrink-0 -ml-2"
+                className="h-10 w-10 shrink-0 -ml-2 rounded-full bg-black/35 text-white hover:bg-black/60"
                 onClick={handleGoBack}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
-            <div className="h-20 w-20 shrink-0 rounded-lg shadow-lg overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center">
+            <div className="h-16 w-16 shrink-0 rounded-lg shadow-lg overflow-hidden bg-gradient-to-br from-primary/45 to-primary/25 flex items-center justify-center ring-1 ring-white/20">
               {event.cover_image_url ? (
                 <img 
                   src={event.cover_image_url} 
@@ -975,38 +1088,27 @@ const SimpleEventAudios = () => {
                 <Music className="h-8 w-8 text-primary/70" />
               )}
             </div>
-            <div className="flex-1 min-w-0 pr-8">
+            <div className="flex-1 min-w-0 pr-8 pt-1">
               <div className="flex items-center gap-2">
-                <h1 className="font-bold text-xl text-foreground leading-tight">
+                <h1 className="font-bold text-lg text-white leading-[1.08] tracking-tight">
                   {event.name}
                 </h1>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
-                  onClick={() => {
-                    const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'wxagqywobyzntrlkhfao';
-                    const ogUrl = `https://${supabaseProjectId}.supabase.co/functions/v1/og-event?id=${id}`;
-                    navigator.clipboard.writeText(ogUrl);
-                    toast.success('Link copiado!');
-                  }}
-                  title="Copiar link do evento"
-                >
-                  <Link2 className="h-4 w-4" />
-                </Button>
               </div>
+              <p className="mt-1 text-xs text-white/75">
+                {formattedDate}{event.location ? ` - ${event.location}` : ''}
+              </p>
               <div className="flex items-center gap-2 mt-2">
-                <p className="text-xs text-muted-foreground">
-                  {audios.length} ÃƒÆ’Ã‚Â¡udio{audios.length !== 1 ? 's' : ''}
+                <p className="text-xs text-white/80">
+                  {audios.length} audio{audios.length !== 1 ? 's' : ''}
                 </p>
                 {isEventSaved && (
-                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400">
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-200">
                     <CheckCircle className="h-3 w-3" />
                     Offline
                   </span>
                 )}
                 {isSyncing && (
-                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-200">
                     <RefreshCw className="h-3 w-3 animate-spin" />
                     Sincronizando
                   </span>
@@ -1016,26 +1118,12 @@ const SimpleEventAudios = () => {
             
             {/* Options dropdown - positioned top right */}
             <div className="absolute top-0 right-0 flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleDownloadAllAudios}
-                disabled={isDownloadingAll || audios.length === 0}
-                title="Baixar ÃƒÆ’Ã‚Â¡udios"
-              >
-                {isDownloadingAll ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <FileArchive className="h-5 w-5" />
-                )}
-              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 rounded-full bg-black/35 text-white hover:bg-black/60"
                     disabled={exportingLyrics || exportingChords || isDownloadingAll}
                   >
                     <MoreVertical className="h-5 w-5" />
@@ -1051,11 +1139,11 @@ const SimpleEventAudios = () => {
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleAddSong}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Adicionar MÃƒÆ’Ã‚Âºsica
+                        Adicionar Música
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setShowReorderSheet(true)}>
                         <ListOrdered className="mr-2 h-4 w-4" />
-                        Reordenar MÃƒÆ’Ã‚Âºsicas
+                        Reordenar Músicas
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
@@ -1110,7 +1198,7 @@ const SimpleEventAudios = () => {
                     ) : (
                       <FileArchive className="mr-2 h-4 w-4" />
                     )}
-                    Baixar ÃƒÆ’Ã‚Âudios
+                    Baixar Áudios
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
@@ -1118,9 +1206,9 @@ const SimpleEventAudios = () => {
                   <DropdownMenuItem onClick={() => {
                     if (!event) return;
                     
-                    // Importar funÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o de compartilhamento
+                    // Importar função de compartilhamento
                     import('@/utils/whatsappShare').then(({ shareEventSongsToWhatsApp }) => {
-                      // Agrupar ÃƒÆ’Ã‚Â¡udios por song_id mantendo ordem
+                      // Agrupar áudios por song_id mantendo ordem
                       const songMap = new Map<string, {
                         songName: string;
                         typeName: string;
@@ -1133,11 +1221,11 @@ const SimpleEventAudios = () => {
                       
                       audios.forEach(audio => {
                         if (!songMap.has(audio.song_id)) {
-                          // Buscar dados da mÃƒÆ’Ã‚Âºsica
+                          // Buscar dados da música
                           const song = songs.find(s => s.id === audio.song_id);
                           songMap.set(audio.song_id, {
                             songName: audio.song_name,
-                            typeName: audio.song_type_name || 'MÃƒÆ’Ã‚Âºsica',
+                            typeName: audio.song_type_name || 'Música',
                             lyrics: song?.lyrics || null,
                             sheetMusicUrl: song?.sheet_music_pdf_url || song?.sheet_music_url || null,
                             audios: []
@@ -1145,7 +1233,7 @@ const SimpleEventAudios = () => {
                           orderedSongIds.push(audio.song_id);
                         }
                         songMap.get(audio.song_id)!.audios.push({
-                          naipe: audio.naipe,
+                          naipe: normalizeNaipeAlias(audio.naipe),
                           audioUrl: audio.audio_url
                         });
                       });
@@ -1175,11 +1263,11 @@ const SimpleEventAudios = () => {
                           const { exportEventPDF } = await import('@/utils/exportEventPDF');
                           const songsWithSheets = songs.filter(s => s.sheet_music_pdf_url || s.sheet_music_url);
                           if (songsWithSheets.length === 0) {
-                            toast.error('Nenhuma partitura disponÃƒÆ’Ã‚Â­vel');
+                            toast.error('Nenhuma partitura disponível');
                             return;
                           }
 
-                          // Sempre priorizar o tenant do evento (evita usar a logo errada quando o usuÃƒÆ’Ã‚Â¡rio estÃƒÆ’Ã‚Â¡ em outro tenant)
+                          // Sempre priorizar o tenant do evento (evita usar a logo errada quando o usuário está em outro tenant)
                           let tenantInfo: { name: string; logo_url: string | null } | undefined;
                           if ((event as any).tenant_id) {
                             const { data } = await supabase
@@ -1218,51 +1306,46 @@ const SimpleEventAudios = () => {
         </div>
 
         {/* Audio List */}
-        <div className="px-4 py-2 max-w-2xl mx-auto pb-24">
+        <div className="px-4 py-3 max-w-2xl mx-auto pb-24">
           <div className="mb-4 space-y-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar mÃƒÆ’Ã‚Âºsica, tipo ou voz..."
+                placeholder="Buscar música, tipo ou voz..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-10 pl-9 pr-3"
               />
             </div>
-            {availableNaipes.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedNaipes.length === 0 ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-7 px-3 text-xs font-medium rounded-full"
-                  onClick={() => setSelectedNaipes([])}
-                >
-                  Todas
-                </Button>
-                {availableNaipes.map((naipe) => {
-                  const lowerNaipe = naipe.toLowerCase();
-                  const isActive = selectedNaipes.includes(naipe);
-                  const colorClasses =
-                    lowerNaipe === 'soprano' ? (isActive ? 'bg-pink-500 text-white hover:bg-pink-600' : 'border-pink-500/30 text-pink-600 hover:bg-pink-50') :
-                    lowerNaipe === 'contralto' ? (isActive ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'border-yellow-500/30 text-yellow-600 hover:bg-yellow-50') :
-                    lowerNaipe === 'tenor' ? (isActive ? 'bg-green-500 text-white hover:bg-green-600' : 'border-green-500/30 text-green-600 hover:bg-green-50') :
-                    lowerNaipe === 'baixo' ? (isActive ? 'bg-blue-500 text-white hover:bg-blue-600' : 'border-blue-500/30 text-blue-600 hover:bg-blue-50') :
-                    isActive ? 'bg-primary text-primary-foreground' : 'border-primary/30 text-primary hover:bg-primary/10';
+            <div className="grid w-full grid-cols-4 h-9 rounded-xl bg-white/5 border border-white/10 p-0.5 gap-1">
+              {MAIN_NAIPE_FILTERS.map((naipe) => {
+                const isSelected = selectedNaipes.includes(naipe);
+                const selectedClasses =
+                  naipe === 'soprano'
+                    ? 'bg-pink-500 text-white'
+                    : naipe === 'contralto'
+                      ? 'bg-yellow-500 text-black'
+                      : naipe === 'tenor'
+                        ? 'bg-green-500 text-black'
+                        : 'bg-blue-500 text-white';
 
-                  return (
-                    <Button
-                      key={naipe}
-                      variant={isActive ? 'default' : 'outline'}
-                      size="sm"
-                      className={`h-7 px-3 text-xs font-medium rounded-full ${colorClasses}`}
-                      onClick={() => toggleNaipe(naipe)}
-                    >
-                      {naipe}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
+                return (
+                  <button
+                    key={naipe}
+                    type="button"
+                    onClick={() => toggleNaipeFilter(naipe)}
+                    aria-pressed={isSelected}
+                    className={`text-xs capitalize rounded-lg transition-colors ${
+                      isSelected
+                        ? selectedClasses
+                        : 'text-white/80 hover:bg-white/10'
+                    }`}
+                  >
+                    {naipe}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           
           {/* Active filters indicator */}
@@ -1290,7 +1373,7 @@ const SimpleEventAudios = () => {
           {audios.length === 0 ? (
             <Card className="p-8 text-center">
               <Music className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">Nenhuma mÃƒÆ’Ã‚Âºsica cadastrada</p>
+              <p className="text-muted-foreground">Nenhuma música cadastrada</p>
             </Card>
           ) : filteredAudios.length === 0 ? (
             <Card className="p-8 text-center">
@@ -1311,10 +1394,11 @@ const SimpleEventAudios = () => {
                 const isActive = hasAudio && currentTrack?.id === audio.id;
                 const isActuallyPlaying = isActive && isPlaying;
                 const isFirstInSongGroup = index === 0 || filteredAudios[index - 1]?.song_id !== audio.song_id;
+                const normalizedAudioNaipe = normalizeNaipeAlias(audio.naipe);
                 
                 return (
                   <div key={audio.id} className="space-y-2">
-                    {isUnfilteredView && isFirstInSongGroup && (
+                    {isFirstInSongGroup && (
                       <div className="px-1 pt-2">
                         <p className="text-sm font-semibold text-foreground truncate">
                           {songGroupNumberBySongId[audio.song_id]}. {audio.song_name}
@@ -1322,7 +1406,7 @@ const SimpleEventAudios = () => {
                       </div>
                     )}
                     <Card 
-                    className={`p-3 transition-colors hover:bg-accent/50 ${isActive ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}
+                    className={`border-white/10 bg-white/[0.03] p-3 transition-colors hover:bg-white/[0.06] ${isActive ? 'ring-1 ring-primary/30 bg-primary/10' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       {/* Play Button or Music Icon */}
@@ -1350,86 +1434,47 @@ const SimpleEventAudios = () => {
 
                       {/* Song Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-sm text-foreground truncate">
+                        <div className="flex items-start gap-2">
+                          <p className="font-medium text-sm text-foreground leading-tight break-words line-clamp-2">
                             {audio.song_type_name}
                           </p>
                           {hasAudio ? (
                             <Badge 
-                              variant={audio.naipe.toLowerCase() === '4 vozes' ? "secondary" : "outline"}
+                              variant={normalizedAudioNaipe === '4 vozes' ? "secondary" : "outline"}
                               className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider pointer-events-none ${
-                                audio.naipe.toLowerCase() === 'soprano' ? 'border-pink-500/40 text-pink-600 dark:text-pink-400 bg-pink-500/5' :
-                                audio.naipe.toLowerCase() === 'contralto' ? 'border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
-                                audio.naipe.toLowerCase() === 'tenor' ? 'border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5' :
-                                audio.naipe.toLowerCase() === 'baixo' ? 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
-                                audio.naipe.toLowerCase() === '4 vozes' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none' :
+                                normalizedAudioNaipe === 'soprano' ? 'border-pink-500/40 text-pink-600 dark:text-pink-400 bg-pink-500/5' :
+                                normalizedAudioNaipe === 'contralto' ? 'border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
+                                normalizedAudioNaipe === 'tenor' ? 'border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5' :
+                                normalizedAudioNaipe === 'baixo' ? 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
+                                normalizedAudioNaipe === '4 vozes' ? 'border-violet-400/50 text-violet-700 dark:text-violet-300 bg-violet-500/10' :
                                 'border-primary/40 text-primary bg-primary/5'
                               }`}
                             >
-                              {audio.naipe}
+                              {normalizedAudioNaipe}
                             </Badge>
                           ) : (
                             <Badge 
                               variant="outline"
                               className="h-4 px-1.5 text-[9px] font-medium uppercase tracking-wider pointer-events-none text-muted-foreground border-muted-foreground/30"
                             >
-                              Sem ÃƒÆ’Ã‚Â¡udio
+                              Sem áudio
                             </Badge>
                           )}
                           {hasAudio && isCached(audio.audio_url) && (
-                            <span title="DisponÃƒÆ’Ã‚Â­vel offline" className="flex shrink-0">
+                            <span title="Disponível offline" className="flex shrink-0">
                               <Check className="h-3 w-3 text-green-500" />
                             </span>
                           )}
                           {hasAudio && currentTrack?.id === audio.id && repeatMode === 'track' && (
-                            <span title="Repetindo esta mÃƒÆ’Ã‚Âºsica" className="flex shrink-0">
+                            <span title="Repetindo esta música" className="flex shrink-0">
                               <Repeat1 className="h-3 w-3 text-primary" />
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2 break-words">
                           {audio.song_name}
                         </p>
                       </div>
-
-                      {/* Lyrics Button */}
-                      {audio.song_lyrics && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => handleOpenLyrics(audio)}
-                          title="Ver letra"
-                        >
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      )}
-
-                      {/* Chords Button */}
-                      {audio.song_chords && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => handleOpenChords(audio)}
-                          title="Ver cifra"
-                        >
-                          <Guitar className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      )}
-
-                      {/* Sheet Music Button */}
-                      {audio.song_sheet_music_pdf_url && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => handleOpenSheetMusic(audio)}
-                          title="Ver partitura"
-                        >
-                          <Music2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      )}
 
                       {/* Actions Menu */}
                       <DropdownMenu>
@@ -1439,19 +1484,38 @@ const SimpleEventAudios = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
+                          {audio.song_lyrics && (
+                            <DropdownMenuItem onClick={() => handleOpenLyrics(audio)}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              Ver letra
+                            </DropdownMenuItem>
+                          )}
+                          {audio.song_chords && (
+                            <DropdownMenuItem onClick={() => handleOpenChords(audio)}>
+                              <Guitar className="mr-2 h-4 w-4" />
+                              Ver cifra
+                            </DropdownMenuItem>
+                          )}
+                          {audio.song_sheet_music_pdf_url && (
+                            <DropdownMenuItem onClick={() => handleOpenSheetMusic(audio)}>
+                              <Music2 className="mr-2 h-4 w-4" />
+                              Ver partitura
+                            </DropdownMenuItem>
+                          )}
+                          {(audio.song_lyrics || audio.song_chords || audio.song_sheet_music_pdf_url) && <DropdownMenuSeparator />}
                           {hasAudio && (
                             <>
                               <DropdownMenuItem 
                                 onClick={() => {
-                                  // Se a mÃƒÆ’Ã‚Âºsica atual nÃƒÆ’Ã‚Â£o estÃƒÆ’Ã‚Â¡ tocando ou ÃƒÆ’Ã‚Â© outra, primeiro seleciona ela
+                                  // Se a música atual não está tocando ou é outra, primeiro seleciona ela
                                   if (currentTrack?.id !== audio.id) {
                                     handlePlay(audio);
                                   }
-                                  // Ativa/desativa repetiÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o individual
+                                  // Ativa/desativa repetição individual
                                   if (repeatMode !== 'track') {
                                     // Precisamos ativar repeat mode 'track'
                                     // toggleRepeat vai de off -> playlist -> track -> off
-                                    // entÃƒÆ’Ã‚Â£o precisamos chamar atÃƒÆ’Ã‚Â© chegar em 'track'
+                                    // então precisamos chamar até chegar em 'track'
                                     if (repeatMode === 'off') {
                                       toggleRepeat(); // off -> playlist
                                       setTimeout(() => toggleRepeat(), 50); // playlist -> track
@@ -1464,7 +1528,7 @@ const SimpleEventAudios = () => {
                                 }}
                               >
                                 <Repeat1 className={`mr-2 h-4 w-4 ${currentTrack?.id === audio.id && repeatMode === 'track' ? 'text-primary' : ''}`} />
-                                {currentTrack?.id === audio.id && repeatMode === 'track' ? 'Desativar RepetiÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o' : 'Repetir MÃƒÆ’Ã‚Âºsica'}
+                                {currentTrack?.id === audio.id && repeatMode === 'track' ? 'Desativar Repetição' : 'Repetir Música'}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleShareWhatsApp(audio)}>
@@ -1480,13 +1544,19 @@ const SimpleEventAudios = () => {
                           {isAdmin && (
                             <>
                               {hasAudio && <DropdownMenuSeparator />}
+                              {hasAudio && (
+                                <DropdownMenuItem onClick={() => openNaipeEditModal(audio)}>
+                                  <Music className="mr-2 h-4 w-4" />
+                                  Alterar naipe do áudio
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={() => openTypeEditModal(audio)}>
                                 <ListOrdered className="mr-2 h-4 w-4" />
                                 Alterar tipo no evento
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleEditSong(audio.song_id)}>
                                 <Pencil className="mr-2 h-4 w-4" />
-                                Editar MÃƒÆ’Ã‚Âºsica
+                                Editar Música
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => setSongToDelete(audio)}
@@ -1501,7 +1571,6 @@ const SimpleEventAudios = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    
                     {/* Progress Bar - Shows when active (playing or paused) */}
                     {hasAudio && isActive && duration > 0 && (
                       <div className="mt-3 flex items-center gap-2">
@@ -1560,12 +1629,12 @@ const SimpleEventAudios = () => {
                         return <div key={index} className="h-4" />;
                       }
                       
-                      // Refrain markers [REFRÃƒÆ’Ã†â€™O] or R:
-                      if (/^\[REFR[ÃƒÆ’Ã†â€™A]O\]$/i.test(trimmed) || /^\[\/REFR[ÃƒÆ’Ã†â€™A]O\]$/i.test(trimmed)) {
+                      // Refrain markers [REFRÃO] or R:
+                      if (/^\[REFR(?:ÃO|AO)\]$/i.test(trimmed) || /^\[\/REFR(?:ÃO|AO)\]$/i.test(trimmed)) {
                         return null;
                       }
                       
-                      if (/^(R:|REFRÃƒÆ’Ã†â€™O:|REFRAO:|REF:)/i.test(trimmed)) {
+                      if (/^(R:|REFRÃO:|REFRAO:|REF:)/i.test(trimmed)) {
                         return (
                           <p key={index} className="font-bold text-primary mt-4 mb-2 text-base sm:text-lg">
                             {trimmed}
@@ -1595,7 +1664,7 @@ const SimpleEventAudios = () => {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mb-3 opacity-40" />
-                    <p className="text-base">Letra nÃƒÆ’Ã‚Â£o disponÃƒÆ’Ã‚Â­vel</p>
+                    <p className="text-base">Letra não disponível</p>
                   </div>
                 )}
               </div>
@@ -1633,7 +1702,7 @@ const SimpleEventAudios = () => {
             <DialogHeader>
               <DialogTitle>Alterar tipo no evento</DialogTitle>
               <DialogDescription>
-                Essa alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o vale apenas para este evento.
+                Essa alteração vale apenas para este evento.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
@@ -1673,6 +1742,52 @@ const SimpleEventAudios = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Edit Audio Naipe Dialog */}
+        <Dialog open={editNaipeModalOpen} onOpenChange={setEditNaipeModalOpen}>
+          <DialogContent className="w-[90vw] max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Alterar naipe do áudio</DialogTitle>
+              <DialogDescription>
+                Essa alteração vale apenas para este áudio.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground truncate">
+                {audioForNaipeEdit?.song_name}
+              </p>
+              <Select value={selectedNaipeForEdit} onValueChange={setSelectedNaipeForEdit}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o naipe" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUDIO_NAIPE_OPTIONS.map((naipe) => (
+                    <SelectItem key={naipe} value={naipe}>
+                      {naipe}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 border-t pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditNaipeModalOpen(false)}
+                disabled={savingNaipeForAudio}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSaveNaipeForAudio}
+                disabled={savingNaipeForAudio || !selectedNaipeForEdit}
+              >
+                {savingNaipeForAudio ? 'Salvando...' : 'Salvar naipe'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Save Offline Dialog */}
         <SaveEventOfflineDialog
           open={saveOfflineDialogOpen}
@@ -1691,10 +1806,10 @@ const SimpleEventAudios = () => {
         <AlertDialog open={!!songToDelete} onOpenChange={(open) => !open && setSongToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remover mÃƒÆ’Ã‚Âºsica do evento?</AlertDialogTitle>
+              <AlertDialogTitle>Remover música do evento?</AlertDialogTitle>
               <AlertDialogDescription>
-                A mÃƒÆ’Ã‚Âºsica "{songToDelete?.song_name}" serÃƒÆ’Ã‚Â¡ removida deste evento. 
-                A mÃƒÆ’Ã‚Âºsica continuarÃƒÆ’Ã‚Â¡ disponÃƒÆ’Ã‚Â­vel no catÃƒÆ’Ã‚Â¡logo.
+                A música "{songToDelete?.song_name}" será removida deste evento. 
+                A música continuará disponível no catálogo.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1724,23 +1839,23 @@ const SimpleEventAudios = () => {
         >
           <AlertDialogContent className="max-w-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle>Adicionar MÃƒÆ’Ã‚Âºsica</AlertDialogTitle>
+              <AlertDialogTitle>Adicionar Música</AlertDialogTitle>
               <AlertDialogDescription>
-                Escolha uma mÃƒÆ’Ã‚Âºsica existente ou crie uma nova
+                Escolha uma música existente ou crie uma nova
               </AlertDialogDescription>
             </AlertDialogHeader>
 
             <Tabs defaultValue="existing" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="existing">MÃƒÆ’Ã‚Âºsica Existente</TabsTrigger>
-                <TabsTrigger value="new">Nova MÃƒÆ’Ã‚Âºsica</TabsTrigger>
+                <TabsTrigger value="existing">Música Existente</TabsTrigger>
+                <TabsTrigger value="new">Nova Música</TabsTrigger>
               </TabsList>
 
               <TabsContent value="existing" className="space-y-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar mÃƒÆ’Ã‚Âºsica..."
+                    placeholder="Buscar música..."
                     value={addSongSearchQuery}
                     onChange={(e) => setAddSongSearchQuery(e.target.value)}
                     className="pl-9"
@@ -1757,8 +1872,8 @@ const SimpleEventAudios = () => {
                   ).length === 0 ? (
                     <p className="py-8 text-center text-muted-foreground">
                       {addSongSearchQuery
-                        ? 'Nenhuma mÃƒÆ’Ã‚Âºsica encontrada'
-                        : 'Todas as mÃƒÆ’Ã‚Âºsicas jÃƒÆ’Ã‚Â¡ foram adicionadas'}
+                        ? 'Nenhuma música encontrada'
+                        : 'Todas as músicas já foram adicionadas'}
                     </p>
                   ) : (
                     availableSongs
@@ -1807,9 +1922,9 @@ const SimpleEventAudios = () => {
               <TabsContent value="new" className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Nome da MÃƒÆ’Ã‚Âºsica</label>
+                    <label className="text-sm font-medium">Nome da Música</label>
                     <Input
-                      placeholder="Digite o nome da mÃƒÆ’Ã‚Âºsica"
+                      placeholder="Digite o nome da música"
                       value={newSongName}
                       onChange={(e) => setNewSongName(e.target.value)}
                       maxLength={255}
