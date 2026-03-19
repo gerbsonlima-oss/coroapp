@@ -633,7 +633,7 @@ const SimpleEventAudios = () => {
       }));
 
       // If naipes are selected, the ZIP utility will label it accordingly
-      const naipeLabel = selectedNaipes.length === 1 ? selectedNaipes[0] : '4 vozes';
+      const naipeLabel = selectedNaipes.length === 1 ? selectedNaipes[0] : 'todos';
       
       await exportEventZIP(event.name, tracks, naipeLabel);
       toast.dismiss(toastId);
