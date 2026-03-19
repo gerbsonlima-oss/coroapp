@@ -1477,7 +1477,7 @@ const SimpleEventAudios = () => {
                                 'border-primary/40 text-primary bg-primary/5'
                               }`}
                             >
-                              {normalizedAudioNaipe}
+                              {NAIPE_DISPLAY_LABELS[normalizedAudioNaipe] || normalizedAudioNaipe}
                             </Badge>
                           ) : (
                             <Badge 

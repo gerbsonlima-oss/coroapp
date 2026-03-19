@@ -108,7 +108,7 @@ export const SongAudioInlinePlayer = ({ audioUrl, naipe, name }: SongAudioInline
 
       {/* Naipe Badge */}
       <Badge 
-        variant={lowerNaipe === '4 vozes' ? "secondary" : "outline"}
+        variant={lowerNaipe === 'todos' || lowerNaipe === '4 vozes' ? "secondary" : "outline"}
         className={`h-5 px-2 text-[10px] font-bold uppercase tracking-wider pointer-events-none shrink-0 ${naipeColorClass}`}
       >
         {naipe}
