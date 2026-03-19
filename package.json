@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "import:notion-songs": "node scripts/import-notion-songs.mjs",
     "import:cantos-local": "node scripts/import-cantos-local.mjs",
-    "import:voice-folders": "node scripts/import-voice-folders.mjs"
+    "import:voice-folders": "node scripts/import-voice-folders.mjs",
+    "import:notion-events-zip": "node scripts/import-notion-events-zip.mjs",
+    "link:notion-events-songs-zip": "node scripts/link-notion-events-songs-zip.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
