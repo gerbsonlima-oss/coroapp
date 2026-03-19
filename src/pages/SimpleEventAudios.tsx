@@ -88,18 +88,27 @@ interface SongType {
 }
 
 const MAIN_NAIPE_FILTERS = ['soprano', 'contralto', 'tenor', 'baixo'] as const;
-const AUDIO_NAIPE_OPTIONS = ['soprano', 'contralto', 'tenor', 'baixo', '4 vozes'] as const;
+const AUDIO_NAIPE_OPTIONS = ['soprano', 'contralto', 'tenor', 'baixo', 'todos'] as const;
+
+const NAIPE_DISPLAY_LABELS: Record<string, string> = {
+  soprano: 'Soprano',
+  contralto: 'Contralto',
+  tenor: 'Tenor',
+  baixo: 'Baixo',
+  todos: '4 vozes',
+  unissono: 'Original',
+};
 
 const normalizeNaipe = (value: string) => value.trim().toLowerCase();
 const normalizeNaipeAlias = (value: string) => {
   const normalized = normalizeNaipe(value).replace(/\s+/g, ' ');
   if (normalized === 'unissono' || normalized === 'todos' || normalized === '4vozes' || normalized === '4 vozes') {
-    return '4 vozes';
+    return 'todos';
   }
   return normalized;
 };
 const isFourVoices = (value: string) => {
-  return normalizeNaipeAlias(value) === '4 vozes';
+  return normalizeNaipeAlias(value) === 'todos';
 };
 
 const NAIPE_ORDER: Record<string, number> = {
@@ -107,7 +116,7 @@ const NAIPE_ORDER: Record<string, number> = {
   contralto: 1,
   tenor: 2,
   baixo: 3,
-  '4 vozes': 4,
+  todos: 4,
 };
 
 const getNaipeSortOrder = (naipe: string) => {
