@@ -2,6 +2,50 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+const shouldReloadForRuntimeError = (message: string) => {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('failed to fetch dynamically imported module') ||
+    normalized.includes('chunkloaderror') ||
+    normalized.includes('loading chunk') ||
+    normalized.includes('importing a module script failed')
+  );
+};
+
+const safeReloadAfterChunkError = () => {
+  const key = 'last_chunk_error_reload_at';
+  const now = Date.now();
+  const last = Number(sessionStorage.getItem(key) || '0');
+
+  // Avoid reload loops if something else is broken
+  if (now - last < 5000) return;
+
+  sessionStorage.setItem(key, String(now));
+  window.location.reload();
+};
+
+// Handle Vite preload errors (common after deploy with stale SW/chunks on Android)
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  console.warn('[Runtime] Vite preload error detected. Reloading app...');
+  safeReloadAfterChunkError();
+});
+
+// Extra fallback for chunk loading errors surfaced as unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  const reason = event.reason;
+  const message =
+    typeof reason === 'string'
+      ? reason
+      : String(reason?.message || reason || '');
+
+  if (shouldReloadForRuntimeError(message)) {
+    console.warn('[Runtime] Dynamic import/chunk error detected. Reloading app...');
+    event.preventDefault();
+    safeReloadAfterChunkError();
+  }
+});
+
 // Register Service Worker - v2
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
