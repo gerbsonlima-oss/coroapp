@@ -1789,7 +1789,7 @@ const SimpleEventAudios = () => {
                 <SelectContent>
                   {AUDIO_NAIPE_OPTIONS.map((naipe) => (
                     <SelectItem key={naipe} value={naipe}>
-                      {naipe}
+                      {NAIPE_DISPLAY_LABELS[naipe] || naipe}
                     </SelectItem>
                   ))}
                 </SelectContent>
