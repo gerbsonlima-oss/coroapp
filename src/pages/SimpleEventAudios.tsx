@@ -1114,6 +1114,24 @@ const SimpleEventAudios = () => {
                   </span>
                 )}
               </div>
+              <button
+                className="inline-flex items-center gap-1.5 mt-2 text-xs text-white/60 hover:text-white/90 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const slug = tenantSlug || (event as any).tenant_slug;
+                  const publicUrl = slug
+                    ? `${window.location.origin}/${slug}/public/events/${event.id}`
+                    : `${window.location.origin}/e/${event.id}`;
+                  navigator.clipboard.writeText(publicUrl).then(() => {
+                    toast.success('Link copiado!');
+                  }).catch(() => {
+                    toast.error('Erro ao copiar link');
+                  });
+                }}
+              >
+                <Link className="h-3.5 w-3.5" />
+                Copiar link do evento
+              </button>
             </div>
             
             {/* Options dropdown - positioned top right */}
