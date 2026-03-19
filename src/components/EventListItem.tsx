@@ -11,6 +11,7 @@ import { CachedImage } from './CachedImage';
 import { OfflineBadge } from './OfflineBadge';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { useTenantPath } from '@/contexts/TenantContext';
+import { parseDateOnlyLocal } from '@/utils/dateParsing';
 
 interface Event {
   id: string;
@@ -121,7 +122,7 @@ export const EventListItem = ({ event }: EventListItemProps) => {
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="line-clamp-1">
-                  {format(new Date(event.date), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                  {format(parseDateOnlyLocal(event.date), "dd 'de' MMMM", { locale: ptBR })}
                 </span>
               </div>
               {event.location && (

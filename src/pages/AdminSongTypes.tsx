@@ -26,9 +26,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Plus, Edit2, Trash2, GripVertical } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { cn } from '@/lib/utils';
 
 const songTypeSchema = z.object({
   name: z.string().trim().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo'),
@@ -50,6 +54,85 @@ interface SongType {
   created_at: string;
 }
 
+const SortableSongTypeItem = ({
+  type,
+  index,
+  disabled,
+  onEdit,
+  onDelete,
+}: {
+  type: SongType;
+  index: number;
+  disabled: boolean;
+  onEdit: (type: SongType) => void;
+  onDelete: (type: SongType) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: type.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={cn('p-4 transition-shadow hover:shadow-md', isDragging && 'shadow-lg ring-2 ring-primary/20')}
+    >
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          className="flex items-center text-muted-foreground touch-none disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Arrastar para reordenar"
+          disabled={disabled}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
+
+        <div className="flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <h3 className="font-semibold">{type.name}</h3>
+            <Badge variant="outline" className="text-xs">
+              {type.slug}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              #{index + 1}
+            </Badge>
+          </div>
+          {type.description && (
+            <p className="text-sm text-muted-foreground">{type.description}</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit(type)}
+            disabled={disabled}
+          >
+            <Edit2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(type)}
+            disabled={disabled}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 const AdminSongTypes = () => {
   const navigate = useNavigate();
   const { tenantId } = useTenant();
@@ -69,6 +152,7 @@ const AdminSongTypes = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [typeToDelete, setTypeToDelete] = useState<SongType | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -242,6 +326,37 @@ const AdminSongTypes = () => {
     }));
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || savingOrder) return;
+
+    const oldIndex = songTypes.findIndex((type) => type.id === active.id);
+    const newIndex = songTypes.findIndex((type) => type.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const previousOrder = songTypes;
+    const reorderedTypes = arrayMove(songTypes, oldIndex, newIndex);
+    setSongTypes(reorderedTypes);
+    setSavingOrder(true);
+
+    try {
+      const updates = reorderedTypes.map((type, index) =>
+        supabase.from('song_types').update({ order_index: index }).eq('id', type.id)
+      );
+      const results = await Promise.all(updates);
+      const firstError = results.find((result) => result.error)?.error;
+
+      if (firstError) throw firstError;
+      toast.success('Ordem dos tipos atualizada');
+    } catch (error) {
+      console.error('Error reordering song types:', error);
+      setSongTypes(previousOrder);
+      toast.error('Erro ao reordenar tipos de música');
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -290,48 +405,35 @@ const AdminSongTypes = () => {
               </Button>
             </Card>
           ) : (
-            songTypes.map((type, index) => (
-              <Card key={type.id} className="p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center text-muted-foreground">
-                    <GripVertical className="h-5 w-5" />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{type.name}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        {type.slug}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        #{index + 1}
-                      </Badge>
-                    </div>
-                    {type.description && (
-                      <p className="text-sm text-muted-foreground">{type.description}</p>
-                    )}
-                  </div>
+            <>
+              <div className="flex items-center justify-between rounded-lg border border-border/50 bg-card px-3 py-2 text-xs text-muted-foreground">
+                <span>Arraste os itens para reordenar os tipos do repertório.</span>
+                {savingOrder && (
+                  <span className="inline-flex items-center gap-2 font-medium text-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Salvando ordem...
+                  </span>
+                )}
+              </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditDialog(type)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openDeleteDialog(type)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))
+              <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext
+                  items={songTypes.map((type) => type.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {songTypes.map((type, index) => (
+                    <SortableSongTypeItem
+                      key={type.id}
+                      type={type}
+                      index={index}
+                      disabled={savingOrder}
+                      onEdit={openEditDialog}
+                      onDelete={openDeleteDialog}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            </>
           )}
         </div>
       </main>

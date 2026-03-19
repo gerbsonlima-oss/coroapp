@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { parseDateOnlyLocal } from '@/utils/dateParsing';
 
 import { injectTenantManifest } from '@/utils/injectTenantManifest';
 
@@ -78,7 +79,7 @@ const Home = () => {
         
         return savedEvents
           .filter(event => event.date >= todayStr)
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .sort((a, b) => parseDateOnlyLocal(a.date).getTime() - parseDateOnlyLocal(b.date).getTime())
           .slice(0, 10);
       }
     },
@@ -111,7 +112,7 @@ const Home = () => {
         
         return savedEvents
           .filter(event => event.date < todayStr)
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .sort((a, b) => parseDateOnlyLocal(b.date).getTime() - parseDateOnlyLocal(a.date).getTime())
           .slice(0, 10);
       }
     },
@@ -176,7 +177,7 @@ const Home = () => {
           <div className="flex items-center gap-1.5">
             <Clock className="h-3 w-3 flex-shrink-0" />
             <span className="line-clamp-1">
-              {format(new Date(event.date), "dd MMM 'às' HH:mm", { locale: ptBR })}
+              {format(parseDateOnlyLocal(event.date), "dd MMM", { locale: ptBR })}
             </span>
           </div>
           {event.location && (

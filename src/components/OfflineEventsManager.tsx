@@ -24,6 +24,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { parseDateOnlyLocal } from '@/utils/dateParsing';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -239,7 +240,7 @@ export function OfflineEventsManager() {
                         </h4>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                           <Calendar className="h-3 w-3" />
-                          <span>{format(new Date(event.date + 'T12:00:00'), "dd MMM yyyy", { locale: ptBR })}</span>
+                          <span>{format(parseDateOnlyLocal(event.date), "dd MMM yyyy", { locale: ptBR })}</span>
                         </div>
                         {event.location && (
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">

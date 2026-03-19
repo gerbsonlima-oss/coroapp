@@ -5,6 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
 import { supabase } from '@/integrations/supabase/client';
 import { generateSongTypeLabelsWithNumerals } from './songTypeLabeling';
+import { parseDateOnlyLocal } from './dateParsing';
 
 interface TenantInfo {
   name: string;
@@ -360,7 +361,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   const footerY = pageHeight - 30;
   coverPdf.setFontSize(15);
   coverPdf.setFont('times', 'normal');
-  const formattedDate = format(new Date(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR });
+  const formattedDate = format(parseDateOnlyLocal(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR });
   const dateWidth = coverPdf.getTextWidth(formattedDate);
   coverPdf.text(formattedDate, (pageWidth - dateWidth) / 2, footerY);
 
@@ -593,7 +594,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  const fileName = `Partituras_${event.name.replace(/[^a-z0-9]/gi, '_')}_${format(new Date(event.date), 'yyyy-MM-dd')}.pdf`;
+  const fileName = `Partituras_${event.name.replace(/[^a-z0-9]/gi, '_')}_${format(parseDateOnlyLocal(event.date), 'yyyy-MM-dd')}.pdf`;
   link.download = fileName;
   link.click();
   URL.revokeObjectURL(url);
@@ -664,7 +665,7 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
 
   pdf.setFontSize(16);
   pdf.setFont('helvetica', 'normal');
-  const formattedDate = format(new Date(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR });
+  const formattedDate = format(parseDateOnlyLocal(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR });
   const dateWidth = pdf.getTextWidth(formattedDate);
   pdf.text(formattedDate, (pageWidth - dateWidth) / 2, titleY + 35);
 
@@ -801,7 +802,7 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
       pdf.setTextColor(150, 150, 150);
     }
     
-    const footerText = `${event.name} • ${format(new Date(event.date), "dd/MM/yyyy")}`;
+    const footerText = `${event.name} • ${format(parseDateOnlyLocal(event.date), "dd/MM/yyyy")}`;
     const footerWidth = pdf.getTextWidth(footerText);
     pdf.text(footerText, (pageWidth - footerWidth) / 2, pageHeight - 10);
     
@@ -810,6 +811,6 @@ const exportWithImages = async (event: Event, songs: Song[]) => {
     }
   }
 
-  const fileName = `Partituras_${event.name.replace(/[^a-z0-9]/gi, '_')}_${format(new Date(event.date), 'yyyy-MM-dd')}.pdf`;
+  const fileName = `Partituras_${event.name.replace(/[^a-z0-9]/gi, '_')}_${format(parseDateOnlyLocal(event.date), 'yyyy-MM-dd')}.pdf`;
   pdf.save(fileName);
 };

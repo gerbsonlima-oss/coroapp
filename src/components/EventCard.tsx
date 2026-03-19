@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CachedImage } from './CachedImage';
 import { useTenantPath } from '@/contexts/TenantContext';
+import { parseDateOnlyLocal } from '@/utils/dateParsing';
 
 interface Event {
   id: string;
@@ -56,7 +57,7 @@ export const EventCard = ({ event }: EventCardProps) => {
         </h3>
         <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground">
           <Calendar className="h-3.5 w-3.5 opacity-70" />
-          <span>{format(new Date(event.date), "dd 'de' MMM", { locale: ptBR })}</span>
+          <span>{format(parseDateOnlyLocal(event.date), "dd 'de' MMM", { locale: ptBR })}</span>
         </div>
       </div>
     </div>

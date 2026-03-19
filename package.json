@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "import:notion-songs": "node scripts/import-notion-songs.mjs",
-    "import:cantos-local": "node scripts/import-cantos-local.mjs"
+    "import:cantos-local": "node scripts/import-cantos-local.mjs",
+    "import:voice-folders": "node scripts/import-voice-folders.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

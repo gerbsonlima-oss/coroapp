@@ -32,6 +32,7 @@ import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { ExportLyricsDialog, LyricsExportOptions } from '@/components/ExportLyricsDialog';
 import { useExportPreferences } from '@/hooks/useExportPreferences';
+import { parseDateOnlyLocal } from '@/utils/dateParsing';
 
 interface Event {
   id: string;
@@ -821,7 +822,7 @@ const SimpleEventAudios = () => {
   }
 
   const ogImageUrl = event.cover_image_url || `${window.location.origin}/favicon.png`;
-  const formattedDate = format(new Date(event.date + 'T12:00:00'), "EEEE, d 'de' MMMM", { locale: ptBR });
+  const formattedDate = format(parseDateOnlyLocal(event.date), "EEEE, d 'de' MMMM", { locale: ptBR });
 
   return (
     <>

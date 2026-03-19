@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
+import { parseDateOnlyLocal } from './dateParsing';
 
 interface TenantInfo {
   name: string;
@@ -247,7 +248,7 @@ export const exportEventsReportPDF = async (
     pdf.setFontSize(9);
     pdf.setTextColor(100, 100, 100);
     pdf.setFont('helvetica', 'normal');
-    const eventDate = format(new Date(event.date), "dd 'de' MMMM", { locale: ptBR });
+    const eventDate = format(parseDateOnlyLocal(event.date), "dd 'de' MMMM", { locale: ptBR });
     const eventInfo = event.location ? `${eventDate} • ${event.location}` : eventDate;
     pdf.text(eventInfo, margin + 6, y + 5);
 
