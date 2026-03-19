@@ -73,7 +73,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
-  { key: 'unissono', label: 'Original' },
+  { key: '4 vozes', label: '4 vozes' },
 ] as const;
 
 type NaipeKey = (typeof NAIPES)[number]['key'];
@@ -1148,11 +1148,11 @@ const EventQuickEdit = () => {
                                   onClick={() =>
                                     setActiveAudio({
                                       eventSongId: song.eventSongId,
-                                      naipe: 'unissono',
+                                      naipe: '4 vozes',
                                     })
                                   }
                                 >
-                                  Áudios (música original)
+                                  Áudios (4 vozes)
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"

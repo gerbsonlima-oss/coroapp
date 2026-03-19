@@ -5,8 +5,8 @@ import { useTenantPath } from '@/contexts/TenantContext';
 export function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { buildPath, tenantSlug } = useTenantPath();
-  
+  const { buildPath } = useTenantPath();
+
   const isActive = (basePath: string): boolean => {
     const globalPrefixes = new Set(['auth', 'e']);
     const appRoots = new Set([
@@ -32,11 +32,18 @@ export function BottomNavigation() {
     return pathname.startsWith(basePath);
   };
 
-  const navItems = [
-    { label: 'Início', icon: Home, path: '/', isActive: isActive('/') },
-    { label: 'Eventos', icon: Calendar, path: '/events', isActive: isActive('/events') },
-    { label: 'Repertório', icon: Music, path: '/songs', isActive: isActive('/songs') },
-    { label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isActive('/liturgy') },
+  const navItems: Array<{
+    id: string;
+    label: string;
+    icon: typeof Home;
+    path?: string;
+    isActive: boolean;
+    onClick?: () => void;
+  }> = [
+    { id: 'home', label: 'Início', icon: Home, path: '/', isActive: isActive('/') },
+    { id: 'events', label: 'Eventos', icon: Calendar, path: '/events', isActive: isActive('/events') },
+    { id: 'songs', label: 'Repertório', icon: Music, path: '/songs', isActive: isActive('/songs') },
+    { id: 'liturgy', label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isActive('/liturgy') },
   ];
 
   return (
@@ -44,9 +51,17 @@ export function BottomNavigation() {
       <div className="flex items-center justify-around px-0">
         {navItems.map((item) => (
           <button
-            key={item.path}
+            key={item.id}
             type="button"
-            onClick={() => navigate(buildPath(item.path))}
+            onClick={() => {
+              if (item.onClick) {
+                item.onClick();
+                return;
+              }
+              if (item.path) {
+                navigate(buildPath(item.path));
+              }
+            }}
             className={`flex flex-col items-center gap-1 flex-1 py-3 px-2 transition-all duration-200 active:scale-95 ${
               item.isActive
                 ? 'text-primary'

@@ -21,6 +21,15 @@ interface CopyResponse {
 
 const generateId = () => crypto.randomUUID();
 
+const normalizeAudioNaipe = (value: string | null | undefined): string => {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized === "soprano") return "soprano";
+  if (normalized === "contralto") return "contralto";
+  if (normalized === "tenor") return "tenor";
+  if (normalized === "baixo") return "baixo";
+  return "4 vozes";
+};
+
 async function copySongType(
   sourceTenantId: string,
   targetTenantId: string,
@@ -107,7 +116,7 @@ async function copySong(
       id: generateId(),
       song_id: newSongId,
       tenant_id: targetTenantId,
-      naipe: audio.naipe,
+      naipe: normalizeAudioNaipe(audio.naipe),
       name: audio.name,
       audio_url: audio.audio_url,
     }));

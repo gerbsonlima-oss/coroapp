@@ -83,7 +83,7 @@ export const SongAudioInlinePlayer = ({ audioUrl, naipe, name }: SongAudioInline
     lowerNaipe === 'contralto' ? 'border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
     lowerNaipe === 'tenor' ? 'border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5' :
     lowerNaipe === 'baixo' ? 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
-    lowerNaipe === 'unissono' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none' :
+    lowerNaipe === '4 vozes' ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-none' :
     'border-primary/40 text-primary bg-primary/5';
 
   return (
@@ -108,11 +108,10 @@ export const SongAudioInlinePlayer = ({ audioUrl, naipe, name }: SongAudioInline
 
       {/* Naipe Badge */}
       <Badge 
-        variant={lowerNaipe === 'unissono' ? "secondary" : "outline"}
+        variant={lowerNaipe === '4 vozes' ? "secondary" : "outline"}
         className={`h-5 px-2 text-[10px] font-bold uppercase tracking-wider pointer-events-none shrink-0 ${naipeColorClass}`}
       >
         {naipe}
-        {lowerNaipe === 'unissono' && ' ★'}
       </Badge>
 
       {/* Progress */}

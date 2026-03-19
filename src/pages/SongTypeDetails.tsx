@@ -180,8 +180,9 @@ const SongTypeDetails = () => {
       'C': 'Contralto',
       'T': 'Tenor',
       'B': 'Baixo',
-      'unissono': 'Original',
-      'Unissono': 'Original',
+      'unissono': '4 vozes',
+      'Unissono': '4 vozes',
+      '4 vozes': '4 vozes',
     };
     const label = labels[naipe] || naipe;
     return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();

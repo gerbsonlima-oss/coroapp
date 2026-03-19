@@ -29,8 +29,7 @@ const NAIPES = [
   { key: 'contralto', label: 'Contralto' },
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
-  { key: 'unissono', label: 'Original' },
-  { key: 'todos', label: 'Outros' },
+  { key: '4 vozes', label: '4 vozes' },
 ];
 
 interface SongTypeOption {
@@ -72,8 +71,7 @@ const SongForm = () => {
     contralto: [],
     tenor: [],
     baixo: [],
-    unissono: [],
-    todos: [],
+    '4 vozes': [],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lyricsInputRef = useRef<HTMLInputElement>(null);

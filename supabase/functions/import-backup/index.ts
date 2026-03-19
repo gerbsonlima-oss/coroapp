@@ -28,6 +28,15 @@ interface ImportData {
   urlMapping: Record<string, string>;
 }
 
+const normalizeAudioNaipe = (value: string | null | undefined): string => {
+  const normalized = (value ?? '').trim().toLowerCase();
+  if (normalized === 'soprano') return 'soprano';
+  if (normalized === 'contralto') return 'contralto';
+  if (normalized === 'tenor') return 'tenor';
+  if (normalized === 'baixo') return 'baixo';
+  return '4 vozes';
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -189,7 +198,7 @@ Deno.serve(async (req) => {
         id: crypto.randomUUID(),
         song_id: newSongId,
         name: audio.name,
-        naipe: audio.naipe,
+        naipe: normalizeAudioNaipe(audio.naipe),
         audio_url: replaceUrl(audio.audio_url),
         tenant_id: newTenantId,
         created_at: audio.created_at,
