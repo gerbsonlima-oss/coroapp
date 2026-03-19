@@ -447,7 +447,26 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
 
   // Observação para ouvir os áudios no app com QR Code, logo abaixo do índice
   try {
-    const eventUrl = `${window.location.origin}/public/events/${event.id}`;
+    const pathFirstSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
+    const globalPrefixes = new Set(['auth', 'e']);
+    const appRoots = new Set([
+      'events',
+      'songs',
+      'admin',
+      'rehearsals',
+      'liturgy',
+      'audio-to-sheet',
+      'choir-members',
+      'pending-approval',
+      'public',
+    ]);
+    const currentSlug =
+      pathFirstSegment && !globalPrefixes.has(pathFirstSegment) && !appRoots.has(pathFirstSegment)
+        ? pathFirstSegment
+        : (localStorage.getItem('selected_tenant_slug') || '');
+    const eventUrl = currentSlug
+      ? `${window.location.origin}/${currentSlug}/public/events/${event.id}`
+      : `${window.location.origin}/public/events/${event.id}`;
     const qrDataUrl = await QRCode.toDataURL(eventUrl, { margin: 1, scale: 6 });
 
     // Garante que texto + QR caibam na página atual; se não couberem, continua na próxima

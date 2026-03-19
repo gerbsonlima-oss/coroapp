@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, MessageCircle, Mail, Lock, User, Calendar, Music, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 const authSchema = z.object({
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
@@ -51,6 +52,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user } = useAuth();
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
 
   // Buscar lista de tenants (coros)
   const { data: tenants } = useQuery({
@@ -68,7 +70,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(buildPath('/'));
     }
   }, [user, navigate]);
 
@@ -365,3 +367,5 @@ const Auth = () => {
 };
 
 export default Auth;
+
+

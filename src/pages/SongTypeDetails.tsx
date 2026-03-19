@@ -59,9 +59,9 @@ import { typeLabels, typeGradients } from '@/constants/songTypes';
 const SongTypeDetails = () => {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { buildPath } = useTenantPath();
   const [songs, setSongs] = useState<Song[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -261,7 +261,7 @@ const SongTypeDetails = () => {
 
         {user && (
           <Button
-            onClick={() => navigate('/songs/new')}
+            onClick={() => navigate(buildPath('/songs/new'))}
             variant="ghost"
             className="text-[#a7a7a7] hover:text-white"
           >
@@ -278,7 +278,7 @@ const SongTypeDetails = () => {
             <p className="text-[#a7a7a7] mb-4">Nenhuma música disponível nesta categoria</p>
             {user && (
               <Button
-                onClick={() => navigate('/songs/new')}
+                onClick={() => navigate(buildPath('/songs/new'))}
                 className="rounded-full bg-[#1DB954] text-black hover:bg-[#1ed760]"
               >
                 <Plus className="w-5 h-5 mr-2" />
@@ -367,7 +367,7 @@ const SongTypeDetails = () => {
                                     <DropdownMenuItem 
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        navigate(`/songs/${track.songId}/edit`);
+                                        navigate(buildPath(`/songs/${track.songId}/edit`));
                                       }}
                                       className="focus:bg-[#3e3e3e] focus:text-white"
                                     >
@@ -386,7 +386,7 @@ const SongTypeDetails = () => {
                   ) : (
                     // Música sem áudios - card clicável
                     <div
-                      onClick={() => navigate(`/songs/${song.id}/edit`)}
+                      onClick={() => navigate(buildPath(`/songs/${song.id}/edit`))}
                       className="hover:bg-[#181818] px-2 py-3 cursor-pointer flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -419,7 +419,7 @@ const SongTypeDetails = () => {
                             <DropdownMenuItem 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/songs/${song.id}/edit`);
+                                navigate(buildPath(`/songs/${song.id}/edit`));
                               }}
                               className="focus:bg-[#3e3e3e] focus:text-white"
                             >
@@ -462,3 +462,6 @@ const SongTypeDetails = () => {
 };
 
 export default SongTypeDetails;
+
+
+

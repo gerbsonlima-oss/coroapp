@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTenant } from './TenantContext';
 
 interface NavigationContextType {
   lastEventsRoute: string;
@@ -18,22 +19,27 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem('lastSongsRoute') || '/songs';
   });
   const location = useLocation();
+  const { tenantSlug } = useTenant();
 
   useEffect(() => {
-    if (location.pathname.startsWith('/events')) {
+    const normalizedPath = tenantSlug && location.pathname.startsWith(`/${tenantSlug}`)
+      ? location.pathname.slice(tenantSlug.length + 1) || '/'
+      : location.pathname;
+
+    if (normalizedPath.startsWith('/events')) {
       const newRoute = location.pathname + location.search;
       if (newRoute !== lastEventsRoute) {
         setLastEventsRoute(newRoute);
         localStorage.setItem('lastEventsRoute', newRoute);
       }
-    } else if (location.pathname.startsWith('/songs')) {
+    } else if (normalizedPath.startsWith('/songs')) {
       const newRoute = location.pathname + location.search;
       if (newRoute !== lastSongsRoute) {
         setLastSongsRoute(newRoute);
         localStorage.setItem('lastSongsRoute', newRoute);
       }
     }
-  }, [location.pathname, location.search, lastEventsRoute, lastSongsRoute]);
+  }, [location.pathname, location.search, lastEventsRoute, lastSongsRoute, tenantSlug]);
 
   return (
     <NavigationContext.Provider

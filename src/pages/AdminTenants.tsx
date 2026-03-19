@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useAuth } from '@/hooks/useAuth';
 import { useCopyTenantData } from '@/hooks/useCopyTenantData';
+import { useTenantPath } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +63,7 @@ interface CopyDialogData {
 
 export default function AdminTenants() {
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
   const { user, loading: authLoading } = useAuth();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdmin();
   const { copyData, progress: copyProgress, reset: resetCopyProgress } = useCopyTenantData();
@@ -102,9 +104,9 @@ export default function AdminTenants() {
   useEffect(() => {
     if (!superAdminLoading && !isSuperAdmin && user) {
       toast.error('Acesso restrito a super administradores');
-      navigate('/');
+      navigate(buildPath('/'));
     }
-  }, [isSuperAdmin, superAdminLoading, user, navigate]);
+  }, [isSuperAdmin, superAdminLoading, user, navigate, buildPath]);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -403,7 +405,7 @@ export default function AdminTenants() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/')}
+            onClick={() => navigate(buildPath('/'))}
             className="shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -820,3 +822,4 @@ export default function AdminTenants() {
     </div>
   );
 }
+

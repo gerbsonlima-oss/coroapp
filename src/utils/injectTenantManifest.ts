@@ -3,6 +3,7 @@
  * This ensures installed PWAs open directly to the tenant's home page
  */
 export const injectTenantManifest = (tenantSlug: string, tenantName?: string) => {
+  const origin = window.location.origin;
   // Remove any existing dynamic manifest
   const existingManifest = document.querySelector('link[rel="manifest"][data-dynamic="true"]');
   if (existingManifest) {
@@ -13,21 +14,21 @@ export const injectTenantManifest = (tenantSlug: string, tenantName?: string) =>
     name: tenantName ? `${tenantName} - CantoSacro` : 'CantoSacro',
     short_name: tenantName?.split(' ')[0] || 'CantoSacro',
     description: 'Aplicativo para gestão de músicas e eventos litúrgicos',
-    start_url: `/${tenantSlug}`,
-    scope: '/',
+    start_url: `${origin}/${tenantSlug}`,
+    scope: `${origin}/`,
     display: 'standalone',
     background_color: '#1a1a2e',
     theme_color: '#6366f1',
     orientation: 'portrait-primary',
     icons: [
       {
-        src: '/liturgia-plus-icon.png',
+        src: `${origin}/liturgia-plus-icon.png`,
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any maskable'
       },
       {
-        src: '/liturgia-plus-icon.png',
+        src: `${origin}/liturgia-plus-icon.png`,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any maskable'

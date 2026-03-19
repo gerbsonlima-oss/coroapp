@@ -1,12 +1,31 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Music, BookOpen, Calendar } from 'lucide-react';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 export function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { buildPath, tenantSlug } = useTenantPath();
   
   const isActive = (basePath: string): boolean => {
-    const pathname = location.pathname;
+    const globalPrefixes = new Set(['auth', 'e']);
+    const appRoots = new Set([
+      'events',
+      'songs',
+      'admin',
+      'rehearsals',
+      'liturgy',
+      'audio-to-sheet',
+      'choir-members',
+      'pending-approval',
+      'public',
+    ]);
+    const segments = location.pathname.split('/').filter(Boolean);
+    const first = segments[0];
+    const hasSlugPrefix = !!first && !globalPrefixes.has(first) && !appRoots.has(first);
+    const pathname = hasSlugPrefix
+      ? `/${segments.slice(1).join('/') || ''}` || '/'
+      : location.pathname;
     if (basePath === '/') {
       return pathname === '/';
     }
@@ -26,7 +45,8 @@ export function BottomNavigation() {
         {navItems.map((item) => (
           <button
             key={item.path}
-            onClick={() => navigate(item.path)}
+            type="button"
+            onClick={() => navigate(buildPath(item.path))}
             className={`flex flex-col items-center gap-1 flex-1 py-3 px-2 transition-all duration-200 active:scale-95 ${
               item.isActive
                 ? 'text-primary'

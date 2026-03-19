@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ export default function ChoirMemberForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { tenantId, tenantSlug } = useTenant();
+  const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditing = Boolean(id);
@@ -203,8 +204,6 @@ export default function ChoirMemberForm() {
       toast.error('Erro ao excluir: ' + error.message);
     }
   };
-
-  const buildPath = (path: string) => path;
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -407,3 +406,4 @@ export default function ChoirMemberForm() {
     </div>
   );
 }
+

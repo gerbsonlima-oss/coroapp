@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { useEventOfflineSave } from '@/hooks/useEventOfflineSave';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -144,13 +144,14 @@ const EventDetails = () => {
     id: string;
   }>();
   const location = useLocation();
-  const isPublicView = location.pathname.startsWith('/public/');
+  const isPublicView = location.pathname.includes('/public/');
   const {
     user
   } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
+  const { buildPath } = useTenantPath();
   const { isEventAvailableOffline, refreshSavedEventIds } = useOfflineStorage();
   const isOnline = useOnlineStatus();
   
@@ -868,7 +869,7 @@ const EventDetails = () => {
       {showMusicRain && <MusicRain onComplete={() => setShowMusicRain(false)} />}
       <EnhancedMiniPlayer />
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2.5 border-b border-border/50 bg-background/95 backdrop-blur-md">
-        <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : '/events')} className="h-8 w-8 shrink-0 text-foreground">
+        <Button variant="ghost" size="icon" onClick={() => navigate(isPublicView ? '/auth' : buildPath('/events'))} className="h-8 w-8 shrink-0 text-foreground">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1" />
@@ -924,11 +925,11 @@ const EventDetails = () => {
               {user && canEdit && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(`/events/edit/${id}`)}>
+                  <DropdownMenuItem onClick={() => navigate(buildPath(`/events/${id}/edit`))}>
                     <Edit className="mr-2 h-4 w-4" />
                     Editar Evento
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/quick-edit`)}>
+                  <DropdownMenuItem onClick={() => navigate(buildPath(`/events/${id}/quick-edit`))}>
                     <Music className="mr-2 h-4 w-4" />
                     Editar Músicas
                   </DropdownMenuItem>
@@ -958,7 +959,7 @@ const EventDetails = () => {
               {user && canEdit && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(`/events/${id}/rehearsals`)}>
+                  <DropdownMenuItem onClick={() => navigate(buildPath(`/events/${id}/rehearsals`))}>
                     <Calendar className="mr-2 h-4 w-4" />
                     Ensaios
                   </DropdownMenuItem>
@@ -1139,7 +1140,7 @@ const EventDetails = () => {
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                     {user && canEdit && (
-                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
                                     )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -1192,7 +1193,7 @@ const EventDetails = () => {
                           <DropdownMenuContent align="end" className="z-50">
                             <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4 text-primary" /> Baixar partitura (PDF)</DropdownMenuItem>
                             {user && canEdit && <>
-                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
                               <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Remover do evento</DropdownMenuItem>
                             </>}
                           </DropdownMenuContent>
@@ -1280,7 +1281,7 @@ const EventDetails = () => {
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                 {user && canEdit && (
-                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1360,7 +1361,7 @@ const EventDetails = () => {
                           </DropdownMenuItem>
                           {user && canEdit && (
                             <>
-                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}>
                                 <Edit className="mr-2 h-4 w-4" /> Editar Música
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive">
@@ -1460,7 +1461,7 @@ const EventDetails = () => {
                             <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
                           </DropdownMenuItem>
                           {user && canEdit && (
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/songs/${song.id}/edit?returnTo=/events/${id}`); }}>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}>
                               <Edit className="mr-2 h-4 w-4" /> Editar Música
                             </DropdownMenuItem>
                           )}
@@ -1673,3 +1674,5 @@ const EventDetails = () => {
 };
 
 export default EventDetails;
+
+

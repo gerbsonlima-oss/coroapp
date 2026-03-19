@@ -28,7 +28,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { shareCompleteToWhatsApp } from '@/utils/whatsappShare';
 import { Helmet } from 'react-helmet-async';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { ExportLyricsDialog, LyricsExportOptions } from '@/components/ExportLyricsDialog';
 import { useExportPreferences } from '@/hooks/useExportPreferences';
@@ -106,9 +106,9 @@ const SimpleEventAudios = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
   const location = useLocation();
-  const { tenantSlug, tenant } = useTenant();
-  const { isAdmin } = useIsAdmin();
+  const { tenantSlug, tenant } = useTenant();  const { isAdmin } = useIsAdmin();
   const { preferences: exportPreferences, savePreferences: saveExportPreferences } = useExportPreferences();
   
   // Check if this is accessed from internal navigation (not shared link /e/:id)
@@ -243,7 +243,7 @@ const SimpleEventAudios = () => {
   }, [selectedNaipes]);
 
   const handleGoBack = () => {
-    navigate('/events');
+    navigate(buildPath('/events'));
   };
 
   // Update global playlist when audios or filters change (only include items with actual audio)
@@ -637,7 +637,7 @@ const SimpleEventAudios = () => {
 
   // Navigation handlers for admin actions
   const handleEditEvent = () => {
-    navigate(`/events/${id}/edit`);
+    navigate(buildPath(`/events/${id}/edit`));
   };
 
   const handleAddSong = () => {
@@ -768,7 +768,7 @@ const SimpleEventAudios = () => {
   };
 
   const handleEditSong = (songId: string) => {
-    navigate(`/songs/${songId}/edit`);
+    navigate(buildPath(`/songs/${songId}/edit`));
   };
 
   const handleDeleteSong = async () => {
@@ -1816,3 +1816,6 @@ const SimpleEventAudios = () => {
 };
 
 export default SimpleEventAudios;
+
+
+

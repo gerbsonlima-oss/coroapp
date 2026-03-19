@@ -48,8 +48,6 @@ interface SongAudio {
   name: string;
 }
 
-import { songTypeOrder, typeLabels, typeGradients } from '@/constants/songTypes';
-
 const Songs = () => {
   const [songTypes, setSongTypes] = useState<SongTypeAlbum[]>([]);
   const [songs, setSongs] = useState<SongListItem[]>([]);
@@ -195,12 +193,17 @@ const Songs = () => {
         .select('id, name, type, lyrics, chords, sheet_music_url, sheet_music_pdf_url, tenant_id')
         .in('tenant_id', queryTenantIds);
 
+      const typeOrFilter =
+        queryTenantIds.length === 0
+          ? 'tenant_id.is.null'
+          : `tenant_id.is.null,${queryTenantIds.map((id) => `tenant_id.eq.${id}`).join(',')}`;
+
       const [{ data: songTypesData, error: songTypesError }, { data: songsData, error: songsError }] =
         await Promise.all([
           supabase
             .from('song_types')
-            .select('id, slug, name, order_index')
-            .is('tenant_id', null)
+            .select('id, slug, name, order_index, tenant_id')
+            .or(typeOrFilter)
             .order('order_index'),
           songsQuery,
         ]);
@@ -213,16 +216,37 @@ const Songs = () => {
         return acc;
       }, {} as Record<string, number>);
 
-      const typeNameMap = new Map<string, string>();
+      const mergedBySlug = new Map<string, any>();
       (songTypesData || []).forEach((type) => {
-        typeNameMap.set(type.slug, type.name);
+        const existing = mergedBySlug.get(type.slug);
+        // Prefer tenant-specific over global duplicate slug
+        if (!existing || (existing.tenant_id == null && type.tenant_id != null)) {
+          mergedBySlug.set(type.slug, type);
+        }
       });
 
-      const albums: SongTypeAlbum[] = (songTypesData || []).map((type) => ({
+      const mergedTypes = [...mergedBySlug.values()].sort((a, b) => (a.order_index ?? 999) - (b.order_index ?? 999));
+      const typeNameMap = new Map<string, string>(mergedTypes.map((type) => [type.slug, type.name]));
+
+      const albums: SongTypeAlbum[] = mergedTypes.map((type) => ({
         type: type.slug,
         name: type.name,
         count: typeCount[type.slug] || 0,
       }));
+
+      // Ensure unknown/missing song types still show up in grouped view
+      Object.keys(typeCount).forEach((slug) => {
+        if (!typeNameMap.has(slug)) {
+          albums.push({
+            type: slug,
+            name: slug
+              .replace(/[_-]+/g, ' ')
+              .replace(/\b\w/g, (c) => c.toUpperCase()),
+            count: typeCount[slug] || 0,
+          });
+          typeNameMap.set(slug, slug);
+        }
+      });
 
       const songsList: SongListItem[] = (songsData || []).map((song) => ({
         id: song.id,
@@ -591,3 +615,4 @@ const Songs = () => {
 };
 
 export default Songs;
+

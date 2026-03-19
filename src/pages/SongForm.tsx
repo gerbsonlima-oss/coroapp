@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ const NAIPES = [
   { key: 'tenor', label: 'Tenor' },
   { key: 'baixo', label: 'Baixo' },
   { key: 'unissono', label: 'Original' },
+  { key: 'todos', label: 'Outros' },
 ];
 
 interface SongTypeOption {
@@ -72,6 +73,7 @@ const SongForm = () => {
     tenor: [],
     baixo: [],
     unissono: [],
+    todos: [],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lyricsInputRef = useRef<HTMLInputElement>(null);
@@ -88,14 +90,19 @@ const SongForm = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [songTypes, setSongTypes] = useState<SongTypeOption[]>([]);
   const { user } = useAuth();
-  const { tenantId } = useTenant();
-  const navigate = useNavigate();
+  const { tenantId } = useTenant();  const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+
+  const resolveReturnPath = (path: string): string => {
+    if (/^https?:\/\//i.test(path)) return path;
+    return buildPath(path);
+  };
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('Você não tem permissão para acessar esta página');
-      navigate('/songs');
+      navigate(buildPath('/songs'));
     }
   }, [isAdmin, adminLoading, navigate]);
 
@@ -147,7 +154,7 @@ const SongForm = () => {
       await fetchAudios();
     } catch (error: any) {
       toast.error('Erro ao carregar música');
-      navigate('/songs');
+      navigate(buildPath('/songs'));
     } finally {
       setFetchLoading(false);
     }
@@ -396,13 +403,13 @@ const SongForm = () => {
       
       // Priority: returnTo > eventId > song details (edit) > songs list (create)
       if (returnTo) {
-        navigate(returnTo);
+        navigate(resolveReturnPath(returnTo));
       } else if (eventId) {
-        navigate(`/events/${eventId}`);
+        navigate(buildPath(`/events/${eventId}`));
       } else if (isEditMode) {
-        navigate(`/songs/${songId}`);
+        navigate(buildPath(`/songs/${songId}`));
       } else {
-        navigate('/songs');
+        navigate(buildPath('/songs'));
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -437,7 +444,7 @@ const SongForm = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-subtle">
         <div className="flex items-center gap-4 px-4 py-3">
           <button 
-            onClick={() => navigate(returnTo || (eventId ? `/events/${eventId}` : (isEditMode ? `/songs/${id}` : '/songs')))}
+            onClick={() => navigate(returnTo ? resolveReturnPath(returnTo) : (eventId ? buildPath(`/events/${eventId}`) : (isEditMode ? buildPath(`/songs/${id}`) : buildPath('/songs'))))}
             className="p-2 rounded-full hover:bg-secondary transition-colors"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -730,3 +737,6 @@ const SongForm = () => {
 };
 
 export default SongForm;
+
+
+

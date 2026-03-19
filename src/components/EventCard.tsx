@@ -3,6 +3,7 @@ import { Music, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CachedImage } from './CachedImage';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 interface Event {
   id: string;
@@ -19,10 +20,11 @@ interface EventCardProps {
 
 export const EventCard = ({ event }: EventCardProps) => {
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
 
   return (
     <div
-      onClick={() => navigate(`/events/${event.id}`)}
+      onClick={() => navigate(buildPath(`/events/${event.id}`))}
       className="group cursor-pointer transition-all duration-300 hover:scale-[1.04] active:scale-[0.96]"
     >
       <div className="relative aspect-square overflow-hidden rounded-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] hover:shadow-[0_12px_48px_0_rgba(31,38,135,0.5)] transition-all duration-300 border border-white/20 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 group-hover:from-white/15 group-hover:to-white/8 group-hover:border-white/30">
@@ -60,3 +62,5 @@ export const EventCard = ({ event }: EventCardProps) => {
     </div>
   );
 };
+
+

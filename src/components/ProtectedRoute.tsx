@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -12,6 +13,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, skipApprovalCheck = false }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
 
   // Check if user has admin or super_admin role (they don't need approval)
   const { data: hasAdminRole, isLoading: roleLoading } = useQuery({
@@ -58,7 +60,7 @@ export const ProtectedRoute = ({ children, skipApprovalCheck = false }: Protecte
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/');
+      navigate('/auth');
     }
   }, [user, loading, navigate]);
 
@@ -68,10 +70,10 @@ export const ProtectedRoute = ({ children, skipApprovalCheck = false }: Protecte
     
     if (!skipApprovalCheck && !profileLoading && profile) {
       if (profile.approval_status === 'pending' || profile.approval_status === 'rejected') {
-        navigate('/pending-approval');
+        navigate(buildPath('/pending-approval'));
       }
     }
-  }, [profile, profileLoading, navigate, skipApprovalCheck, hasAdminRole]);
+  }, [profile, profileLoading, navigate, skipApprovalCheck, hasAdminRole, buildPath]);
 
   if (loading || (!skipApprovalCheck && roleLoading) || (!skipApprovalCheck && !hasAdminRole && profileLoading)) {
     return (
@@ -97,3 +99,4 @@ export const ProtectedRoute = ({ children, skipApprovalCheck = false }: Protecte
 
   return <>{children}</>;
 };
+

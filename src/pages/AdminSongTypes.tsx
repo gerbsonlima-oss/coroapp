@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,14 +53,15 @@ interface SongType {
 const AdminSongTypes = () => {
   const navigate = useNavigate();
   const { tenantId } = useTenant();
+  const { buildPath } = useTenantPath();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       toast.error('Você não tem permissão para acessar esta página');
-      navigate('/songs');
+      navigate(buildPath('/songs'));
     }
-  }, [isAdmin, adminLoading, navigate]);
+  }, [isAdmin, adminLoading, navigate, buildPath]);
   const [songTypes, setSongTypes] = useState<SongType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -253,7 +254,7 @@ const AdminSongTypes = () => {
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex items-center gap-4 p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/songs')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(buildPath('/songs'))}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
@@ -462,3 +463,5 @@ const AdminSongTypes = () => {
 };
 
 export default AdminSongTypes;
+
+

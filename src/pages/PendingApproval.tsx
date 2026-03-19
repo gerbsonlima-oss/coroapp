@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Clock, LogOut, RefreshCw } from 'lucide-react';
 import liturgiaLogo from '@/assets/liturgia-plus-logo.png';
+import { useTenantPath } from '@/contexts/TenantContext';
 
 const PendingApproval = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
 
   const { data: profile, refetch, isLoading } = useQuery({
     queryKey: ['user-approval-status', user?.id],
@@ -32,13 +34,13 @@ const PendingApproval = () => {
 
   useEffect(() => {
     if (profile?.approval_status === 'approved') {
-      navigate('/');
+      navigate(buildPath('/'));
     }
   }, [profile, navigate]);
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    navigate(buildPath('/'));
   };
 
   const handleRefresh = () => {
@@ -139,3 +141,5 @@ const PendingApproval = () => {
 };
 
 export default PendingApproval;
+
+

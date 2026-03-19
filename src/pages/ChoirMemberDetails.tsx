@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ export default function ChoirMemberDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { tenantSlug } = useTenant();
+  const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
   const [member, setMember] = useState<ChoirMember | null>(null);
   const [attendanceStats, setAttendanceStats] = useState<AttendanceStats>({ total: 0, attended: 0 });
@@ -82,8 +83,6 @@ export default function ChoirMemberDetails() {
       console.error('Error fetching attendance stats:', error);
     }
   };
-
-  const buildPath = (path: string) => path;
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -255,3 +254,4 @@ export default function ChoirMemberDetails() {
     </div>
   );
 }
+

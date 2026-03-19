@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAudioCache } from '@/hooks/useAudioCache';
 import { Button } from '@/components/ui/button';
@@ -77,10 +77,10 @@ const SongDetails = () => {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
+  const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
-  const { tenantId } = useTenant();
-  const { getCachedUrl, isCached } = useAudioCache();
+  const { tenantId } = useTenant();  const { getCachedUrl, isCached } = useAudioCache();
   const { 
     currentTrackIndex, 
     playTrack, 
@@ -154,7 +154,7 @@ const SongDetails = () => {
 
     } catch (error: any) {
       toast.error('Erro ao carregar música');
-      navigate('/songs');
+      navigate(buildPath('/songs'));
     } finally {
       setLoading(false);
     }
@@ -185,7 +185,7 @@ const SongDetails = () => {
       if (error) throw error;
 
       toast.success('Música excluída com sucesso!');
-      navigate('/songs');
+      navigate(buildPath('/songs'));
     } catch (error: any) {
       toast.error('Erro ao excluir música');
     } finally {
@@ -299,7 +299,7 @@ const SongDetails = () => {
       <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex items-center justify-between p-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/songs')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(buildPath('/songs'))}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
@@ -346,7 +346,7 @@ const SongDetails = () => {
                         }
                       />
                     )}
-                    <DropdownMenuItem onClick={() => navigate(`/songs/${id}/edit`)}>
+                    <DropdownMenuItem onClick={() => navigate(buildPath(`/songs/${id}/edit`))}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Editar Música
                     </DropdownMenuItem>
@@ -597,3 +597,6 @@ const SongDetails = () => {
 };
 
 export default SongDetails;
+
+
+

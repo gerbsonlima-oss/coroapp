@@ -10,7 +10,7 @@ export const SplashScreen = () => {
   // Don't show splash screen on root selection page or auth pages
   const isRoot = location.pathname === '/';
   const isAuth = location.pathname.startsWith('/auth');
-  const isPublic = location.pathname.startsWith('/public');
+  const isPublic = location.pathname.includes('/public/');
 
   useEffect(() => {
     // Wait for tenant to load, then show for 2.5s

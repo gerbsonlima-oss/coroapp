@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useAuth } from '@/hooks/useAuth';
@@ -66,6 +66,7 @@ import { naipeLabels, naipeColors, naipeGradients } from '@/constants/naipes';
 export default function ChoirMembers() {
   const navigate = useNavigate();
   const { tenantId, tenantSlug, tenant } = useTenant();
+  const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { user } = useAuth();
@@ -311,8 +312,6 @@ export default function ChoirMembers() {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
-
-  const buildPath = (path: string) => path;
 
   const formatPhoneForWhatsApp = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '');
@@ -681,3 +680,4 @@ export default function ChoirMembers() {
     </div>
   );
 }
+
