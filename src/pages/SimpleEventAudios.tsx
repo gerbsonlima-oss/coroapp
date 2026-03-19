@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, ArrowLeft, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1, ListOrdered } from 'lucide-react';
+import { Play, Pause, MoreVertical, Download, MessageCircle, Music, FileText, X, Guitar, BookOpen, Share2, CloudDownload, CheckCircle, Trash2, RefreshCw, Music2, Search, ArrowLeft, Loader2, Edit, Plus, Pencil, FileArchive, Check, Repeat1, ListOrdered, Link } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -1114,6 +1114,24 @@ const SimpleEventAudios = () => {
                   </span>
                 )}
               </div>
+              <button
+                className="inline-flex items-center gap-1.5 mt-2 text-xs text-white/60 hover:text-white/90 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const slug = tenantSlug || (event as any).tenant_slug;
+                  const publicUrl = slug
+                    ? `${window.location.origin}/${slug}/public/events/${event.id}`
+                    : `${window.location.origin}/e/${event.id}`;
+                  navigator.clipboard.writeText(publicUrl).then(() => {
+                    toast.success('Link copiado!');
+                  }).catch(() => {
+                    toast.error('Erro ao copiar link');
+                  });
+                }}
+              >
+                <Link className="h-3.5 w-3.5" />
+                Copiar link do evento
+              </button>
             </div>
             
             {/* Options dropdown - positioned top right */}
