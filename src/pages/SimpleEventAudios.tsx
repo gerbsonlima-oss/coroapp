@@ -88,18 +88,27 @@ interface SongType {
 }
 
 const MAIN_NAIPE_FILTERS = ['soprano', 'contralto', 'tenor', 'baixo'] as const;
-const AUDIO_NAIPE_OPTIONS = ['soprano', 'contralto', 'tenor', 'baixo', '4 vozes'] as const;
+const AUDIO_NAIPE_OPTIONS = ['soprano', 'contralto', 'tenor', 'baixo', 'todos'] as const;
+
+const NAIPE_DISPLAY_LABELS: Record<string, string> = {
+  soprano: 'Soprano',
+  contralto: 'Contralto',
+  tenor: 'Tenor',
+  baixo: 'Baixo',
+  todos: '4 vozes',
+  unissono: 'Original',
+};
 
 const normalizeNaipe = (value: string) => value.trim().toLowerCase();
 const normalizeNaipeAlias = (value: string) => {
   const normalized = normalizeNaipe(value).replace(/\s+/g, ' ');
   if (normalized === 'unissono' || normalized === 'todos' || normalized === '4vozes' || normalized === '4 vozes') {
-    return '4 vozes';
+    return 'todos';
   }
   return normalized;
 };
 const isFourVoices = (value: string) => {
-  return normalizeNaipeAlias(value) === '4 vozes';
+  return normalizeNaipeAlias(value) === 'todos';
 };
 
 const NAIPE_ORDER: Record<string, number> = {
@@ -107,7 +116,7 @@ const NAIPE_ORDER: Record<string, number> = {
   contralto: 1,
   tenor: 2,
   baixo: 3,
-  '4 vozes': 4,
+  todos: 4,
 };
 
 const getNaipeSortOrder = (naipe: string) => {
@@ -624,7 +633,7 @@ const SimpleEventAudios = () => {
       }));
 
       // If naipes are selected, the ZIP utility will label it accordingly
-      const naipeLabel = selectedNaipes.length === 1 ? selectedNaipes[0] : '4 vozes';
+      const naipeLabel = selectedNaipes.length === 1 ? selectedNaipes[0] : 'todos';
       
       await exportEventZIP(event.name, tracks, naipeLabel);
       toast.dismiss(toastId);
@@ -1458,17 +1467,17 @@ const SimpleEventAudios = () => {
                           </p>
                           {hasAudio ? (
                             <Badge 
-                              variant={normalizedAudioNaipe === '4 vozes' ? "secondary" : "outline"}
+                              variant={normalizedAudioNaipe === 'todos' ? "secondary" : "outline"}
                               className={`h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider pointer-events-none ${
                                 normalizedAudioNaipe === 'soprano' ? 'border-pink-500/40 text-pink-600 dark:text-pink-400 bg-pink-500/5' :
                                 normalizedAudioNaipe === 'contralto' ? 'border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5' :
                                 normalizedAudioNaipe === 'tenor' ? 'border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5' :
                                 normalizedAudioNaipe === 'baixo' ? 'border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/5' :
-                                normalizedAudioNaipe === '4 vozes' ? 'border-violet-400/50 text-violet-700 dark:text-violet-300 bg-violet-500/10' :
+                                normalizedAudioNaipe === 'todos' ? 'border-violet-400/50 text-violet-700 dark:text-violet-300 bg-violet-500/10' :
                                 'border-primary/40 text-primary bg-primary/5'
                               }`}
                             >
-                              {normalizedAudioNaipe}
+                              {NAIPE_DISPLAY_LABELS[normalizedAudioNaipe] || normalizedAudioNaipe}
                             </Badge>
                           ) : (
                             <Badge 
@@ -1780,7 +1789,7 @@ const SimpleEventAudios = () => {
                 <SelectContent>
                   {AUDIO_NAIPE_OPTIONS.map((naipe) => (
                     <SelectItem key={naipe} value={naipe}>
-                      {naipe}
+                      {NAIPE_DISPLAY_LABELS[naipe] || naipe}
                     </SelectItem>
                   ))}
                 </SelectContent>

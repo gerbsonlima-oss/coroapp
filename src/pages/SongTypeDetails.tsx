@@ -182,6 +182,7 @@ const SongTypeDetails = () => {
       'B': 'Baixo',
       'unissono': '4 vozes',
       'Unissono': '4 vozes',
+      'todos': '4 vozes',
       '4 vozes': '4 vozes',
     };
     const label = labels[naipe] || naipe;

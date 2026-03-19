@@ -34,7 +34,7 @@ const normalizeAudioNaipe = (value: string | null | undefined): string => {
   if (normalized === 'contralto') return 'contralto';
   if (normalized === 'tenor') return 'tenor';
   if (normalized === 'baixo') return 'baixo';
-  return '4 vozes';
+  return 'todos';
 };
 
 Deno.serve(async (req) => {
