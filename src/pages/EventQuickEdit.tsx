@@ -1148,7 +1148,7 @@ const EventQuickEdit = () => {
                                   onClick={() =>
                                     setActiveAudio({
                                       eventSongId: song.eventSongId,
-                                      naipe: '4 vozes',
+                                      naipe: 'todos',
                                     })
                                   }
                                 >
