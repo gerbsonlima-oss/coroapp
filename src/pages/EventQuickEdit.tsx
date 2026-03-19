@@ -1132,6 +1132,11 @@ const EventQuickEdit = () => {
                                 <DropdownMenuItem
                                   onClick={() => setEditingEventSongId(song.eventSongId)}
                                 >
+                                  Alterar tipo no evento
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setEditingEventSongId(song.eventSongId)}
+                                >
                                   Ajustar neste evento
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -1313,6 +1318,11 @@ const EventQuickEdit = () => {
                                       }
                                     >
                                       Editar música
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => setEditingEventSongId(song.eventSongId)}
+                                    >
+                                      Alterar tipo no evento
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => setEditingEventSongId(song.eventSongId)}

@@ -67,6 +67,7 @@ const defaultTypeLabels: Record<string, { name: string; order: number }> = {
 interface SongAudio {
   id: string;
   song_id: string;
+  event_song_id?: string;
   naipe: string;
   audio_url: string;
   name: string;
@@ -232,6 +233,10 @@ const SimpleEventAudios = () => {
   const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
   const [addingSong, setAddingSong] = useState(false);
   const [songTypesForModal, setSongTypesForModal] = useState<SongType[]>([]);
+  const [editTypeModalOpen, setEditTypeModalOpen] = useState(false);
+  const [audioForTypeEdit, setAudioForTypeEdit] = useState<SongAudio | null>(null);
+  const [selectedTypeForEdit, setSelectedTypeForEdit] = useState('');
+  const [savingTypeForEvent, setSavingTypeForEvent] = useState(false);
   
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -339,6 +344,7 @@ const SimpleEventAudios = () => {
         return {
           id: audio.id,
           song_id: audio.song_id,
+          event_song_id: eventSong?.id,
           naipe: audio.naipe,
           audio_url: audio.audio_url,
           name: audio.name,
@@ -434,6 +440,7 @@ const SimpleEventAudios = () => {
         
         return {
           ...audio,
+          event_song_id: eventSong?.id,
           song_name: eventSong?.songs?.name || 'Música',
           song_type_slug: typeSlug,
           song_type_name: defaultType?.name || songType?.name || typeSlug,
@@ -457,6 +464,7 @@ const SimpleEventAudios = () => {
           return {
             id: `no-audio-${es.songs.id}`,
             song_id: es.songs.id,
+            event_song_id: es.id,
             naipe: '',
             audio_url: '',
             name: '',
@@ -770,6 +778,81 @@ const SimpleEventAudios = () => {
 
   const handleEditSong = (songId: string) => {
     navigate(buildPath(`/songs/${songId}/edit`));
+  };
+
+  const openTypeEditModal = async (audio: SongAudio) => {
+    if (!songTypesForModal.length) {
+      await fetchSongTypesForModal();
+    }
+    setAudioForTypeEdit(audio);
+    setSelectedTypeForEdit(audio.song_type_slug || '');
+    setEditTypeModalOpen(true);
+  };
+
+  const handleSaveTypeForEvent = async () => {
+    if (!audioForTypeEdit || !selectedTypeForEdit || !id) return;
+
+    setSavingTypeForEvent(true);
+    try {
+      const baseQuery = supabase.from('event_songs').update({ type: selectedTypeForEdit });
+      const { error } = audioForTypeEdit.event_song_id
+        ? await baseQuery.eq('id', audioForTypeEdit.event_song_id)
+        : await baseQuery.eq('event_id', id).eq('song_id', audioForTypeEdit.song_id);
+
+      if (error) throw error;
+
+      const selectedType = songTypesForModal.find((t) => t.slug === selectedTypeForEdit);
+      const defaultType = defaultTypeLabels[selectedTypeForEdit];
+      const typeName = selectedType?.name || defaultType?.name || selectedTypeForEdit;
+      const typeOrder = selectedType?.order_index ?? defaultType?.order ?? 999;
+
+      setAudios((prev) =>
+        sortByTypeOrder(
+          prev.map((a) => {
+            const sameEventSong = audioForTypeEdit.event_song_id
+              ? a.event_song_id === audioForTypeEdit.event_song_id
+              : a.song_id === audioForTypeEdit.song_id;
+
+            if (!sameEventSong) return a;
+
+            return {
+              ...a,
+              song_type_slug: selectedTypeForEdit,
+              song_type_name: typeName,
+              song_type_order: typeOrder,
+            };
+          })
+        )
+      );
+
+      setSongs((prev) =>
+        prev.map((s) => {
+          const sameEventSong = audioForTypeEdit.event_song_id
+            ? (s.event_song_id || s.id) === audioForTypeEdit.event_song_id
+            : s.id === audioForTypeEdit.song_id;
+          return sameEventSong ? { ...s, type: selectedTypeForEdit, typeName, typeOrder } : s;
+        })
+      );
+
+      setSelectedAudio((prev) =>
+        prev && prev.song_id === audioForTypeEdit.song_id
+          ? {
+              ...prev,
+              song_type_slug: selectedTypeForEdit,
+              song_type_name: typeName,
+              song_type_order: typeOrder,
+            }
+          : prev
+      );
+
+      toast.success('Tipo atualizado neste evento');
+      setEditTypeModalOpen(false);
+    } catch (error) {
+      console.error('Error updating event song type:', error);
+      toast.error('Erro ao atualizar tipo no evento');
+    } finally {
+      setSavingTypeForEvent(false);
+    }
   };
 
   const handleDeleteSong = async () => {
@@ -1453,6 +1536,10 @@ const SimpleEventAudios = () => {
                           {isAdmin && (
                             <>
                               {hasAudio && <DropdownMenuSeparator />}
+                              <DropdownMenuItem onClick={() => openTypeEditModal(audio)}>
+                                <ListOrdered className="mr-2 h-4 w-4" />
+                                Alterar tipo no evento
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleEditSong(audio.song_id)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Editar Música
@@ -1594,6 +1681,52 @@ const SimpleEventAudios = () => {
             }}
           />
         )}
+
+        {/* Edit Event Type Dialog */}
+        <Dialog open={editTypeModalOpen} onOpenChange={setEditTypeModalOpen}>
+          <DialogContent className="w-[90vw] max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Alterar tipo no evento</DialogTitle>
+              <DialogDescription>
+                Essa alteração vale apenas para este evento.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground truncate">
+                {audioForTypeEdit?.song_name}
+              </p>
+              <Select value={selectedTypeForEdit} onValueChange={setSelectedTypeForEdit}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {songTypesForModal.map((type) => (
+                    <SelectItem key={type.slug} value={type.slug}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 border-t pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditTypeModalOpen(false)}
+                disabled={savingTypeForEvent}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSaveTypeForEvent}
+                disabled={savingTypeForEvent || !selectedTypeForEdit}
+              >
+                {savingTypeForEvent ? 'Salvando...' : 'Salvar tipo'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Save Offline Dialog */}
         <SaveEventOfflineDialog

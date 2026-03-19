@@ -254,6 +254,10 @@ const EventDetails = () => {
     name: string;
     order_index: number;
   }[]>([]);
+  const [showTypeEditDialog, setShowTypeEditDialog] = useState(false);
+  const [songForTypeEdit, setSongForTypeEdit] = useState<EventSong | null>(null);
+  const [selectedTypeForEdit, setSelectedTypeForEdit] = useState('');
+  const [isSavingTypeEdit, setIsSavingTypeEdit] = useState(false);
   const navigate = useNavigate();
   const {
     cacheMultipleAudios,
@@ -302,6 +306,19 @@ const EventDetails = () => {
       });
     });
   }, [tracks, selectedNaipe]);
+
+  const availableTypeOptions = useMemo(() => {
+    if (eventTypes.length > 0) {
+      return eventTypes
+        .slice()
+        .sort((a, b) => a.order_index - b.order_index)
+        .map((t) => ({ slug: t.slug, name: t.name }));
+    }
+
+    return Object.entries(typeLabels)
+      .map(([slug, name]) => ({ slug, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  }, [eventTypes, typeLabels]);
 
   const {
     currentTrack,
@@ -666,6 +683,51 @@ const EventDetails = () => {
       fetchEventDetails();
     } catch (error: any) {
       toast.error('Erro ao remover música');
+    }
+  };
+
+  const openTypeEditDialog = (song: EventSong) => {
+    setSongForTypeEdit(song);
+    setSelectedTypeForEdit(song.type || '');
+    setShowTypeEditDialog(true);
+  };
+
+  const handleUpdateEventSongType = async () => {
+    if (!songForTypeEdit?.event_song_id || !selectedTypeForEdit) {
+      toast.error('Selecione um tipo para continuar');
+      return;
+    }
+
+    try {
+      setIsSavingTypeEdit(true);
+      const { error } = await supabase
+        .from('event_songs')
+        .update({ type: selectedTypeForEdit })
+        .eq('id', songForTypeEdit.event_song_id);
+
+      if (error) throw error;
+
+      setSongs((prev) =>
+        prev.map((song) =>
+          song.event_song_id === songForTypeEdit.event_song_id
+            ? { ...song, type: selectedTypeForEdit }
+            : song
+        )
+      );
+
+      if (selectedSongForModal?.event_song_id === songForTypeEdit.event_song_id) {
+        setSelectedSongForModal((prev) =>
+          prev ? { ...prev, type: selectedTypeForEdit } : prev
+        );
+      }
+
+      toast.success('Tipo atualizado neste evento');
+      setShowTypeEditDialog(false);
+    } catch (error) {
+      console.error('Erro ao atualizar tipo da música no evento:', error);
+      toast.error('Erro ao atualizar tipo da música no evento');
+    } finally {
+      setIsSavingTypeEdit(false);
     }
   };
 
@@ -1140,7 +1202,10 @@ const EventDetails = () => {
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                     <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                     {user && canEdit && (
-                                      <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                      <>
+                                        <DropdownMenuItem onClick={e => { e.stopPropagation(); openTypeEditDialog(song); }}><ListOrdered className="mr-2 h-4 w-4" /> Alterar tipo no evento</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}&eventId=${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                      </>
                                     )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -1193,7 +1258,8 @@ const EventDetails = () => {
                           <DropdownMenuContent align="end" className="z-50">
                             <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4 text-primary" /> Baixar partitura (PDF)</DropdownMenuItem>
                             {user && canEdit && <>
-                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); openTypeEditDialog(song); }}><ListOrdered className="mr-2 h-4 w-4" /> Alterar tipo no evento</DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}&eventId=${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar música</DropdownMenuItem>
                               <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Remover do evento</DropdownMenuItem>
                             </>}
                           </DropdownMenuContent>
@@ -1281,7 +1347,10 @@ const EventDetails = () => {
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleDownloadSongPdf(song); }}><FileText className="mr-2 h-4 w-4" /> Baixar Partitura</DropdownMenuItem>
                                 <DropdownMenuItem onClick={async e => { e.stopPropagation(); await handleShareWhatsApp(audio.audio_url, song.name, song.type, audio.naipe); }}><MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp</DropdownMenuItem>
                                 {user && canEdit && (
-                                  <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem onClick={e => { e.stopPropagation(); openTypeEditDialog(song); }}><ListOrdered className="mr-2 h-4 w-4" /> Alterar tipo no evento</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}&eventId=${id}`)); }}><Edit className="mr-2 h-4 w-4" /> Editar Música</DropdownMenuItem>
+                                  </>
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1361,7 +1430,10 @@ const EventDetails = () => {
                           </DropdownMenuItem>
                           {user && canEdit && (
                             <>
-                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); openTypeEditDialog(song); }}>
+                                <ListOrdered className="mr-2 h-4 w-4" /> Alterar tipo no evento
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}&eventId=${id}`)); }}>
                                 <Edit className="mr-2 h-4 w-4" /> Editar Música
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={e => { e.stopPropagation(); removeSongFromEvent(song.event_song_id); }} className="text-destructive focus:text-destructive">
@@ -1461,9 +1533,14 @@ const EventDetails = () => {
                             <MessageCircle className="mr-2 h-4 w-4" /> Enviar via WhatsApp
                           </DropdownMenuItem>
                           {user && canEdit && (
-                            <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}`)); }}>
-                              <Edit className="mr-2 h-4 w-4" /> Editar Música
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); openTypeEditDialog(song); }}>
+                                <ListOrdered className="mr-2 h-4 w-4" /> Alterar tipo no evento
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(buildPath(`/songs/${song.id}/edit?returnTo=/events/${id}&eventId=${id}`)); }}>
+                                <Edit className="mr-2 h-4 w-4" /> Editar Música
+                              </DropdownMenuItem>
+                            </>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -1523,6 +1600,49 @@ const EventDetails = () => {
           duration={duration} 
         />;
       })()}
+
+      <Dialog open={showTypeEditDialog} onOpenChange={setShowTypeEditDialog}>
+        <DialogContent className="w-[90vw] max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Alterar tipo no evento</DialogTitle>
+            <DialogDescription>
+              Essa alteração vale apenas para esta celebração.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground truncate">{songForTypeEdit?.name}</p>
+            <Select value={selectedTypeForEdit} onValueChange={setSelectedTypeForEdit}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTypeOptions.map((typeOption) => (
+                  <SelectItem key={typeOption.slug} value={typeOption.slug}>
+                    {typeOption.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-2 border-t pt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowTypeEditDialog(false)}
+              disabled={isSavingTypeEdit}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleUpdateEventSongType}
+              disabled={isSavingTypeEdit || !selectedTypeForEdit}
+            >
+              {isSavingTypeEdit ? 'Salvando...' : 'Salvar tipo'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showSearchModal} onOpenChange={setShowSearchModal}>
         <DialogContent className="w-[90vw] max-w-sm">
