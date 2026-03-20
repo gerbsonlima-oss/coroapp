@@ -3,6 +3,22 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 
+function getFriendlyAuthErrorMessage(error: unknown, fallback: string): string {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : '';
+  const rawMessage = message.toLowerCase();
+
+  if (rawMessage.includes('signups not allowed for this instance')) {
+    return 'Cadastro desativado neste projeto do Supabase. Ative "Enable email signups" em Authentication > Providers > Email.';
+  }
+
+  return message || fallback;
+}
+
 function getTenantSlugFromHostname(): string {
   const hostname = window.location.hostname;
   
@@ -104,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success('Conta criada! Aguarde a aprovação do administrador.');
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar conta');
+      toast.error(getFriendlyAuthErrorMessage(error, 'Erro ao criar conta'));
       throw error;
     }
   };
@@ -119,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao fazer login');
+      toast.error(getFriendlyAuthErrorMessage(error, 'Erro ao fazer login'));
       throw error;
     }
   };
@@ -132,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       if (result?.error) throw result.error;
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao fazer login com Google');
+      toast.error(getFriendlyAuthErrorMessage(error, 'Erro ao fazer login com Google'));
       throw error;
     }
   };
@@ -144,7 +160,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast.success('Logout realizado com sucesso!');
       window.location.href = '/';
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao fazer logout');
+      toast.error(getFriendlyAuthErrorMessage(error, 'Erro ao fazer logout'));
       throw error;
     }
   };
@@ -178,7 +194,7 @@ export const useAuth = () => {
             },
           },
         });
-        if (error) throw error;
+        if (error) throw new Error(getFriendlyAuthErrorMessage(error, 'Erro ao criar conta'));
         
         if (authData.user) {
           await supabase
@@ -199,7 +215,7 @@ export const useAuth = () => {
           email,
           password,
         });
-        if (error) throw error;
+        if (error) throw new Error(getFriendlyAuthErrorMessage(error, 'Erro ao fazer login'));
         toast.success('Login realizado com sucesso!');
       },
       signInWithGoogle: async () => {
@@ -209,11 +225,11 @@ export const useAuth = () => {
             redirectTo: `${window.location.origin}/`,
           },
         });
-        if (error) throw error;
+        if (error) throw new Error(getFriendlyAuthErrorMessage(error, 'Erro ao fazer login com Google'));
       },
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
-        if (error) throw error;
+        if (error) throw new Error(getFriendlyAuthErrorMessage(error, 'Erro ao fazer logout'));
         toast.success('Logout realizado com sucesso!');
       },
     };
