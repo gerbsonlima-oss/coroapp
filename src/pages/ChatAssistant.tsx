@@ -95,7 +95,10 @@ export default function ChatAssistant() {
     return (
       <div className="space-y-0.5">
         {lines.map((line, index) => (
-          <p key={`${message.id}_${index}`} className="whitespace-pre-wrap leading-relaxed">
+          <p
+            key={`${message.id}_${index}`}
+            className="whitespace-pre-wrap leading-relaxed text-slate-900"
+          >
             {line}
           </p>
         ))}
@@ -126,12 +129,12 @@ export default function ChatAssistant() {
 
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-4">
         {loading ? (
-          <Card className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+          <Card className="flex items-center gap-2 p-4 text-sm text-slate-700">
             <Loader2 className="h-4 w-4 animate-spin" />
             Carregando conversa...
           </Card>
         ) : messages.length === 0 ? (
-          <Card className="border-dashed p-4 text-sm text-muted-foreground">
+          <Card className="border-dashed p-4 text-sm text-slate-700">
             Diga "oi" para começar. Eu vou te guiar passo a passo.
           </Card>
         ) : (
@@ -201,6 +204,7 @@ export default function ChatAssistant() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder={pendingFile ? `Arquivo: ${pendingFile.name}` : "Digite sua mensagem..."}
+            className="bg-white text-slate-900 placeholder:text-slate-500"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
