@@ -9,6 +9,7 @@ export interface Tenant {
   slug: string;
   name: string;
   logo_url: string | null;
+  chat_enabled: boolean;
 }
 
 interface TenantContextType {
@@ -51,7 +52,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       try {
         const { data, error } = await supabase
           .from('tenants')
-          .select('id, slug, name, logo_url')
+          .select('id, slug, name, logo_url, chat_enabled')
           .order('name');
         
         if (!error && data) {
@@ -100,7 +101,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
         const { data: tenants, error: tenantsError } = await supabase
           .from('tenants')
-          .select('id, slug, name, logo_url')
+          .select('id, slug, name, logo_url, chat_enabled')
           .in('id', tenantIds)
           .order('name');
 
@@ -137,7 +138,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching user tenants:', err);
         const cachedTenant = getTenantConfig();
         if (cachedTenant) {
-          setTenant(cachedTenant);
+          setTenant({
+            ...cachedTenant,
+            chat_enabled: Boolean(cachedTenant.chat_enabled),
+          });
         }
       } finally {
         setLoading(false);

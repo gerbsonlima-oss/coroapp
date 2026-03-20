@@ -21,6 +21,7 @@ interface TenantConfig {
   name: string;
   slug: string;
   logo_url: string | null;
+  chat_enabled?: boolean;
 }
 
 const STORAGE_KEYS = {

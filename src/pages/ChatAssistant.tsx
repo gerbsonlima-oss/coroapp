@@ -19,7 +19,7 @@ type SessionFlowState = { step?: string };
 export default function ChatAssistant() {
   const navigate = useNavigate();
   const { buildPath } = useTenantPath();
-  const { tenantId } = useTenant();
+  const { tenantId, tenant } = useTenant();
   const { user } = useAuth();
 
   const [session, setSession] = useState<ChatSession | null>(null);
@@ -45,8 +45,20 @@ export default function ChatAssistant() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!tenantId || !tenant) return;
+    if (tenant.chat_enabled) return;
+
+    toast.error("Chat desativado para esta organizacao");
+    navigate(buildPath("/"), { replace: true });
+  }, [tenantId, tenant, navigate, buildPath]);
+
+  useEffect(() => {
     async function bootstrap() {
       if (!tenantId || !user?.id) return;
+      if (tenant && !tenant.chat_enabled) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const result = await ChatCommandService.startOrResumeSession(tenantId, user.id);
@@ -60,7 +72,7 @@ export default function ChatAssistant() {
       }
     }
     bootstrap();
-  }, [tenantId, user?.id]);
+  }, [tenantId, user?.id, tenant]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

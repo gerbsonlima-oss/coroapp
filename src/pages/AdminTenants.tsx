@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Pencil, Trash2, Building2, Shield, Upload, X, Copy, Crop } from 'lucide-react';
 import { ImageCropper } from '@/components/ImageCropper';
@@ -44,6 +45,7 @@ interface Tenant {
   slug: string;
   name: string;
   logo_url: string | null;
+  chat_enabled: boolean;
   created_at: string;
 }
 
@@ -51,6 +53,7 @@ interface TenantFormData {
   slug: string;
   name: string;
   logo_url: string;
+  chat_enabled: boolean;
 }
 
 interface CopyDialogData {
@@ -79,6 +82,7 @@ export default function AdminTenants() {
     slug: '',
     name: '',
     logo_url: '',
+    chat_enabled: false,
   });
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -133,7 +137,7 @@ export default function AdminTenants() {
 
   function openCreateDialog() {
     setEditingTenant(null);
-    setFormData({ slug: '', name: '', logo_url: '' });
+    setFormData({ slug: '', name: '', logo_url: '', chat_enabled: false });
     setLogoPreview(null);
     setLogoFile(null);
     setDialogOpen(true);
@@ -145,6 +149,7 @@ export default function AdminTenants() {
       slug: tenant.slug,
       name: tenant.name,
       logo_url: tenant.logo_url || '',
+      chat_enabled: tenant.chat_enabled,
     });
     setLogoPreview(tenant.logo_url);
     setLogoFile(null);
@@ -259,6 +264,7 @@ export default function AdminTenants() {
             slug: formData.slug.toLowerCase().trim(),
             name: formData.name.trim(),
             logo_url: logoUrl || null,
+            chat_enabled: formData.chat_enabled,
           })
           .eq('id', editingTenant.id);
 
@@ -271,6 +277,7 @@ export default function AdminTenants() {
             slug: formData.slug.toLowerCase().trim(),
             name: formData.name.trim(),
             logo_url: logoUrl || null,
+            chat_enabled: formData.chat_enabled,
           });
 
         if (error) throw error;
@@ -627,6 +634,22 @@ export default function AdminTenants() {
                   </p>
                 </div>
                 
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="chat_enabled">Chat do tenant</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Quando desligado, o menu e a tela de chat ficam bloqueados.
+                    </p>
+                  </div>
+                  <Switch
+                    id="chat_enabled"
+                    checked={formData.chat_enabled}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, chat_enabled: checked })
+                    }
+                  />
+                </div>
+                
                 {/* Logo Upload Section */}
                 <div className="space-y-3">
                   <Label>Logo (moldura redonda)</Label>
@@ -765,6 +788,15 @@ export default function AdminTenants() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          tenant.chat_enabled
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        Chat: {tenant.chat_enabled ? 'Ativado' : 'Desativado'}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"

@@ -650,6 +650,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          chat_enabled: boolean
           created_at: string
           id: string
           logo_url: string | null
@@ -658,6 +659,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          chat_enabled?: boolean
           created_at?: string
           id?: string
           logo_url?: string | null
@@ -666,6 +668,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          chat_enabled?: boolean
           created_at?: string
           id?: string
           logo_url?: string | null

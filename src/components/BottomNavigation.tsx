@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Music, BookOpen, Calendar, MessageCircle } from 'lucide-react';
-import { useTenantPath } from '@/contexts/TenantContext';
+import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 
 export function BottomNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { tenant } = useTenant();
   const { buildPath } = useTenantPath();
 
   const isActive = (basePath: string): boolean => {
@@ -45,8 +46,17 @@ export function BottomNavigation() {
     { id: 'events', label: 'Eventos', icon: Calendar, path: '/events', isActive: isActive('/events') },
     { id: 'songs', label: 'Repertório', icon: Music, path: '/songs', isActive: isActive('/songs') },
     { id: 'liturgy', label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isActive('/liturgy') },
-    { id: 'chat', label: 'Chat', icon: MessageCircle, path: '/chat', isActive: isActive('/chat') },
   ];
+
+  if (tenant?.chat_enabled) {
+    navItems.push({
+      id: 'chat',
+      label: 'Chat',
+      icon: MessageCircle,
+      path: '/chat',
+      isActive: isActive('/chat'),
+    });
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm safe-area-inset-bottom">
@@ -65,9 +75,7 @@ export function BottomNavigation() {
               }
             }}
             className={`flex flex-col items-center gap-1 flex-1 py-3 px-2 transition-all duration-200 active:scale-95 ${
-              item.isActive
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground'
+              item.isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <item.icon className="h-6 w-6" />
