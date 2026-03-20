@@ -95,6 +95,7 @@ function App() {
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/e/:id" element={<SimpleEventAudios />} />
+            <Route path="/s/:id" element={<PublicSongDetails />} />
             <Route path="/:slug/public/events/:id" element={<SimpleEventAudios />} />
             <Route path="/:slug/pending-approval" element={<PendingApproval />} />
 
