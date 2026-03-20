@@ -3,7 +3,7 @@ import { LoadingFallback } from '@/components/LoadingFallback';
 import { lazy, Suspense } from 'react';
 
 const Auth = lazy(() => import('@/pages/Auth'));
-const Home = lazy(() => import('@/pages/Home'));
+const TenantSelection = lazy(() => import('@/pages/TenantSelection'));
 
 export const AuthOrTenantSelection = () => {
   const { user, loading } = useAuth();
@@ -14,7 +14,7 @@ export const AuthOrTenantSelection = () => {
 
   return (
     <Suspense fallback={<LoadingFallback />}>
-      {user ? <Home /> : <Auth />}
+      {user ? <TenantSelection /> : <Auth />}
     </Suspense>
   );
 };

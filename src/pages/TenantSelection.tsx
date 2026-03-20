@@ -1,5 +1,6 @@
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenantPath } from '@/contexts/TenantContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Building2, ArrowRight, LogOut, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { LoadingFallback } from '@/components/LoadingFallback';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Navigate } from 'react-router-dom';
 
 interface UserTenant {
   id: string;
@@ -18,6 +20,7 @@ interface UserTenant {
 const TenantSelection = () => {
   const { switchTenant, loading: tenantLoading } = useTenant();
   const { user, signOut, loading: authLoading } = useAuth();
+  const { buildAuthPath } = useTenantPath();
   const [userTenants, setUserTenants] = useState<UserTenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -92,6 +95,10 @@ const TenantSelection = () => {
 
   if (authLoading || tenantLoading || loadingTenants) {
     return <LoadingFallback />;
+  }
+
+  if (!user) {
+    return <Navigate to={buildAuthPath()} replace />;
   }
 
   return (

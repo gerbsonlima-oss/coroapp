@@ -38,7 +38,7 @@ const Events = () => {
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
   const { tenantId } = useTenant();
-  const { buildPath } = useTenantPath();
+  const { buildPath, buildAuthPath } = useTenantPath();
   const { saveEvents, isEventAvailableOffline } = useOfflineStorage();
   
   const canCreateEvent = isAdmin || isSuperAdmin;
@@ -169,7 +169,7 @@ const Events = () => {
                 <LogOut className="h-5 w-5" />
               </Button>
             ) : (
-              <Button variant="ghost" size="icon" onClick={() => navigate('/auth')} className="hover:bg-accent/80">
+              <Button variant="ghost" size="icon" onClick={() => navigate(buildAuthPath())} className="hover:bg-accent/80">
                 <LogIn className="h-5 w-5" />
               </Button>
             )}
@@ -206,7 +206,7 @@ const Events = () => {
             )}
             {!user && (
               <Button
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate(buildAuthPath())}
                 className="gradient-primary shadow-glow hover:shadow-glow/50 transition-all"
                 size="lg"
               >

@@ -45,6 +45,7 @@ interface SignUpData {
   naipe?: string;
   birthDate?: string;
   tenantId?: string;
+  tenantSlug?: string;
   phone?: string;
 }
 
@@ -95,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           data: {
             full_name: data.fullName,
             tenant_id: data.tenantId,
+            tenant_slug: data.tenantSlug,
           },
         },
       });
@@ -191,6 +193,7 @@ export const useAuth = () => {
             data: { 
               full_name: data.fullName,
               tenant_id: data.tenantId,
+              tenant_slug: data.tenantSlug,
             },
           },
         });

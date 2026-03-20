@@ -7,7 +7,7 @@ const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { buildPath } = useTenantPath();
+  const { buildPath, buildAuthPath } = useTenantPath();
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
@@ -20,7 +20,7 @@ const NotFound = () => {
         <p className="mb-4 text-xl text-gray-600">Oops! Page not found</p>
         <button
           type="button"
-          onClick={() => navigate(user ? buildPath('/') : '/auth')}
+          onClick={() => navigate(user ? buildPath('/') : buildAuthPath())}
           className="text-blue-500 underline hover:text-blue-700"
         >
           Return to Home

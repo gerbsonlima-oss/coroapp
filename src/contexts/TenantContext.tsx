@@ -250,13 +250,43 @@ export function useTenant() {
 export function useTenantPath() {
   const { tenantSlug, userTenants, availableTenants } = useTenant();
   const location = useLocation();
+  const currentPathFirstSegment = location.pathname.split('/').filter(Boolean)[0];
+  const appRoots = new Set([
+    'events',
+    'songs',
+    'admin',
+    'rehearsals',
+    'liturgy',
+    'chat',
+    'audio-to-sheet',
+    'choir-members',
+    'pending-approval',
+    'public',
+    'tenant-selection',
+  ]);
+  const globalPrefixes = new Set(['auth', 'e', 'tenant-selection']);
+  const currentPathSlug =
+    currentPathFirstSegment &&
+    !globalPrefixes.has(currentPathFirstSegment) &&
+    !appRoots.has(currentPathFirstSegment)
+      ? currentPathFirstSegment
+      : '';
+  const activeSlug =
+    currentPathSlug ||
+    tenantSlug ||
+    localStorage.getItem(TENANT_STORAGE_KEY) ||
+    '';
+
+  const buildAuthPath = (): string => {
+    if (!activeSlug) return '/auth';
+    return `/${activeSlug}/auth`;
+  };
   
   const buildPath = (path: string): string => {
     if (!path) return path;
     if (/^https?:\/\//i.test(path)) return path;
 
     const normalized = path.startsWith('/') ? path : `/${path}`;
-    const globalPrefixes = new Set(['auth', 'e']);
     const firstSegment = normalized.split('/').filter(Boolean)[0];
 
     if (firstSegment && globalPrefixes.has(firstSegment)) {
@@ -266,18 +296,6 @@ export function useTenantPath() {
     const knownSlugs = new Set([
       ...userTenants.map(t => t.slug),
       ...availableTenants.map(t => t.slug),
-    ]);
-    const appRoots = new Set([
-      'events',
-      'songs',
-      'admin',
-      'rehearsals',
-      'liturgy',
-      'chat',
-      'audio-to-sheet',
-      'choir-members',
-      'pending-approval',
-      'public',
     ]);
     const segments = normalized.split('/').filter(Boolean);
     const secondSegment = segments[1];
@@ -294,19 +312,6 @@ export function useTenantPath() {
       return normalized;
     }
 
-    const currentPathFirstSegment = location.pathname.split('/').filter(Boolean)[0];
-    const currentPathSlug =
-      currentPathFirstSegment &&
-      !globalPrefixes.has(currentPathFirstSegment) &&
-      !appRoots.has(currentPathFirstSegment)
-        ? currentPathFirstSegment
-        : '';
-
-    const activeSlug =
-      currentPathSlug ||
-      tenantSlug ||
-      localStorage.getItem(TENANT_STORAGE_KEY) ||
-      '';
     if (!activeSlug) return normalized;
 
     if (normalized === '/') return `/${activeSlug}`;
@@ -317,5 +322,5 @@ export function useTenantPath() {
     return `/${activeSlug}${normalized}`;
   };
   
-  return { buildPath, tenantSlug };
+  return { buildPath, buildAuthPath, tenantSlug };
 }

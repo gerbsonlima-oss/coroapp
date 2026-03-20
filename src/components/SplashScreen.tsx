@@ -9,7 +9,9 @@ export const SplashScreen = () => {
 
   // Don't show splash screen on root selection page or auth pages
   const isRoot = location.pathname === '/';
-  const isAuth = location.pathname.startsWith('/auth');
+  const segments = location.pathname.split('/').filter(Boolean);
+  const isScopedAuth = segments.length === 2 && segments[1] === 'auth';
+  const isAuth = location.pathname.startsWith('/auth') || isScopedAuth;
   const isPublic = location.pathname.includes('/public/');
 
   useEffect(() => {

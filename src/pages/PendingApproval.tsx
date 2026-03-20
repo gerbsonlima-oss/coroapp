@@ -12,7 +12,7 @@ import { useTenantPath } from '@/contexts/TenantContext';
 const PendingApproval = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { buildPath } = useTenantPath();
+  const { buildPath, buildAuthPath } = useTenantPath();
 
   const { data: profile, refetch, isLoading } = useQuery({
     queryKey: ['user-approval-status', user?.id],
@@ -33,10 +33,15 @@ const PendingApproval = () => {
   });
 
   useEffect(() => {
+    if (!user) {
+      navigate(buildAuthPath(), { replace: true });
+      return;
+    }
+
     if (profile?.approval_status === 'approved') {
       navigate(buildPath('/'));
     }
-  }, [profile, navigate]);
+  }, [profile, user, navigate, buildPath, buildAuthPath]);
 
   const handleLogout = async () => {
     await signOut();

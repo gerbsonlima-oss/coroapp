@@ -66,7 +66,7 @@ interface CopyDialogData {
 
 export default function AdminTenants() {
   const navigate = useNavigate();
-  const { buildPath } = useTenantPath();
+  const { buildPath, buildAuthPath } = useTenantPath();
   const { user, loading: authLoading } = useAuth();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdmin();
   const { copyData, progress: copyProgress, reset: resetCopyProgress } = useCopyTenantData();
@@ -101,9 +101,9 @@ export default function AdminTenants() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/auth');
+      navigate(buildAuthPath());
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, buildAuthPath]);
 
   useEffect(() => {
     if (!superAdminLoading && !isSuperAdmin && user) {

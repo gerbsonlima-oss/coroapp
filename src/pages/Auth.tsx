@@ -7,39 +7,41 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { z } from 'zod';
 import { InstallPWAButton } from '@/components/InstallPWAButton';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, MessageCircle, Mail, Lock, User, Calendar, Music, Users } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AlertCircle, MessageCircle, Mail, Lock, User, Calendar, Music, Users, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantPath } from '@/contexts/TenantContext';
 
 const authSchema = z.object({
-  email: z.string().email('Email inválido').max(255, 'Email muito longo'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').max(100, 'Senha muito longa'),
-  fullName: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100, 'Nome muito longo').optional(),
+  email: z.string().email('Email invalido').max(255, 'Email muito longo'),
+  password: z.string().min(6, 'Senha deve ter no minimo 6 caracteres').max(100, 'Senha muito longa'),
+  fullName: z.string().min(3, 'Nome deve ter no minimo 3 caracteres').max(100, 'Nome muito longo').optional(),
   naipe: z.string().optional(),
   birthDate: z.string().optional(),
   tenantId: z.string().uuid('Selecione um coro').optional(),
   phone: z.string().max(20, 'WhatsApp muito longo').optional(),
 });
 
-// Função para aplicar máscara de telefone
 const formatPhone = (value: string): string => {
-  // Remove tudo que não é número
   const numbers = value.replace(/\D/g, '');
-  
-  // Aplica a máscara
+
   if (numbers.length <= 2) {
     return numbers;
-  } else if (numbers.length <= 7) {
+  }
+  if (numbers.length <= 7) {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-  } else if (numbers.length <= 11) {
+  }
+  if (numbers.length <= 11) {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
   }
   return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
 };
 
 const Auth = () => {
+  const { slug: routeSlug } = useParams<{ slug?: string }>();
+  const isTenantScopedAuth = !!routeSlug;
+
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,7 +56,26 @@ const Auth = () => {
   const navigate = useNavigate();
   const { buildPath } = useTenantPath();
 
-  // Buscar lista de tenants (coros)
+  const {
+    data: contextualTenant,
+    isLoading: contextualTenantLoading,
+    isError: contextualTenantError,
+  } = useQuery({
+    queryKey: ['tenant-by-slug', routeSlug],
+    queryFn: async () => {
+      if (!routeSlug) return null;
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('id, name, slug')
+        .eq('slug', routeSlug)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: isTenantScopedAuth,
+  });
+
   const { data: tenants } = useQuery({
     queryKey: ['tenants-list'],
     queryFn: async () => {
@@ -62,17 +83,30 @@ const Auth = () => {
         .from('tenants')
         .select('id, name, slug')
         .order('name');
-      
+
       if (error) throw error;
       return data;
     },
+    enabled: !isTenantScopedAuth,
   });
 
   useEffect(() => {
     if (user) {
       navigate(buildPath('/'));
     }
-  }, [user, navigate]);
+  }, [user, navigate, buildPath]);
+
+  useEffect(() => {
+    if (isTenantScopedAuth) {
+      setIsSignUp(true);
+    }
+  }, [isTenantScopedAuth]);
+
+  useEffect(() => {
+    if (contextualTenant?.id) {
+      setTenantId(contextualTenant.id);
+    }
+  }, [contextualTenant?.id]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
@@ -85,28 +119,43 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const data = isSignUp 
-        ? { email, password, fullName, naipe, birthDate, tenantId, phone } 
+      const data = isSignUp
+        ? { email, password, fullName, naipe, birthDate, tenantId, phone }
         : { email, password };
-      
-      // Validação customizada para signup
+
       if (isSignUp) {
-        if (!fullName || fullName.length < 3) {
-          setErrors({ fullName: 'Nome deve ter no mínimo 3 caracteres' });
+        if (isTenantScopedAuth && !contextualTenant?.id) {
+          setErrors({ general: 'Nao foi possivel identificar a organizacao deste link.' });
           setLoading(false);
           return;
         }
+
+        if (!fullName || fullName.length < 3) {
+          setErrors({ fullName: 'Nome deve ter no minimo 3 caracteres' });
+          setLoading(false);
+          return;
+        }
+
         if (!tenantId) {
           setErrors({ tenantId: 'Selecione um coro' });
           setLoading(false);
           return;
         }
       }
-      
+
       authSchema.parse(data);
 
       if (isSignUp) {
-        await signUp({ email, password, fullName, naipe, birthDate, tenantId, phone });
+        await signUp({
+          email,
+          password,
+          fullName,
+          naipe,
+          birthDate,
+          tenantId,
+          tenantSlug: contextualTenant?.slug || tenants?.find((tenant) => tenant.id === tenantId)?.slug,
+          phone,
+        });
       } else {
         await signIn(email, password);
       }
@@ -127,21 +176,59 @@ const Auth = () => {
     }
   };
 
+  if (isTenantScopedAuth && contextualTenantLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#1a2642] to-[#0f1e3a] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-white/80">Carregando organizacao...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isTenantScopedAuth && (contextualTenantError || !contextualTenant)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#1a2642] to-[#0f1e3a] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl text-center">
+          <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+          </div>
+          <h1 className="text-xl font-semibold text-white">Organizacao nao encontrada</h1>
+          <p className="mt-2 text-sm text-white/70">
+            Este link de cadastro nao esta associado a uma organizacao valida.
+          </p>
+          <div className="mt-6 space-y-2">
+            <Button
+              type="button"
+              className="w-full"
+              onClick={() => navigate('/auth')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Ir para login geral
+            </Button>
+            <p className="text-xs text-white/50">
+              Se voce recebeu este link por convite, confirme com o administrador.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#1a2642] to-[#0f1e3a] flex items-center justify-center p-4">
-      {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 mb-4 shadow-xl">
-            <img 
-              src="/liturgia-plus-logo.webp" 
-              alt="CantoSacro" 
+            <img
+              src="/liturgia-plus-logo.webp"
+              alt="CantoSacro"
               className="w-24 h-24 md:w-32 md:h-32 object-contain"
               width={128}
               height={128}
@@ -152,20 +239,18 @@ const Auth = () => {
             Canto<span className="font-semibold text-primary">Sacro</span>
           </h1>
           <p className="mt-2 text-sm text-white/60 tracking-wide">
-            Harmonia e organização para o seu ministério
+            Harmonia e organizacao para o seu ministerio
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
-          {/* Tab Toggle */}
           <div className="flex mb-6 bg-white/5 rounded-xl p-1">
             <button
               type="button"
               onClick={() => setIsSignUp(false)}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                !isSignUp 
-                  ? 'bg-primary text-white shadow-lg' 
+                !isSignUp
+                  ? 'bg-primary text-white shadow-lg'
                   : 'text-white/60 hover:text-white'
               }`}
             >
@@ -175,8 +260,8 @@ const Auth = () => {
               type="button"
               onClick={() => setIsSignUp(true)}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                isSignUp 
-                  ? 'bg-primary text-white shadow-lg' 
+                isSignUp
+                  ? 'bg-primary text-white shadow-lg'
                   : 'text-white/60 hover:text-white'
               }`}
             >
@@ -193,7 +278,7 @@ const Auth = () => {
                 </AlertDescription>
               </Alert>
             )}
-            
+
             {isSignUp && (
               <>
                 <div className="space-y-1.5">
@@ -204,7 +289,7 @@ const Auth = () => {
                   <Input
                     id="fullName"
                     type="text"
-                    placeholder="João Silva"
+                    placeholder="Joao Silva"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     disabled={loading}
@@ -275,18 +360,27 @@ const Auth = () => {
                     <Users className="h-3.5 w-3.5" />
                     Coro *
                   </Label>
-                  <Select value={tenantId} onValueChange={setTenantId} disabled={loading}>
-                    <SelectTrigger className={`h-11 bg-white/5 border-white/10 text-white focus:border-primary ${errors.tenantId ? 'border-destructive' : ''}`}>
-                      <SelectValue placeholder="Selecione seu coro" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1a2642] border-white/10">
-                      {tenants?.map((tenant) => (
-                        <SelectItem key={tenant.id} value={tenant.id}>
-                          {tenant.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {isTenantScopedAuth ? (
+                    <Input
+                      id="tenantId"
+                      value={contextualTenant?.name || ''}
+                      disabled
+                      className="h-11 bg-white/10 border-white/20 text-white"
+                    />
+                  ) : (
+                    <Select value={tenantId} onValueChange={setTenantId} disabled={loading}>
+                      <SelectTrigger className={`h-11 bg-white/5 border-white/10 text-white focus:border-primary ${errors.tenantId ? 'border-destructive' : ''}`}>
+                        <SelectValue placeholder="Selecione seu coro" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1a2642] border-white/10">
+                        {tenants?.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id}>
+                            {tenant.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   {errors.tenantId && (
                     <p className="text-xs text-destructive mt-1">{errors.tenantId}</p>
                   )}
@@ -321,7 +415,7 @@ const Auth = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
@@ -346,7 +440,6 @@ const Auth = () => {
             </Button>
           </form>
 
-          {/* Divider */}
           {!isSignUp && (
             <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
@@ -358,7 +451,6 @@ const Auth = () => {
             </div>
           )}
 
-          {/* Google Sign In */}
           {!isSignUp && (
             <Button
               type="button"
@@ -371,7 +463,7 @@ const Auth = () => {
                 try {
                   await signInWithGoogle();
                 } catch {
-                  // error handled in hook
+                  // handled in hook
                 } finally {
                   setLoading(false);
                 }
@@ -387,10 +479,9 @@ const Auth = () => {
             </Button>
           )}
 
-          {/* PWA Install */}
           <div className="mt-4">
-            <InstallPWAButton 
-              variant="ghost" 
+            <InstallPWAButton
+              variant="ghost"
               size="sm"
               className="w-full text-white/60 hover:text-white hover:bg-white/5"
               showText={true}
@@ -398,9 +489,8 @@ const Auth = () => {
           </div>
         </div>
 
-        {/* Footer */}
         <p className="text-center text-xs text-white/40 mt-6">
-          Liturgia+ - Gestão de Coral
+          Liturgia+ - Gestao de Coral
         </p>
       </div>
     </div>
@@ -408,5 +498,3 @@ const Auth = () => {
 };
 
 export default Auth;
-
-

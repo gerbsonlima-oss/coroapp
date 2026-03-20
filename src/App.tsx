@@ -53,12 +53,16 @@ function RootRedirect() {
   const { tenantSlug, loading: tenantLoading } = useTenant();
 
   if (loading || tenantLoading) return <LoadingFallback />;
-  if (!user) return <Navigate to="/auth" replace />;
-
   const activeSlug = getActiveTenantSlug(tenantSlug);
+
+  if (!user) {
+    if (activeSlug) return <Navigate to={`/${activeSlug}/auth`} replace />;
+    return <Navigate to="/auth" replace />;
+  }
+
   if (activeSlug) return <Navigate to={`/${activeSlug}`} replace />;
 
-  return <AuthOrTenantSelection />;
+  return <Navigate to="/tenant-selection" replace />;
 }
 
 function LegacyRouteRedirect() {
@@ -95,6 +99,8 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/:slug/auth" element={<Auth />} />
+            <Route path="/tenant-selection" element={<AuthOrTenantSelection />} />
             <Route path="/e/:id" element={<SimpleEventAudios />} />
             <Route path="/s/:id" element={<PublicSongDetails />} />
             <Route path="/:slug/public/events/:id" element={<SimpleEventAudios />} />
@@ -148,6 +154,7 @@ function App() {
             <Route path="/audio-to-sheet/*" element={<LegacyRouteRedirect />} />
             <Route path="/choir-members/*" element={<LegacyRouteRedirect />} />
             <Route path="/admin/*" element={<LegacyRouteRedirect />} />
+            <Route path="/tenant-selection/*" element={<AuthOrTenantSelection />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
