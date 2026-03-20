@@ -25,7 +25,7 @@ export interface PlayerState {
 }
 
 export const useEventPlayer = (tracks: Track[]) => {
-  const { getCachedUrl, isCached } = useAudioCache();
+  const { getCachedUrl } = useAudioCache();
   const audioRef = useRef<HTMLAudioElement>(null);
   const isOggUrl = (url: string) => /\.ogg($|[?#])/i.test(url);
   const browserSupportsOgg = (audio: HTMLAudioElement) =>
@@ -331,7 +331,6 @@ export const useEventPlayer = (tracks: Track[]) => {
         
         console.log('[Player] Current src:', currentSrc);
         console.log('[Player] New src:', cachedUrl);
-        console.log('[Player] Is cached:', isCached(currentTrack.url));
         
         // Só atualiza se a URL mudou
         const shouldForceReload =
@@ -402,7 +401,7 @@ export const useEventPlayer = (tracks: Track[]) => {
     return () => {
       if (loadingTimeout) clearTimeout(loadingTimeout);
     };
-  }, [currentTrack?.id, getCachedUrl, isCached]);
+  }, [currentTrack?.id, getCachedUrl]);
 
   // ✅ Handle filter changes - if current track no longer exists in playlist
   useEffect(() => {

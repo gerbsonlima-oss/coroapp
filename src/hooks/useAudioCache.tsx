@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
 const CACHE_NAME = 'media-cache-v1';
@@ -29,6 +29,18 @@ export const useAudioCache = () => {
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const activeBlobUrls = useRef<Set<string>>(new Set());
 
+  const loadCachedAudios = useCallback(async () => {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const requests = await cache.keys();
+      const urls = requests.map(req => normalizeUrl(req.url));
+      setCachedAudios(new Set(urls));
+      console.log(`[Cache] Loaded ${urls.length} cached files`);
+    } catch (error) {
+      console.error('[Cache] Error loading cache:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadCachedAudios();
 
@@ -44,21 +56,9 @@ export const useAudioCache = () => {
       activeBlobUrls.current.clear();
       blobUrlMap.clear();
     };
-  }, []);
+  }, [loadCachedAudios]);
 
-  const loadCachedAudios = async () => {
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      const requests = await cache.keys();
-      const urls = requests.map(req => normalizeUrl(req.url));
-      setCachedAudios(new Set(urls));
-      console.log(`[Cache] Loaded ${urls.length} cached files`);
-    } catch (error) {
-      console.error('[Cache] Error loading cache:', error);
-    }
-  };
-
-  const getCachedUrl = async (url: string): Promise<string> => {
+  const getCachedUrl = useCallback(async (url: string): Promise<string> => {
     const normalizedUrl = normalizeUrl(url);
     
     // Se já temos um blob URL ativo para esta URL, reutilize
@@ -98,7 +98,7 @@ export const useAudioCache = () => {
     
     // Retorna a URL original se não estiver em cache
     return url;
-  };
+  }, []);
 
   const cacheAudio = async (url: string): Promise<boolean> => {
     const normalizedUrl = normalizeUrl(url);
@@ -308,10 +308,10 @@ export const useAudioCache = () => {
     }
   };
 
-  const isCached = (url: string): boolean => {
+  const isCached = useCallback((url: string): boolean => {
     const normalizedUrl = normalizeUrl(url);
     return cachedAudios.has(normalizedUrl);
-  };
+  }, [cachedAudios]);
 
   // Async version that checks the actual cache
   const isCachedAsync = async (url: string): Promise<boolean> => {
