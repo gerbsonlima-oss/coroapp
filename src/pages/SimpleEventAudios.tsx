@@ -210,6 +210,7 @@ const SimpleEventAudios = () => {
   const [showExportLyricsDialog, setShowExportLyricsDialog] = useState(false);
   const [showReorderSheet, setShowReorderSheet] = useState(false);
   const [typeLabels, setTypeLabels] = useState<Record<string, string>>({});
+  const [trackProgress, setTrackProgress] = useState<Record<string, { currentTime: number; duration: number }>>({});
 
   // Helper functions and Memoized values
   const filteredAudios = useMemo(() => {
@@ -307,6 +308,36 @@ const SimpleEventAudios = () => {
   useEffect(() => {
     localStorage.setItem('simpleEvent_selectedNaipes', JSON.stringify(selectedNaipes));
   }, [selectedNaipes]);
+
+  useEffect(() => {
+    setTrackProgress({});
+  }, [id]);
+
+  useEffect(() => {
+    if (!currentTrack?.id) return;
+    if (currentTime <= 0 && duration <= 0) return;
+
+    setTrackProgress((prev) => {
+      const existing = prev[currentTrack.id];
+      const nextDuration = duration > 0 ? duration : (existing?.duration ?? 0);
+
+      if (
+        existing &&
+        Math.abs(existing.currentTime - currentTime) < 0.15 &&
+        Math.abs(existing.duration - nextDuration) < 0.15
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [currentTrack.id]: {
+          currentTime,
+          duration: nextDuration,
+        },
+      };
+    });
+  }, [currentTrack?.id, currentTime, duration]);
 
   const handleGoBack = () => {
     navigate(buildPath('/events'));
@@ -1164,6 +1195,10 @@ const SimpleEventAudios = () => {
                         <Edit className="mr-2 h-4 w-4" />
                         Editar Evento
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(buildPath(`/events/${event.id}/rehearsals`))}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Ensaios do Evento
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleAddSong}>
                         <Plus className="mr-2 h-4 w-4" />
                         Adicionar Música
@@ -1171,6 +1206,16 @@ const SimpleEventAudios = () => {
                       <DropdownMenuItem onClick={() => setShowReorderSheet(true)}>
                         <ListOrdered className="mr-2 h-4 w-4" />
                         Reordenar Músicas
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+
+                  {!isAdmin && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate(buildPath(`/events/${event.id}/rehearsals`))}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Ensaios do Evento
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
@@ -1420,6 +1465,17 @@ const SimpleEventAudios = () => {
                 const hasAudio = audio.audio_url !== '';
                 const isActive = hasAudio && currentTrack?.id === audio.id;
                 const isActuallyPlaying = isActive && isPlaying;
+                const rememberedProgress = trackProgress[audio.id];
+                const displayedCurrentTime = isActive
+                  ? currentTime
+                  : (rememberedProgress?.currentTime ?? 0);
+                const displayedDuration = isActive
+                  ? duration
+                  : (rememberedProgress?.duration ?? 0);
+                const shouldShowProgress =
+                  hasAudio &&
+                  displayedDuration > 0 &&
+                  (isActive || displayedCurrentTime > 0);
                 const isFirstInSongGroup = index === 0 || filteredAudios[index - 1]?.song_id !== audio.song_id;
                 const normalizedAudioNaipe = normalizeNaipeAlias(audio.naipe);
                 
@@ -1599,22 +1655,23 @@ const SimpleEventAudios = () => {
                       </DropdownMenu>
                     </div>
                     {/* Progress Bar - Shows when active (playing or paused) */}
-                    {hasAudio && isActive && duration > 0 && (
+                    {shouldShowProgress && (
                       <div className="mt-3 flex items-center gap-2">
                         <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">
-                          {formatTime(currentTime)}
+                          {formatTime(displayedCurrentTime)}
                         </span>
                         <Slider
-                          value={[currentTime]}
-                          max={duration}
+                          value={[displayedCurrentTime]}
+                          max={displayedDuration}
                           step={0.1}
                           onValueChange={handleSeek}
                           onPointerDown={() => setIsSeeking(true)}
                           onPointerUp={() => setIsSeeking(false)}
+                          disabled={!isActive}
                           className="flex-1"
                         />
                         <span className="text-xs text-muted-foreground tabular-nums w-10">
-                          {formatTime(duration)}
+                          {formatTime(displayedDuration)}
                         </span>
                       </div>
                     )}
