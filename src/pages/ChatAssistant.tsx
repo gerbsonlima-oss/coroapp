@@ -383,6 +383,15 @@ export default function ChatAssistant() {
 
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-white/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-3 py-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0"
+            onClick={() => handleQuickReply("restart")}
+            disabled={sending}
+          >
+            Início
+          </Button>
           <input
             ref={fileRef}
             type="file"

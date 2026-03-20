@@ -24,7 +24,18 @@ export function detectIntent(rawText: string): ChatIntent {
     return "cancel";
   }
 
-  if (text === "reiniciar" || text === "restart" || text === "recomecar" || text === "recomecar") {
+  if (
+    text === "reiniciar" ||
+    text === "restart" ||
+    text === "recomecar" ||
+    text === "inicio" ||
+    text === "iniciar" ||
+    text === "menu" ||
+    text === "home" ||
+    text === "voltar ao inicio" ||
+    text === "voltar para o inicio" ||
+    text === "comecar de novo"
+  ) {
     return "restart";
   }
 
