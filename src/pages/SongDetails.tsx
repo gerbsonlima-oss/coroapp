@@ -25,7 +25,8 @@ import {
   Check,
   Music,
   Share2,
-  Guitar
+  Guitar,
+  Link
 } from 'lucide-react';
 import ChordViewer from '@/components/ChordViewer';
 import { toast } from 'sonner';
