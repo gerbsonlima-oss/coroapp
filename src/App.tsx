@@ -28,6 +28,7 @@ const SongDetails = lazy(() => import("./pages/SongDetails"));
 const SongTypeDetails = lazy(() => import("./pages/SongTypeDetails"));
 const AdminSongTypes = lazy(() => import("./pages/AdminSongTypes"));
 const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
+const PublicSongDetails = lazy(() => import("./pages/PublicSongDetails"));
 const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const AdminTenants = lazy(() => import("./pages/AdminTenants"));
 const AdminBackup = lazy(() => import("./pages/AdminBackup"));
