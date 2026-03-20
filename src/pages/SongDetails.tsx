@@ -318,6 +318,14 @@ const SongDetails = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => {
+                  const url = `${window.location.origin}/s/${id}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success('Link da música copiado!');
+                }}>
+                  <Link className="mr-2 h-4 w-4" />
+                  Copiar link da música
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleFullShareWhatsApp}>
                   <Share2 className="mr-2 h-4 w-4" />
                   Compartilhar Completa
