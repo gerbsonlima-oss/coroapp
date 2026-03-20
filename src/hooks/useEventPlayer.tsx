@@ -27,6 +27,12 @@ export interface PlayerState {
 export const useEventPlayer = (tracks: Track[]) => {
   const { getCachedUrl, isCached } = useAudioCache();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const isOggUrl = (url: string) => /\.ogg($|[?#])/i.test(url);
+  const browserSupportsOgg = (audio: HTMLAudioElement) =>
+    Boolean(audio.canPlayType('audio/ogg; codecs="opus"') || audio.canPlayType('audio/ogg'));
+  const dispatchAudioError = (message: string, track: Track | null) => {
+    window.dispatchEvent(new CustomEvent('audio-error', { detail: { message, track } }));
+  };
 
   // ✅ SINGLE SOURCE OF TRUTH - All player state consolidated
   const [state, setState] = useState<PlayerState>({
@@ -237,10 +243,12 @@ export const useEventPlayer = (tracks: Track[]) => {
         4: 'Áudio não encontrado ou inacessível'
       };
       const errorCode = audioTarget.error?.code || 4;
-      const message = errorMessages[errorCode] || 'Erro ao reproduzir áudio';
-      
-      // We'll emit a custom event that can be caught by the UI
-      window.dispatchEvent(new CustomEvent('audio-error', { detail: { message, track: currentTrack } }));
+      let message = errorMessages[errorCode] || 'Erro ao reproduzir áudio';
+      if (currentTrack?.url && isOggUrl(currentTrack.url) && !browserSupportsOgg(audioTarget)) {
+        message = 'Este navegador não suporta este áudio .ogg. Tente Chrome/Firefox ou use MP3/M4A.';
+      }
+
+      dispatchAudioError(message, currentTrack);
     };
 
     const handleStalled = () => {
@@ -310,14 +318,28 @@ export const useEventPlayer = (tracks: Track[]) => {
       try {
         // Obtém a URL cacheada (ou original se não estiver em cache)
         const cachedUrl = await getCachedUrl(currentTrack.url);
-        const currentSrc = audioRef.current.src;
+        const audioEl = audioRef.current;
+        const currentSrc = audioEl.src;
+
+        if (isOggUrl(cachedUrl) && !browserSupportsOgg(audioEl)) {
+          console.warn('[Player] Browser does not support OGG/Opus:', cachedUrl);
+          setIsPlaying(false);
+          setIsLoading(false);
+          dispatchAudioError('Este navegador nao suporta este audio .ogg. Tente Chrome/Firefox ou use MP3/M4A.', currentTrack);
+          return;
+        }
         
         console.log('[Player] Current src:', currentSrc);
         console.log('[Player] New src:', cachedUrl);
         console.log('[Player] Is cached:', isCached(currentTrack.url));
         
         // Só atualiza se a URL mudou
-        if (currentSrc !== cachedUrl) {
+        const shouldForceReload =
+          !!audioEl.error ||
+          audioEl.readyState === 0 ||
+          audioEl.networkState === audioEl.NETWORK_NO_SOURCE;
+
+        if (currentSrc !== cachedUrl || shouldForceReload) {
           setIsLoading(true);
           
           // Timeout de segurança: se o áudio não carregar em 10 segundos, reseta o loading
@@ -327,17 +349,17 @@ export const useEventPlayer = (tracks: Track[]) => {
           }, 10000);
           
           // Pause e reset antes de mudar a source
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-          audioRef.current.src = cachedUrl;
-          audioRef.current.load();
+          audioEl.pause();
+          audioEl.currentTime = 0;
+          audioEl.src = cachedUrl;
+          audioEl.load();
           
           console.log('[Player] Source updated to:', cachedUrl);
           
           // Se estava tocando, tenta tocar a nova source
           if (state.isPlaying) {
             console.log('[Player] Resuming playback after source change');
-            const playPromise = audioRef.current.play();
+            const playPromise = audioEl.play();
             if (playPromise !== undefined) {
               playPromise.catch(err => {
                 if (err.name !== 'AbortError') {
@@ -352,10 +374,16 @@ export const useEventPlayer = (tracks: Track[]) => {
         } else {
           console.log('[Player] Source unchanged, skipping reload');
           // Se a source não mudou e não está carregando, pode tocar imediatamente
-          if (state.isPlaying && audioRef.current.paused) {
-            audioRef.current.play().catch(err => {
+          if (state.isPlaying && audioEl.paused) {
+            audioEl.play().catch(err => {
               if (err.name !== 'AbortError') {
                 console.error('[Player] Error playing:', err);
+                if (isOggUrl(cachedUrl) && !browserSupportsOgg(audioEl)) {
+                  dispatchAudioError(
+                    'Este navegador nao suporta este audio .ogg. Tente Chrome/Firefox ou use MP3/M4A.',
+                    currentTrack
+                  );
+                }
                 setIsPlaying(false);
               }
             });

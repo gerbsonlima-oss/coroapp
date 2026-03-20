@@ -135,7 +135,7 @@ function App() {
             <Route path="/:slug/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/:slug/events/new" element={<ProtectedRoute><NewEvent /></ProtectedRoute>} />
             <Route path="/:slug/events/edit/:id" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
-            <Route path="/:slug/events/:id" element={<ProtectedRoute><SimpleEventAudios /></ProtectedRoute>} />
+            <Route path="/:slug/events/:id" element={<SimpleEventAudios />} />
             <Route path="/:slug/events/:id/edit" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
             <Route path="/:slug/events/:id/quick-edit" element={<ProtectedRoute><EventQuickEdit /></ProtectedRoute>} />
             <Route path="/:slug/events/:eventId/rehearsals" element={<ProtectedRoute><Rehearsals /></ProtectedRoute>} />
