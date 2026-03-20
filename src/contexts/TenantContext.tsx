@@ -12,6 +12,14 @@ export interface Tenant {
   chat_enabled: boolean;
 }
 
+type TenantRow = {
+  id: string;
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  chat_enabled?: boolean | null;
+};
+
 interface TenantContextType {
   /** Current active tenant (first user tenant or selected) */
   tenant: Tenant | null;
@@ -34,6 +42,41 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 const TENANT_STORAGE_KEY = 'selected_tenant_slug';
 
+const normalizeTenants = (rows: TenantRow[] | null | undefined): Tenant[] =>
+  (rows || []).map((t) => ({
+    id: t.id,
+    slug: t.slug,
+    name: t.name,
+    logo_url: t.logo_url,
+    chat_enabled: Boolean(t.chat_enabled),
+  }));
+
+async function fetchTenantsWithSchemaFallback(ids?: string[]) {
+  const withChatBase = supabase
+    .from('tenants')
+    .select('id, slug, name, logo_url, chat_enabled');
+
+  const withChatQuery = ids && ids.length > 0 ? withChatBase.in('id', ids) : withChatBase;
+  const withChat = await withChatQuery.order('name');
+
+  if (!withChat.error) {
+    return { data: normalizeTenants(withChat.data as TenantRow[]), error: null };
+  }
+
+  const fallbackBase = supabase
+    .from('tenants')
+    .select('id, slug, name, logo_url');
+
+  const fallbackQuery = ids && ids.length > 0 ? fallbackBase.in('id', ids) : fallbackBase;
+  const fallback = await fallbackQuery.order('name');
+
+  if (fallback.error) {
+    return { data: null as Tenant[] | null, error: fallback.error };
+  }
+
+  return { data: normalizeTenants(fallback.data as TenantRow[]), error: null };
+}
+
 export function TenantProvider({ children }: { children: ReactNode }) {
   const { saveTenantConfig, getTenantConfig } = useOfflineStorage();
   const { user } = useAuth();
@@ -50,11 +93,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function fetchTenants() {
       try {
-        const { data, error } = await supabase
-          .from('tenants')
-          .select('id, slug, name, logo_url, chat_enabled')
-          .order('name');
-        
+        const { data, error } = await fetchTenantsWithSchemaFallback();
+
         if (!error && data) {
           setAvailableTenants(data);
         }
@@ -99,11 +139,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const { data: tenants, error: tenantsError } = await supabase
-          .from('tenants')
-          .select('id, slug, name, logo_url, chat_enabled')
-          .in('id', tenantIds)
-          .order('name');
+        const { data: tenants, error: tenantsError } = await fetchTenantsWithSchemaFallback(tenantIds);
 
         if (!tenantsError && tenants) {
           setUserTenants(tenants);
