@@ -215,7 +215,7 @@ const PublicSongDetails = () => {
   }
 
   const currentTrack = currentAudioIndex !== null ? sortedAudios[currentAudioIndex] : null;
-  const naipeLabel = (naipe: string) => NAIPE_LABELS[naipe?.toLowerCase()] || naipe;
+  const naipeLabel = (naipe: string) => naipeLabels[naipe?.toLowerCase()] || naipe;
 
   return (
     <div className="min-h-screen bg-background">
