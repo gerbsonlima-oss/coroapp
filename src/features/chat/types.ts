@@ -26,6 +26,7 @@ export type ChatStep =
   | "confirm_event"
   | "awaiting_song_name"
   | "awaiting_song_type"
+  | "awaiting_song_form"
   | "confirm_song"
   | "awaiting_audio_naipe"
   | "awaiting_audio_file"
