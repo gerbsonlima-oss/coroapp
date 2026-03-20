@@ -118,7 +118,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       try {
         const { data: roles, error: rolesError } = await supabase
           .from('user_roles')
-          .select('tenant_id')
+          .select('tenant_id, role')
           .eq('user_id', user.id);
 
         if (rolesError) {
@@ -132,9 +132,46 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             .map(r => r.tenant_id)
             .filter((id): id is string => id !== null)
         )];
+        const isGlobalSuperAdmin = (roles || []).some(
+          (role) => role.role === 'super_admin' && role.tenant_id === null
+        );
 
         if (tenantIds.length === 0) {
+          if (isGlobalSuperAdmin) {
+            const { data: allTenants, error: allTenantsError } = await fetchTenantsWithSchemaFallback();
+            if (allTenantsError || !allTenants) {
+              console.error('Error fetching all tenants for super admin:', allTenantsError);
+              setUserTenants([]);
+              setTenant(null);
+              localStorage.removeItem(TENANT_STORAGE_KEY);
+              setLoading(false);
+              return;
+            }
+
+            setUserTenants(allTenants);
+            setTenant(prev => {
+              const currentStillValid = prev && allTenants.find(t => t.id === prev.id);
+              if (currentStillValid) return prev;
+
+              const storedSlug = localStorage.getItem(TENANT_STORAGE_KEY);
+              const storedTenant = storedSlug ? allTenants.find(t => t.slug === storedSlug) : null;
+              const activeTenant = storedTenant || allTenants[0] || null;
+
+              if (activeTenant) {
+                saveTenantConfig(activeTenant);
+                localStorage.setItem(TENANT_STORAGE_KEY, activeTenant.slug);
+              }
+
+              return activeTenant;
+            });
+
+            setLoading(false);
+            return;
+          }
+
           setUserTenants([]);
+          setTenant(null);
+          localStorage.removeItem(TENANT_STORAGE_KEY);
           setLoading(false);
           return;
         }
@@ -146,22 +183,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           
           // Only set active tenant if none is currently selected or current is invalid
           setTenant(prev => {
-            const pathnameFirstSegment = location.pathname.split('/').filter(Boolean)[0];
-            const pathTenant = pathnameFirstSegment
-              ? tenants.find(t => t.slug === pathnameFirstSegment)
-              : null;
-            if (pathTenant && (!prev || prev.id !== pathTenant.id)) {
-              saveTenantConfig(pathTenant);
-              localStorage.setItem(TENANT_STORAGE_KEY, pathTenant.slug);
-              return pathTenant;
-            }
-
             const currentStillValid = prev && tenants.find(t => t.id === prev.id);
             if (currentStillValid) return prev;
 
             const storedSlug = localStorage.getItem(TENANT_STORAGE_KEY);
             const storedTenant = storedSlug ? tenants.find(t => t.slug === storedSlug) : null;
-            const activeTenant = pathTenant || storedTenant || tenants[0];
+            const activeTenant = storedTenant || tenants[0];
             
             if (activeTenant) {
               saveTenantConfig(activeTenant);
@@ -184,7 +211,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       }
     }
     fetchUserTenants();
-  }, [user, location.pathname]);
+  }, [user]);
 
   const switchTenant = (slug: string) => {
     const found = userTenants.find(t => t.slug === slug) || availableTenants.find(t => t.slug === slug);
@@ -196,7 +223,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         ...availableTenants.map(t => t.slug),
       ]);
       const firstSegment = currentSegments[0];
-      const globalSegments = new Set(['auth', 'e']);
+      const globalSegments = new Set(['auth', 'e', 'tenant-selection']);
 
       let nextPath = `/${slug}`;
 
@@ -204,7 +231,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         nextPath = `/${slug}`;
       } else if (firstSegment && knownSlugs.has(firstSegment)) {
         const rest = currentSegments.slice(1).join('/');
-        nextPath = rest ? `/${slug}/${rest}` : `/${slug}`;
+        const restFirstSegment = currentSegments[1];
+        if (restFirstSegment && globalSegments.has(restFirstSegment)) {
+          nextPath = `/${slug}`;
+        } else {
+          nextPath = rest ? `/${slug}/${rest}` : `/${slug}`;
+        }
       } else if (firstSegment && globalSegments.has(firstSegment)) {
         nextPath = `/${slug}`;
       } else {

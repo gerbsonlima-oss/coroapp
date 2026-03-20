@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -50,7 +50,7 @@ function getActiveTenantSlug(tenantSlug: string | null): string {
 
 function RootRedirect() {
   const { user, loading } = useAuth();
-  const { tenantSlug, loading: tenantLoading } = useTenant();
+  const { tenantSlug, userTenants, loading: tenantLoading } = useTenant();
 
   if (loading || tenantLoading) return <LoadingFallback />;
   const activeSlug = getActiveTenantSlug(tenantSlug);
@@ -60,7 +60,20 @@ function RootRedirect() {
     return <Navigate to="/auth" replace />;
   }
 
-  if (activeSlug) return <Navigate to={`/${activeSlug}`} replace />;
+  if (tenantSlug) return <Navigate to={`/${tenantSlug}`} replace />;
+
+  if (userTenants.length === 1) {
+    return <Navigate to={`/${userTenants[0].slug}`} replace />;
+  }
+
+  const storedSlug = localStorage.getItem("selected_tenant_slug") || "";
+  if (storedSlug && userTenants.some((tenant) => tenant.slug === storedSlug)) {
+    return <Navigate to={`/${storedSlug}`} replace />;
+  }
+
+  if (storedSlug && !userTenants.some((tenant) => tenant.slug === storedSlug)) {
+    localStorage.removeItem("selected_tenant_slug");
+  }
 
   return <Navigate to="/tenant-selection" replace />;
 }
@@ -78,6 +91,12 @@ function LegacyRouteRedirect() {
       replace
     />
   );
+}
+
+function LegacyTenantSelectionRedirect() {
+  const { slug } = useParams<{ slug: string }>();
+  if (!slug) return <Navigate to="/tenant-selection" replace />;
+  return <Navigate to={`/${slug}`} replace />;
 }
 
 function App() {
@@ -101,6 +120,8 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/:slug/auth" element={<Auth />} />
             <Route path="/tenant-selection" element={<AuthOrTenantSelection />} />
+            <Route path="/:slug/tenant-selection" element={<LegacyTenantSelectionRedirect />} />
+            <Route path="/:slug/tenant-selection/*" element={<LegacyTenantSelectionRedirect />} />
             <Route path="/e/:id" element={<SimpleEventAudios />} />
             <Route path="/s/:id" element={<PublicSongDetails />} />
             <Route path="/:slug/public/events/:id" element={<SimpleEventAudios />} />
