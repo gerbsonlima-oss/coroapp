@@ -28,6 +28,7 @@ const SongDetails = lazy(() => import("./pages/SongDetails"));
 const SongTypeDetails = lazy(() => import("./pages/SongTypeDetails"));
 const AdminSongTypes = lazy(() => import("./pages/AdminSongTypes"));
 const AudioToSheet = lazy(() => import("./pages/AudioToSheet"));
+const PublicSongDetails = lazy(() => import("./pages/PublicSongDetails"));
 const Rehearsals = lazy(() => import("./pages/Rehearsals"));
 const AdminTenants = lazy(() => import("./pages/AdminTenants"));
 const AdminBackup = lazy(() => import("./pages/AdminBackup"));
@@ -94,6 +95,7 @@ function App() {
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/e/:id" element={<SimpleEventAudios />} />
+            <Route path="/s/:id" element={<PublicSongDetails />} />
             <Route path="/:slug/public/events/:id" element={<SimpleEventAudios />} />
             <Route path="/:slug/pending-approval" element={<PendingApproval />} />
 
