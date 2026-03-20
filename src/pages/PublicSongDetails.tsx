@@ -12,7 +12,7 @@ import {
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
 import { typeLabels } from '@/constants/songTypes';
-import { naipeColors, NAIPE_ORDER, NAIPE_LABELS } from '@/constants/naipes';
+import { naipeColors, NAIPE_ORDER, naipeLabels } from '@/constants/naipes';
 
 interface Song {
   id: string;
