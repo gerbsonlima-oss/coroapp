@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Music, BookOpen, Calendar } from 'lucide-react';
+import { Home, Music, BookOpen, Calendar, MessageCircle } from 'lucide-react';
 import { useTenantPath } from '@/contexts/TenantContext';
 
 export function BottomNavigation() {
@@ -15,6 +15,7 @@ export function BottomNavigation() {
       'admin',
       'rehearsals',
       'liturgy',
+      'chat',
       'audio-to-sheet',
       'choir-members',
       'pending-approval',
@@ -44,6 +45,7 @@ export function BottomNavigation() {
     { id: 'events', label: 'Eventos', icon: Calendar, path: '/events', isActive: isActive('/events') },
     { id: 'songs', label: 'Repertório', icon: Music, path: '/songs', isActive: isActive('/songs') },
     { id: 'liturgy', label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isActive('/liturgy') },
+    { id: 'chat', label: 'Chat', icon: MessageCircle, path: '/chat', isActive: isActive('/chat') },
   ];
 
   return (

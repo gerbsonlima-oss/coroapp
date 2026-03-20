@@ -39,6 +39,7 @@ const ChoirMemberForm = lazy(() => import("./pages/ChoirMemberForm"));
 const ChoirMemberDetails = lazy(() => import("./pages/ChoirMemberDetails"));
 const PendingApproval = lazy(() => import("./pages/PendingApproval"));
 const Liturgy = lazy(() => import("./pages/Liturgy"));
+const ChatAssistant = lazy(() => import("./pages/ChatAssistant"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 import { AuthOrTenantSelection } from "@/components/AuthOrTenantSelection";
@@ -121,6 +122,7 @@ function App() {
 
             <Route path="/:slug/rehearsals" element={<ProtectedRoute><Rehearsals /></ProtectedRoute>} />
             <Route path="/:slug/liturgy" element={<ProtectedRoute><Liturgy /></ProtectedRoute>} />
+            <Route path="/:slug/chat" element={<ProtectedRoute><ChatAssistant /></ProtectedRoute>} />
             <Route path="/:slug/audio-to-sheet" element={<ProtectedRoute><AudioToSheet /></ProtectedRoute>} />
 
             {/* Choir Members */}
@@ -142,6 +144,7 @@ function App() {
             <Route path="/songs/*" element={<LegacyRouteRedirect />} />
             <Route path="/rehearsals/*" element={<LegacyRouteRedirect />} />
             <Route path="/liturgy/*" element={<LegacyRouteRedirect />} />
+            <Route path="/chat/*" element={<LegacyRouteRedirect />} />
             <Route path="/audio-to-sheet/*" element={<LegacyRouteRedirect />} />
             <Route path="/choir-members/*" element={<LegacyRouteRedirect />} />
             <Route path="/admin/*" element={<LegacyRouteRedirect />} />
