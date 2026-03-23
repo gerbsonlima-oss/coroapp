@@ -5,7 +5,9 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 // Versão do SW - altere para forçar atualização
-const SW_VERSION = '2.0.0';
+const SW_VERSION = '2.1.0';
+const SHARE_CACHE_NAME = 'share-target-cache-v1';
+const SHARE_CACHE_KEY = '/shared-target-payload';
 console.log('[SW] Liturgia+ Service Worker v' + SW_VERSION);
 
 // Limpa caches antigos
@@ -150,6 +152,42 @@ registerRoute(
     ],
   })
 );
+
+// Web Share Target (Android/WhatsApp -> PWA)
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'POST') return;
+
+  const url = new URL(request.url);
+  if (url.pathname !== '/share-target') return;
+
+  event.respondWith((async () => {
+    try {
+      const formData = await request.formData();
+      const filesFromParam = formData.getAll('files').filter((item) => item instanceof File);
+      const fallbackFile = formData.get('file');
+      const pickedFile = filesFromParam[0] || (fallbackFile instanceof File ? fallbackFile : null);
+
+      if (pickedFile) {
+        const cache = await caches.open(SHARE_CACHE_NAME);
+
+        const response = new Response(pickedFile, {
+          headers: {
+            'content-type': pickedFile.type || 'application/octet-stream',
+            'x-shared-name': encodeURIComponent(pickedFile.name || 'arquivo-compartilhado'),
+          },
+        });
+
+        await cache.put(SHARE_CACHE_KEY, response);
+      }
+
+      return Response.redirect('/share-target?shared=1', 303);
+    } catch (error) {
+      console.error('[SW] Share target error:', error);
+      return Response.redirect('/share-target?shared=0', 303);
+    }
+  })());
+});
 
 // Ativar service worker imediatamente e limpar caches antigos
 self.addEventListener('install', (event) => {

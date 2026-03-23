@@ -223,7 +223,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         ...availableTenants.map(t => t.slug),
       ]);
       const firstSegment = currentSegments[0];
-      const globalSegments = new Set(['auth', 'e', 'tenant-selection']);
+      const globalSegments = new Set(['auth', 'e', 'tenant-selection', 'share-target']);
 
       let nextPath = `/${slug}`;
 
@@ -258,7 +258,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     const firstSegment = location.pathname.split('/').filter(Boolean)[0];
     if (!firstSegment) return;
 
-    const globalSegments = new Set(['auth', 'e']);
+    const globalSegments = new Set(['auth', 'e', 'share-target']);
     const appRoots = new Set([
       'events',
       'songs',
@@ -331,8 +331,9 @@ export function useTenantPath() {
     'pending-approval',
     'public',
     'tenant-selection',
+    'share-target',
   ]);
-  const globalPrefixes = new Set(['auth', 'e', 'tenant-selection']);
+  const globalPrefixes = new Set(['auth', 'e', 'tenant-selection', 'share-target']);
   const currentPathSlug =
     currentPathFirstSegment &&
     !globalPrefixes.has(currentPathFirstSegment) &&

@@ -40,6 +40,7 @@ const ChoirMemberDetails = lazy(() => import("./pages/ChoirMemberDetails"));
 const PendingApproval = lazy(() => import("./pages/PendingApproval"));
 const Liturgy = lazy(() => import("./pages/Liturgy"));
 const ChatAssistant = lazy(() => import("./pages/ChatAssistant"));
+const ShareTarget = lazy(() => import("./pages/ShareTarget"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 import { AuthOrTenantSelection } from "@/components/AuthOrTenantSelection";
@@ -120,6 +121,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/:slug/auth" element={<Auth />} />
             <Route path="/tenant-selection" element={<AuthOrTenantSelection />} />
+            <Route path="/share-target" element={<ShareTarget />} />
             <Route path="/:slug/tenant-selection" element={<LegacyTenantSelectionRedirect />} />
             <Route path="/:slug/tenant-selection/*" element={<LegacyTenantSelectionRedirect />} />
             <Route path="/e/:id" element={<SimpleEventAudios />} />
