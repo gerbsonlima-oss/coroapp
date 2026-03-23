@@ -52,17 +52,6 @@ const normalizeTenants = (rows: TenantRow[] | null | undefined): Tenant[] =>
   }));
 
 async function fetchTenantsWithSchemaFallback(ids?: string[]) {
-  const withChatBase = supabase
-    .from('tenants')
-    .select('id, slug, name, logo_url, chat_enabled');
-
-  const withChatQuery = ids && ids.length > 0 ? withChatBase.in('id', ids) : withChatBase;
-  const withChat = await withChatQuery.order('name');
-
-  if (!withChat.error) {
-    return { data: normalizeTenants(withChat.data as TenantRow[]), error: null };
-  }
-
   const fallbackBase = supabase
     .from('tenants')
     .select('id, slug, name, logo_url');
@@ -74,6 +63,8 @@ async function fetchTenantsWithSchemaFallback(ids?: string[]) {
     return { data: null as Tenant[] | null, error: fallback.error };
   }
 
+  // Keep backward compatibility for projects where `chat_enabled` does not exist yet.
+  // The UI already handles this as disabled by default.
   return { data: normalizeTenants(fallback.data as TenantRow[]), error: null };
 }
 

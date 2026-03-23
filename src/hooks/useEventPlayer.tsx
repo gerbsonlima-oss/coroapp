@@ -27,11 +27,18 @@ export interface PlayerState {
 export const useEventPlayer = (tracks: Track[]) => {
   const { getCachedUrl } = useAudioCache();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const isOggUrl = (url: string) => /\.ogg($|[?#])/i.test(url);
   const browserSupportsOgg = (audio: HTMLAudioElement) =>
     Boolean(audio.canPlayType('audio/ogg; codecs="opus"') || audio.canPlayType('audio/ogg'));
   const dispatchAudioError = (message: string, track: Track | null) => {
     window.dispatchEvent(new CustomEvent('audio-error', { detail: { message, track } }));
+  };
+  const revokeBlobUrl = () => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
   };
 
   // ✅ SINGLE SOURCE OF TRUTH - All player state consolidated
@@ -71,6 +78,23 @@ export const useEventPlayer = (tracks: Track[]) => {
 
   const setIsLoading = useCallback((loading: boolean) => {
     setState(prev => ({ ...prev, isLoading: loading }));
+  }, []);
+
+  const buildFallbackBlobUrl = useCallback(async (url: string) => {
+    const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const fallbackBlob = blob.type && blob.type !== 'application/octet-stream'
+      ? blob
+      : new Blob([await blob.arrayBuffer()], { type: 'audio/mpeg' });
+
+    revokeBlobUrl();
+    const blobUrl = URL.createObjectURL(fallbackBlob);
+    blobUrlRef.current = blobUrl;
+    return blobUrl;
   }, []);
 
   const setVolume = useCallback((volume: number) => {
@@ -164,7 +188,12 @@ export const useEventPlayer = (tracks: Track[]) => {
       if (state.isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        audioRef.current.play().catch((err) => {
+          if (err?.name !== 'AbortError') {
+            console.error('Erro ao reproduzir:', err);
+            setIsPlaying(false);
+          }
+        });
       }
     }
   }, [state.isPlaying]);
@@ -360,9 +389,21 @@ export const useEventPlayer = (tracks: Track[]) => {
             console.log('[Player] Resuming playback after source change');
             const playPromise = audioEl.play();
             if (playPromise !== undefined) {
-              playPromise.catch(err => {
+              playPromise.catch(async (err) => {
                 if (err.name !== 'AbortError') {
                   console.error('[Player] Error playing after load:', err);
+                  if (err.name === 'NotSupportedError') {
+                    try {
+                      const fallbackUrl = await buildFallbackBlobUrl(cachedUrl);
+                      audioEl.src = fallbackUrl;
+                      audioEl.load();
+                      await audioEl.play();
+                      clearTimeout(loadingTimeout);
+                      return;
+                    } catch (fallbackError) {
+                      console.error('[Player] Blob fallback failed:', fallbackError);
+                    }
+                  }
                   setIsPlaying(false);
                   setIsLoading(false);
                   clearTimeout(loadingTimeout);
@@ -374,9 +415,20 @@ export const useEventPlayer = (tracks: Track[]) => {
           console.log('[Player] Source unchanged, skipping reload');
           // Se a source não mudou e não está carregando, pode tocar imediatamente
           if (state.isPlaying && audioEl.paused) {
-            audioEl.play().catch(err => {
+            audioEl.play().catch(async err => {
               if (err.name !== 'AbortError') {
                 console.error('[Player] Error playing:', err);
+                if (err.name === 'NotSupportedError') {
+                  try {
+                    const fallbackUrl = await buildFallbackBlobUrl(cachedUrl);
+                    audioEl.src = fallbackUrl;
+                    audioEl.load();
+                    await audioEl.play();
+                    return;
+                  } catch (fallbackError) {
+                    console.error('[Player] Blob fallback failed:', fallbackError);
+                  }
+                }
                 if (isOggUrl(cachedUrl) && !browserSupportsOgg(audioEl)) {
                   dispatchAudioError(
                     'Este navegador nao suporta este audio .ogg. Tente Chrome/Firefox ou use MP3/M4A.',
@@ -401,7 +453,7 @@ export const useEventPlayer = (tracks: Track[]) => {
     return () => {
       if (loadingTimeout) clearTimeout(loadingTimeout);
     };
-  }, [currentTrack?.id, getCachedUrl]);
+  }, [currentTrack?.id, getCachedUrl, buildFallbackBlobUrl]);
 
   // ✅ Handle filter changes - if current track no longer exists in playlist
   useEffect(() => {
@@ -410,6 +462,12 @@ export const useEventPlayer = (tracks: Track[]) => {
       playTrack(0);
     }
   }, [tracks.length, state.currentTrackId, currentTrackIndex, playTrack]);
+
+  useEffect(() => {
+    return () => {
+      revokeBlobUrl();
+    };
+  }, []);
 
   // =====================
   // Return API
