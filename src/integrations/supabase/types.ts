@@ -14,98 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      chat_messages: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          metadata: Json
-          role: string
-          session_id: string
-          tenant_id: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          metadata?: Json
-          role: string
-          session_id: string
-          tenant_id: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          metadata?: Json
-          role?: string
-          session_id?: string
-          tenant_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "chat_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chat_messages_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chat_sessions: {
-        Row: {
-          created_at: string
-          current_flow: string
-          current_step: string
-          flow_state: Json
-          id: string
-          status: string
-          tenant_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_flow?: string
-          current_step?: string
-          flow_state?: Json
-          id?: string
-          status?: string
-          tenant_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_flow?: string
-          current_step?: string
-          flow_state?: Json
-          id?: string
-          status?: string
-          tenant_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_sessions_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       choir_members: {
         Row: {
           active: boolean | null
@@ -650,7 +558,6 @@ export type Database = {
       }
       tenants: {
         Row: {
-          chat_enabled: boolean
           created_at: string
           id: string
           logo_url: string | null
@@ -659,7 +566,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          chat_enabled?: boolean
           created_at?: string
           id?: string
           logo_url?: string | null
@@ -668,7 +574,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          chat_enabled?: boolean
           created_at?: string
           id?: string
           logo_url?: string | null
