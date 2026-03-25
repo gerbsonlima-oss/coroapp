@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AudioPlayer } from '@/components/AudioPlayer';
+import { AudioRecorder } from '@/components/AudioRecorder';
 import { uploadFileToBucket } from '@/utils/storageUpload';
 import { convertPdfToImages, createCombinedImage } from '@/utils/pdfToImage';
 import { ArrowLeft, FileText, Upload, Trash2, Headphones, Plus, MoreVertical, Search, GripVertical } from 'lucide-react';
@@ -1534,6 +1535,15 @@ const EventQuickEdit = () => {
                       disabled={processingAudioId === `${song.songId}-${activeAudio.naipe}`}
                     />
                   </label>
+                  <div className="flex-1">
+                    <AudioRecorder
+                      compact
+                      naipeName={naipeLabel}
+                      onRecordingComplete={(file) =>
+                        handleAttachAudio(song, activeAudio.naipe, file)
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             </DialogContent>

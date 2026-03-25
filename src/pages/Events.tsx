@@ -15,7 +15,6 @@ import { Plus, Calendar, Music, WifiOff, FileText, Search, X, LogOut, LogIn } fr
 import { toast } from 'sonner';
 import { useAudioCache } from '@/hooks/useAudioCache';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
-import { format } from 'date-fns';
 
 import { EventListItem } from '@/components/EventListItem';
 
@@ -35,7 +34,6 @@ const Events = () => {
   const [isOffline, setIsOffline] = useState(false);
   const [showReportExporter, setShowReportExporter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewFilter, setViewFilter] = useState<'all' | 'upcoming' | 'past' | 'offline'>('all');
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { isSuperAdmin } = useSuperAdmin();
@@ -51,20 +49,9 @@ const Events = () => {
   const queryTenantIds = tenantId ? [tenantId] : [];
 
   const filteredEvents = useMemo(() => {
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-
-    let base = events;
-    if (viewFilter === 'upcoming') {
-      base = events.filter((event) => event.date >= todayStr);
-    } else if (viewFilter === 'past') {
-      base = events.filter((event) => event.date < todayStr);
-    } else if (viewFilter === 'offline') {
-      base = events.filter((event) => isEventAvailableOffline(event.id));
-    }
-
-    if (!searchQuery.trim()) return base;
+    if (!searchQuery.trim()) return events;
     const q = searchQuery.toLowerCase();
-    return base.filter(e =>
+    return events.filter(e =>
       e.name.toLowerCase().includes(q) ||
       (e.location && e.location.toLowerCase().includes(q)) ||
       e.date.includes(q)
@@ -139,6 +126,14 @@ const Events = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-[144px]">
       <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-xl shadow-subtle px-4 py-3 md:px-6 md:py-4">
@@ -189,17 +184,8 @@ const Events = () => {
           className="md:hidden w-full mb-4 gradient-primary shadow-glow"
           showText={true}
         />
-
-        {loading ? (
-          <div className="space-y-3 md:space-y-4">
-            {[0, 1, 2, 3].map((item) => (
-              <div
-                key={item}
-                className="h-[98px] sm:h-[130px] rounded-xl border border-border/60 bg-card/60 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : events.length === 0 ? (
+        
+        {events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 md:py-20 text-center px-4">
             <div className="mb-6 rounded-full bg-primary/10 p-8">
               <Calendar className="h-12 w-12 md:h-16 md:w-16 text-primary" />
@@ -231,63 +217,22 @@ const Events = () => {
         ) : (
           <div className="space-y-3 md:space-y-4">
             {/* Search */}
-            <div className="space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome, local ou data..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-9"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label="Limpar busca"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant={viewFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewFilter('all')}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, local ou data..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  Todos
-                </Button>
-                <Button
-                  type="button"
-                  variant={viewFilter === 'upcoming' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewFilter('upcoming')}
-                >
-                  Futuros
-                </Button>
-                <Button
-                  type="button"
-                  variant={viewFilter === 'past' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewFilter('past')}
-                >
-                  Passados
-                </Button>
-                <Button
-                  type="button"
-                  variant={viewFilter === 'offline' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewFilter('offline')}
-                >
-                  Offline
-                </Button>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {filteredEvents.length} resultado{filteredEvents.length === 1 ? '' : 's'}
-                </span>
-              </div>
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             {/* Desktop New Event Button */}
@@ -304,12 +249,9 @@ const Events = () => {
             )}
 
             {filteredEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground border border-dashed border-border rounded-xl bg-card/40">
+              <div className="text-center py-8 text-muted-foreground">
                 <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="px-3">
-                  Nenhum evento encontrado
-                  {searchQuery ? ` para "${searchQuery}"` : ' com este filtro'}.
-                </p>
+                <p>Nenhum evento encontrado para "{searchQuery}"</p>
               </div>
             ) : (
               filteredEvents.map((event) => (
