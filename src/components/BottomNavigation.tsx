@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Music, BookOpen, Calendar, MessageCircle } from 'lucide-react';
+import { Home, Music, BookOpen, Calendar, MessageCircle, ClipboardCheck } from 'lucide-react';
 import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 
 export function BottomNavigation() {
@@ -28,9 +28,11 @@ export function BottomNavigation() {
     const pathname = hasSlugPrefix
       ? `/${segments.slice(1).join('/') || ''}` || '/'
       : location.pathname;
+
     if (basePath === '/') {
       return pathname === '/';
     }
+
     return pathname.startsWith(basePath);
   };
 
@@ -44,6 +46,7 @@ export function BottomNavigation() {
   }> = [
     { id: 'home', label: 'Início', icon: Home, path: '/', isActive: isActive('/') },
     { id: 'events', label: 'Eventos', icon: Calendar, path: '/events', isActive: isActive('/events') },
+    { id: 'rehearsals', label: 'Ensaios', icon: ClipboardCheck, path: '/rehearsals', isActive: isActive('/rehearsals') },
     { id: 'songs', label: 'Repertório', icon: Music, path: '/songs', isActive: isActive('/songs') },
     { id: 'liturgy', label: 'Liturgia', icon: BookOpen, path: '/liturgy', isActive: isActive('/liturgy') },
   ];

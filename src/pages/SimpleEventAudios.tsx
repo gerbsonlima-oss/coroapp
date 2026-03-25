@@ -885,7 +885,8 @@ const SimpleEventAudios = () => {
   };
 
   const handleEditSong = (songId: string) => {
-    navigate(buildPath(`/songs/${songId}/edit`));
+    const returnTo = `${location.pathname}${location.search}${location.hash}`;
+    navigate(buildPath(`/songs/${songId}/edit?returnTo=${encodeURIComponent(returnTo)}`));
   };
 
   const openTypeEditModal = async (audio: SongAudio) => {

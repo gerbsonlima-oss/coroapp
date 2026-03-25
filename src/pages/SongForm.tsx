@@ -9,10 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ArrowLeft, Save, Upload, FileText, Loader2, Music, Mic, Paperclip, Check, ChevronsUpDown, FileType, Search, Guitar } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, Paperclip, Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LyricsSearchModal } from '@/components/LyricsSearchModal';
-import { LyricsEditor } from '@/components/LyricsEditor';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { convertPdfToImages, createCombinedImage } from '@/utils/pdfToImage';
@@ -74,13 +72,10 @@ const SongForm = () => {
     todos: [],
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const lyricsInputRef = useRef<HTMLInputElement>(null);
   const [sheetMusic, setSheetMusic] = useState<File | null>(null);
   const [originalPdf, setOriginalPdf] = useState<File | null>(null);
-  const [lyricsFile, setLyricsFile] = useState<File | null>(null);
   const [lyricsText, setLyricsText] = useState('');
   const [chordsText, setChordsText] = useState('');
-  const [lyricsSearchOpen, setLyricsSearchOpen] = useState(false);
   const [convertingPdf, setConvertingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -265,11 +260,7 @@ const SongForm = () => {
 
       let songId = id;
       
-      // Get lyrics content from file or text
-      let lyricsContent: string | null = lyricsText || null;
-      if (lyricsFile && !lyricsText) {
-        lyricsContent = await lyricsFile.text();
-      }
+      const lyricsContent: string | null = lyricsText || null;
 
       if (isEditMode) {
         // Modo Edição
@@ -451,70 +442,69 @@ const SongForm = () => {
         </div>
       </header>
 
-      <main className="px-3 py-3 max-w-2xl mx-auto h-[calc(100vh-80px)] flex flex-col">
-        <form onSubmit={handleSubmit} className="space-y-3 flex-1 overflow-y-auto">
-          {/* Informações Básicas Card */}
+      <main className="px-3 py-3 max-w-2xl mx-auto">
+        <form id="song-form" onSubmit={handleSubmit} className="space-y-3 pb-24">
+          {/* Card: Título */}
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs font-semibold">Nome *</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Ave Maria"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={loading}
-                className={`h-9 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.name ? 'border-red-500' : ''}`}
-              />
-              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
-            </div>
+            <Label htmlFor="name" className="text-xs font-semibold">Título *</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Ave Maria"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+              className={`h-10 rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.name ? 'border-red-500' : ''}`}
+            />
+            {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+          </div>
 
-            <div>
-              <Label htmlFor="type" className="text-xs font-semibold">Tipo *</Label>
-              <Popover open={openTypeSelect} onOpenChange={setOpenTypeSelect}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openTypeSelect}
-                    className={`w-full h-9 justify-between rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.type ? 'border-red-500' : ''}`}
-                    disabled={loading}
-                  >
-                    {type ? songTypes.find((t) => t.slug === type)?.name : 'Selecione'}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Buscar tipo..." />
-                    <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
-                    <CommandList>
-                      <CommandGroup>
-                        {songTypes.map((songType) => (
-                          <CommandItem
-                            key={songType.id}
-                            value={songType.slug}
-                            onSelect={(currentValue) => {
-                              setType(currentValue === type ? '' : currentValue);
-                              setOpenTypeSelect(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                'mr-2 h-4 w-4',
-                                type === songType.slug ? 'opacity-100' : 'opacity-0'
-                              )}
-                            />
-                            {songType.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {errors.type && <p className="text-xs text-red-500">{errors.type}</p>}
-            </div>
+          {/* Card: Tipo */}
+          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
+            <Label htmlFor="type" className="text-xs font-semibold">Tipo *</Label>
+            <Popover open={openTypeSelect} onOpenChange={setOpenTypeSelect}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openTypeSelect}
+                  className={`w-full h-10 justify-between rounded-md text-sm border-primary/30 bg-secondary/50 ${errors.type ? 'border-red-500' : ''}`}
+                  disabled={loading}
+                >
+                  {type ? songTypes.find((t) => t.slug === type)?.name : 'Selecione'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar tipo..." />
+                  <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                  <CommandList>
+                    <CommandGroup>
+                      {songTypes.map((songType) => (
+                        <CommandItem
+                          key={songType.id}
+                          value={songType.slug}
+                          onSelect={(currentValue) => {
+                            setType(currentValue === type ? '' : currentValue);
+                            setOpenTypeSelect(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              type === songType.slug ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          {songType.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            {errors.type && <p className="text-xs text-red-500">{errors.type}</p>}
           </div>
 
           {/* Partitura Card */}
@@ -558,7 +548,7 @@ const SongForm = () => {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={loading || convertingPdf}
                 title="Anexar arquivo"
-                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50"
+                className="h-11 w-11 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50 flex items-center justify-center"
               >
                 <Paperclip className="h-5 w-5 text-primary" />
               </button>
@@ -570,131 +560,10 @@ const SongForm = () => {
             </div>
           </div>
 
-          {/* Letra Card */}
-          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
-            <Label className="text-xs font-semibold">Letra</Label>
-            
-            <Input
-              ref={lyricsInputRef}
-              id="lyrics-file"
-              type="file"
-              accept=".txt"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  setLyricsFile(file);
-                  const text = await file.text();
-                  setLyricsText(text);
-                }
-              }}
-              disabled={loading || convertingPdf}
-              className="hidden"
-            />
-            
-            <div className="flex gap-2 items-center">
-              <button
-                type="button"
-                onClick={() => lyricsInputRef.current?.click()}
-                disabled={loading || convertingPdf}
-                title="Anexar arquivo TXT"
-                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50"
-              >
-                <Paperclip className="h-5 w-5 text-primary" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setLyricsSearchOpen(true)}
-                disabled={loading || convertingPdf || !name}
-                title="Buscar letra online"
-                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50"
-              >
-                <Search className="h-5 w-5 text-primary" />
-              </button>
-              {lyricsFile && (
-                <span className="text-xs truncate bg-primary/5 px-2 py-1 rounded border border-primary/20">
-                  {lyricsFile.name}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">Anexe .txt, busque online ou use o editor abaixo</p>
-            
-            {/* Dica de formatação */}
-            <div className="text-xs text-muted-foreground bg-secondary/30 p-2 rounded border border-primary/10">
-              <p className="font-medium text-foreground/80 mb-1">Formatação:</p>
-              <p>• Selecione o texto e aplique <strong>negrito</strong>, <em>itálico</em> ou <span className="text-red-500">cores</span></p>
-              <p>• Use <code className="bg-primary/10 px-1 rounded">[REFRÃO]</code>...<code className="bg-primary/10 px-1 rounded">[/REFRÃO]</code> para marcar refrões</p>
-              <p>• Inicie estrofes com <code className="bg-primary/10 px-1 rounded">1.</code>, <code className="bg-primary/10 px-1 rounded">2.</code> etc para numerar</p>
-            </div>
-            
-            {/* Editor de texto rico para letra */}
-            <LyricsEditor
-              value={lyricsText}
-              onChange={setLyricsText}
-              disabled={loading}
-              placeholder="[REFRÃO]&#10;Glória a Deus nas alturas&#10;E paz na terra aos homens&#10;[/REFRÃO]&#10;&#10;1. Primeira estrofe aqui..."
-            />
-          </div>
-
-          <LyricsSearchModal
-            open={lyricsSearchOpen}
-            onOpenChange={setLyricsSearchOpen}
-            songName={name}
-            onImport={(lyrics) => {
-              setLyricsText(lyrics);
-              const blob = new Blob([lyrics], { type: 'text/plain' });
-              const file = new File([blob], `${name || 'letra'}.txt`, { type: 'text/plain' });
-              setLyricsFile(file);
-            }}
-          />
-
-          {/* Cifra Card */}
-          <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
-            <div className="flex items-center gap-2">
-              <Guitar className="h-4 w-4 text-primary" />
-              <Label className="text-xs font-semibold">Cifra</Label>
-            </div>
-            
-            {/* Dica de formatação */}
-            <div className="text-xs text-muted-foreground bg-secondary/30 p-2 rounded border border-primary/10">
-              <p className="font-medium text-foreground/80 mb-1">Formatos suportados:</p>
-              <p>• <strong>ChordPro:</strong> <code className="bg-primary/10 px-1 rounded">[C]Letra[G]aqui</code></p>
-              <p>• <strong>Acordes acima:</strong> acordes em linha separada</p>
-              <p className="mt-1 font-medium text-foreground/80">Seções:</p>
-              <p>• Use <code className="bg-primary/10 px-1 rounded">[REFRÃO]</code>...<code className="bg-primary/10 px-1 rounded">[/REFRÃO]</code> para refrão</p>
-              <p>• Use <code className="bg-primary/10 px-1 rounded">[1]</code>...<code className="bg-primary/10 px-1 rounded">[/1]</code>, <code className="bg-primary/10 px-1 rounded">[2]</code>...<code className="bg-primary/10 px-1 rounded">[/2]</code> para estrofes</p>
-            </div>
-            
-            {/* Textarea para editar cifra */}
-            <textarea
-              value={chordsText}
-              onChange={(e) => setChordsText(e.target.value)}
-              placeholder={`[1]
-[C]Quão grande [G]és Tu, [Am]Senhor
-[F]Quão grande [C]és Tu
-[/1]
-
-[REFRÃO]
-[C]Minh'alma [G]canta a [Am]Ti
-[F]Quão grande [C]és Tu
-[/REFRÃO]
-
-[2]
-[C]Segunda estrofe [G]aqui
-[/2]`}
-              disabled={loading}
-              rows={10}
-              className="w-full rounded-lg bg-secondary/30 p-3 text-sm font-mono leading-relaxed border border-primary/10 focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/20 resize-y min-h-[150px] placeholder:text-muted-foreground/50"
-            />
-            {chordsText && (
-              <p className="text-xs text-muted-foreground text-right">
-                {chordsText.length} caracteres
-              </p>
-            )}
-          </div>
-
           {/* Áudios por Naipe Card */}
           <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
             <Label className="text-xs font-semibold">Áudios</Label>
+            <p className="text-xs text-muted-foreground">Upload por naipe (sem gravação no app).</p>
             
             <div className="space-y-2">
               {NAIPES.map(({ key, label }) => (
@@ -714,10 +583,10 @@ const SongForm = () => {
           </div>
         </form>
 
-        {/* Botão Salvar - Fixed Bottom */}
+        {/* Botão Salvar */}
         <Button
           type="submit"
-          onClick={handleSubmit}
+          form="song-form"
           className="w-full h-12 rounded-lg bg-gradient-to-r from-primary to-primary/80 hover:to-primary text-primary-foreground hover:scale-105 transition-all text-sm font-bold shadow-glow hover:shadow-glow/50 mt-3"
           disabled={loading || convertingPdf}
         >

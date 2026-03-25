@@ -1,10 +1,6 @@
 import { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { FileAudio, Trash2, Plus, Paperclip, Mic } from 'lucide-react';
-import { AudioRecorder } from './AudioRecorder';
+import { FileAudio, Trash2, Paperclip } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -37,7 +33,6 @@ interface NaipeAudioManagerProps {
 }
 
 export const NaipeAudioManager = ({
-  naipe,
   naipeLabel,
   audios,
   onAudiosChange,
@@ -45,7 +40,6 @@ export const NaipeAudioManager = ({
   existingAudios = [],
   onAudioDeleted,
 }: NaipeAudioManagerProps) => {
-  const [audioNames, setAudioNames] = useState<Record<number, string>>({});
   const [deletingAudioId, setDeletingAudioId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,9 +54,7 @@ export const NaipeAudioManager = ({
       if (error) throw error;
 
       toast.success(`Áudio "${audioName}" excluído com sucesso`);
-      if (onAudioDeleted) {
-        onAudioDeleted();
-      }
+      onAudioDeleted?.();
     } catch (error) {
       console.error('Erro ao excluir áudio:', error);
       toast.error('Erro ao excluir áudio');
@@ -75,7 +67,7 @@ export const NaipeAudioManager = ({
     if (!file) return;
 
     const newAudio: NaipeAudio = {
-      name: audioNames[index ?? audios.length] || file.name,
+      name: file.name,
       file,
     };
 
@@ -88,15 +80,6 @@ export const NaipeAudioManager = ({
     }
   };
 
-  const handleNameChange = (index: number, name: string) => {
-    setAudioNames((prev) => ({ ...prev, [index]: name }));
-    const newAudios = [...audios];
-    if (newAudios[index]) {
-      newAudios[index].name = name;
-      onAudiosChange(newAudios);
-    }
-  };
-
   const removeAudio = (index: number) => {
     const newAudios = audios.filter((_, i) => i !== index);
     onAudiosChange(newAudios);
@@ -106,22 +89,15 @@ export const NaipeAudioManager = ({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-muted-foreground">{naipeLabel}</span>
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled}
-            title="Anexar áudio"
-            className="p-1.5 rounded bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Paperclip className="h-4 w-4 text-primary" />
-          </button>
-          <AudioRecorder
-            naipeName={naipe}
-            onRecordingComplete={(file) => handleFileChange(file)}
-            disabled={disabled}
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
+          title="Anexar áudio"
+          className="h-11 w-11 rounded bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          <Paperclip className="h-4 w-4 text-primary" />
+        </button>
       </div>
 
       <Input
@@ -144,7 +120,7 @@ export const NaipeAudioManager = ({
                 <button
                   type="button"
                   disabled={disabled || deletingAudioId === audio.id}
-                  className="p-0.5 hover:bg-red-500/20 rounded transition-all disabled:opacity-50"
+                  className="h-9 w-9 hover:bg-red-500/20 rounded transition-all disabled:opacity-50 flex items-center justify-center"
                 >
                   <Trash2 className="h-3 w-3 text-red-500" />
                 </button>
@@ -178,7 +154,7 @@ export const NaipeAudioManager = ({
               type="button"
               onClick={() => removeAudio(index)}
               disabled={disabled}
-              className="p-0.5 hover:bg-red-500/20 rounded transition-all disabled:opacity-50"
+              className="h-9 w-9 hover:bg-red-500/20 rounded transition-all disabled:opacity-50 flex items-center justify-center"
             >
               <Trash2 className="h-3 w-3 text-red-500" />
             </button>

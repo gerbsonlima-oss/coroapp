@@ -31,6 +31,20 @@ interface EventListItemProps {
   event: Event;
 }
 
+const getRelativeDateLabel = (date: string) => {
+  const target = parseDateOnlyLocal(date);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const eventDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  const dayMs = 24 * 60 * 60 * 1000;
+  const diffDays = Math.round((eventDay.getTime() - today.getTime()) / dayMs);
+
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Amanha';
+  if (diffDays > 1) return `Em ${diffDays} dias`;
+  return `${Math.abs(diffDays)} dias atras`;
+};
+
 export const EventListItem = ({ event }: EventListItemProps) => {
   const navigate = useNavigate();
   const { buildPath } = useTenantPath();
@@ -39,8 +53,9 @@ export const EventListItem = ({ event }: EventListItemProps) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loadingSongs, setLoadingSongs] = useState(false);
   const [songsLoaded, setSongsLoaded] = useState(false);
-  
+
   const isOffline = isEventAvailableOffline(event.id);
+  const relativeDate = getRelativeDateLabel(event.date);
 
   const handleExpand = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,7 +89,7 @@ export const EventListItem = ({ event }: EventListItemProps) => {
           setSongsLoaded(true);
         }
       } catch (error) {
-        console.error('Erro ao carregar músicas:', error);
+        console.error('Erro ao carregar musicas:', error);
       } finally {
         setLoadingSongs(false);
       }
@@ -82,48 +97,52 @@ export const EventListItem = ({ event }: EventListItemProps) => {
   };
 
   const getTypeLabel = (type: string) => {
-    return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   return (
-    <Card className="overflow-hidden border-0 bg-card hover:bg-accent/5 transition-colors shadow-sm">
-      <div 
-        className="flex flex-row cursor-pointer"
+    <Card className="overflow-hidden border border-border/60 bg-card/95 transition-all duration-200 hover:shadow-md hover:border-primary/30">
+      <button
+        type="button"
+        className="flex w-full flex-row text-left"
         onClick={() => navigate(buildPath(`/events/${event.id}`))}
+        aria-label={`Abrir evento ${event.name}`}
       >
-        {/* Imagem */}
-        <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-muted">
+        <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden bg-muted sm:h-32 sm:w-32">
           {event.cover_image_url ? (
             <CachedImage
               src={event.cover_image_url}
               alt={event.name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               fallback={
-                <div className="h-full w-full flex items-center justify-center bg-primary/10">
+                <div className="flex h-full w-full items-center justify-center bg-primary/10">
                   <Music className="h-8 w-8 text-primary/40" />
                 </div>
               }
             />
           ) : (
-            <div className="h-full w-full flex items-center justify-center bg-primary/10">
+            <div className="flex h-full w-full items-center justify-center bg-primary/10">
               <Music className="h-8 w-8 text-primary/40" />
             </div>
           )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
         </div>
 
-        {/* Conteúdo */}
-        <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col justify-between p-3 sm:p-4">
           <div>
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="font-bold text-base sm:text-lg line-clamp-2 flex-1">{event.name}</h3>
-              {isOffline && <OfflineBadge variant="small" className="shrink-0 mt-0.5" />}
+            <div className="mb-1 flex items-start justify-between gap-2">
+              <h3 className="flex-1 line-clamp-2 text-base font-bold sm:text-lg">{event.name}</h3>
+              <div className="mt-0.5 flex shrink-0 items-center gap-1.5">
+                <Badge variant="outline" className="h-5 bg-background/80 px-1.5 text-[10px]">
+                  {relativeDate}
+                </Badge>
+                {isOffline && <OfflineBadge variant="small" className="shrink-0" />}
+              </div>
             </div>
-            <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
+            <div className="space-y-1 text-xs text-muted-foreground sm:text-sm">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="line-clamp-1">
-                  {format(parseDateOnlyLocal(event.date), "dd 'de' MMMM", { locale: ptBR })}
-                </span>
+                <span className="line-clamp-1">{format(parseDateOnlyLocal(event.date), "dd 'de' MMMM", { locale: ptBR })}</span>
               </div>
               {event.location && (
                 <div className="flex items-center gap-1.5">
@@ -133,33 +152,34 @@ export const EventListItem = ({ event }: EventListItemProps) => {
               )}
             </div>
           </div>
-
-          <div className="flex justify-end mt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-xs hover:bg-primary/10 hover:text-primary"
-              onClick={handleExpand}
-            >
-              {expanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-1" />
-                  Ocultar músicas
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-1" />
-                  Ver músicas
-                </>
-              )}
-            </Button>
-          </div>
+          <div className="mt-2 text-[11px] font-medium text-primary/80 sm:text-xs">Toque para abrir detalhes do evento</div>
         </div>
+      </button>
+
+      <div className="border-t border-border/50 bg-card px-3 py-2 sm:px-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs hover:bg-primary/10 hover:text-primary"
+          onClick={handleExpand}
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="mr-1 h-4 w-4" />
+              Ocultar musicas
+            </>
+          ) : (
+            <>
+              <ChevronDown className="mr-1 h-4 w-4" />
+              Ver musicas
+              {songsLoaded && songs.length > 0 && <span className="ml-1 text-muted-foreground">({songs.length})</span>}
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* Lista de Músicas Expandida */}
       {expanded && (
-        <div className="border-t border-border/50 bg-muted/30 px-4 py-3 animate-in slide-in-from-top-2">
+        <div className="animate-in slide-in-from-top-2 border-t border-border/50 bg-muted/30 px-4 py-3">
           {loadingSongs ? (
             <div className="flex justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -167,26 +187,25 @@ export const EventListItem = ({ event }: EventListItemProps) => {
           ) : songs.length > 0 ? (
             <div className="space-y-2">
               {songs.map((song, index) => (
-                <div key={song.id} className="flex items-center justify-between text-sm gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-muted-foreground text-xs w-4 text-right shrink-0">{index + 1}.</span>
-                    <span className="font-medium truncate text-foreground/90">{song.name}</span>
+                <div key={song.id} className="flex items-center justify-between gap-2 text-sm">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="w-4 shrink-0 text-right text-xs text-muted-foreground">{index + 1}.</span>
+                    <span className="truncate font-medium text-foreground/90">{song.name}</span>
                   </div>
-                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 font-normal text-muted-foreground bg-background/50">
+                  <Badge
+                    variant="outline"
+                    className="h-5 shrink-0 bg-background/50 px-1.5 text-[10px] font-normal text-muted-foreground"
+                  >
                     {getTypeLabel(song.type)}
                   </Badge>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-2">
-              Nenhuma música cadastrada neste evento.
-            </p>
+            <p className="py-2 text-center text-sm text-muted-foreground">Nenhuma musica cadastrada neste evento.</p>
           )}
         </div>
       )}
     </Card>
   );
 };
-
-

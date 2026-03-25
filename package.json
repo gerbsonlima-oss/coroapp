@@ -88,11 +88,10 @@
     "@rollup/rollup-linux-x64-gnu": "4.53.2"
   },
   "overrides": {
-    "esbuild": "0.25.0",
-    "@esbuild/win32-x64": "0.25.0"
+    "esbuild": "0.25.0"
   },
   "devDependencies": {
-    "@esbuild/win32-x64": "^0.25.0",
+    "@esbuild/win32-x64": "0.25.0",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
