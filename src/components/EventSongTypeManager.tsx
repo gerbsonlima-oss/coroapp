@@ -463,7 +463,7 @@ export const EventSongTypeManager = ({
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {globalSongTypes.map((type) => {
                     const alreadyAdded = eventSongTypes.some(
-                      (et) => et.songTypeId === type.id
+                      (et) => et.label.toLowerCase() === type.name.toLowerCase() || et.songTypeId === type.id
                     );
                     return (
                       <Card

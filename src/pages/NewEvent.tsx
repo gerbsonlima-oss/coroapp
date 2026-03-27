@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Calendar, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Calendar, Upload, X, Image as ImageIcon, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { compressEventCoverImage } from '@/utils/imageCompression';
@@ -35,11 +36,6 @@ interface EventSongType {
   songTypeId?: string;
 }
 
-interface SongType {
-  id: string;
-  slug: string;
-  name: string;
-}
 
 const NewEvent = () => {
   const [name, setName] = useState('');
@@ -53,8 +49,8 @@ const NewEvent = () => {
   const [loading, setLoading] = useState(false);
   const [eventSongTypes, setEventSongTypes] = useState<EventSongType[]>([]);
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
-  const [songTypes, setSongTypes] = useState<SongType[]>([]);
-  const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
+  const [eventTypeNames, setEventTypeNames] = useState<string[]>([]);
+  const [newTypeName, setNewTypeName] = useState('');
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { tenantId, loading: tenantLoading } = useTenant();
@@ -70,38 +66,14 @@ const NewEvent = () => {
 
   useEffect(() => {
     if (tenantId) {
-      fetchInitialData();
+      fetchAvailableSongs();
+      // Pre-populate with default liturgical types
+      setEventTypeNames([
+        'Entrada', 'Ato Penitencial', 'Glória', 'Salmo', 'Aclamação',
+        'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Ação de Graças', 'Final'
+      ]);
     }
   }, [tenantId]);
-
-  const fetchInitialData = async () => {
-    await Promise.all([fetchAvailableSongs(), fetchDefaultSongTypes()]);
-  };
-
-const fetchDefaultSongTypes = async () => {
-  try {
-    // ✅ Tipos de música agora são globais
-    const { data, error } = await supabase
-      .from('song_types')
-      .select('*')
-      .order('order_index');
-
-    if (error) throw error;
-
-    const types = data || [];
-    setSongTypes(types);
-
-    // Todos os tipos selecionados por padrão
-    const initialSelection: Record<string, boolean> = {};
-    types.forEach((type) => {
-      initialSelection[type.id] = true;
-    });
-    setSelectedTypeIds(initialSelection);
-  } catch (error) {
-    console.error('Error fetching song types:', error);
-    toast.error('Erro ao carregar tipos de música');
-  }
-};
 
   const fetchAvailableSongs = async () => {
     if (!tenantId) return;
@@ -160,11 +132,19 @@ const handleSongCreate = async (type: string, songName: string) => {
   }
 };
 
-const toggleTypeSelection = (typeId: string) => {
-  setSelectedTypeIds((prev) => ({
-    ...prev,
-    [typeId]: !prev[typeId],
-  }));
+const handleAddTypeName = () => {
+  const trimmed = newTypeName.trim();
+  if (!trimmed) return;
+  if (eventTypeNames.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
+    toast.error('Tipo já adicionado');
+    return;
+  }
+  setEventTypeNames(prev => [...prev, trimmed]);
+  setNewTypeName('');
+};
+
+const handleRemoveTypeName = (index: number) => {
+  setEventTypeNames(prev => prev.filter((_, i) => i !== index));
 };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,15 +257,14 @@ const toggleTypeSelection = (typeId: string) => {
 
       if (eventError) throw eventError;
 
-      // Salvar seleção de tipos para o evento
-      const selectedTypes = songTypes.filter((type) => selectedTypeIds[type.id]);
-      if (selectedTypes.length > 0) {
+      // Salvar tipos de música como texto livre
+      if (eventTypeNames.length > 0) {
         const { error: typesError } = await supabase
           .from('event_song_types')
           .insert(
-            selectedTypes.map((type, index) => ({
+            eventTypeNames.map((typeName, index) => ({
               event_id: eventData.id,
-              song_type_id: type.id,
+              type_name: typeName,
               order_index: index,
             }))
           );
@@ -444,25 +423,51 @@ const toggleTypeSelection = (typeId: string) => {
             <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
               <Label className="text-xs font-semibold">Tipos de música deste evento</Label>
               <p className="text-xs text-muted-foreground">
-                Selecione quais tipos litúrgicos serão utilizados neste evento. Todos vêm
-                selecionados por padrão.
+                Adicione os tipos litúrgicos que serão utilizados neste evento.
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {songTypes.map((type) => (
-                  <label
-                    key={type.id}
-                    className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs"
+              <div className="flex flex-wrap gap-2">
+                {eventTypeNames.map((typeName, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="flex items-center gap-1 text-xs"
                   >
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-border accent-primary"
-                      checked={!!selectedTypeIds[type.id]}
-                      onChange={() => toggleTypeSelection(type.id)}
+                    {typeName}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTypeName(index)}
                       disabled={loading}
-                    />
-                    <span className="font-medium truncate">{type.name}</span>
-                  </label>
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
                 ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ex.: Entrada, Comunhão..."
+                  value={newTypeName}
+                  onChange={(e) => setNewTypeName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTypeName();
+                    }
+                  }}
+                  disabled={loading}
+                  className="h-9 rounded-md text-sm border-primary/30 bg-secondary/50"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddTypeName}
+                  disabled={loading || !newTypeName.trim()}
+                  className="h-9"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 

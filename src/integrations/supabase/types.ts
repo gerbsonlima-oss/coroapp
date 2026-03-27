@@ -109,21 +109,24 @@ export type Database = {
           event_id: string
           id: string
           order_index: number
-          song_type_id: string
+          song_type_id: string | null
+          type_name: string | null
         }
         Insert: {
           created_at?: string
           event_id: string
           id?: string
           order_index?: number
-          song_type_id: string
+          song_type_id?: string | null
+          type_name?: string | null
         }
         Update: {
           created_at?: string
           event_id?: string
           id?: string
           order_index?: number
-          song_type_id?: string
+          song_type_id?: string | null
+          type_name?: string | null
         }
         Relationships: [
           {
