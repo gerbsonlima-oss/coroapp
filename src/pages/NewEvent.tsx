@@ -70,38 +70,14 @@ const NewEvent = () => {
 
   useEffect(() => {
     if (tenantId) {
-      fetchInitialData();
+      fetchAvailableSongs();
+      // Pre-populate with default liturgical types
+      setEventTypeNames([
+        'Entrada', 'Ato Penitencial', 'Glória', 'Salmo', 'Aclamação',
+        'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Ação de Graças', 'Final'
+      ]);
     }
   }, [tenantId]);
-
-  const fetchInitialData = async () => {
-    await Promise.all([fetchAvailableSongs(), fetchDefaultSongTypes()]);
-  };
-
-const fetchDefaultSongTypes = async () => {
-  try {
-    // ✅ Tipos de música agora são globais
-    const { data, error } = await supabase
-      .from('song_types')
-      .select('*')
-      .order('order_index');
-
-    if (error) throw error;
-
-    const types = data || [];
-    setSongTypes(types);
-
-    // Todos os tipos selecionados por padrão
-    const initialSelection: Record<string, boolean> = {};
-    types.forEach((type) => {
-      initialSelection[type.id] = true;
-    });
-    setSelectedTypeIds(initialSelection);
-  } catch (error) {
-    console.error('Error fetching song types:', error);
-    toast.error('Erro ao carregar tipos de música');
-  }
-};
 
   const fetchAvailableSongs = async () => {
     if (!tenantId) return;
