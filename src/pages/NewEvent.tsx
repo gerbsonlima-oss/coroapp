@@ -53,8 +53,8 @@ const NewEvent = () => {
   const [loading, setLoading] = useState(false);
   const [eventSongTypes, setEventSongTypes] = useState<EventSongType[]>([]);
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
-  const [songTypes, setSongTypes] = useState<SongType[]>([]);
-  const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
+  const [eventTypeNames, setEventTypeNames] = useState<string[]>([]);
+  const [newTypeName, setNewTypeName] = useState('');
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { tenantId, loading: tenantLoading } = useTenant();
