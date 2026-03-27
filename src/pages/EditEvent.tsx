@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Calendar, Upload, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Upload, X, Image as ImageIcon, Trash2, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { compressEventCoverImage } from '@/utils/imageCompression';
 import { z } from 'zod';
@@ -40,11 +41,6 @@ interface Song {
   type: string;
 }
 
-interface SongType {
-  id: string;
-  slug: string;
-  name: string;
-}
 
 const EditEvent = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,8 +55,8 @@ const EditEvent = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [songTypes, setSongTypes] = useState<SongType[]>([]);
-  const [selectedTypeIds, setSelectedTypeIds] = useState<Record<string, boolean>>({});
+  const [eventTypeNames, setEventTypeNames] = useState<string[]>([]);
+  const [newTypeName, setNewTypeName] = useState('');
   const [pdfTheme, setPdfTheme] = useState<string>('deep_blue_gold');
   const { user } = useAuth();
   const { tenantId } = useTenant();  const navigate = useNavigate();
