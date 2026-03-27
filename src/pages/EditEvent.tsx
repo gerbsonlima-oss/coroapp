@@ -122,32 +122,23 @@ const EditEvent = () => {
 
   const fetchEventSongTypes = async (eventId: string) => {
     try {
-      const [{ data: allTypes, error: typesError }, { data: eventTypes, error: eventTypesError }] =
-        await Promise.all([
-          // ✅ Tipos de música agora são globais
-          supabase.from('song_types').select('*').order('order_index'),
-          supabase.from('event_song_types').select('song_type_id').eq('event_id', eventId),
-        ]);
+      const { data: eventTypes, error: eventTypesError } = await supabase
+        .from('event_song_types')
+        .select('type_name, order_index')
+        .eq('event_id', eventId)
+        .order('order_index');
 
-      if (typesError) throw typesError;
       if (eventTypesError) throw eventTypesError;
 
-      const types = allTypes || [];
-      setSongTypes(types);
-
-      const selection: Record<string, boolean> = {};
       if (eventTypes && eventTypes.length > 0) {
-        eventTypes.forEach((row) => {
-          selection[row.song_type_id] = true;
-        });
+        setEventTypeNames(eventTypes.map((row) => row.type_name || '').filter(Boolean));
       } else {
-        // Se não houver configuração específica, todos os tipos ficam selecionados
-        types.forEach((type) => {
-          selection[type.id] = true;
-        });
+        // Default types if none configured
+        setEventTypeNames([
+          'Entrada', 'Ato Penitencial', 'Glória', 'Salmo', 'Aclamação',
+          'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Ação de Graças', 'Final'
+        ]);
       }
-
-      setSelectedTypeIds(selection);
     } catch (error) {
       console.error('Erro ao carregar tipos do evento:', error);
       toast.error('Erro ao carregar tipos de música do evento');
@@ -255,9 +246,7 @@ const EditEvent = () => {
 
       if (eventError) throw eventError;
 
-      // Sincronizar tipos selecionados para o evento
-      const selectedTypes = songTypes.filter((type) => selectedTypeIds[type.id]);
-
+      // Sincronizar tipos de música como texto livre
       const { error: deleteError } = await supabase
         .from('event_song_types')
         .delete()
@@ -265,13 +254,13 @@ const EditEvent = () => {
 
       if (deleteError) throw deleteError;
 
-      if (selectedTypes.length > 0) {
+      if (eventTypeNames.length > 0) {
         const { error: insertError } = await supabase
           .from('event_song_types')
           .insert(
-            selectedTypes.map((type, index) => ({
+            eventTypeNames.map((typeName, index) => ({
               event_id: id,
-              song_type_id: type.id,
+              type_name: typeName,
               order_index: index,
             }))
           );
@@ -660,30 +649,61 @@ const EditEvent = () => {
             <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
               <Label className="text-xs font-semibold">Tipos de música deste evento</Label>
               <p className="text-xs text-muted-foreground">
-                Selecione quais tipos litúrgicos serão utilizados neste evento. Todos vêm
-                selecionados por padrão.
+                Adicione os tipos litúrgicos que serão utilizados neste evento.
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {songTypes.map((type) => (
-                  <label
-                    key={type.id}
-                    className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs"
+              <div className="flex flex-wrap gap-2">
+                {eventTypeNames.map((typeName, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="flex items-center gap-1 text-xs"
                   >
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-border accent-primary"
-                      checked={!!selectedTypeIds[type.id]}
-                      onChange={() =>
-                        setSelectedTypeIds((prev) => ({
-                          ...prev,
-                          [type.id]: !prev[type.id],
-                        }))
-                      }
+                    {typeName}
+                    <button
+                      type="button"
+                      onClick={() => setEventTypeNames(prev => prev.filter((_, i) => i !== index))}
                       disabled={loading}
-                    />
-                    <span className="font-medium truncate">{type.name}</span>
-                  </label>
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
                 ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ex.: Entrada, Comunhão..."
+                  value={newTypeName}
+                  onChange={(e) => setNewTypeName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const trimmed = newTypeName.trim();
+                      if (trimmed && !eventTypeNames.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
+                        setEventTypeNames(prev => [...prev, trimmed]);
+                        setNewTypeName('');
+                      }
+                    }
+                  }}
+                  disabled={loading}
+                  className="h-9 rounded-md text-sm border-primary/30 bg-secondary/50"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const trimmed = newTypeName.trim();
+                    if (trimmed && !eventTypeNames.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
+                      setEventTypeNames(prev => [...prev, trimmed]);
+                      setNewTypeName('');
+                    }
+                  }}
+                  disabled={loading || !newTypeName.trim()}
+                  className="h-9"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
