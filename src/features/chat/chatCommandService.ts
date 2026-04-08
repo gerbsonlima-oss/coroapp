@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+
+// chat_messages and chat_sessions tables are not yet in the generated types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
 import { convertPdfToImages, createCombinedImage } from "@/utils/pdfToImage";
 import { uploadFileToBucket } from "@/utils/storageUpload";
 import { detectIntent, isAffirmative, isNegative, normalizeFreeText } from "./intents";
@@ -74,7 +78,7 @@ async function checkIsAdmin(userId: string, tenantId: string): Promise<boolean> 
 }
 
 async function listMessages(sessionId: string): Promise<ChatMessage[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("chat_messages")
     .select("*")
     .eq("session_id", sessionId)
@@ -89,7 +93,7 @@ export class ChatCommandService {
     session: ChatSession;
     messages: ChatMessage[];
   }> {
-    const { data: existing, error: existingError } = await supabase
+    const { data: existing, error: existingError } = await db
       .from("chat_sessions")
       .select("*")
       .eq("tenant_id", tenantId)
@@ -103,7 +107,7 @@ export class ChatCommandService {
 
     let session = existing as ChatSession | null;
     if (!session) {
-      const { data: created, error: createError } = await supabase
+      const { data: created, error: createError } = await db
         .from("chat_sessions")
         .insert({
           tenant_id: tenantId,
@@ -133,7 +137,7 @@ export class ChatCommandService {
   }
 
   static async cancelFlow(sessionId: string): Promise<void> {
-    await supabase
+    await db
       .from("chat_sessions")
       .update({
         current_flow: "idle",
@@ -144,7 +148,7 @@ export class ChatCommandService {
   }
 
   static async restartFlow(sessionId: string): Promise<void> {
-    await supabase
+    await db
       .from("chat_sessions")
       .update({
         current_flow: "idle",
@@ -163,7 +167,7 @@ export class ChatCommandService {
     messages: ChatMessage[];
     botMessages: ChatMessagePayload[];
   }> {
-    const { data: sessionData, error: sessionError } = await supabase
+    const { data: sessionData, error: sessionError } = await db
       .from("chat_sessions")
       .select("*")
       .eq("id", sessionId)
@@ -195,7 +199,7 @@ export class ChatCommandService {
     } satisfies ChatMessagePayload["metadata"];
 
     if (normalizedText && !normalizedText.startsWith("__action:")) {
-      const { error: userMsgError } = await supabase.from("chat_messages").insert({
+      const { error: userMsgError } = await db.from("chat_messages").insert({
         session_id: session.id,
         tenant_id: session.tenant_id,
         user_id: session.user_id,
@@ -266,7 +270,7 @@ export class ChatCommandService {
       pushHelp();
     }
 
-    const { error: sessionUpdateError } = await supabase
+    const { error: sessionUpdateError } = await db
       .from("chat_sessions")
       .update({
         current_flow: nextState.flow,
@@ -285,11 +289,11 @@ export class ChatCommandService {
         content: msg.text,
         metadata: (msg.metadata || {}) as unknown as Json,
       }));
-      const { error: botInsertError } = await supabase.from("chat_messages").insert(payload);
+      const { error: botInsertError } = await db.from("chat_messages").insert(payload);
       if (botInsertError) throw botInsertError;
     }
 
-    const { data: refreshed, error: refreshedError } = await supabase
+    const { data: refreshed, error: refreshedError } = await db
       .from("chat_sessions")
       .select("*")
       .eq("id", session.id)
