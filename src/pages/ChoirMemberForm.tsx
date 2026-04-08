@@ -67,6 +67,20 @@ export default function ChoirMemberForm() {
         .single();
 
       if (error) throw error;
+
+      // Fetch user role for this tenant
+      let userRole: 'admin' | 'user' = 'user';
+      if (tenantId) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', id!)
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+        if (roleData?.role === 'admin' || roleData?.role === 'super_admin') {
+          userRole = 'admin';
+        }
+      }
       
       setFormData({
         name: data.full_name || '',
@@ -76,6 +90,7 @@ export default function ChoirMemberForm() {
         phone: data.phone || '',
         email: data.email || '',
         active: data.active ?? true,
+        role: userRole,
       });
       setPhotoPreview(data.photo_url);
     } catch (error: any) {
