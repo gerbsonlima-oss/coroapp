@@ -48,6 +48,7 @@ export default function ChoirMemberForm() {
     phone: '',
     email: '',
     active: true,
+    role: 'user',
   });
 
   useEffect(() => {
