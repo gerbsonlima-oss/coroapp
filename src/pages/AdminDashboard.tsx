@@ -46,8 +46,8 @@ const AdminDashboard = () => {
 
   const adminCards: AdminCard[] = [
     {
-      title: 'Coralistas',
-      description: 'Gerenciar membros do coral',
+      title: 'Usuários',
+      description: 'Gerenciar usuários do coral',
       icon: <Users className="h-6 w-6" />,
       path: `${prefix}/choir-members`,
     },
