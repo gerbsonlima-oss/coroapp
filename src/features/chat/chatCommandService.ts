@@ -199,7 +199,7 @@ export class ChatCommandService {
     } satisfies ChatMessagePayload["metadata"];
 
     if (normalizedText && !normalizedText.startsWith("__action:")) {
-      const { error: userMsgError } = await supabase.from("chat_messages").insert({
+      const { error: userMsgError } = await db.from("chat_messages").insert({
         session_id: session.id,
         tenant_id: session.tenant_id,
         user_id: session.user_id,
@@ -289,7 +289,7 @@ export class ChatCommandService {
         content: msg.text,
         metadata: (msg.metadata || {}) as unknown as Json,
       }));
-      const { error: botInsertError } = await supabase.from("chat_messages").insert(payload);
+      const { error: botInsertError } = await db.from("chat_messages").insert(payload);
       if (botInsertError) throw botInsertError;
     }
 
