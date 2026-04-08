@@ -77,7 +77,7 @@ export default function ChoirMemberForm() {
       });
       setPhotoPreview(data.photo_url);
     } catch (error: any) {
-      toast.error('Erro ao carregar coralista: ' + error.message);
+      toast.error('Erro ao carregar usuário: ' + error.message);
       navigate(buildPath('/choir-members'));
     } finally {
       setLoading(false);
@@ -174,10 +174,10 @@ export default function ChoirMemberForm() {
           .eq('id', id);
 
         if (error) throw error;
-        toast.success('Coralista atualizado com sucesso!');
+        toast.success('Usuário atualizado com sucesso!');
       } else {
         // For new members, we need an email - they need to register themselves
-        toast.error('Novos coralistas devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
+        toast.error('Novos usuários devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
         return;
       }
 
@@ -198,7 +198,7 @@ export default function ChoirMemberForm() {
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('Coralista desativado com sucesso!');
+      toast.success('Usuário desativado com sucesso!');
       navigate(buildPath('/choir-members'));
     } catch (error: any) {
       toast.error('Erro ao excluir: ' + error.message);
@@ -235,7 +235,7 @@ export default function ChoirMemberForm() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-bold">
-              {isEditing ? 'Editar Coralista' : 'Novo Coralista'}
+              {isEditing ? 'Editar Usuário' : 'Novo Usuário'}
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -248,9 +248,9 @@ export default function ChoirMemberForm() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir coralista?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. O coralista será removido permanentemente.
+                     <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                     <AlertDialogDescription>
+                       Esta ação não pode ser desfeita. O usuário será removido permanentemente.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -385,7 +385,7 @@ export default function ChoirMemberForm() {
         <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
           <div>
             <Label htmlFor="active" className="text-base">Status ativo</Label>
-            <p className="text-sm text-muted-foreground">Coralistas inativos não aparecem para seleção</p>
+            <p className="text-sm text-muted-foreground">Usuários inativos não aparecem para seleção</p>
           </div>
           <Switch
             id="active"

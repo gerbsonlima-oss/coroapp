@@ -60,7 +60,7 @@ export default function ChoirMemberDetails() {
       if (error) throw error;
       setMember(data as ChoirMember);
     } catch (error: any) {
-      toast.error('Erro ao carregar coralista: ' + error.message);
+      toast.error('Erro ao carregar usuário: ' + error.message);
       navigate(buildPath('/choir-members'));
     } finally {
       setLoading(false);
@@ -107,7 +107,7 @@ export default function ChoirMemberDetails() {
   if (!member) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Coralista não encontrado.</p>
+        <p className="text-muted-foreground">Usuário não encontrado.</p>
       </div>
     );
   }
