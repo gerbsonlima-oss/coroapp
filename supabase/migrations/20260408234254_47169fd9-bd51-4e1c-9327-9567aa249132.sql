@@ -1,0 +1,1 @@
+ALTER TABLE public.tenants ADD COLUMN chat_enabled boolean NOT NULL DEFAULT false;
