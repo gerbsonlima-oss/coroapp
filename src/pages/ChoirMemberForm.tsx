@@ -191,9 +191,23 @@ export default function ChoirMemberForm() {
           .eq('id', id);
 
         if (error) throw error;
+
+        // Update user role for this tenant
+        if (tenantId && id) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .update({ role: formData.role })
+            .eq('user_id', id)
+            .eq('tenant_id', tenantId);
+
+          if (roleError) {
+            console.error('Error updating role:', roleError);
+            toast.error('Perfil salvo, mas erro ao atualizar permissão.');
+          }
+        }
+
         toast.success('Usuário atualizado com sucesso!');
       } else {
-        // For new members, we need an email - they need to register themselves
         toast.error('Novos usuários devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
         return;
       }
@@ -396,6 +410,26 @@ export default function ChoirMemberForm() {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             placeholder="email@exemplo.com"
           />
+        </div>
+
+        {/* Role */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Permissão
+          </Label>
+          <Select value={formData.role} onValueChange={(value: 'admin' | 'user') => setFormData({ ...formData, role: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a permissão" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Usuário comum</SelectItem>
+              <SelectItem value="admin">Administrador</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Administradores podem gerenciar eventos, músicas e usuários do coral.
+          </p>
         </div>
 
         {/* Active */}
