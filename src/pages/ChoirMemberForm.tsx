@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Camera, Loader2, Trash2, Save, Crop } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Trash2, Save, Crop, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImageCropper } from '@/components/ImageCropper';
 
@@ -22,6 +22,7 @@ interface FormData {
   phone: string;
   email: string;
   active: boolean;
+  role: 'admin' | 'user';
 }
 
 export default function ChoirMemberForm() {
@@ -47,6 +48,7 @@ export default function ChoirMemberForm() {
     phone: '',
     email: '',
     active: true,
+    role: 'user',
   });
 
   useEffect(() => {
@@ -65,6 +67,20 @@ export default function ChoirMemberForm() {
         .single();
 
       if (error) throw error;
+
+      // Fetch user role for this tenant
+      let userRole: 'admin' | 'user' = 'user';
+      if (tenantId) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', id!)
+          .eq('tenant_id', tenantId)
+          .maybeSingle();
+        if (roleData?.role === 'admin' || roleData?.role === 'super_admin') {
+          userRole = 'admin';
+        }
+      }
       
       setFormData({
         name: data.full_name || '',
@@ -74,10 +90,11 @@ export default function ChoirMemberForm() {
         phone: data.phone || '',
         email: data.email || '',
         active: data.active ?? true,
+        role: userRole,
       });
       setPhotoPreview(data.photo_url);
     } catch (error: any) {
-      toast.error('Erro ao carregar coralista: ' + error.message);
+      toast.error('Erro ao carregar usuário: ' + error.message);
       navigate(buildPath('/choir-members'));
     } finally {
       setLoading(false);
@@ -174,10 +191,24 @@ export default function ChoirMemberForm() {
           .eq('id', id);
 
         if (error) throw error;
-        toast.success('Coralista atualizado com sucesso!');
+
+        // Update user role for this tenant
+        if (tenantId && id) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .update({ role: formData.role })
+            .eq('user_id', id)
+            .eq('tenant_id', tenantId);
+
+          if (roleError) {
+            console.error('Error updating role:', roleError);
+            toast.error('Perfil salvo, mas erro ao atualizar permissão.');
+          }
+        }
+
+        toast.success('Usuário atualizado com sucesso!');
       } else {
-        // For new members, we need an email - they need to register themselves
-        toast.error('Novos coralistas devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
+        toast.error('Novos usuários devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
         return;
       }
 
@@ -198,7 +229,7 @@ export default function ChoirMemberForm() {
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('Coralista desativado com sucesso!');
+      toast.success('Usuário desativado com sucesso!');
       navigate(buildPath('/choir-members'));
     } catch (error: any) {
       toast.error('Erro ao excluir: ' + error.message);
@@ -235,7 +266,7 @@ export default function ChoirMemberForm() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-bold">
-              {isEditing ? 'Editar Coralista' : 'Novo Coralista'}
+              {isEditing ? 'Editar Usuário' : 'Novo Usuário'}
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -248,9 +279,9 @@ export default function ChoirMemberForm() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir coralista?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. O coralista será removido permanentemente.
+                     <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                     <AlertDialogDescription>
+                       Esta ação não pode ser desfeita. O usuário será removido permanentemente.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -381,11 +412,31 @@ export default function ChoirMemberForm() {
           />
         </div>
 
+        {/* Role */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Permissão
+          </Label>
+          <Select value={formData.role} onValueChange={(value: 'admin' | 'user') => setFormData({ ...formData, role: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a permissão" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Usuário comum</SelectItem>
+              <SelectItem value="admin">Administrador</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Administradores podem gerenciar eventos, músicas e usuários do coral.
+          </p>
+        </div>
+
         {/* Active */}
         <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
           <div>
             <Label htmlFor="active" className="text-base">Status ativo</Label>
-            <p className="text-sm text-muted-foreground">Coralistas inativos não aparecem para seleção</p>
+            <p className="text-sm text-muted-foreground">Usuários inativos não aparecem para seleção</p>
           </div>
           <Switch
             id="active"

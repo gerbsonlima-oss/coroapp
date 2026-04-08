@@ -144,7 +144,7 @@ export default function ChoirMembers() {
       if (error) throw error;
       setMembers((data || []) as ChoirMember[]);
     } catch (error: any) {
-      toast.error('Erro ao carregar coralistas: ' + error.message);
+      toast.error('Erro ao carregar usuários: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -222,7 +222,7 @@ export default function ChoirMembers() {
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
       fetchMembers(); // Refresh members list
-      toast.success(status === 'approved' ? 'Usuário aprovado e adicionado aos coralistas!' : 'Usuário rejeitado.');
+      toast.success(status === 'approved' ? 'Usuário aprovado com sucesso!' : 'Usuário rejeitado.');
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao atualizar status');
@@ -246,7 +246,7 @@ export default function ChoirMembers() {
         .maybeSingle();
 
       if (existingProfile) {
-        toast.error('Este coralista já existe no coro de destino.');
+        toast.error('Este usuário já existe no coro de destino.');
         return;
       }
 
@@ -262,18 +262,18 @@ export default function ChoirMembers() {
 
       if (roleError) {
         if (roleError.code === '23505') {
-          toast.error('Este coralista já tem acesso ao coro de destino.');
+          toast.error('Este usuário já tem acesso ao coro de destino.');
         } else {
           throw roleError;
         }
         return;
       }
 
-      toast.success('Coralista adicionado ao outro coro com sucesso!');
+      toast.success('Usuário adicionado ao outro coro com sucesso!');
       setCopyMemberDialog({ open: false, member: null });
       setSelectedTargetTenant('');
     } catch (error: any) {
-      toast.error('Erro ao copiar coralista: ' + error.message);
+      toast.error('Erro ao copiar usuário: ' + error.message);
     } finally {
       setCopyingMember(false);
     }
@@ -345,8 +345,8 @@ export default function ChoirMembers() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Coralistas</h1>
-              <p className="text-sm text-muted-foreground">{members.length} membros</p>
+              <h1 className="text-xl font-bold">Usuários</h1>
+              <p className="text-sm text-muted-foreground">{members.length} usuários</p>
             </div>
           </div>
           <Button onClick={() => navigate(buildPath('/choir-members/new'))}>
@@ -413,8 +413,8 @@ export default function ChoirMembers() {
                   <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
                     {searchTerm || filterNaipe !== 'all'
-                      ? 'Nenhum coralista encontrado com esses filtros.'
-                      : 'Nenhum coralista cadastrado ainda.'}
+                      ? 'Nenhum usuário encontrado com esses filtros.'
+                      : 'Nenhum usuário cadastrado ainda.'}
                   </p>
                   {!searchTerm && filterNaipe === 'all' && (
                     <Button
@@ -423,7 +423,7 @@ export default function ChoirMembers() {
                       onClick={() => navigate(buildPath('/choir-members/new'))}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Cadastrar primeiro coralista
+                      Cadastrar primeiro usuário
                     </Button>
                   )}
                 </div>
@@ -642,7 +642,7 @@ export default function ChoirMembers() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Adicionar coralista a outro coro
+              Adicionar usuário a outro coro
             </DialogTitle>
             <DialogDescription>
               Escolha o coro para o qual deseja adicionar <strong>{copyMemberDialog.member?.full_name || copyMemberDialog.member?.email}</strong>.
