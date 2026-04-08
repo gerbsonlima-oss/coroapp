@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Camera, Loader2, Trash2, Save, Crop } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Trash2, Save, Crop, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImageCropper } from '@/components/ImageCropper';
 
@@ -22,6 +22,7 @@ interface FormData {
   phone: string;
   email: string;
   active: boolean;
+  role: 'admin' | 'user';
 }
 
 export default function ChoirMemberForm() {
