@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+
+// chat_messages and chat_sessions tables are not yet in the generated types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
 import { convertPdfToImages, createCombinedImage } from "@/utils/pdfToImage";
 import { uploadFileToBucket } from "@/utils/storageUpload";
 import { detectIntent, isAffirmative, isNegative, normalizeFreeText } from "./intents";
