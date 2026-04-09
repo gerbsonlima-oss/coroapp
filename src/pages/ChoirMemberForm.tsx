@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Camera, Loader2, Trash2, Save, Crop, Shield } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Trash2, Save, Crop, Shield, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImageCropper } from '@/components/ImageCropper';
 
@@ -21,6 +21,7 @@ interface FormData {
   naipe: string;
   phone: string;
   email: string;
+  password: string;
   active: boolean;
   role: 'admin' | 'user';
 }
@@ -40,6 +41,7 @@ export default function ChoirMemberForm() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [originalImageSrc, setOriginalImageSrc] = useState<string>('');
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     birth_date: '',
@@ -47,6 +49,7 @@ export default function ChoirMemberForm() {
     naipe: '',
     phone: '',
     email: '',
+    password: '',
     active: true,
     role: 'user',
   });
@@ -68,7 +71,6 @@ export default function ChoirMemberForm() {
 
       if (error) throw error;
 
-      // Fetch user role for this tenant
       let userRole: 'admin' | 'user' = 'user';
       if (tenantId) {
         const { data: roleData } = await supabase
@@ -89,6 +91,7 @@ export default function ChoirMemberForm() {
         naipe: data.naipe || '',
         phone: data.phone || '',
         email: data.email || '',
+        password: '',
         active: data.active ?? true,
         role: userRole,
       });
@@ -110,12 +113,9 @@ export default function ChoirMemberForm() {
       return;
     }
 
-    // Create object URL for cropper
     const imageUrl = URL.createObjectURL(file);
     setOriginalImageSrc(imageUrl);
     setShowCropper(true);
-    
-    // Reset the input so the same file can be selected again
     e.target.value = '';
   };
 
@@ -123,8 +123,6 @@ export default function ChoirMemberForm() {
     const file = new File([croppedBlob], `cropped-${Date.now()}.webp`, { type: 'image/webp' });
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(croppedBlob));
-    
-    // Clean up the original image URL
     if (originalImageSrc) {
       URL.revokeObjectURL(originalImageSrc);
       setOriginalImageSrc('');
@@ -143,7 +141,6 @@ export default function ChoirMemberForm() {
     if (!photoFile) return photoPreview;
 
     const fileName = `${tenantId}/${Date.now()}.webp`;
-
     const { error: uploadError } = await supabase.storage
       .from('choir-member-photos')
       .upload(fileName, photoFile);
@@ -170,21 +167,30 @@ export default function ChoirMemberForm() {
       return;
     }
 
+    if (!isEditing && !formData.password.trim()) {
+      toast.error('A senha é obrigatória para novos usuários.');
+      return;
+    }
+
+    if (!isEditing && formData.password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
     setSaving(true);
     try {
-      const photoUrl = await uploadPhoto();
-
-      const profileData = {
-        full_name: formData.name.trim(),
-        birth_date: formData.birth_date || null,
-        parish: formData.parish.trim() || null,
-        naipe: formData.naipe || null,
-        phone: formData.phone.trim() || null,
-        active: formData.active,
-        photo_url: photoUrl,
-      };
-
       if (isEditing) {
+        const photoUrl = await uploadPhoto();
+        const profileData = {
+          full_name: formData.name.trim(),
+          birth_date: formData.birth_date || null,
+          parish: formData.parish.trim() || null,
+          naipe: formData.naipe || null,
+          phone: formData.phone.trim() || null,
+          active: formData.active,
+          photo_url: photoUrl,
+        };
+
         const { error } = await supabase
           .from('profiles')
           .update(profileData)
@@ -192,7 +198,6 @@ export default function ChoirMemberForm() {
 
         if (error) throw error;
 
-        // Update user role for this tenant
         if (tenantId && id) {
           const { error: roleError } = await supabase
             .from('user_roles')
@@ -208,8 +213,37 @@ export default function ChoirMemberForm() {
 
         toast.success('Usuário atualizado com sucesso!');
       } else {
-        toast.error('Novos usuários devem se cadastrar pelo app. Use a aba "Pendentes" para aprovar.');
-        return;
+        // Create new user via edge function
+        const { data, error } = await supabase.functions.invoke('create-user', {
+          body: {
+            email: formData.email.trim(),
+            password: formData.password,
+            full_name: formData.name.trim(),
+            tenant_id: tenantId,
+            tenant_slug: tenantSlug,
+            role: formData.role,
+            naipe: formData.naipe || null,
+            phone: formData.phone.trim() || null,
+            birth_date: formData.birth_date || null,
+            parish: formData.parish.trim() || null,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        // Upload photo if provided
+        if (photoFile && data?.user_id) {
+          const photoUrl = await uploadPhoto();
+          if (photoUrl) {
+            await supabase
+              .from('profiles')
+              .update({ photo_url: photoUrl })
+              .eq('id', data.user_id);
+          }
+        }
+
+        toast.success('Usuário criado com sucesso!');
       }
 
       navigate(buildPath('/choir-members'));
@@ -222,7 +256,6 @@ export default function ChoirMemberForm() {
 
   const handleDelete = async () => {
     try {
-      // We don't delete profiles, just deactivate them
       const { error } = await supabase
         .from('profiles')
         .update({ active: false, approval_status: 'rejected' })
@@ -279,15 +312,15 @@ export default function ChoirMemberForm() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                     <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                     <AlertDialogTitle>Desativar usuário?</AlertDialogTitle>
                      <AlertDialogDescription>
-                       Esta ação não pode ser desfeita. O usuário será removido permanentemente.
+                       O usuário será desativado e não poderá mais acessar o sistema.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-                      Excluir
+                      Desativar
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -350,6 +383,53 @@ export default function ChoirMemberForm() {
           />
         </div>
 
+        {/* Email */}
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail *</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="email@exemplo.com"
+            required
+            disabled={isEditing}
+          />
+          {isEditing && (
+            <p className="text-xs text-muted-foreground">O e-mail não pode ser alterado após o cadastro.</p>
+          )}
+        </div>
+
+        {/* Password - only for new users */}
+        {!isEditing && (
+          <div className="space-y-2">
+            <Label htmlFor="password">Senha *</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Mínimo 6 caracteres"
+                required
+                minLength={6}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              O usuário poderá alterar a senha depois pelo app.
+            </p>
+          </div>
+        )}
+
         {/* Birth Date */}
         <div className="space-y-2">
           <Label htmlFor="birth_date">Data de nascimento</Label>
@@ -400,18 +480,6 @@ export default function ChoirMemberForm() {
           />
         </div>
 
-        {/* Email */}
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            placeholder="email@exemplo.com"
-          />
-        </div>
-
         {/* Role */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
@@ -428,22 +496,24 @@ export default function ChoirMemberForm() {
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Administradores podem gerenciar eventos, músicas e usuários do coral.
+            Administradores podem gerenciar eventos, músicas e usuários.
           </p>
         </div>
 
-        {/* Active */}
-        <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
-          <div>
-            <Label htmlFor="active" className="text-base">Status ativo</Label>
-            <p className="text-sm text-muted-foreground">Usuários inativos não aparecem para seleção</p>
+        {/* Active - only for editing */}
+        {isEditing && (
+          <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
+            <div>
+              <Label htmlFor="active" className="text-base">Status ativo</Label>
+              <p className="text-sm text-muted-foreground">Usuários inativos não aparecem para seleção</p>
+            </div>
+            <Switch
+              id="active"
+              checked={formData.active}
+              onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+            />
           </div>
-          <Switch
-            id="active"
-            checked={formData.active}
-            onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-          />
-        </div>
+        )}
       </form>
 
       {/* Image Cropper Modal */}
@@ -457,4 +527,3 @@ export default function ChoirMemberForm() {
     </div>
   );
 }
-
