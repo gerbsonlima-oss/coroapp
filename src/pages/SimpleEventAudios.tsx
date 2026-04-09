@@ -767,10 +767,10 @@ const SimpleEventAudios = () => {
     if (!event?.tenant_id) return;
     setLoadingAvailableSongs(true);
     try {
+      // Fetch songs from all tenants the user belongs to (RLS handles access)
       const { data, error } = await supabase
         .from('songs')
-        .select('id, name, type')
-        .eq('tenant_id', event.tenant_id)
+        .select('id, name, type, tenant_id')
         .order('name');
       
       if (error) throw error;
