@@ -341,6 +341,11 @@ const Songs = () => {
             <p className="truncate text-[13px] font-medium text-foreground group-hover:text-primary transition-colors">
               {song.name}
             </p>
+            {isMultiTenant && song.tenant_id && tenantNameMap.has(song.tenant_id) && (
+              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 shrink-0">
+                {tenantNameMap.get(song.tenant_id)}
+              </Badge>
+            )}
             <div className="flex items-center gap-0.5 ml-auto shrink-0">
               {hasLyrics && <FileText className="h-2.5 w-2.5 text-muted-foreground/40" />}
               {hasChords && <Guitar className="h-2.5 w-2.5 text-muted-foreground/40" />}
