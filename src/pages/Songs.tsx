@@ -5,6 +5,7 @@ import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download, Eye, Pencil, Trash2, Guitar, Music2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -66,12 +67,16 @@ const Songs = () => {
   const [loadingAudios, setLoadingAudios] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { tenantId, tenant } = useTenant();
+  const { tenantId, tenant, userTenants, userTenantIds, isMultiTenant } = useTenant();
   const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
 
-  // Always use current tenant only
-  const queryTenantIds = tenantId ? [tenantId] : [];
+  // Show songs from ALL user tenants
+  const queryTenantIds = userTenantIds.length > 0 ? userTenantIds : (tenantId ? [tenantId] : []);
+
+  // Build a map of tenant_id -> tenant name for badges
+  const tenantNameMap = new Map<string, string>();
+  userTenants.forEach(t => tenantNameMap.set(t.id, t.name));
 
   useEffect(() => {
     localStorage.setItem('songs_groupBy', groupBy);
@@ -336,6 +341,11 @@ const Songs = () => {
             <p className="truncate text-[13px] font-medium text-foreground group-hover:text-primary transition-colors">
               {song.name}
             </p>
+            {isMultiTenant && song.tenant_id && tenantNameMap.has(song.tenant_id) && (
+              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 shrink-0">
+                {tenantNameMap.get(song.tenant_id)}
+              </Badge>
+            )}
             <div className="flex items-center gap-0.5 ml-auto shrink-0">
               {hasLyrics && <FileText className="h-2.5 w-2.5 text-muted-foreground/40" />}
               {hasChords && <Guitar className="h-2.5 w-2.5 text-muted-foreground/40" />}
