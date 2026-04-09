@@ -153,7 +153,7 @@ const SimpleEventAudios = () => {
   const navigate = useNavigate();
   const { buildPath } = useTenantPath();
   const location = useLocation();
-  const { tenantSlug, tenant } = useTenant();  const { isAdmin } = useIsAdmin();
+  const { tenantSlug, tenant, userTenants, isMultiTenant } = useTenant();  const { isAdmin } = useIsAdmin();
   const { preferences: exportPreferences, savePreferences: saveExportPreferences } = useExportPreferences();
   
   // Internal access is only when user is inside app routes (not share/public links)
@@ -1972,10 +1972,17 @@ const SimpleEventAudios = () => {
                               : 'hover:bg-accent'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{song.name}</span>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-medium truncate">{song.name}</span>
+                              {isMultiTenant && song.tenant_id && song.tenant_id !== event?.tenant_id && (
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 shrink-0">
+                                  {userTenants.find(t => t.id === song.tenant_id)?.name || ''}
+                                </Badge>
+                              )}
+                            </div>
                             {song.type && (
-                              <Badge className="bg-primary/10 text-primary border-primary/30">
+                              <Badge className="bg-primary/10 text-primary border-primary/30 shrink-0">
                                 {defaultTypeLabels[song.type]?.name || song.type}
                               </Badge>
                             )}
