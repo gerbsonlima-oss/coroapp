@@ -79,10 +79,10 @@ const NewEvent = () => {
     if (!tenantId) return;
     
     try {
+      // Fetch songs from all tenants the user belongs to (RLS handles access)
       const { data, error } = await supabase
         .from('songs')
         .select('*')
-        .eq('tenant_id', tenantId)
         .order('name');
 
       if (error) throw error;
