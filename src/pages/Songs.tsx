@@ -5,6 +5,7 @@ import { useTenant, useTenantPath } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Plus, Music, LogOut, Settings, Search, X, Sparkles, Sliders, Filter, ChevronDown, MoreVertical, Share2, FileText, Download, Eye, Pencil, Trash2, Guitar, Music2 } from 'lucide-react';
 import { toast } from 'sonner';
