@@ -66,12 +66,16 @@ const Songs = () => {
   const [loadingAudios, setLoadingAudios] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { tenantId, tenant } = useTenant();
+  const { tenantId, tenant, userTenants, userTenantIds, isMultiTenant } = useTenant();
   const { buildPath } = useTenantPath();
   const { isAdmin } = useIsAdmin();
 
-  // Always use current tenant only
-  const queryTenantIds = tenantId ? [tenantId] : [];
+  // Show songs from ALL user tenants
+  const queryTenantIds = userTenantIds.length > 0 ? userTenantIds : (tenantId ? [tenantId] : []);
+
+  // Build a map of tenant_id -> tenant name for badges
+  const tenantNameMap = new Map<string, string>();
+  userTenants.forEach(t => tenantNameMap.set(t.id, t.name));
 
   useEffect(() => {
     localStorage.setItem('songs_groupBy', groupBy);
