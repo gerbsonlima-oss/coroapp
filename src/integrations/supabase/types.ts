@@ -664,6 +664,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_tenant_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          chat_enabled: boolean
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+        }[]
+      }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
