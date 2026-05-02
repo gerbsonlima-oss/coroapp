@@ -68,7 +68,9 @@ Deno.serve(async (req) => {
     // Build OG image URL - use event cover or fallback
     const appUrl = Deno.env.get('APP_URL') || 'https://coroapp.lovable.app';
     const ogImage = event.cover_image_url || `${appUrl}/icon-512.png`;
-    const pageUrl = `${appUrl}/e/${eventId}`;
+    const pageUrl = slug
+      ? `${appUrl}/${slug}/public/events/${eventId}`
+      : `${appUrl}/e/${eventId}`;
 
     // Build description
     const description = `${formattedDate}${event.location ? ` • ${event.location}` : ''}`;
