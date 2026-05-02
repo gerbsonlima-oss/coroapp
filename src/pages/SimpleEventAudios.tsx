@@ -1159,9 +1159,12 @@ const SimpleEventAudios = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   const slug = tenantSlug || (event as any).tenant_slug;
-                  const publicUrl = slug
-                    ? `${window.location.origin}/${slug}/public/events/${event.id}`
-                    : `${window.location.origin}/e/${event.id}`;
+                  // Use og-event edge function so crawlers (WhatsApp, etc.) get rich previews
+                  // with the event's cover image. Humans are 302-redirected to the public page.
+                  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                  const params = new URLSearchParams({ id: event.id });
+                  if (slug) params.set('slug', slug);
+                  const publicUrl = `${supabaseUrl}/functions/v1/og-event?${params.toString()}`;
                   navigator.clipboard.writeText(publicUrl).then(() => {
                     toast.success('Link copiado!');
                   }).catch(() => {
