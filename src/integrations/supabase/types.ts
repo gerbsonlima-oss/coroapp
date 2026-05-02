@@ -664,6 +664,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_tenant_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          chat_enabled: boolean
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+        }[]
+      }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
@@ -677,6 +687,15 @@ export type Database = {
       is_tenant_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_public_tenants: {
+        Args: never
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+        }[]
       }
     }
     Enums: {
