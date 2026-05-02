@@ -11,6 +11,7 @@ import { useLiturgy } from '@/hooks/useLiturgy';
 import { getLiturgicalDay } from '@/data/liturgicalCalendar';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { useTenantPath } from '@/contexts/TenantContext';
+import DOMPurify from 'dompurify';
 
 interface DayCard {
   date: Date;
@@ -240,7 +241,7 @@ const Liturgy = () => {
                 <div className="prose prose-sm dark:prose-invert max-w-none bg-card rounded-lg border p-6 space-y-4">
                   <div
                     className="text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: liturgyData.body }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(liturgyData.body) }}
                   />
                 </div>
               )}
