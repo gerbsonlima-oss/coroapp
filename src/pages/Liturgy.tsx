@@ -241,7 +241,7 @@ const Liturgy = () => {
                 <div className="prose prose-sm dark:prose-invert max-w-none bg-card rounded-lg border p-6 space-y-4">
                   <div
                     className="text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: liturgyData.body }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(liturgyData.body) }}
                   />
                 </div>
               )}
