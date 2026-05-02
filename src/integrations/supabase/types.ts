@@ -688,6 +688,15 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      list_public_tenants: {
+        Args: never
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"
