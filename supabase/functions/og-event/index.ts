@@ -15,7 +15,14 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const eventId = url.searchParams.get('id');
+    // Support both ?id=... and trailing path segment (/og-event/<id>) and ?slug=...
+    let eventId = url.searchParams.get('id');
+    const slug = url.searchParams.get('slug');
+    if (!eventId) {
+      const parts = url.pathname.split('/').filter(Boolean);
+      const last = parts[parts.length - 1];
+      if (last && last !== 'og-event') eventId = last;
+    }
 
     if (!eventId) {
       return new Response('Event ID is required', { status: 400, headers: corsHeaders });
@@ -25,10 +32,13 @@ Deno.serve(async (req) => {
     const userAgent = req.headers.get('user-agent') || '';
     const isCrawler = /WhatsApp|facebookexternalhit|Twitterbot|LinkedInBot|TelegramBot|Slackbot|Discordbot|Pinterest|bot|crawler|spider/i.test(userAgent);
 
-    // If not a crawler, redirect to the app
+    // If not a crawler, redirect to the app (use slug-aware URL when provided)
     if (!isCrawler) {
       const appUrl = Deno.env.get('APP_URL') || 'https://coroapp.lovable.app';
-      return Response.redirect(`${appUrl}/e/${eventId}`, 302);
+      const target = slug
+        ? `${appUrl}/${slug}/public/events/${eventId}`
+        : `${appUrl}/e/${eventId}`;
+      return Response.redirect(target, 302);
     }
 
     // For crawlers, fetch event data and return HTML with OG tags
