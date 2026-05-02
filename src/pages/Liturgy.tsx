@@ -11,6 +11,7 @@ import { useLiturgy } from '@/hooks/useLiturgy';
 import { getLiturgicalDay } from '@/data/liturgicalCalendar';
 import { TenantSwitcher } from '@/components/TenantSwitcher';
 import { useTenantPath } from '@/contexts/TenantContext';
+import DOMPurify from 'dompurify';
 
 interface DayCard {
   date: Date;
