@@ -64,14 +64,12 @@ const Auth = () => {
     queryKey: ['tenant-by-slug', routeSlug],
     queryFn: async () => {
       if (!routeSlug) return null;
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('id, name, slug')
-        .eq('slug', routeSlug)
+      const { data, error } = await (supabase as any)
+        .rpc('get_tenant_by_slug', { _slug: routeSlug })
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data ? { id: data.id, name: data.name, slug: data.slug } : null;
     },
     enabled: isTenantScopedAuth,
   });
@@ -79,13 +77,10 @@ const Auth = () => {
   const { data: tenants } = useQuery({
     queryKey: ['tenants-list'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('id, name, slug')
-        .order('name');
+      const { data, error } = await (supabase as any).rpc('list_public_tenants');
 
       if (error) throw error;
-      return data;
+      return ((data as any[]) || []).map((t) => ({ id: t.id, name: t.name, slug: t.slug }));
     },
     enabled: !isTenantScopedAuth,
   });
