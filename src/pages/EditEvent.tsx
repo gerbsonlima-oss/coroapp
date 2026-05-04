@@ -50,6 +50,10 @@ const EditEvent = () => {
   const [notes, setNotes] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [pdfCoverUrl, setPdfCoverUrl] = useState<string | null>(null);
+  const [pdfCoverFile, setPdfCoverFile] = useState<File | null>(null);
+  const [pdfBackCoverUrl, setPdfBackCoverUrl] = useState<string | null>(null);
+  const [pdfBackCoverFile, setPdfBackCoverFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
