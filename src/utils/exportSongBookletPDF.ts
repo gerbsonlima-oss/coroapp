@@ -13,6 +13,8 @@ interface Event {
   location: string | null;
   cover_image_url: string | null;
   pdf_theme?: string | null;
+  pdf_cover_url?: string | null;
+  pdf_back_cover_url?: string | null;
 }
 
 interface Song {
