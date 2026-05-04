@@ -1,10 +1,1 @@
 project_id = "wxagqywobyzntrlkhfao"
-
-[functions.image-proxy]
-verify_jwt = false
-
-[functions.og-event]
-verify_jwt = false
-
-[functions.redirect]
-verify_jwt = false
