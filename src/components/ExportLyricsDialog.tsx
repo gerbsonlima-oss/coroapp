@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, Settings2, ChevronDown, ChevronUp, Palette } from 'lucide-react';
+import { BookOpen, Settings2, ChevronDown, ChevronUp, Palette, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export interface LyricsExportOptions {
@@ -13,6 +13,8 @@ export interface LyricsExportOptions {
   margin: number;
   gutter: number;
   theme?: string;
+  coverDataUrl?: string | null;
+  backCoverDataUrl?: string | null;
 }
 
 interface ExportLyricsDialogProps {
@@ -44,6 +46,14 @@ const themeOptions: { value: string; label: string; color: string }[] = [
   { value: 'wine_burgundy', label: 'Vinho', color: '#881337' },
 ];
 
+const fileToDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+    reader.readAsDataURL(file);
+  });
+
 export const ExportLyricsDialog = ({
   open,
   onOpenChange,
@@ -58,6 +68,10 @@ export const ExportLyricsDialog = ({
   const [gutter, setGutter] = useState(initialOptions?.gutter ?? 12);
   const [theme, setTheme] = useState(initialOptions?.theme ?? currentTheme ?? 'deep_blue_gold');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [coverDataUrl, setCoverDataUrl] = useState<string | null>(null);
+  const [backCoverDataUrl, setBackCoverDataUrl] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const backInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state when dialog opens with new initialOptions
   useEffect(() => {
@@ -90,20 +104,125 @@ export const ExportLyricsDialog = ({
     18: 'Extra grande',
   };
 
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>, kind: 'cover' | 'back') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      if (kind === 'cover') setCoverDataUrl(dataUrl);
+      else setBackCoverDataUrl(dataUrl);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleExport = () => {
-    onExport({ fontSize, fontFamily, margin, gutter, theme });
+    onExport({ fontSize, fontFamily, margin, gutter, theme, coverDataUrl, backCoverDataUrl });
   };
 
   const selectedTheme = themeOptions.find(t => t.value === theme) || themeOptions[0];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Exportar Letras</DialogTitle>
         </DialogHeader>
 
         <div className="py-4 space-y-4">
+          {/* Capa e Contracapa */}
+          <div className="space-y-3 rounded-md border border-border p-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Capa e Contracapa (opcional)
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Envie imagens (JPG/PNG) para usar como capa e contracapa do livro. Quando enviadas, a capa gerada automaticamente não será incluída.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {/* Capa */}
+              <div className="space-y-1">
+                <Label className="text-xs">Capa</Label>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleCoverChange(e, 'cover')}
+                />
+                {coverDataUrl ? (
+                  <div className="relative">
+                    <img src={coverDataUrl} alt="Capa" className="w-full h-24 object-cover rounded border" />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-1 right-1 h-5 w-5"
+                      onClick={() => {
+                        setCoverDataUrl(null);
+                        if (coverInputRef.current) coverInputRef.current.value = '';
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-24 flex flex-col gap-1"
+                    onClick={() => coverInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span className="text-xs">Enviar capa</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Contracapa */}
+              <div className="space-y-1">
+                <Label className="text-xs">Contracapa</Label>
+                <input
+                  ref={backInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleCoverChange(e, 'back')}
+                />
+                {backCoverDataUrl ? (
+                  <div className="relative">
+                    <img src={backCoverDataUrl} alt="Contracapa" className="w-full h-24 object-cover rounded border" />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-1 right-1 h-5 w-5"
+                      onClick={() => {
+                        setBackCoverDataUrl(null);
+                        if (backInputRef.current) backInputRef.current.value = '';
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-24 flex flex-col gap-1"
+                    onClick={() => backInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span className="text-xs">Enviar contracapa</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Theme Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium flex items-center gap-2">
