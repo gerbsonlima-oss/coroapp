@@ -116,6 +116,8 @@ const EditEvent = () => {
       setLocation(eventData.location || '');
       setNotes(eventData.notes || '');
       setCoverImageUrl(eventData.cover_image_url || null);
+      setPdfCoverUrl((eventData as any).pdf_cover_url || null);
+      setPdfBackCoverUrl((eventData as any).pdf_back_cover_url || null);
     } catch (error) {
       toast.error('Erro ao carregar dados do evento');
       navigate(buildPath('/events'));
