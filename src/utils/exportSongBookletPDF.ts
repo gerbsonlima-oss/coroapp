@@ -1502,10 +1502,22 @@ export const exportSongBookletPDF = async (
   }
 
   // ============================================
-  // ADICIONAR FOOTERS EM TODAS AS PÁGINAS
+  // CONTRACAPA (se enviada)
+  // ============================================
+  if (customBackCoverDataUrl) {
+    pdf.addPage();
+    addFullPageImage(customBackCoverDataUrl);
+  }
+
+  // ============================================
+  // ADICIONAR FOOTERS EM TODAS AS PÁGINAS (exceto capa/contracapa customizadas)
   // ============================================
   const totalPages = pdf.getNumberOfPages();
+  const skipFirst = useCustomCover;
+  const skipLast = !!customBackCoverDataUrl;
   for (let i = 1; i <= totalPages; i++) {
+    if (skipFirst && i === 1) continue;
+    if (skipLast && i === totalPages) continue;
     pdf.setPage(i);
     drawFooter(i, totalPages);
   }
