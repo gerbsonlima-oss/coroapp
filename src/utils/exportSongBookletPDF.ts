@@ -245,6 +245,8 @@ export const exportSongBookletPDF = async (
     margin?: number;
     gutter?: number;
     theme?: string;
+    coverDataUrl?: string | null;
+    backCoverDataUrl?: string | null;
   }
 ) => {
   const baseFontSize = options?.fontSize || 11;
@@ -252,6 +254,9 @@ export const exportSongBookletPDF = async (
   const userMargin = options?.margin || 18;
   const userGutter = options?.gutter || 12;
   const userTheme = options?.theme; // Theme override from dialog
+  const customCoverDataUrl = options?.coverDataUrl || null;
+  const customBackCoverDataUrl = options?.backCoverDataUrl || null;
+  const useCustomCover = !!customCoverDataUrl;
   const typeLabels = await loadTypeLabels();
   
   const songsWithLyrics = songs
