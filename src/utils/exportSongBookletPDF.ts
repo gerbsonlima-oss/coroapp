@@ -592,66 +592,73 @@ export const exportSongBookletPDF = async (
     pdf.text(pageStr, pageWidth - margin, footY, { align: 'right' });
   };
 
-  // Desenhar header da primeira página
-  drawHeader();
-  currentY = getContentStart();
-
-  // ============================================
-  // IMAGEM DO EVENTO na primeira coluna
-  // ============================================
-  if (eventImageDataUrl && eventImageWidth > 0) {
+  // Helper para adicionar imagem cobrindo a página inteira
+  const addFullPageImage = (dataUrl: string) => {
     try {
-      const imgX = col1X + (colWidth - eventImageWidth) / 2;
-      const imgW = eventImageWidth;
-      const imgH = eventImageHeight;
-      const fadeSize = 4; // Tamanho do gradiente de esmaecimento
-
-      // Desenhar a imagem primeiro
-      const eventImgFormat = getJsPdfImageFormatFromDataUrl(eventImageDataUrl);
-      pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, currentY, imgW, imgH);
-
-      // Criar efeito de bordas esmaecidas com gradiente para branco
-      const bgColor: [number, number, number] = [255, 255, 255];
-      const steps = 8;
-
-      // Gradiente superior
-      for (let i = 0; i < steps; i++) {
-        const alpha = 1 - (i / steps);
-        const r = Math.round(bgColor[0] * alpha + 255 * (1 - alpha));
-        const g = Math.round(bgColor[1] * alpha + 255 * (1 - alpha));
-        const b = Math.round(bgColor[2] * alpha + 255 * (1 - alpha));
-        pdf.setFillColor(255, 255, 255);
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX, currentY + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
-      }
-
-      // Gradiente inferior
-      for (let i = 0; i < steps; i++) {
-        const alpha = i / steps;
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX, currentY + imgH - fadeSize + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
-      }
-
-      // Gradiente esquerdo
-      for (let i = 0; i < steps; i++) {
-        const alpha = 1 - (i / steps);
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
-      }
-
-      // Gradiente direito
-      for (let i = 0; i < steps; i++) {
-        const alpha = i / steps;
-        pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
-        pdf.rect(imgX + imgW - fadeSize + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
-      }
-
-      // Resetar opacidade
-      pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
-
-      currentY += imgH + 8;
+      const fmt = getJsPdfImageFormatFromDataUrl(dataUrl);
+      pdf.addImage(dataUrl, fmt, 0, 0, pageWidth, pageHeight);
     } catch (e) {
-      console.warn('Erro ao inserir imagem do evento:', e);
+      console.warn('Erro ao inserir imagem de página inteira:', e);
+    }
+  };
+
+  if (useCustomCover) {
+    // Capa customizada: usa a primeira página inteira para a imagem da capa
+    addFullPageImage(customCoverDataUrl!);
+    // Próxima página inicia o conteúdo, sem header gerado
+    pdf.addPage();
+    currentPage++;
+    currentCol = 1;
+    currentY = getContentStart();
+  } else {
+    // Desenhar header da primeira página (capa gerada)
+    drawHeader();
+    currentY = getContentStart();
+
+    // ============================================
+    // IMAGEM DO EVENTO na primeira coluna
+    // ============================================
+    if (eventImageDataUrl && eventImageWidth > 0) {
+      try {
+        const imgX = col1X + (colWidth - eventImageWidth) / 2;
+        const imgW = eventImageWidth;
+        const imgH = eventImageHeight;
+        const fadeSize = 4;
+
+        const eventImgFormat = getJsPdfImageFormatFromDataUrl(eventImageDataUrl);
+        pdf.addImage(eventImageDataUrl, eventImgFormat, imgX, currentY, imgW, imgH);
+
+        const bgColor: [number, number, number] = [255, 255, 255];
+        const steps = 8;
+
+        for (let i = 0; i < steps; i++) {
+          const alpha = 1 - (i / steps);
+          pdf.setFillColor(255, 255, 255);
+          pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+          pdf.rect(imgX, currentY + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+        }
+        for (let i = 0; i < steps; i++) {
+          const alpha = i / steps;
+          pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+          pdf.rect(imgX, currentY + imgH - fadeSize + (i * fadeSize / steps), imgW, fadeSize / steps, 'F');
+        }
+        for (let i = 0; i < steps; i++) {
+          const alpha = 1 - (i / steps);
+          pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+          pdf.rect(imgX + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
+        }
+        for (let i = 0; i < steps; i++) {
+          const alpha = i / steps;
+          pdf.setGState(new (pdf as any).GState({ opacity: alpha * 0.7 }));
+          pdf.rect(imgX + imgW - fadeSize + (i * fadeSize / steps), currentY, fadeSize / steps, imgH, 'F');
+        }
+
+        pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+
+        currentY += imgH + 8;
+      } catch (e) {
+        console.warn('Erro ao inserir imagem do evento:', e);
+      }
     }
   }
 
