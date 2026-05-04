@@ -13,6 +13,8 @@ interface Event {
   location: string | null;
   cover_image_url: string | null;
   pdf_theme?: string | null;
+  pdf_cover_url?: string | null;
+  pdf_back_cover_url?: string | null;
 }
 
 interface Song {
@@ -254,8 +256,15 @@ export const exportSongBookletPDF = async (
   const userMargin = options?.margin || 18;
   const userGutter = options?.gutter || 12;
   const userTheme = options?.theme; // Theme override from dialog
-  const customCoverDataUrl = options?.coverDataUrl || null;
-  const customBackCoverDataUrl = options?.backCoverDataUrl || null;
+  let customCoverDataUrl = options?.coverDataUrl || null;
+  let customBackCoverDataUrl = options?.backCoverDataUrl || null;
+  // Fallback: usar capa/contracapa salvas no evento
+  if (!customCoverDataUrl && event.pdf_cover_url) {
+    customCoverDataUrl = await loadImageRobust(event.pdf_cover_url);
+  }
+  if (!customBackCoverDataUrl && event.pdf_back_cover_url) {
+    customBackCoverDataUrl = await loadImageRobust(event.pdf_back_cover_url);
+  }
   const useCustomCover = !!customCoverDataUrl;
   const typeLabels = await loadTypeLabels();
   

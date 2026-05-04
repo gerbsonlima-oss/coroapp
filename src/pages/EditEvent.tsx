@@ -50,6 +50,10 @@ const EditEvent = () => {
   const [notes, setNotes] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [pdfCoverUrl, setPdfCoverUrl] = useState<string | null>(null);
+  const [pdfCoverFile, setPdfCoverFile] = useState<File | null>(null);
+  const [pdfBackCoverUrl, setPdfBackCoverUrl] = useState<string | null>(null);
+  const [pdfBackCoverFile, setPdfBackCoverFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -112,6 +116,8 @@ const EditEvent = () => {
       setLocation(eventData.location || '');
       setNotes(eventData.notes || '');
       setCoverImageUrl(eventData.cover_image_url || null);
+      setPdfCoverUrl((eventData as any).pdf_cover_url || null);
+      setPdfBackCoverUrl((eventData as any).pdf_back_cover_url || null);
     } catch (error) {
       toast.error('Erro ao carregar dados do evento');
       navigate(buildPath('/events'));
@@ -208,6 +214,30 @@ const EditEvent = () => {
     }
   };
 
+  const uploadPdfCoverImage = async (
+    userId: string,
+    file: File | null,
+    currentUrl: string | null,
+    suffix: 'pdfcover' | 'pdfback'
+  ): Promise<string | null> => {
+    if (!file) return currentUrl;
+    try {
+      const fileName = `${userId}/${id}-${suffix}-${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
+      const { error: uploadError } = await supabase.storage
+        .from('event-covers')
+        .upload(fileName, file, { cacheControl: '31536000', upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from('event-covers')
+        .getPublicUrl(fileName);
+      return publicUrl;
+    } catch (error) {
+      console.error('Erro upload pdf cover:', error);
+      toast.error('Erro ao enviar imagem do livreto');
+      return currentUrl;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -230,6 +260,8 @@ const EditEvent = () => {
 
       // Upload da imagem se houver
       const uploadedImageUrl = await uploadCoverImage(user.id);
+      const uploadedPdfCoverUrl = await uploadPdfCoverImage(user.id, pdfCoverFile, pdfCoverUrl, 'pdfcover');
+      const uploadedPdfBackCoverUrl = await uploadPdfCoverImage(user.id, pdfBackCoverFile, pdfBackCoverUrl, 'pdfback');
 
       // Atualizar dados básicos do evento
       const { error: eventError } = await supabase
@@ -241,7 +273,9 @@ const EditEvent = () => {
           notes: notes || null,
           cover_image_url: uploadedImageUrl,
           pdf_theme: pdfTheme,
-        })
+          pdf_cover_url: uploadedPdfCoverUrl,
+          pdf_back_cover_url: uploadedPdfBackCoverUrl,
+        } as any)
         .eq('id', id);
 
       if (eventError) throw eventError;
@@ -396,6 +430,66 @@ const EditEvent = () => {
                 <p className="text-xs text-muted-foreground">
                   Formatos aceitos: JPG, PNG, WEBP. Tamanho máximo: 5MB
                 </p>
+              </div>
+            </div>
+
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-3">
+              <Label className="text-xs font-semibold">Capa e Contracapa do Livreto de Partituras (PDF)</Label>
+              <p className="text-xs text-muted-foreground">
+                Imagens opcionais usadas como capa e contracapa ao gerar o PDF do livreto. Quando definidas, substituem a capa gerada automaticamente.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Capa</Label>
+                  {pdfCoverUrl ? (
+                    <div className="relative">
+                      <img src={pdfCoverUrl} alt="Capa PDF" className="w-full h-32 object-cover rounded border" />
+                      <Button type="button" size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => { setPdfCoverFile(null); setPdfCoverUrl(null); }} disabled={loading}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : null}
+                  <Input id="pdfCover" type="file" accept="image/*" className="hidden" disabled={loading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      setPdfCoverFile(f);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setPdfCoverUrl(reader.result as string);
+                      reader.readAsDataURL(f);
+                    }} />
+                  <Label htmlFor="pdfCover" className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-xs font-medium hover:bg-accent">
+                    <Upload className="h-3 w-3" />
+                    {pdfCoverUrl ? 'Alterar' : 'Enviar capa'}
+                  </Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Contracapa</Label>
+                  {pdfBackCoverUrl ? (
+                    <div className="relative">
+                      <img src={pdfBackCoverUrl} alt="Contracapa PDF" className="w-full h-32 object-cover rounded border" />
+                      <Button type="button" size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => { setPdfBackCoverFile(null); setPdfBackCoverUrl(null); }} disabled={loading}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : null}
+                  <Input id="pdfBackCover" type="file" accept="image/*" className="hidden" disabled={loading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      setPdfBackCoverFile(f);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setPdfBackCoverUrl(reader.result as string);
+                      reader.readAsDataURL(f);
+                    }} />
+                  <Label htmlFor="pdfBackCover" className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-xs font-medium hover:bg-accent">
+                    <Upload className="h-3 w-3" />
+                    {pdfBackCoverUrl ? 'Alterar' : 'Enviar contracapa'}
+                  </Label>
+                </div>
               </div>
             </div>
 

@@ -41,6 +41,8 @@ interface Event {
   cover_image_url: string | null;
   tenant_id: string | null;
   pdf_theme: string | null;
+  pdf_cover_url?: string | null;
+  pdf_back_cover_url?: string | null;
 }
 
 // Fallback type labels with liturgical order
@@ -473,7 +475,7 @@ const SimpleEventAudios = () => {
       // Fetch event
       const { data: eventData, error: eventError } = await supabase
         .from('events')
-        .select('id, name, date, location, cover_image_url, tenant_id, pdf_theme')
+        .select('id, name, date, location, cover_image_url, tenant_id, pdf_theme, pdf_cover_url, pdf_back_cover_url')
         .eq('id', id)
         .single();
       
