@@ -214,6 +214,30 @@ const EditEvent = () => {
     }
   };
 
+  const uploadPdfCoverImage = async (
+    userId: string,
+    file: File | null,
+    currentUrl: string | null,
+    suffix: 'pdfcover' | 'pdfback'
+  ): Promise<string | null> => {
+    if (!file) return currentUrl;
+    try {
+      const fileName = `${userId}/${id}-${suffix}-${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
+      const { error: uploadError } = await supabase.storage
+        .from('event-covers')
+        .upload(fileName, file, { cacheControl: '31536000', upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage
+        .from('event-covers')
+        .getPublicUrl(fileName);
+      return publicUrl;
+    } catch (error) {
+      console.error('Erro upload pdf cover:', error);
+      toast.error('Erro ao enviar imagem do livreto');
+      return currentUrl;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
