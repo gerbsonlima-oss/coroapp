@@ -433,6 +433,66 @@ const EditEvent = () => {
               </div>
             </div>
 
+            <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-3">
+              <Label className="text-xs font-semibold">Capa e Contracapa do Livreto de Partituras (PDF)</Label>
+              <p className="text-xs text-muted-foreground">
+                Imagens opcionais usadas como capa e contracapa ao gerar o PDF do livreto. Quando definidas, substituem a capa gerada automaticamente.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Capa</Label>
+                  {pdfCoverUrl ? (
+                    <div className="relative">
+                      <img src={pdfCoverUrl} alt="Capa PDF" className="w-full h-32 object-cover rounded border" />
+                      <Button type="button" size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => { setPdfCoverFile(null); setPdfCoverUrl(null); }} disabled={loading}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : null}
+                  <Input id="pdfCover" type="file" accept="image/*" className="hidden" disabled={loading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      setPdfCoverFile(f);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setPdfCoverUrl(reader.result as string);
+                      reader.readAsDataURL(f);
+                    }} />
+                  <Label htmlFor="pdfCover" className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-xs font-medium hover:bg-accent">
+                    <Upload className="h-3 w-3" />
+                    {pdfCoverUrl ? 'Alterar' : 'Enviar capa'}
+                  </Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Contracapa</Label>
+                  {pdfBackCoverUrl ? (
+                    <div className="relative">
+                      <img src={pdfBackCoverUrl} alt="Contracapa PDF" className="w-full h-32 object-cover rounded border" />
+                      <Button type="button" size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => { setPdfBackCoverFile(null); setPdfBackCoverUrl(null); }} disabled={loading}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : null}
+                  <Input id="pdfBackCover" type="file" accept="image/*" className="hidden" disabled={loading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      setPdfBackCoverFile(f);
+                      const reader = new FileReader();
+                      reader.onloadend = () => setPdfBackCoverUrl(reader.result as string);
+                      reader.readAsDataURL(f);
+                    }} />
+                  <Label htmlFor="pdfBackCover" className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-xs font-medium hover:bg-accent">
+                    <Upload className="h-3 w-3" />
+                    {pdfBackCoverUrl ? 'Alterar' : 'Enviar contracapa'}
+                  </Label>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-card border border-primary/20 rounded-lg p-3 shadow-card space-y-2">
               <Label className="text-xs font-semibold">Tema do PDF de Partituras</Label>
               <p className="text-xs text-muted-foreground">
