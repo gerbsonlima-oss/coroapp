@@ -260,6 +260,8 @@ const EditEvent = () => {
 
       // Upload da imagem se houver
       const uploadedImageUrl = await uploadCoverImage(user.id);
+      const uploadedPdfCoverUrl = await uploadPdfCoverImage(user.id, pdfCoverFile, pdfCoverUrl, 'pdfcover');
+      const uploadedPdfBackCoverUrl = await uploadPdfCoverImage(user.id, pdfBackCoverFile, pdfBackCoverUrl, 'pdfback');
 
       // Atualizar dados básicos do evento
       const { error: eventError } = await supabase
@@ -271,7 +273,9 @@ const EditEvent = () => {
           notes: notes || null,
           cover_image_url: uploadedImageUrl,
           pdf_theme: pdfTheme,
-        })
+          pdf_cover_url: uploadedPdfCoverUrl,
+          pdf_back_cover_url: uploadedPdfBackCoverUrl,
+        } as any)
         .eq('id', id);
 
       if (eventError) throw eventError;
