@@ -23,7 +23,9 @@ export const useExportPreferences = () => {
 
   const savePreferences = useCallback((newPreferences: LyricsExportOptions) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newPreferences));
+      // Não persistir as imagens de capa (grandes e específicas por exportação)
+      const { coverDataUrl, backCoverDataUrl, ...persistable } = newPreferences;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
       setPreferences(newPreferences);
     } catch (e) {
       console.warn('Failed to save export preferences:', e);
