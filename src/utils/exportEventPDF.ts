@@ -19,6 +19,8 @@ interface Event {
   location: string | null;
   cover_image_url: string | null;
   pdf_theme?: string | null;
+  pdf_cover_url?: string | null;
+  pdf_back_cover_url?: string | null;
 }
 
 interface Song {
@@ -253,21 +255,26 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   const indexTypeColor = theme.indexTypeColor;
   
   // ============================================
-  // PÁGINA 1: CAPA PROFISSIONAL
-  // ============================================
-
-  
-  // ============================================
-  // PÁGINA 1: CAPA PROFISSIONAL
+  // PÁGINA 1: CAPA PROFISSIONAL (ou capa customizada)
   // ============================================
   const coverPdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = coverPdf.internal.pageSize.getWidth();
   const pageHeight = coverPdf.internal.pageSize.getHeight();
   const margin = 20;
 
-  // Fundo sólido com a cor do tema selecionado
-  coverPdf.setFillColor(...primaryColor);
-  coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
+  const useCustomCover = !!event.pdf_cover_url;
+
+  if (useCustomCover) {
+    try {
+      const customCoverImg = await loadImage(event.pdf_cover_url!);
+      coverPdf.addImage(customCoverImg, 'JPEG', 0, 0, pageWidth, pageHeight);
+    } catch (error) {
+      console.error('Erro ao carregar capa customizada:', error);
+    }
+  } else {
+    // Fundo sólido com a cor do tema selecionado
+    coverPdf.setFillColor(...primaryColor);
+    coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
   // ÁREA RESERVADA PARA LOGO: ocupa todo o centro disponível (15-165mm do topo)
   const logoAreaTop = 15;
@@ -341,11 +348,11 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   titleLines.forEach((line: string) => {
     const titleWidth = coverPdf.getTextWidth(line);
     coverPdf.text(line, (pageWidth - titleWidth) / 2, titleY);
-    titleY += fontSize * 0.35;
+    titleY += fontSize * 0.4;
   });
 
-  // Linha decorativa (logo abaixo da área do título)
-  const decorativeLineY = titleAreaBottom + 2;
+  // Linha decorativa
+  const decorativeLineY = titleAreaBottom + 5;
   coverPdf.setDrawColor(...accentColor);
   coverPdf.setLineWidth(0.5);
   coverPdf.line(40, decorativeLineY, pageWidth - 40, decorativeLineY);
@@ -353,15 +360,15 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   // Subtítulo
   coverPdf.setFontSize(20);
   coverPdf.setFont('times', 'italic');
-  const subtitle = 'Partituras - Roteiro Litúrgico';
+  const subtitle = 'Livro de Cantos';
   const subtitleWidth = coverPdf.getTextWidth(subtitle);
   coverPdf.text(subtitle, (pageWidth - subtitleWidth) / 2, decorativeLineY + 10);
 
-  // Data e Local no rodapé da página
-  const footerY = pageHeight - 30;
+  // Data e local
+  const footerY = decorativeLineY + 30;
   coverPdf.setFontSize(15);
   coverPdf.setFont('times', 'normal');
-  const formattedDate = format(parseDateOnlyLocal(event.date), "dd 'de' MMMM, yyyy", { locale: ptBR });
+  const formattedDate = format(parseDateOnlyLocal(event.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const dateWidth = coverPdf.getTextWidth(formattedDate);
   coverPdf.text(formattedDate, (pageWidth - dateWidth) / 2, footerY);
 
@@ -369,6 +376,7 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     const locationWidth = coverPdf.getTextWidth(event.location);
     coverPdf.text(event.location, (pageWidth - locationWidth) / 2, footerY + 10);
   }
+  } // fim else (capa gerada)
 
   
   // Converter capa para PDF-lib
@@ -569,16 +577,40 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     }
   }
 
-  // Adicionar numeração de páginas (exceto capa)
+
+  // ============================================
+  // CONTRACAPA (opcional)
+  // ============================================
+  let hasBackCover = false;
+  if (event.pdf_back_cover_url) {
+    try {
+      const backPdf = new jsPDF('p', 'mm', 'a4');
+      const bw = backPdf.internal.pageSize.getWidth();
+      const bh = backPdf.internal.pageSize.getHeight();
+      const backImg = await loadImage(event.pdf_back_cover_url);
+      backPdf.addImage(backImg, 'JPEG', 0, 0, bw, bh);
+      const backBytes = backPdf.output('arraybuffer');
+      const backDoc = await PDFDocument.load(backBytes);
+      const [backPage] = await finalPdf.copyPages(backDoc, [0]);
+      finalPdf.addPage(backPage);
+      hasBackCover = true;
+    } catch (error) {
+      console.error('Erro ao adicionar contracapa customizada:', error);
+    }
+  }
+
+  // Adicionar numeração de páginas (exceto capa e contracapa)
   const pages = finalPdf.getPages();
   const totalPages = pages.length;
+  const numberedTotal = totalPages - 1 - (hasBackCover ? 1 : 0);
 
   pages.forEach((page, index) => {
     if (index === 0) return; // não numerar a capa
+    if (hasBackCover && index === totalPages - 1) return; // não numerar contracapa
 
     const { width } = page.getSize();
     const fontSize = 10;
-    const text = `${index} / ${totalPages - 1}`;
+    const text = `${index} / ${numberedTotal}`;
 
     page.drawText(text, {
       x: width / 2 - text.length * fontSize * 0.25,
