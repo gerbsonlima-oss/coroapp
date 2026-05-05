@@ -577,16 +577,40 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     }
   }
 
-  // Adicionar numeração de páginas (exceto capa)
+
+  // ============================================
+  // CONTRACAPA (opcional)
+  // ============================================
+  let hasBackCover = false;
+  if (event.pdf_back_cover_url) {
+    try {
+      const backPdf = new jsPDF('p', 'mm', 'a4');
+      const bw = backPdf.internal.pageSize.getWidth();
+      const bh = backPdf.internal.pageSize.getHeight();
+      const backImg = await loadImage(event.pdf_back_cover_url);
+      backPdf.addImage(backImg, 'JPEG', 0, 0, bw, bh);
+      const backBytes = backPdf.output('arraybuffer');
+      const backDoc = await PDFDocument.load(backBytes);
+      const [backPage] = await finalPdf.copyPages(backDoc, [0]);
+      finalPdf.addPage(backPage);
+      hasBackCover = true;
+    } catch (error) {
+      console.error('Erro ao adicionar contracapa customizada:', error);
+    }
+  }
+
+  // Adicionar numeração de páginas (exceto capa e contracapa)
   const pages = finalPdf.getPages();
   const totalPages = pages.length;
+  const numberedTotal = totalPages - 1 - (hasBackCover ? 1 : 0);
 
   pages.forEach((page, index) => {
     if (index === 0) return; // não numerar a capa
+    if (hasBackCover && index === totalPages - 1) return; // não numerar contracapa
 
     const { width } = page.getSize();
     const fontSize = 10;
-    const text = `${index} / ${totalPages - 1}`;
+    const text = `${index} / ${numberedTotal}`;
 
     page.drawText(text, {
       x: width / 2 - text.length * fontSize * 0.25,
