@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
@@ -84,6 +84,79 @@ const loadImageViaProxy = async (url: string): Promise<HTMLImageElement> => {
 };
 
 const loadImage = loadImageViaProxy;
+
+// Extrai cores predominantes de uma imagem para usar nos headers do PDF
+const extractPaletteFromImage = (img: HTMLImageElement): {
+  primary: [number, number, number];
+  accent: [number, number, number];
+  onPrimary: [number, number, number];
+} | null => {
+  try {
+    const canvas = document.createElement('canvas');
+    const size = 64;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data;
+
+    // Quantizar cores em buckets (4 bits por canal => 4096 buckets)
+    const buckets = new Map<number, { r: number; g: number; b: number; count: number; sat: number }>();
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      if (a < 200) continue;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const sat = max === 0 ? 0 : (max - min) / max;
+      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+      const cur = buckets.get(key);
+      if (cur) {
+        cur.r += r; cur.g += g; cur.b += b; cur.count++; cur.sat = Math.max(cur.sat, sat);
+      } else {
+        buckets.set(key, { r, g, b, count: 1, sat });
+      }
+    }
+    if (buckets.size === 0) return null;
+
+    const arr = Array.from(buckets.values()).map(v => ({
+      r: Math.round(v.r / v.count),
+      g: Math.round(v.g / v.count),
+      b: Math.round(v.b / v.count),
+      count: v.count,
+      sat: v.sat,
+    }));
+
+    // Pontuação: valoriza saturação e frequência, descarta cores muito claras/escuras
+    const scored = arr
+      .filter(c => {
+        const lum = (c.r * 299 + c.g * 587 + c.b * 114) / 1000;
+        return lum > 25 && lum < 230;
+      })
+      .map(c => ({ ...c, score: c.count * (0.3 + c.sat) }))
+      .sort((a, b) => b.score - a.score);
+
+    const pick = scored[0] || arr.sort((a, b) => b.count - a.count)[0];
+    if (!pick) return null;
+
+    // Escurece levemente para uso como cor primária do header
+    const darken = (v: number, f: number) => Math.max(0, Math.min(255, Math.round(v * f)));
+    const primary: [number, number, number] = [darken(pick.r, 0.75), darken(pick.g, 0.75), darken(pick.b, 0.75)];
+
+    // Cor de destaque: segunda mais relevante, ou clareada
+    const second = scored[1] || pick;
+    const lighten = (v: number, f: number) => Math.max(0, Math.min(255, Math.round(v + (255 - v) * f)));
+    const accent: [number, number, number] = [lighten(second.r, 0.35), lighten(second.g, 0.35), lighten(second.b, 0.35)];
+
+    // Texto sobre primária: branco ou preto conforme luminância
+    const lum = (primary[0] * 299 + primary[1] * 587 + primary[2] * 114) / 1000;
+    const onPrimary: [number, number, number] = lum > 140 ? [30, 30, 30] : [255, 255, 255];
+
+    return { primary, accent, onPrimary };
+  } catch (e) {
+    console.warn('Falha ao extrair paleta da imagem:', e);
+    return null;
+  }
+};
 
 const createCircularImageForPDF = async (img: HTMLImageElement, size: number): Promise<string | null> => {
   return new Promise((resolve) => {
@@ -247,12 +320,12 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   const themeKey = event.pdf_theme || 'deep_blue_gold';
   const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
 
-  const primaryColor = theme.primaryColor;
-  const accentColor = theme.accentColor;
+  let primaryColor = theme.primaryColor;
+  let accentColor = theme.accentColor;
   const textColor = theme.textColor;
-  const whiteColor = theme.whiteColor;
+  let whiteColor = theme.whiteColor;
   const overlayColor = theme.overlayColor;
-  const indexTypeColor = theme.indexTypeColor;
+  let indexTypeColor = theme.indexTypeColor;
   
   // ============================================
   // PÁGINA 1: CAPA PROFISSIONAL (ou capa customizada)
@@ -264,14 +337,33 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
 
   const useCustomCover = !!event.pdf_cover_url;
 
-  if (useCustomCover) {
+  // Pré-carrega capa e contracapa para extrair paleta de cores antes de renderizar headers
+  let customCoverImg: HTMLImageElement | null = null;
+  let customBackCoverImg: HTMLImageElement | null = null;
+  if (event.pdf_cover_url) {
+    try { customCoverImg = await loadImage(event.pdf_cover_url); } catch (e) { console.error('Erro ao carregar capa:', e); }
+  }
+  if (event.pdf_back_cover_url) {
+    try { customBackCoverImg = await loadImage(event.pdf_back_cover_url); } catch (e) { console.error('Erro ao carregar contracapa:', e); }
+  }
+  const paletteSource = customCoverImg || customBackCoverImg;
+  if (paletteSource) {
+    const palette = extractPaletteFromImage(paletteSource);
+    if (palette) {
+      primaryColor = palette.primary;
+      accentColor = palette.accent;
+      whiteColor = palette.onPrimary;
+      indexTypeColor = palette.primary;
+    }
+  }
+
+  if (useCustomCover && customCoverImg) {
     try {
-      const customCoverImg = await loadImage(event.pdf_cover_url!);
       coverPdf.addImage(customCoverImg, 'JPEG', 0, 0, pageWidth, pageHeight);
     } catch (error) {
-      console.error('Erro ao carregar capa customizada:', error);
+      console.error('Erro ao adicionar capa customizada:', error);
     }
-  } else {
+  } else if (!useCustomCover) {
     // Fundo sólido com a cor do tema selecionado
     coverPdf.setFillColor(...primaryColor);
     coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
@@ -513,63 +605,77 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   indexPages.forEach(page => finalPdf.addPage(page));
 
   // ============================================
-  // CONCATENAR PDFs DAS PARTITURAS
+  // CONCATENAR PDFs DAS PARTITURAS (com cabeçalho sutil)
   // ============================================
+  const helvetica = await finalPdf.embedFont(StandardFonts.HelveticaBold);
+  const drawSubtleHeader = (page: any, label: string) => {
+    const { width, height } = page.getSize();
+    const text = label.toUpperCase();
+    const fontSize = 8;
+    const padX = 6;
+    const padY = 3;
+    const textWidth = helvetica.widthOfTextAtSize(text, fontSize);
+    const pillW = textWidth + padX * 2;
+    const pillH = fontSize + padY * 2;
+    const marginPts = 28; // ~10mm
+    const x = marginPts;
+    const y = height - marginPts - pillH;
+
+    // Pill discreta com cor primária
+    page.drawRectangle({
+      x,
+      y,
+      width: pillW,
+      height: pillH,
+      color: rgb(primaryColor[0] / 255, primaryColor[1] / 255, primaryColor[2] / 255),
+    });
+    page.drawText(text, {
+      x: x + padX,
+      y: y + padY + 1,
+      size: fontSize,
+      font: helvetica,
+      color: rgb(whiteColor[0] / 255, whiteColor[1] / 255, whiteColor[2] / 255),
+    });
+
+    // Linha de destaque fina ao longo da página
+    page.drawRectangle({
+      x: x + pillW + 6,
+      y: y + pillH / 2 - 0.25,
+      width: width - (x + pillW + 6) - marginPts,
+      height: 0.5,
+      color: rgb(accentColor[0] / 255, accentColor[1] / 255, accentColor[2] / 255),
+      opacity: 0.6,
+    });
+  };
+
   for (const song of indexSongs) {
     const type = song.type || 'outro';
-    
+    const headerLabel = songTypeLabelMap[song.id] || typeLabels[type] || type;
+
     if (song.sheet_music_pdf_url) {
       try {
-        // Carregar PDF original
         const pdfBytes = await fetchPdfAsArrayBuffer(song.sheet_music_pdf_url);
         const songPdf = await PDFDocument.load(pdfBytes);
-        
-        // Copiar cada página individualmente e adicionar cabeçalho
         const pageCount = songPdf.getPageCount();
         for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
           const [copiedPage] = await finalPdf.copyPages(songPdf, [pageIndex]);
-          
-          // Adicionar faixa de cabeçalho no topo da primeira página do tipo
-          if (pageIndex === 0) {
-            const { width, height } = copiedPage.getSize();
-            const headerHeight = 35;
-            
-            // Desenhar faixa de cabeçalho usando a cor primária do tema
-            copiedPage.drawRectangle({
-              x: 0,
-              y: height - headerHeight,
-              width: width,
-              height: headerHeight,
-              color: rgb(primaryColor[0] / 255, primaryColor[1] / 255, primaryColor[2] / 255),
-            });
-            
-            // Adicionar texto do tipo litúrgico usando a cor clara do tema
-            const headerLabel = (typeLabels[type] || type).toUpperCase();
-            copiedPage.drawText(headerLabel, {
-              x: width / 2 - (headerLabel.length * 4),
-              y: height - headerHeight / 2 - 4,
-              size: 14,
-              color: rgb(whiteColor[0] / 255, whiteColor[1] / 255, whiteColor[2] / 255),
-            });
-          }
-          
+          if (pageIndex === 0) drawSubtleHeader(copiedPage, headerLabel);
           finalPdf.addPage(copiedPage);
         }
       } catch (error) {
         console.error(`Erro ao adicionar PDF de ${song.name}:`, error);
       }
     } else if (song.sheet_music_url) {
-      // Fallback: criar PDF a partir da imagem
       try {
         const img = await loadImage(song.sheet_music_url);
         const tempPdf = new jsPDF('p', 'mm', 'a4');
         const imgWidth = tempPdf.internal.pageSize.getWidth() - 40;
         const imgHeight = (img.height / img.width) * imgWidth;
-        tempPdf.addImage(img, 'JPEG', 20, 20, imgWidth, imgHeight);
-        
+        tempPdf.addImage(img, 'JPEG', 20, 30, imgWidth, imgHeight);
         const tempPdfBytes = tempPdf.output('arraybuffer');
         const tempPdfDoc = await PDFDocument.load(tempPdfBytes);
         const [copiedPage] = await finalPdf.copyPages(tempPdfDoc, [0]);
+        drawSubtleHeader(copiedPage, headerLabel);
         finalPdf.addPage(copiedPage);
       } catch (error) {
         console.error(`Erro ao adicionar imagem de ${song.name}:`, error);
@@ -599,24 +705,29 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     }
   }
 
-  // Adicionar numeração de páginas (exceto capa e contracapa)
+  // Numeração de páginas sutil (exceto capa e contracapa)
+  const pageNumFont = await finalPdf.embedFont(StandardFonts.Helvetica);
   const pages = finalPdf.getPages();
   const totalPages = pages.length;
   const numberedTotal = totalPages - 1 - (hasBackCover ? 1 : 0);
 
   pages.forEach((page, index) => {
-    if (index === 0) return; // não numerar a capa
-    if (hasBackCover && index === totalPages - 1) return; // não numerar contracapa
+    if (index === 0) return;
+    if (hasBackCover && index === totalPages - 1) return;
 
     const { width } = page.getSize();
-    const fontSize = 10;
+    const fontSize = 8;
     const text = `${index} / ${numberedTotal}`;
+    const textWidth = pageNumFont.widthOfTextAtSize(text, fontSize);
+    const marginPts = 28;
 
     page.drawText(text, {
-      x: width / 2 - text.length * fontSize * 0.25,
-      y: 20,
+      x: width - marginPts - textWidth,
+      y: 18,
       size: fontSize,
-      color: rgb(textColor[0] / 255, textColor[1] / 255, textColor[2] / 255),
+      font: pageNumFont,
+      color: rgb(0.45, 0.45, 0.45),
+      opacity: 0.85,
     });
   });
 
