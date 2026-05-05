@@ -605,63 +605,77 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   indexPages.forEach(page => finalPdf.addPage(page));
 
   // ============================================
-  // CONCATENAR PDFs DAS PARTITURAS
+  // CONCATENAR PDFs DAS PARTITURAS (com cabeçalho sutil)
   // ============================================
+  const helvetica = await finalPdf.embedFont(StandardFonts.HelveticaBold);
+  const drawSubtleHeader = (page: any, label: string) => {
+    const { width, height } = page.getSize();
+    const text = label.toUpperCase();
+    const fontSize = 8;
+    const padX = 6;
+    const padY = 3;
+    const textWidth = helvetica.widthOfTextAtSize(text, fontSize);
+    const pillW = textWidth + padX * 2;
+    const pillH = fontSize + padY * 2;
+    const marginPts = 28; // ~10mm
+    const x = marginPts;
+    const y = height - marginPts - pillH;
+
+    // Pill discreta com cor primária
+    page.drawRectangle({
+      x,
+      y,
+      width: pillW,
+      height: pillH,
+      color: rgb(primaryColor[0] / 255, primaryColor[1] / 255, primaryColor[2] / 255),
+    });
+    page.drawText(text, {
+      x: x + padX,
+      y: y + padY + 1,
+      size: fontSize,
+      font: helvetica,
+      color: rgb(whiteColor[0] / 255, whiteColor[1] / 255, whiteColor[2] / 255),
+    });
+
+    // Linha de destaque fina ao longo da página
+    page.drawRectangle({
+      x: x + pillW + 6,
+      y: y + pillH / 2 - 0.25,
+      width: width - (x + pillW + 6) - marginPts,
+      height: 0.5,
+      color: rgb(accentColor[0] / 255, accentColor[1] / 255, accentColor[2] / 255),
+      opacity: 0.6,
+    });
+  };
+
   for (const song of indexSongs) {
     const type = song.type || 'outro';
-    
+    const headerLabel = songTypeLabelMap[song.id] || typeLabels[type] || type;
+
     if (song.sheet_music_pdf_url) {
       try {
-        // Carregar PDF original
         const pdfBytes = await fetchPdfAsArrayBuffer(song.sheet_music_pdf_url);
         const songPdf = await PDFDocument.load(pdfBytes);
-        
-        // Copiar cada página individualmente e adicionar cabeçalho
         const pageCount = songPdf.getPageCount();
         for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
           const [copiedPage] = await finalPdf.copyPages(songPdf, [pageIndex]);
-          
-          // Adicionar faixa de cabeçalho no topo da primeira página do tipo
-          if (pageIndex === 0) {
-            const { width, height } = copiedPage.getSize();
-            const headerHeight = 35;
-            
-            // Desenhar faixa de cabeçalho usando a cor primária do tema
-            copiedPage.drawRectangle({
-              x: 0,
-              y: height - headerHeight,
-              width: width,
-              height: headerHeight,
-              color: rgb(primaryColor[0] / 255, primaryColor[1] / 255, primaryColor[2] / 255),
-            });
-            
-            // Adicionar texto do tipo litúrgico usando a cor clara do tema
-            const headerLabel = (typeLabels[type] || type).toUpperCase();
-            copiedPage.drawText(headerLabel, {
-              x: width / 2 - (headerLabel.length * 4),
-              y: height - headerHeight / 2 - 4,
-              size: 14,
-              color: rgb(whiteColor[0] / 255, whiteColor[1] / 255, whiteColor[2] / 255),
-            });
-          }
-          
+          if (pageIndex === 0) drawSubtleHeader(copiedPage, headerLabel);
           finalPdf.addPage(copiedPage);
         }
       } catch (error) {
         console.error(`Erro ao adicionar PDF de ${song.name}:`, error);
       }
     } else if (song.sheet_music_url) {
-      // Fallback: criar PDF a partir da imagem
       try {
         const img = await loadImage(song.sheet_music_url);
         const tempPdf = new jsPDF('p', 'mm', 'a4');
         const imgWidth = tempPdf.internal.pageSize.getWidth() - 40;
         const imgHeight = (img.height / img.width) * imgWidth;
-        tempPdf.addImage(img, 'JPEG', 20, 20, imgWidth, imgHeight);
-        
+        tempPdf.addImage(img, 'JPEG', 20, 30, imgWidth, imgHeight);
         const tempPdfBytes = tempPdf.output('arraybuffer');
         const tempPdfDoc = await PDFDocument.load(tempPdfBytes);
         const [copiedPage] = await finalPdf.copyPages(tempPdfDoc, [0]);
+        drawSubtleHeader(copiedPage, headerLabel);
         finalPdf.addPage(copiedPage);
       } catch (error) {
         console.error(`Erro ao adicionar imagem de ${song.name}:`, error);
