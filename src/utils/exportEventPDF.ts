@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import QRCode from 'qrcode';
