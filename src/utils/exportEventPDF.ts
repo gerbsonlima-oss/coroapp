@@ -320,12 +320,12 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
   const themeKey = event.pdf_theme || 'deep_blue_gold';
   const theme = pdfThemes[themeKey] || pdfThemes.deep_blue_gold;
 
-  const primaryColor = theme.primaryColor;
-  const accentColor = theme.accentColor;
+  let primaryColor = theme.primaryColor;
+  let accentColor = theme.accentColor;
   const textColor = theme.textColor;
-  const whiteColor = theme.whiteColor;
+  let whiteColor = theme.whiteColor;
   const overlayColor = theme.overlayColor;
-  const indexTypeColor = theme.indexTypeColor;
+  let indexTypeColor = theme.indexTypeColor;
   
   // ============================================
   // PÁGINA 1: CAPA PROFISSIONAL (ou capa customizada)
