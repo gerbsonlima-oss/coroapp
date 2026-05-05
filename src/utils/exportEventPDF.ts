@@ -337,14 +337,33 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
 
   const useCustomCover = !!event.pdf_cover_url;
 
-  if (useCustomCover) {
+  // Pré-carrega capa e contracapa para extrair paleta de cores antes de renderizar headers
+  let customCoverImg: HTMLImageElement | null = null;
+  let customBackCoverImg: HTMLImageElement | null = null;
+  if (event.pdf_cover_url) {
+    try { customCoverImg = await loadImage(event.pdf_cover_url); } catch (e) { console.error('Erro ao carregar capa:', e); }
+  }
+  if (event.pdf_back_cover_url) {
+    try { customBackCoverImg = await loadImage(event.pdf_back_cover_url); } catch (e) { console.error('Erro ao carregar contracapa:', e); }
+  }
+  const paletteSource = customCoverImg || customBackCoverImg;
+  if (paletteSource) {
+    const palette = extractPaletteFromImage(paletteSource);
+    if (palette) {
+      primaryColor = palette.primary;
+      accentColor = palette.accent;
+      whiteColor = palette.onPrimary;
+      indexTypeColor = palette.primary;
+    }
+  }
+
+  if (useCustomCover && customCoverImg) {
     try {
-      const customCoverImg = await loadImage(event.pdf_cover_url!);
       coverPdf.addImage(customCoverImg, 'JPEG', 0, 0, pageWidth, pageHeight);
     } catch (error) {
-      console.error('Erro ao carregar capa customizada:', error);
+      console.error('Erro ao adicionar capa customizada:', error);
     }
-  } else {
+  } else if (!useCustomCover) {
     // Fundo sólido com a cor do tema selecionado
     coverPdf.setFillColor(...primaryColor);
     coverPdf.rect(0, 0, pageWidth, pageHeight, 'F');
