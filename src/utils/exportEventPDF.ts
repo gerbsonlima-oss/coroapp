@@ -85,6 +85,79 @@ const loadImageViaProxy = async (url: string): Promise<HTMLImageElement> => {
 
 const loadImage = loadImageViaProxy;
 
+// Extrai cores predominantes de uma imagem para usar nos headers do PDF
+const extractPaletteFromImage = (img: HTMLImageElement): {
+  primary: [number, number, number];
+  accent: [number, number, number];
+  onPrimary: [number, number, number];
+} | null => {
+  try {
+    const canvas = document.createElement('canvas');
+    const size = 64;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, size, size);
+    const data = ctx.getImageData(0, 0, size, size).data;
+
+    // Quantizar cores em buckets (4 bits por canal => 4096 buckets)
+    const buckets = new Map<number, { r: number; g: number; b: number; count: number; sat: number }>();
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      if (a < 200) continue;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const sat = max === 0 ? 0 : (max - min) / max;
+      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+      const cur = buckets.get(key);
+      if (cur) {
+        cur.r += r; cur.g += g; cur.b += b; cur.count++; cur.sat = Math.max(cur.sat, sat);
+      } else {
+        buckets.set(key, { r, g, b, count: 1, sat });
+      }
+    }
+    if (buckets.size === 0) return null;
+
+    const arr = Array.from(buckets.values()).map(v => ({
+      r: Math.round(v.r / v.count),
+      g: Math.round(v.g / v.count),
+      b: Math.round(v.b / v.count),
+      count: v.count,
+      sat: v.sat,
+    }));
+
+    // Pontuação: valoriza saturação e frequência, descarta cores muito claras/escuras
+    const scored = arr
+      .filter(c => {
+        const lum = (c.r * 299 + c.g * 587 + c.b * 114) / 1000;
+        return lum > 25 && lum < 230;
+      })
+      .map(c => ({ ...c, score: c.count * (0.3 + c.sat) }))
+      .sort((a, b) => b.score - a.score);
+
+    const pick = scored[0] || arr.sort((a, b) => b.count - a.count)[0];
+    if (!pick) return null;
+
+    // Escurece levemente para uso como cor primária do header
+    const darken = (v: number, f: number) => Math.max(0, Math.min(255, Math.round(v * f)));
+    const primary: [number, number, number] = [darken(pick.r, 0.75), darken(pick.g, 0.75), darken(pick.b, 0.75)];
+
+    // Cor de destaque: segunda mais relevante, ou clareada
+    const second = scored[1] || pick;
+    const lighten = (v: number, f: number) => Math.max(0, Math.min(255, Math.round(v + (255 - v) * f)));
+    const accent: [number, number, number] = [lighten(second.r, 0.35), lighten(second.g, 0.35), lighten(second.b, 0.35)];
+
+    // Texto sobre primária: branco ou preto conforme luminância
+    const lum = (primary[0] * 299 + primary[1] * 587 + primary[2] * 114) / 1000;
+    const onPrimary: [number, number, number] = lum > 140 ? [30, 30, 30] : [255, 255, 255];
+
+    return { primary, accent, onPrimary };
+  } catch (e) {
+    console.warn('Falha ao extrair paleta da imagem:', e);
+    return null;
+  }
+};
+
 const createCircularImageForPDF = async (img: HTMLImageElement, size: number): Promise<string | null> => {
   return new Promise((resolve) => {
     try {
