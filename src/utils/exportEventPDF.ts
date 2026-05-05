@@ -705,24 +705,29 @@ const exportWithPdfConcatenation = async (event: Event, songs: Song[], tenant?: 
     }
   }
 
-  // Adicionar numeração de páginas (exceto capa e contracapa)
+  // Numeração de páginas sutil (exceto capa e contracapa)
+  const pageNumFont = await finalPdf.embedFont(StandardFonts.Helvetica);
   const pages = finalPdf.getPages();
   const totalPages = pages.length;
   const numberedTotal = totalPages - 1 - (hasBackCover ? 1 : 0);
 
   pages.forEach((page, index) => {
-    if (index === 0) return; // não numerar a capa
-    if (hasBackCover && index === totalPages - 1) return; // não numerar contracapa
+    if (index === 0) return;
+    if (hasBackCover && index === totalPages - 1) return;
 
     const { width } = page.getSize();
-    const fontSize = 10;
+    const fontSize = 8;
     const text = `${index} / ${numberedTotal}`;
+    const textWidth = pageNumFont.widthOfTextAtSize(text, fontSize);
+    const marginPts = 28;
 
     page.drawText(text, {
-      x: width / 2 - text.length * fontSize * 0.25,
-      y: 20,
+      x: width - marginPts - textWidth,
+      y: 18,
       size: fontSize,
-      color: rgb(textColor[0] / 255, textColor[1] / 255, textColor[2] / 255),
+      font: pageNumFont,
+      color: rgb(0.45, 0.45, 0.45),
+      opacity: 0.85,
     });
   });
 
